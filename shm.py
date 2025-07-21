@@ -1,37 +1,6 @@
-"""
-SHMTools: Python-based Structural Health Monitoring Toolkit
+from IPython.display import Javascript, display
 
-A comprehensive library for structural health monitoring, signal processing,
-and damage detection algorithms. Converted from the original MATLAB SHMTools
-library developed by Los Alamos National Laboratory.
-"""
-
-__version__ = "0.1.0"
-__author__ = "SHMTools Development Team"
-
-# Import main modules for easy access
-from . import core
-from . import features
-from . import classification
-from . import modal
-from . import active_sensing
-from . import hardware
-from . import plotting
-from . import utils
-
-# Common functions for convenience
-from .core.spectral import psd_welch, stft
-from .core.filtering import filter_signal, bandpass_filter
-from .core.statistics import statistical_moments, rms, crest_factor
-from .features.time_series import ar_model, arx_model
-from .classification.outlier_detection import learn_mahalanobis, score_mahalanobis, learn_pca, score_pca
-
-def gui():
-    """Load SHM Function Selector GUI for Jupyter notebooks."""
-    try:
-        from IPython.display import Javascript, display
-        
-        js = '''
+js = '''
 document.querySelectorAll('[id*="shm-dropdown"]').forEach(el => el.remove());
 
 const funcs = {
@@ -104,38 +73,7 @@ Object.keys(funcs).forEach(category => {
 panel.appendChild(content);
 document.body.appendChild(panel);
 console.log('✅ SHM Extension loaded - click functions to copy code');
-        ''';
-        
-        display(Javascript(js))
-        print("🔧 SHM Function Selector loaded! Look for blue panel in top-right corner.")
-        print("💡 Click any function to copy code to clipboard, then paste into cell.")
-        
-    except ImportError:
-        print("❌ Jupyter GUI only available in Jupyter notebooks")
+''';
 
-__all__ = [
-    # Modules
-    "core",
-    "features", 
-    "classification",
-    "modal",
-    "active_sensing", 
-    "hardware",
-    "plotting",
-    "utils",
-    # Common functions
-    "psd_welch",
-    "stft", 
-    "filter_signal",
-    "bandpass_filter",
-    "statistical_moments",
-    "rms",
-    "crest_factor",
-    "ar_model",
-    "arx_model", 
-    "learn_mahalanobis",
-    "score_mahalanobis", 
-    "learn_pca",
-    "score_pca",
-    "gui",
-]
+display(Javascript(js))
+print("🔧 SHM Function Selector loaded! Click functions to copy code to clipboard.")
