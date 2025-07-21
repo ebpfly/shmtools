@@ -1,0 +1,105 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shmtools"
+version = "0.1.0"
+description = "Python-based Structural Health Monitoring Toolkit"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "BSD-3-Clause"}
+authors = [
+    {name = "SHMTools Development Team"},
+]
+keywords = ["structural-health-monitoring", "signal-processing", "machine-learning", "modal-analysis"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+
+dependencies = [
+    "numpy>=1.20.0",
+    "scipy>=1.7.0",
+    "scikit-learn>=1.0.0",
+    "matplotlib>=3.5.0",
+    "bokeh>=2.4.0",
+    "pandas>=1.3.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0",
+    "pytest-cov",
+    "black",
+    "flake8",
+    "mypy",
+    "pre-commit",
+]
+hardware = [
+    "nidaqmx>=0.6.0",
+    "pyserial>=3.5",
+]
+advanced = [
+    "pywavelets>=1.3.0",
+    "numba>=0.56.0",
+    "joblib>=1.1.0",
+]
+docs = [
+    "sphinx>=4.0",
+    "sphinx-rtd-theme",
+    "myst-parser",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/shmtools-python"
+Documentation = "https://shmtools-python.readthedocs.io"
+Repository = "https://github.com/yourusername/shmtools-python.git"
+"Bug Tracker" = "https://github.com/yourusername/shmtools-python/issues"
+
+[project.scripts]
+shmtools-gui = "bokeh_shmtools.app:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["shmtools*", "bokeh_shmtools*"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q --strict-markers"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.coverage.run]
+source = ["shmtools", "bokeh_shmtools"]
+omit = ["*/tests/*", "setup.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+]

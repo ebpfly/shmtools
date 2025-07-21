@@ -1,0 +1,12 @@
+# Development dependencies
+pytest>=6.0
+pytest-cov
+black
+flake8
+mypy
+pre-commit
+jupyter
+notebook
+sphinx>=4.0
+sphinx-rtd-theme
+myst-parser

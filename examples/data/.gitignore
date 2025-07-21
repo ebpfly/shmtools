@@ -1,0 +1,6 @@
+# Ignore MATLAB data files (large files, manually downloaded)
+*.mat
+
+# Keep README and other documentation
+!README.md
+!.gitignore
