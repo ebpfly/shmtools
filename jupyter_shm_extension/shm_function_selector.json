@@ -1,0 +1,5 @@
+{
+  "load_extensions": {
+    "shm_function_selector/main": true
+  }
+}

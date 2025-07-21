@@ -1,0 +1,4 @@
+include README.md
+include shm_function_selector.json
+recursive-include static *
+recursive-include jupyter_shm_extension *.py
