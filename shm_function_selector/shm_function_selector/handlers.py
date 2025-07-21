@@ -33,47 +33,133 @@ class SHMFunctionHandler(APIHandler):
         functions = []
         
         try:
-            # Import main shmtools package
+            # Import main shmtools package and use its introspection system
             import shmtools
             
-            # Define modules to scan
-            modules_to_scan = [
-                'shmtools.core.spectral',
-                'shmtools.core.statistics', 
-                'shmtools.core.filtering',
-                'shmtools.core.preprocessing',
-                'shmtools.features.time_series',
-                'shmtools.classification.outlier_detection',
-            ]
+            # Try to use the built-in introspection system first
+            try:
+                from shmtools.utils.introspection import discover_functions_locally
+                discovered_functions = discover_functions_locally()
+                
+                self.log.info(f"Found {len(discovered_functions)} functions using introspection system")
+                
+                # Convert to our format
+                for func_info in discovered_functions:
+                    try:
+                        # Get the actual function object
+                        module = importlib.import_module(func_info['module'])
+                        func = getattr(module, func_info['name'])
+                        
+                        # Extract detailed information
+                        detailed_info = self._extract_function_info(func, func_info['name'], func_info['category'])
+                        if detailed_info:
+                            functions.append(detailed_info)
+                            
+                    except Exception as e:
+                        self.log.warning(f"Could not process function {func_info['name']}: {e}")
+                        continue
+                        
+            except ImportError:
+                self.log.info("Introspection system not available, using manual discovery")
+                # Fallback to manual scanning
+                functions = self._manual_function_discovery()
+                        
+        except ImportError as e:
+            self.log.warning(f"SHMTools not available: {e}")
+            # Return some dummy functions for testing
+            functions = self._get_dummy_functions()
             
-            for module_name in modules_to_scan:
-                try:
-                    module = importlib.import_module(module_name)
-                    category = self._get_category_from_module_name(module_name)
-                    
+        return functions
+    
+    def _manual_function_discovery(self) -> List[Dict[str, Any]]:
+        """Manual function discovery as fallback."""
+        functions = []
+        
+        # Define modules to scan
+        modules_to_scan = [
+            'shmtools.core.spectral',
+            'shmtools.core.statistics', 
+            'shmtools.core.filtering',
+            'shmtools.core.preprocessing',
+            'shmtools.features.time_series',
+            'shmtools.classification.outlier_detection',
+        ]
+        
+        for module_name in modules_to_scan:
+            try:
+                module = importlib.import_module(module_name)
+                category = self._get_category_from_module_name(module_name)
+                
+                # Check if module has __all__ attribute
+                if hasattr(module, '__all__'):
+                    function_names = module.__all__
+                else:
                     # Find functions in the module
-                    for name in dir(module):
+                    function_names = [name for name in dir(module) 
+                                    if not name.startswith('_')]
+                
+                for name in function_names:
+                    try:
                         obj = getattr(module, name)
                         
-                        # Check if it's a callable function (not class or builtin)
+                        # Check if it's a callable function
                         if (callable(obj) and 
-                            not name.startswith('_') and
-                            inspect.isfunction(obj) and
-                            hasattr(obj, '__module__') and
-                            obj.__module__ == module_name):
+                            inspect.isfunction(obj)):
                             
                             func_info = self._extract_function_info(obj, name, category)
                             if func_info:
                                 functions.append(func_info)
-                                
-                except ImportError as e:
-                    self.log.warning(f"Could not import {module_name}: {e}")
-                    continue
-                    
-        except ImportError as e:
-            self.log.warning(f"SHMTools not available: {e}")
-            
+                    except Exception as e:
+                        self.log.warning(f"Could not process {name} in {module_name}: {e}")
+                        continue
+                            
+            except ImportError as e:
+                self.log.warning(f"Could not import {module_name}: {e}")
+                continue
+        
         return functions
+    
+    def _get_dummy_functions(self) -> List[Dict[str, Any]]:
+        """Return dummy functions for testing when shmtools is not available."""
+        return [
+            {
+                'name': 'psd_welch',
+                'displayName': 'Welch Power Spectral Density',
+                'category': 'Core - Spectral Analysis',
+                'signature': 'psd_welch(data, fs=1000, nperseg=256)',
+                'description': 'Compute power spectral density using Welch method',
+                'docstring': 'Estimates power spectral density using Welch method.',
+                'parameters': [
+                    {'name': 'data', 'type': 'numpy.ndarray', 'optional': False, 'default': None, 'description': 'Input signal data'},
+                    {'name': 'fs', 'type': 'float', 'optional': True, 'default': '1000', 'description': 'Sampling frequency'},
+                    {'name': 'nperseg', 'type': 'int', 'optional': True, 'default': '256', 'description': 'Length of each segment'}
+                ]
+            },
+            {
+                'name': 'ar_model',
+                'displayName': 'AR Model Parameters',
+                'category': 'Features - Time Series Models',
+                'signature': 'ar_model(data, order=10)',
+                'description': 'Estimate autoregressive model parameters',
+                'docstring': 'Fits an autoregressive model to time series data.',
+                'parameters': [
+                    {'name': 'data', 'type': 'numpy.ndarray', 'optional': False, 'default': None, 'description': 'Input time series'},
+                    {'name': 'order', 'type': 'int', 'optional': True, 'default': '10', 'description': 'AR model order'}
+                ]
+            },
+            {
+                'name': 'learn_pca',
+                'displayName': 'Learn PCA Model',
+                'category': 'Classification - Outlier Detection',
+                'signature': 'learn_pca(features, n_components=5)',
+                'description': 'Learn PCA model for outlier detection',
+                'docstring': 'Learns a PCA model from feature data.',
+                'parameters': [
+                    {'name': 'features', 'type': 'numpy.ndarray', 'optional': False, 'default': None, 'description': 'Feature matrix'},
+                    {'name': 'n_components', 'type': 'int', 'optional': True, 'default': '5', 'description': 'Number of PCA components'}
+                ]
+            }
+        ]
     
     def _get_category_from_module_name(self, module_name: str) -> str:
         """Map module names to human-readable categories."""

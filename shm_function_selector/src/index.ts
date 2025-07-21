@@ -5,13 +5,14 @@ import {
 
 import { INotebookTracker } from '@jupyterlab/notebook';
 import { Cell } from '@jupyterlab/cells';
+import { requestAPI } from './serverAPI';
 
 /**
  * The plugin registration information.
  */
 const plugin: JupyterFrontEndPlugin<void> = {
   id: 'shm-function-selector:plugin',
-  description: 'SHM Function Selector for JupyterLab with context menu parameter linking',
+  description: 'SHM Function Selector for JupyterLab with function dropdown and context menu parameter linking',
   autoStart: true,
   requires: [INotebookTracker],
   activate: activate
@@ -26,8 +27,9 @@ function activate(
 ): void {
   console.log('🚀 SHM Function Selector JupyterLab extension activated!');
 
-  // Initialize the context menu manager
+  // Initialize managers
   const contextMenuManager = new SHMContextMenuManager();
+  const functionSelector = new SHMFunctionSelector(app, notebookTracker);
 
   // Set up basic commands first
   const { commands } = app;
@@ -35,10 +37,10 @@ function activate(
   
   commands.addCommand(commandId, {
     label: 'SHM Functions',
-    caption: 'SHM Function Selector - Phase 3 Context Menu System',
+    caption: 'SHM Function Selector - Browse and insert SHM functions',
     execute: () => {
       console.log('📋 SHM Functions command executed');
-      alert('✅ SHM Function Selector Phase 3 Active!\n\nImplemented Features:\n\n🎯 Parameter Detection - Right-click on function parameters\n🧠 Smart Variable Compatibility - Recommends matching variables\n✨ Professional Context Menu - Clean interface with type info\n🔧 Code Modification - Links parameters to variables automatically\n\n➡️ Try right-clicking on parameter values in code cells!');
+      alert('✅ SHM Function Selector Active!\n\nFeatures:\n\n📚 Function Browser - Click dropdown to browse categorized functions\n🎯 Parameter Detection - Right-click on function parameters\n🧠 Smart Variable Compatibility - Recommends matching variables\n✨ Professional Context Menu - Clean interface with type info\n🔧 Code Modification - Links parameters to variables automatically\n\n➡️ Try the function dropdown or right-click on parameter values!');
     }
   });
 
@@ -48,30 +50,7 @@ function activate(
     
     const notebook = nbPanel.content;
     
-    // Add a toolbar button to the notebook
-    const button = document.createElement('button');
-    button.textContent = '🔗 SHM Parameter Linker';
-    button.style.cssText = `
-      margin: 5px;
-      padding: 5px 10px;
-      background: #2e7d2e;
-      color: white;
-      border: none;
-      border-radius: 3px;
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: bold;
-    `;
-    button.onclick = () => {
-      app.commands.execute(commandId);
-    };
-    
-    // Add button to notebook toolbar
-    const toolbar = nbPanel.toolbar;
-    if (toolbar) {
-      toolbar.node.appendChild(button);
-      console.log('🔧 Added SHM parameter linker button to notebook toolbar');
-    }
+    // Note: Removed the red SHM Parameter Linker button per user request
     
     // Listen for right-click events on code cells with full functionality
     notebook.node.addEventListener('contextmenu', (event: MouseEvent) => {
@@ -142,10 +121,349 @@ function activate(
     });
   });
 
-  console.log('✅ SHM Function Selector Phase 3 setup complete - Context Menu System loaded!');
+  console.log('✅ SHM Function Selector setup complete - Function Dropdown (Phase 1) and Context Menu (Phase 3) loaded!');
 }
 
 export default plugin;
+
+// ============================================================================
+// PHASE 1: FUNCTION SELECTOR DROPDOWN IMPLEMENTATION
+// ============================================================================
+
+interface SHMFunction {
+  name: string;
+  displayName: string;
+  category: string;
+  signature: string;
+  description: string;
+  docstring: string;
+  parameters: Array<{
+    name: string;
+    type: string;
+    optional: boolean;
+    default: string | null;
+    description?: string;
+  }>;
+}
+
+class SHMFunctionSelector {
+  private app: JupyterFrontEnd;
+  private notebookTracker: INotebookTracker;
+  private functions: SHMFunction[] = [];
+  private dropdown: HTMLSelectElement | null = null;
+  private recentlyUsed: string[] = [];
+
+  constructor(app: JupyterFrontEnd, notebookTracker: INotebookTracker) {
+    this.app = app;
+    this.notebookTracker = notebookTracker;
+    
+    // Load functions from server
+    this.loadFunctions();
+    
+    // Set up notebook tracking
+    this.setupNotebookTracking();
+  }
+
+  private async loadFunctions(): Promise<void> {
+    try {
+      console.log('📥 Loading SHM functions from server...');
+      const functions = await requestAPI<SHMFunction[]>('functions');
+      this.functions = functions;
+      console.log(`✅ Loaded ${functions.length} SHM functions`, functions);
+      
+      // If dropdown exists, populate it
+      if (this.dropdown) {
+        this.populateDropdown();
+      }
+    } catch (error) {
+      console.error('❌ Failed to load SHM functions:', error);
+      console.error('Error details:', error);
+      
+      // Show error notification
+      this.showNotification('⚠️ Failed to load SHM functions. Check browser console.', '#ff9800');
+    }
+  }
+
+  private setupNotebookTracking(): void {
+    this.notebookTracker.widgetAdded.connect((sender, nbPanel) => {
+      console.log('📓 Adding function selector to notebook toolbar');
+      
+      // Create the dropdown container
+      const container = document.createElement('div');
+      container.style.cssText = `
+        display: inline-flex;
+        align-items: center;
+        margin: 2px 5px;
+        gap: 5px;
+        flex-shrink: 0;
+        white-space: nowrap;
+        z-index: 1000;
+      `;
+
+      // Create label
+      const label = document.createElement('label');
+      label.textContent = 'SHM Function:';
+      label.style.cssText = `
+        font-size: 12px;
+        font-weight: bold;
+        color: #333;
+      `;
+
+      // Create dropdown
+      this.dropdown = document.createElement('select');
+      this.dropdown.style.cssText = `
+        padding: 4px 8px;
+        font-size: 11px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        background: white;
+        cursor: pointer;
+        min-width: 180px;
+        max-width: 250px;
+        flex-shrink: 1;
+      `;
+
+      // Add automatic insertion on selection change
+      this.dropdown.onchange = () => this.insertSelectedFunction(nbPanel);
+
+      // Add elements to container
+      container.appendChild(label);
+      container.appendChild(this.dropdown);
+
+      // Add to notebook toolbar
+      const toolbar = nbPanel.toolbar;
+      if (toolbar) {
+        toolbar.node.appendChild(container);
+        console.log('✅ Added function selector to toolbar');
+        
+        // Populate dropdown
+        this.populateDropdown();
+      }
+    });
+  }
+
+  private populateDropdown(): void {
+    if (!this.dropdown) return;
+
+    // Clear existing options
+    this.dropdown.innerHTML = '';
+
+    // Add default option
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = '-- Select a function --';
+    this.dropdown.appendChild(defaultOption);
+
+    // Add recently used section if any
+    if (this.recentlyUsed.length > 0) {
+      const recentGroup = document.createElement('optgroup');
+      recentGroup.label = '⏱️ Recently Used';
+      
+      this.recentlyUsed.forEach(funcName => {
+        const func = this.functions.find(f => f.name === funcName);
+        if (func) {
+          const option = document.createElement('option');
+          option.value = func.name;
+          option.textContent = func.displayName;
+          recentGroup.appendChild(option);
+        }
+      });
+      
+      this.dropdown.appendChild(recentGroup);
+    }
+
+    // Group functions by category
+    const categories = new Map<string, SHMFunction[]>();
+    this.functions.forEach(func => {
+      if (!categories.has(func.category)) {
+        categories.set(func.category, []);
+      }
+      categories.get(func.category)!.push(func);
+    });
+
+    // Add categorized functions
+    categories.forEach((funcs, category) => {
+      const optgroup = document.createElement('optgroup');
+      optgroup.label = category;
+      
+      funcs.forEach(func => {
+        const option = document.createElement('option');
+        option.value = func.name;
+        option.textContent = func.displayName;
+        option.title = func.description;
+        optgroup.appendChild(option);
+      });
+      
+      this.dropdown.appendChild(optgroup);
+    });
+  }
+
+  private insertSelectedFunction(nbPanel: any): void {
+    if (!this.dropdown || !this.dropdown.value) {
+      // Don't show alert for automatic calls - just return silently
+      return;
+    }
+
+    const selectedFunc = this.functions.find(f => f.name === this.dropdown!.value);
+    if (!selectedFunc) return;
+
+    // Add to recently used (max 5)
+    this.recentlyUsed = [selectedFunc.name, ...this.recentlyUsed.filter(n => n !== selectedFunc.name)].slice(0, 5);
+    
+    // Generate code snippet
+    const codeSnippet = this.generateCodeSnippet(selectedFunc);
+    
+    // Insert into active cell or create new cell
+    const notebook = nbPanel.content;
+    const activeCell = notebook.activeCell;
+    
+    if (activeCell && activeCell.model.type === 'code') {
+      // Insert at cursor position in active cell
+      const editor = activeCell.editor;
+      if (editor) {
+        const cursorPos = editor.getCursorPosition();
+        const currentText = editor.model.sharedModel.getSource();
+        
+        // Insert code at cursor position
+        const lines = currentText.split('\n');
+        const line = lines[cursorPos.line] || '';
+        const before = line.substring(0, cursorPos.column);
+        const after = line.substring(cursorPos.column);
+        
+        // If we're in the middle of a line, add newlines
+        const insertion = (before.trim() ? '\n' : '') + codeSnippet + (after.trim() ? '\n' : '');
+        lines[cursorPos.line] = before + insertion + after;
+        
+        editor.model.sharedModel.setSource(lines.join('\n'));
+        
+        // Move cursor to first parameter
+        const newCursorLine = cursorPos.line + (before.trim() ? 1 : 0);
+        editor.setCursorPosition({ line: newCursorLine, column: codeSnippet.indexOf('=') + 1 });
+      }
+    } else {
+      // Create new code cell
+      const cellIndex = notebook.activeCellIndex !== -1 ? notebook.activeCellIndex + 1 : notebook.widgets.length;
+      notebook.model.sharedModel.insertCell(cellIndex, {
+        cell_type: 'code',
+        source: codeSnippet
+      });
+      
+      // Activate the new cell
+      notebook.activeCellIndex = cellIndex;
+    }
+
+    // Show success notification
+    this.showNotification(`✅ Inserted ${selectedFunc.displayName}`, '#4caf50');
+    
+    // Reset dropdown
+    this.dropdown.value = '';
+    this.populateDropdown();
+  }
+
+  private generateCodeSnippet(func: SHMFunction): string {
+    const params = func.parameters;
+    const hasRequiredParams = params.some(p => !p.optional);
+    
+    // Generate parameter string
+    let paramStrings: string[] = [];
+    
+    params.forEach(param => {
+      let paramStr = `    ${param.name}=`;
+      
+      if (param.default && param.default !== 'None') {
+        // Use default value
+        paramStr += param.default;
+      } else if (param.type.includes('array') || param.type.includes('ndarray')) {
+        paramStr += 'data';  // Placeholder for array data
+      } else if (param.type.includes('int')) {
+        paramStr += '1';
+      } else if (param.type.includes('float')) {
+        paramStr += '1.0';
+      } else if (param.type.includes('str')) {
+        paramStr += "'value'";
+      } else {
+        paramStr += 'None';
+      }
+      
+      // Add comment with type info
+      if (param.description) {
+        paramStr += `,  # ${param.description}`;
+      } else {
+        paramStr += `,  # ${param.type}`;
+      }
+      
+      // Mark optional parameters
+      if (param.optional) {
+        paramStr += ' (optional)';
+      }
+      
+      paramStrings.push(paramStr);
+    });
+    
+    // Generate function call
+    let code = `# ${func.description}\n`;
+    
+    // Determine output variable name
+    const outputVar = this.suggestOutputVariable(func.name);
+    
+    if (paramStrings.length > 0) {
+      code += `${outputVar} = shmtools.${func.name}(\n${paramStrings.join('\n')}\n)`;
+    } else {
+      code += `${outputVar} = shmtools.${func.name}()`;
+    }
+    
+    return code;
+  }
+
+  private suggestOutputVariable(funcName: string): string {
+    // Suggest meaningful output variable names based on function
+    const suggestions: { [key: string]: string } = {
+      'psd_welch': 'frequencies, psd',
+      'ar_model': 'ar_coeffs, rmse',
+      'score_pca': 'scores',
+      'learn_pca': 'pca_model',
+      'score_mahalanobis': 'distances',
+      'learn_mahalanobis': 'maha_model',
+      'filter_butterworth': 'filtered_data',
+      'statistical_moments': 'moments',
+    };
+    
+    // Check if we have a specific suggestion
+    for (const [pattern, suggestion] of Object.entries(suggestions)) {
+      if (funcName.includes(pattern)) {
+        return suggestion;
+      }
+    }
+    
+    // Generic output name
+    return 'result';
+  }
+
+  private showNotification(message: string, color: string): void {
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: ${color};
+      color: white;
+      padding: 10px 15px;
+      border-radius: 4px;
+      z-index: 10000;
+      font-family: monospace;
+      font-size: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 3000);
+  }
+}
 
 // ============================================================================
 // PHASE 3: CONTEXT MENU IMPLEMENTATION

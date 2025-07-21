@@ -22,8 +22,12 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
 ]
 dependencies = [
+    "jupyter_server>=1.21,<3"
 ]
 dynamic = ["version", "description", "authors", "urls", "keywords"]
+
+[project.entry-points."jupyter_server.extension_points"]
+shm_function_selector = "shm_function_selector:_load_jupyter_server_extension"
 
 [tool.hatch.version]
 source = "nodejs"
