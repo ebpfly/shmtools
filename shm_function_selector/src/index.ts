@@ -63,7 +63,22 @@ function activate(
       const editor = activeCell.editor;
       if (!editor) return;
 
-      const cursor = editor.getCursorPosition();
+      // Clear any text selection to get accurate cursor position
+      const selection = editor.getSelection();
+      let cursor;
+      
+      if (selection && selection.start.line === selection.end.line && selection.start.column === selection.end.column) {
+        // No selection, use cursor position
+        cursor = editor.getCursorPosition();
+      } else if (selection) {
+        // Text is selected, use the start of selection as cursor position
+        cursor = selection.start;
+        console.log('🔍 Text selected, using selection start as cursor position');
+      } else {
+        // Fallback to cursor position
+        cursor = editor.getCursorPosition();
+      }
+
       const code = editor.model.sharedModel.getSource();
       
       // Get the index of the current cell
@@ -79,6 +94,11 @@ function activate(
 
       console.log('🎯 Right-click at position:', cursor, 'absolute:', absolutePos);
       console.log('📍 Current cell index:', currentCellIndex);
+      console.log('📋 Full code:');
+      console.log(code);
+      console.log('📋 Code length:', code.length);
+      console.log('📋 Character at absolute position:', code[absolutePos] || 'END');
+      console.log('📋 Context around cursor:', code.substring(Math.max(0, absolutePos-10), absolutePos+10));
       
       // Try to detect parameter context
       const parameterContext = contextMenuManager.detectParameterContext(code, absolutePos);
@@ -512,13 +532,388 @@ class SHMContextMenuManager {
       currentPos += lines[i].length + 1; // +1 for newline
     }
 
-    const line = lines[targetLine];
+    console.log(`🔍 Target line ${targetLine}, column ${targetCol}`);
     
-    console.log(`🔍 Target line ${targetLine}: "${line}"`);
-    console.log(`🔍 Target column: ${targetCol}`);
+    // For multi-line function calls, we need to analyze the entire code block
+    return this.findParameterInMultiLineFunction(code, cursorPos, lines, targetLine, targetCol);
+  }
+
+  private findParameterInMultiLineFunction(code: string, cursorPos: number, lines: string[], targetLine: number, targetCol: number): ParameterContext | null {
+    // First, find the function call that contains our cursor position
+    console.log('🔍 About to call extractFunctionCallAtPosition...');
+    const functionCall = this.extractFunctionCallAtPosition(code, cursorPos);
+    console.log('🔍 extractFunctionCallAtPosition returned:', functionCall);
+    if (!functionCall) {
+      console.log('🔍 No function call found at cursor position');
+      return null;
+    }
+
+    console.log(`🔍 Found function call: ${functionCall.functionName}`);
+    console.log(`🔍 Function call span: ${functionCall.startPos} - ${functionCall.endPos}`);
+
+    // Parse parameters within the function call
+    return this.findParameterInFunctionCall(functionCall, cursorPos);
+  }
+
+  private extractFunctionCallAtPosition(code: string, cursorPos: number): {
+    functionName: string;
+    startPos: number;
+    endPos: number;
+    fullText: string;
+    parametersText: string;
+  } | null {
+    console.log(`🔍 *** STARTING extractFunctionCallAtPosition ***`);
+    console.log(`🔍 Extracting function call at position ${cursorPos}`);
+    console.log(`🔍 Code length: ${code.length}`);
     
-    // Simple character-by-character approach to find parameter
-    return this.findParameterAtPosition(line, targetCol, targetLine, currentPos);
+    // Add a test to see if the method is working at all
+    if (!code || code.length === 0) {
+      console.log(`🔍 ❌ Code is empty or undefined`);
+      return null;
+    }
+    
+    if (cursorPos < 0 || cursorPos >= code.length) {
+      console.log(`🔍 ❌ Cursor position ${cursorPos} is out of bounds for code length ${code.length}`);
+      return null;
+    }
+    
+    // Strategy: Look for function patterns in the code and check if cursor is within their scope
+    const functionPattern = /(\w+(?:\.\w+)*)\s*\(/g;
+    let match;
+    let bestMatch = null;
+    let matchCount = 0;
+    
+    // Find all function calls in the code
+    console.log(`🔍 Searching for function patterns in code...`);
+    console.log(`🔍 Using regex: ${functionPattern}`);
+    console.log(`🔍 Code to search:`);
+    console.log(code);
+    while ((match = functionPattern.exec(code)) !== null) {
+      matchCount++;
+      const matchStart = match.index;
+      const functionName = match[1];
+      const openParenPos = match.index + match[0].length - 1;
+      
+      console.log(`🔍 Match #${matchCount}: Found function "${functionName}" at position ${matchStart}, opening paren at ${openParenPos}`);
+      console.log(`🔍 Match details: "${match[0]}" (full match)`);
+      console.log(`🔍 Function name captured: "${match[1]}"`);
+      console.log(`🔍 Code at match start: "${code.substring(matchStart, matchStart + 20)}"`);
+      console.log(`🔍 Character at open paren pos: "${code[openParenPos]}"`);
+      console.log(`🔍 Context: "${code.substring(Math.max(0, matchStart-5), matchStart+15)}"`);
+      console.log(`🔍 Cursor ${cursorPos} vs match range ${matchStart}-???`);
+      
+      // Find the matching closing parenthesis
+      let parenCount = 0;
+      let functionEnd = -1;
+      
+      for (let i = openParenPos; i < code.length; i++) {
+        if (code[i] === '(') {
+          parenCount++;
+        } else if (code[i] === ')') {
+          parenCount--;
+          if (parenCount === 0) {
+            functionEnd = i + 1;
+            break;
+          }
+        }
+      }
+      
+      if (functionEnd === -1) {
+        console.log(`🔍 No closing paren found for "${functionName}"`);
+        continue;
+      }
+      
+      console.log(`🔍 Function "${functionName}" spans ${matchStart} to ${functionEnd}, cursor at ${cursorPos}`);
+      console.log(`🔍 Checking if ${cursorPos} >= ${matchStart} && ${cursorPos} <= ${functionEnd}`);
+      console.log(`🔍 First condition: ${cursorPos >= matchStart}, Second condition: ${cursorPos <= functionEnd}`);
+      
+      // Check if cursor is within this function call
+      if (cursorPos >= matchStart && cursorPos <= functionEnd) {
+        console.log(`🔍 ✅ Cursor is within function "${functionName}"!`);
+        
+        // If we have multiple nested functions, prefer the innermost one
+        if (!bestMatch || (matchStart > bestMatch.startPos)) {
+          const fullText = code.substring(matchStart, functionEnd);
+          const parametersText = code.substring(openParenPos + 1, functionEnd - 1);
+          
+          // Extract just the function name part (after the last dot)
+          const nameParts = functionName.split('.');
+          const simpleName = nameParts[nameParts.length - 1];
+          
+          bestMatch = {
+            functionName: simpleName,
+            startPos: matchStart,
+            endPos: functionEnd,
+            fullText,
+            parametersText
+          };
+        }
+      }
+    }
+    
+    console.log(`🔍 Total matches found: ${matchCount}`);
+    
+    if (bestMatch) {
+      console.log(`🔍 ✅ Returning best match: ${bestMatch.functionName} (${bestMatch.startPos}-${bestMatch.endPos})`);
+    } else {
+      console.log(`🔍 ❌ No function call found containing cursor position ${cursorPos}`);
+    }
+    
+    console.log(`🔍 *** ENDING extractFunctionCallAtPosition ***`);
+    return bestMatch;
+  }
+
+  private findParameterInFunctionCall(functionCall: any, cursorPos: number): ParameterContext | null {
+    const { functionName, startPos, parametersText } = functionCall;
+    
+    // Parse parameters from the parameters text (could be multi-line)
+    const parameters = this.parseParameters(parametersText);
+    
+    console.log(`🔍 Parsed ${parameters.length} parameters:`, parameters);
+
+    // Find which parameter the cursor is in
+    // Calculate the position relative to the start of the parameters (after opening parenthesis)
+    let parenPos = startPos + functionName.length;
+    while (parenPos < functionCall.endPos && functionCall.fullText[parenPos - startPos] !== '(') {
+      parenPos++;
+    }
+    const parametersStartPos = parenPos + 1;
+    const relativePos = cursorPos - parametersStartPos;
+    
+    console.log(`🔍 Function "${functionName}" starts at ${startPos}, parameters start at ${parametersStartPos}`);
+    console.log(`🔍 Cursor at absolute ${cursorPos}, relative to parameters: ${relativePos}`);
+    console.log(`🔍 Parameters text: "${parametersText}"`);
+    console.log(`🔍 Character at cursor in full code: "${functionCall.fullText[cursorPos - startPos] || 'END'}"`);
+    
+    for (const param of parameters) {
+      const paramStart = param.startPos;
+      const paramEnd = param.endPos;
+      
+      console.log(`🔍 Parameter "${param.name}"`);
+      console.log(`   📍 Value: "${param.value}"`);
+      console.log(`   📍 Range: [${paramStart}-${paramEnd}] (relative to parameters)`);
+      console.log(`   📍 Absolute range: [${parametersStartPos + paramStart}-${parametersStartPos + paramEnd}]`);
+      console.log(`   📍 Text at range: "${parametersText.substring(paramStart, paramEnd)}"`);
+      console.log(`   📍 Is cursor in range? ${relativePos >= paramStart && relativePos <= paramEnd} (cursor=${relativePos})`);
+      
+      // Be more generous with the range check - include some margin
+      const margin = 2; // Allow 2 characters margin
+      if (relativePos >= (paramStart - margin) && relativePos <= (paramEnd + margin)) {
+        console.log(`✅ Found parameter "${param.name}" at cursor position (with margin)`);
+        
+        // Calculate absolute positions for replacement
+        const absoluteStart = parametersStartPos + paramStart;
+        const absoluteEnd = parametersStartPos + paramEnd;
+        
+        console.log(`🔧 Replacement range: [${absoluteStart}-${absoluteEnd}]`);
+        
+        return {
+          parameterName: param.name,
+          currentValue: param.value,
+          functionName: functionName,
+          position: { line: 0, ch: 0 }, // Will be calculated properly in replacement
+          replacementRange: { 
+            start: absoluteStart,
+            end: absoluteEnd
+          }
+        };
+      }
+    }
+    
+    console.log(`🔍 Cursor not in any parameter value using complex parsing`);
+    
+    // Fallback: try simpler approach
+    console.log(`🔍 Trying fallback simple parameter detection...`);
+    return this.fallbackParameterDetection(parametersText, relativePos, functionName, parametersStartPos);
+  }
+
+  private fallbackParameterDetection(parametersText: string, relativePos: number, functionName: string, parametersStartPos: number): ParameterContext | null {
+    // Simple approach: split by commas and look for param=value patterns
+    console.log(`🔍 Fallback: analyzing text around position ${relativePos}`);
+    console.log(`🔍 Fallback: parameters text: "${parametersText}"`);
+    
+    // Get character at cursor position
+    const charAtCursor = parametersText[relativePos] || '';
+    console.log(`🔍 Fallback: character at cursor: "${charAtCursor}"`);
+    
+    // Find the parameter assignment that contains our position
+    // Look backwards and forwards for = and comma/parenthesis
+    let searchStart = relativePos;
+    let searchEnd = relativePos;
+    
+    // Find the start of the current parameter assignment
+    while (searchStart > 0 && parametersText[searchStart] !== ',' && parametersText[searchStart] !== '(') {
+      searchStart--;
+    }
+    if (parametersText[searchStart] === ',' || parametersText[searchStart] === '(') {
+      searchStart++; // Move past the comma or opening paren
+    }
+    
+    // Find the end of the current parameter assignment
+    while (searchEnd < parametersText.length - 1 && parametersText[searchEnd] !== ',' && parametersText[searchEnd] !== ')') {
+      searchEnd++;
+    }
+    
+    const paramText = parametersText.substring(searchStart, searchEnd).trim();
+    console.log(`🔍 Fallback: found parameter text: "${paramText}"`);
+    
+    // Parse param=value from this text
+    const match = paramText.match(/^\s*(\w+)\s*=\s*(.+?)\s*$/);
+    if (match) {
+      const paramName = match[1];
+      const paramValue = match[2].trim();
+      
+      console.log(`🔍 Fallback: found parameter "${paramName}" = "${paramValue}"`);
+      
+      // Find the value position within the parameter text
+      const equalPos = paramText.indexOf('=');
+      let valueStart = equalPos + 1;
+      while (valueStart < paramText.length && /\s/.test(paramText[valueStart])) {
+        valueStart++;
+      }
+      const valueEnd = valueStart + paramValue.length;
+      
+      // Convert to absolute positions
+      const absoluteValueStart = parametersStartPos + searchStart + valueStart;
+      const absoluteValueEnd = parametersStartPos + searchStart + valueEnd;
+      
+      console.log(`🔍 Fallback: value positions [${absoluteValueStart}-${absoluteValueEnd}]`);
+      
+      return {
+        parameterName: paramName,
+        currentValue: paramValue,
+        functionName: functionName,
+        position: { line: 0, ch: 0 },
+        replacementRange: { 
+          start: absoluteValueStart,
+          end: absoluteValueEnd
+        }
+      };
+    }
+    
+    console.log(`🔍 Fallback: no parameter found`);
+    return null;
+  }
+
+  private parseParameters(parametersText: string): Array<{
+    name: string;
+    value: string;
+    startPos: number;
+    endPos: number;
+  }> {
+    const parameters = [];
+    
+    // Remove comments and normalize whitespace while tracking positions
+    let cleanText = '';
+    let positionMap = []; // Maps clean position to original position
+    
+    for (let i = 0; i < parametersText.length; i++) {
+      const char = parametersText[i];
+      
+      // Skip comments (# to end of line)
+      if (char === '#') {
+        let j = i;
+        while (j < parametersText.length && parametersText[j] !== '\n') {
+          j++;
+        }
+        if (j < parametersText.length && parametersText[j] === '\n') {
+          cleanText += ' '; // Replace comment with single space
+          positionMap.push(i);
+        }
+        i = j - 1; // Will be incremented by for loop
+        continue;
+      }
+      
+      cleanText += char;
+      positionMap.push(i);
+    }
+
+    // Now parse parameters from clean text
+    // Fixed pattern: parameter_name = value (handles multi-line with proper lookahead)
+    // The key fix: allow any whitespace (including newlines) between comma and next parameter
+    const paramRegex = /(\w+)\s*=\s*([^,)]+?)(?=\s*,\s*|\s*$|\s*\))/g;
+    let match;
+    
+    while ((match = paramRegex.exec(cleanText)) !== null) {
+      const paramName = match[1];
+      let paramValue = match[2].trim();
+      const matchStart = match.index;
+      
+      // Find the actual start of the value (after =)
+      let valueSearchStart = matchStart + paramName.length;
+      while (valueSearchStart < cleanText.length && cleanText[valueSearchStart] !== '=') {
+        valueSearchStart++;
+      }
+      valueSearchStart++; // Skip the '=' character
+      
+      // Skip whitespace after =
+      while (valueSearchStart < cleanText.length && /\s/.test(cleanText[valueSearchStart])) {
+        valueSearchStart++;
+      }
+      
+      // Find the end of the value (before comma, closing paren, or next parameter)
+      let valueEnd = valueSearchStart;
+      let parenDepth = 0;
+      let inString = false;
+      let stringChar = '';
+      
+      for (let i = valueSearchStart; i < cleanText.length; i++) {
+        const char = cleanText[i];
+        
+        if (!inString) {
+          if (char === '"' || char === "'") {
+            inString = true;
+            stringChar = char;
+          } else if (char === '(') {
+            parenDepth++;
+          } else if (char === ')') {
+            if (parenDepth === 0) {
+              // End of function call
+              break;
+            }
+            parenDepth--;
+          } else if (char === ',' && parenDepth === 0) {
+            // Check if this is the end of our parameter value
+            // Look ahead to see if next non-whitespace is parameter_name=
+            let lookahead = i + 1;
+            while (lookahead < cleanText.length && /\s/.test(cleanText[lookahead])) {
+              lookahead++;
+            }
+            if (lookahead < cleanText.length && /\w+\s*=/.test(cleanText.substring(lookahead))) {
+              // This comma separates our parameter from the next one
+              break;
+            }
+          }
+        } else {
+          if (char === stringChar && (i === 0 || cleanText[i-1] !== '\\')) {
+            inString = false;
+          }
+        }
+        
+        valueEnd = i + 1;
+      }
+      
+      // Extract the actual value text
+      paramValue = cleanText.substring(valueSearchStart, valueEnd).trim();
+      
+      // Map back to original positions in the original text (with comments)
+      const originalValueStart = positionMap[valueSearchStart] || valueSearchStart;
+      const originalValueEnd = positionMap[Math.min(valueEnd - 1, positionMap.length - 1)] || (valueEnd - 1);
+      
+      console.log(`🔍 Parsed parameter "${paramName}" = "${paramValue}"`);
+      console.log(`   📍 Clean text value start: ${valueSearchStart}, end: ${valueEnd}`);
+      console.log(`   📍 Original positions: [${originalValueStart}-${originalValueEnd}]`);
+      console.log(`   📍 Clean text at range: "${cleanText.substring(valueSearchStart, valueEnd)}"`);
+      
+      parameters.push({
+        name: paramName,
+        value: paramValue,
+        startPos: originalValueStart,
+        endPos: originalValueEnd + 1
+      });
+    }
+    
+    return parameters;
   }
 
   private findParameterAtPosition(line: string, col: number, lineNum: number, lineStartPos: number): ParameterContext | null {
@@ -921,24 +1316,42 @@ class SHMContextMenuManager {
     const editor = activeCell.editor;
     const currentText = editor.model.sharedModel.getSource();
     
-    // Simple replacement: replace current parameter value with variable name
-    const lines = currentText.split('\n');
-    const targetLine = parameterContext.position.line;
-    
-    if (targetLine < lines.length) {
-      let line = lines[targetLine];
+    // Use the replacement range from parameter context for precise replacement
+    if (parameterContext.replacementRange) {
+      const startPos = parameterContext.replacementRange.start;
+      const endPos = parameterContext.replacementRange.end;
       
-      // Replace the parameter value
-      const paramPattern = new RegExp(`(${parameterContext.parameterName}\\s*=\\s*)([^,\\)]+)`, 'g');
-      line = line.replace(paramPattern, `$1${variable.name}`);
+      console.log(`🔧 Replacing text from position ${startPos} to ${endPos}`);
+      console.log(`🔧 Original value: "${currentText.substring(startPos, endPos)}"`);
+      console.log(`🔧 New value: "${variable.name}"`);
       
-      // Remove TODO comments
-      line = line.replace(/\s*#\s*TODO[^\n]*/g, '');
-      
-      lines[targetLine] = line;
+      // Replace the exact range with the variable name
+      const newText = currentText.substring(0, startPos) + 
+                     variable.name + 
+                     currentText.substring(endPos);
       
       // Update the cell content
-      editor.model.sharedModel.setSource(lines.join('\n'));
+      editor.model.sharedModel.setSource(newText);
+    } else {
+      // Fallback to old line-based replacement for compatibility
+      const lines = currentText.split('\n');
+      const targetLine = parameterContext.position.line;
+      
+      if (targetLine < lines.length) {
+        let line = lines[targetLine];
+        
+        // Replace the parameter value
+        const paramPattern = new RegExp(`(${parameterContext.parameterName}\\s*=\\s*)([^,\\)]+)`, 'g');
+        line = line.replace(paramPattern, `$1${variable.name}`);
+        
+        // Remove TODO comments
+        line = line.replace(/\s*#\s*TODO[^\n]*/g, '');
+        
+        lines[targetLine] = line;
+        
+        // Update the cell content
+        editor.model.sharedModel.setSource(lines.join('\n'));
+      }
     }
 
     // Show success notification
