@@ -1,0 +1,214 @@
+%%javascript
+console.log('=== SHM Extension - Fixed Layout ===');
+
+// Remove any existing SHM elements to avoid duplicates
+var existingElements = document.querySelectorAll('[id*="shm-"]');
+existingElements.forEach(function(el) { el.remove(); });
+
+// Mock SHM functions data
+var mockFunctions = [
+    {
+        name: 'psd_welch',
+        category: 'Core - Spectral Analysis',
+        display_name: 'PSD Welch',
+        description: 'Power spectral density using Welch method',
+        template: `# Power spectral density using Welch method
+frequencies, power_spectrum = shmtools.psd_welch(
+    x=acceleration_data,  # Input signal
+    fs=sampling_freq,     # Sampling frequency
+    nperseg=1024         # Segment length
+)`
+    },
+    {
+        name: 'ar_model',
+        category: 'Features - Time Series',
+        display_name: 'AR Model',
+        description: 'Autoregressive model parameters',
+        template: `# Autoregressive model parameters
+features, residuals = shmtools.ar_model(
+    X=acceleration_data,  # Input time series
+    ar_order=15          # AR model order
+)`
+    },
+    {
+        name: 'learn_pca',
+        category: 'Classification - Outlier Detection',
+        display_name: 'Learn PCA',
+        description: 'Learn PCA outlier detection model',
+        template: `# Learn PCA outlier detection model
+pca_model = shmtools.learn_pca(
+    X=training_features,  # Training features
+    per_var=0.95         # Variance to retain
+)`
+    },
+    {
+        name: 'score_pca',
+        category: 'Classification - Outlier Detection',
+        display_name: 'Score PCA',
+        description: 'Score data using PCA model',
+        template: `# Score data using PCA model
+scores, outliers = shmtools.score_pca(
+    Y=test_features,  # Test features
+    model=pca_model   # Trained PCA model
+)`
+    }
+];
+
+// Create main container with fixed positioning
+var container = document.createElement('div');
+container.id = 'shm-main-container';
+container.style.cssText = `
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    margin: 10px auto;
+    padding: 20px;
+    background: white;
+    border: 2px solid #007bff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    z-index: 1000;
+`;
+
+// Create header
+var header = document.createElement('div');
+header.innerHTML = `
+    <h2 style="margin: 0 0 20px 0; color: #007bff; text-align: center; font-size: 24px;">
+        🔧 SHM Function Selector
+    </h2>
+    <p style="margin: 0 0 20px 0; text-align: center; color: #666; font-size: 14px;">
+        Click any function below to generate ready-to-use code
+    </p>
+`;
+container.appendChild(header);
+
+// Create function grid
+var functionsGrid = document.createElement('div');
+functionsGrid.style.cssText = `
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+`;
+
+mockFunctions.forEach(function(func, index) {
+    var functionCard = document.createElement('div');
+    functionCard.style.cssText = `
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 15px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: center;
+    `;
+    
+    functionCard.innerHTML = `
+        <div style="font-weight: bold; color: #007bff; margin-bottom: 8px; font-size: 14px;">
+            ${func.display_name}
+        </div>
+        <div style="font-size: 12px; color: #6c757d; margin-bottom: 8px;">
+            ${func.category}
+        </div>
+        <div style="font-size: 11px; color: #868e96;">
+            ${func.description}
+        </div>
+    `;
+    
+    // Add hover effects
+    functionCard.onmouseover = function() {
+        this.style.background = '#e3f2fd';
+        this.style.borderColor = '#2196f3';
+        this.style.transform = 'translateY(-2px)';
+        this.style.boxShadow = '0 4px 12px rgba(33,150,243,0.15)';
+    };
+    
+    functionCard.onmouseout = function() {
+        this.style.background = '#f8f9fa';
+        this.style.borderColor = '#dee2e6';
+        this.style.transform = 'translateY(0)';
+        this.style.boxShadow = 'none';
+    };
+    
+    // Add click handler
+    functionCard.onclick = function() {
+        showGeneratedCode(func);
+    };
+    
+    functionsGrid.appendChild(functionCard);
+});
+
+container.appendChild(functionsGrid);
+
+// Create code display area
+var codeDisplay = document.createElement('div');
+codeDisplay.id = 'shm-code-display';
+codeDisplay.style.cssText = `
+    display: none;
+    margin-top: 20px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 4px solid #28a745;
+`;
+container.appendChild(codeDisplay);
+
+// Add to page - insert after the current cell
+var cells = document.querySelectorAll('.cell');
+var currentCell = cells[cells.length - 1]; // Get last cell (should be current)
+if (currentCell && currentCell.parentNode) {
+    currentCell.parentNode.insertBefore(container, currentCell.nextSibling);
+} else {
+    document.body.appendChild(container);
+}
+
+// Function to show generated code
+function showGeneratedCode(func) {
+    var codeDisplay = document.getElementById('shm-code-display');
+    
+    codeDisplay.innerHTML = `
+        <h3 style="margin: 0 0 15px 0; color: #28a745; font-size: 18px;">
+            ✅ ${func.display_name} - Ready to Use!
+        </h3>
+        <div style="background: white; border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin-bottom: 15px;">
+            <pre style="margin: 0; font-family: 'Monaco', 'Consolas', monospace; font-size: 13px; line-height: 1.4; color: #333;">${func.template}</pre>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <button onclick="copyToClipboard('${func.name}')" style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                📋 Copy Code
+            </button>
+            <span style="font-size: 12px; color: #666;">
+                💡 Create a new cell below and paste this code
+            </span>
+        </div>
+    `;
+    
+    codeDisplay.style.display = 'block';
+    codeDisplay.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+    
+    console.log(`Generated code for ${func.name}:`);
+    console.log(func.template);
+}
+
+// Copy to clipboard function
+window.copyToClipboard = function(funcName) {
+    var func = mockFunctions.find(f => f.name === funcName);
+    if (func) {
+        navigator.clipboard.writeText(func.template).then(function() {
+            alert('✅ Code copied to clipboard!\n\nCreate a new cell and paste (Ctrl+V or Cmd+V)');
+        }).catch(function() {
+            // Fallback for older browsers
+            console.log('Code to copy:');
+            console.log(func.template);
+            alert('📋 Code logged to console - copy from there');
+        });
+    }
+};
+
+console.log('✅ SHM Function Selector loaded successfully!');
+console.log(`📋 ${mockFunctions.length} functions available`);
+console.log('👆 Click any function card above to generate code!');
+
+// Add some breathing room
+container.style.marginBottom = '40px';

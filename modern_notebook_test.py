@@ -1,0 +1,173 @@
+#!/usr/bin/env python3
+"""
+Create a notebook cell that will load our extension in modern Jupyter
+"""
+
+modern_test_cell = '''%%javascript
+console.log("Starting SHM Extension Test...");
+
+// Create mock Jupyter environment if needed
+if (typeof Jupyter === 'undefined') {
+    window.Jupyter = {
+        notebook: {
+            base_url: '',
+            get_selected_cell: function() {
+                return {
+                    cell_type: 'code',
+                    get_text: function() { return ''; },
+                    set_text: function(text) { 
+                        console.log('Cell text set to:', text); 
+                    }
+                };
+            },
+            insert_cell_below: function(type) {
+                console.log('Inserting cell of type:', type);
+                return {
+                    set_text: function(text) {
+                        console.log('New cell content:', text);
+                        // Create a visible result
+                        var pre = document.createElement('pre');
+                        pre.style.background = '#f8f9fa';
+                        pre.style.padding = '10px';
+                        pre.style.border = '1px solid #ddd';
+                        pre.style.marginTop = '10px';
+                        pre.textContent = text;
+                        document.body.appendChild(pre);
+                    }
+                };
+            }
+        }
+    };
+}
+
+// Test SHM function discovery directly
+console.log("Testing function discovery...");
+
+// Mock SHM functions (since server might not be running)
+var mockFunctions = [
+    {
+        name: 'psd_welch',
+        category: 'Core - Spectral Analysis',
+        display_name: 'Power Spectral Density (Welch)',
+        description: 'Estimate power spectral density using Welch method',
+        parameters: [
+            {name: 'x', type: 'numpy.ndarray', optional: false},
+            {name: 'fs', type: 'float', default: '1.0', optional: true}
+        ]
+    },
+    {
+        name: 'ar_model',
+        category: 'Features - Time Series Models',
+        display_name: 'AR Model Parameters & Residuals', 
+        description: 'Estimate autoregressive model parameters',
+        parameters: [
+            {name: 'X', type: 'numpy.ndarray', optional: false},
+            {name: 'ar_order', type: 'int', default: '5', optional: true}
+        ]
+    }
+];
+
+// Function to generate code
+function generateCode(func) {
+    var lines = ['# ' + func.description];
+    var params = [];
+    
+    func.parameters.forEach(function(param) {
+        var paramStr = param.name + '=';
+        if (param.default && param.default !== 'None') {
+            paramStr += param.default;
+        } else {
+            paramStr += 'None  # ' + (param.optional ? 'TODO' : 'REQUIRED') + ': ' + param.type;
+        }
+        params.push(paramStr);
+    });
+    
+    var outputs = 'result';
+    if (func.name.includes('ar_model')) {
+        outputs = 'features, residuals';
+    } else if (func.name.includes('psd')) {
+        outputs = 'frequencies, power_spectrum';
+    }
+    
+    var code = outputs + ' = shmtools.' + func.name + '(\\n    ' + 
+               params.join(',\\n    ') + '\\n)';
+    lines.push(code);
+    
+    return lines.join('\\n');
+}
+
+// Create UI elements
+console.log("Creating UI elements...");
+
+// Create dropdown button
+var dropdown = document.createElement('div');
+dropdown.className = 'dropdown';
+dropdown.style.margin = '10px';
+dropdown.innerHTML = `
+    <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" style="font-size: 14px;">
+        🔧 SHM Functions
+    </button>
+    <ul class="dropdown-menu" id="shm-functions-list" style="max-height: 300px; overflow-y: auto;">
+        <li><h6 class="dropdown-header">Available Functions</h6></li>
+    </ul>
+`;
+
+// Add to page
+document.body.appendChild(dropdown);
+
+// Populate dropdown
+var list = document.getElementById('shm-functions-list');
+mockFunctions.forEach(function(func, index) {
+    var item = document.createElement('li');
+    var link = document.createElement('a');
+    link.className = 'dropdown-item';
+    link.href = '#';
+    link.textContent = func.display_name + ' (' + func.category + ')';
+    link.onclick = function(e) {
+        e.preventDefault();
+        var code = generateCode(func);
+        console.log('Generated code for ' + func.name + ':', code);
+        
+        // Use Jupyter to insert code
+        if (Jupyter && Jupyter.notebook) {
+            var cell = Jupyter.notebook.insert_cell_below('code');
+            cell.set_text(code);
+        }
+        
+        alert('Code generated! Check console and new cell below.');
+    };
+    item.appendChild(link);
+    list.appendChild(item);
+});
+
+console.log("✅ SHM Extension test complete! Try clicking the dropdown above.");
+
+// Add some styling
+var style = document.createElement('style');
+style.textContent = `
+    .dropdown-menu {
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .dropdown-item:hover {
+        background-color: #f8f9fa;
+    }
+`;
+document.head.appendChild(style);
+'''
+
+print("Copy and paste this into a Jupyter notebook cell:")
+print("=" * 50)
+print(modern_test_cell)
+
+# Also save to file for easy copying
+with open('notebook_test_cell.txt', 'w') as f:
+    f.write(modern_test_cell)
+    
+print("\n" + "=" * 50)
+print("Also saved to: notebook_test_cell.txt")
+print("\nThis will:")
+print("1. Create a working SHM Functions dropdown")
+print("2. Test code generation")
+print("3. Show results directly in the notebook")

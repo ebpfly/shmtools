@@ -26,6 +26,12 @@ from .core.statistics import statistical_moments, rms, crest_factor
 from .features.time_series import ar_model, arx_model
 from .classification.outlier_detection import learn_mahalanobis, score_mahalanobis, learn_pca, score_pca
 
+# Load introspection capabilities for Jupyter notebooks
+try:
+    from . import introspection
+except ImportError:
+    pass  # Introspection not available
+
 def gui():
     """Load SHM Function Selector GUI for Jupyter notebooks."""
     try:

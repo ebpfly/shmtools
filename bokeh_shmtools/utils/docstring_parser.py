@@ -50,6 +50,58 @@ class FunctionMetadata:
     typical_usage: List[str] = field(default_factory=list)
     notes: str = ""
     references: List[str] = field(default_factory=list)
+    display_name: Optional[str] = None
+    verbose_call: Optional[str] = None
+
+
+def parse_verbose_call(verbose_call: str) -> Dict[str, Any]:
+    """
+    Parse verbose function call to extract human-readable names.
+    
+    Format: [Output1, Output2] = Function Name (Input1, Input2)
+    
+    Returns
+    -------
+    dict with keys:
+        - 'function_display_name': Human-readable function name
+        - 'input_names': List of human-readable input names  
+        - 'output_names': List of human-readable output names
+    """
+    result = {
+        'function_display_name': '',
+        'input_names': [],
+        'output_names': []
+    }
+    
+    if not verbose_call:
+        return result
+        
+    try:
+        # Match pattern: [outputs] = function_name (inputs)
+        # or just: function_name (inputs) for functions with no outputs
+        pattern = r'^(?:\[([^\]]+)\]\s*=\s*)?([^(]+)\s*\(([^)]*)\)$'
+        match = re.match(pattern, verbose_call.strip())
+        
+        if match:
+            outputs_part, function_part, inputs_part = match.groups()
+            
+            # Extract function display name
+            result['function_display_name'] = function_part.strip()
+            
+            # Extract input names
+            if inputs_part:
+                inputs = [name.strip() for name in inputs_part.split(',')]
+                result['input_names'] = [inp for inp in inputs if inp]
+            
+            # Extract output names
+            if outputs_part:
+                outputs = [name.strip() for name in outputs_part.split(',')]
+                result['output_names'] = [out for out in outputs if out]
+                
+    except Exception as e:
+        print(f"Error parsing verbose call '{verbose_call}': {e}")
+    
+    return result
 
 
 def parse_shmtools_docstring(func) -> Optional[FunctionMetadata]:
@@ -109,7 +161,9 @@ def parse_shmtools_docstring(func) -> Optional[FunctionMetadata]:
             interactive_plot=meta_info.get('interactive_plot', False),
             typical_usage=meta_info.get('typical_usage', []),
             notes=notes,
-            references=references
+            references=references,
+            display_name=meta_info.get('display_name'),
+            verbose_call=meta_info.get('verbose_call')
         )
         
     except Exception as e:
@@ -119,7 +173,8 @@ def parse_shmtools_docstring(func) -> Optional[FunctionMetadata]:
 
 def _extract_meta_section(docstring: str) -> Dict[str, Any]:
     """Extract metadata from .. meta:: section."""
-    meta_pattern = r'\.\. meta::\s*\n((?:\s{4,}.*\n?)*)'
+    # Match meta section until we hit a section header or empty line followed by non-indented content
+    meta_pattern = r'\.\. meta::\s*\n((?:\s{4,}:.*\n?)*)'
     meta_match = re.search(meta_pattern, docstring)
     meta_info = {}
     
@@ -127,9 +182,9 @@ def _extract_meta_section(docstring: str) -> Dict[str, Any]:
         meta_text = meta_match.group(1)
         for line in meta_text.strip().split('\n'):
             line = line.strip()
-            if line.startswith(':') and line.endswith(':'):
+            if line.startswith(':') and ':' in line[1:]:
                 # Handle lines like ":category: Core - Spectral Analysis"
-                parts = line[1:-1].split(':', 1)
+                parts = line[1:].split(':', 1)
                 if len(parts) == 2:
                     key, value = parts
                     key = key.strip()
@@ -163,7 +218,8 @@ def _parse_parameters_with_gui(docstring: str) -> List[ParameterSpec]:
     param_text = param_match.group(1)
     
     # Split into individual parameter blocks
-    param_blocks = re.split(r'\n(\w+)\s*:', param_text)[1:]  # Skip first empty element
+    # Match parameter names that can have spaces around the colon (e.g., "X : array_like")
+    param_blocks = re.split(r'\n(\w+)\s*:\s*', param_text)[1:]  # Skip first empty element
     
     for i in range(0, len(param_blocks), 2):
         if i + 1 >= len(param_blocks):
@@ -269,7 +325,9 @@ def _parse_returns_section(docstring: str) -> List[ReturnSpec]:
     returns_text = returns_match.group(1)
     
     # Split into individual return blocks
-    return_blocks = re.split(r'\n(\w+)\s*:', returns_text)[1:]
+    # First, handle the case where first return doesn't start with newline
+    returns_text_with_newline = '\n' + returns_text.lstrip()
+    return_blocks = re.split(r'\n(\w+)\s*:', returns_text_with_newline)[1:]
     
     for i in range(0, len(return_blocks), 2):
         if i + 1 >= len(return_blocks):

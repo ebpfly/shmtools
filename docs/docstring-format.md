@@ -97,7 +97,25 @@ def psd_welch(x, fs=1.0, window="hann", nperseg=None):
         :output_type: Frequency Domain
         :interactive_plot: True
         :typical_usage: ["vibration_analysis", "frequency_content", "noise_analysis"]
+        :display_name: Power Spectral Density (Welch Method)
+        :verbose_call: Compute PSD(signal, sampling_rate, window_type, segment_length)
     
+### Meta Field Specifications
+
+The `.. meta::` section contains machine-readable metadata for the workflow builder:
+
+- **`:category:`** - Functional classification (e.g., "Core - Spectral Analysis", "Classification - Parametric Detectors")
+- **`:matlab_equivalent:`** - Original MATLAB function name for reference  
+- **`:complexity:`** - Difficulty level: "Basic", "Intermediate", "Advanced"
+- **`:data_type:`** - Expected input type: "Time Series", "Features", "Frequency Domain"
+- **`:output_type:`** - Output data type: "Features", "Scores", "Model", "Frequency Domain"
+- **`:interactive_plot:`** - Boolean, whether function generates interactive visualizations
+- **`:typical_usage:`** - List of common use cases for search and categorization
+- **`:display_name:`** - Short, human-readable function name for UI display (NEW)
+- **`:verbose_call:`** - Human-readable function call template with parameter names (NEW)
+
+The new `:display_name:` and `:verbose_call:` fields provide the UI with short, descriptive names that match the original MATLAB "VERBOSE FUNCTION CALL" metadata.
+
     Parameters
     ----------
     x : array_like, shape (n_samples,) or (n_samples, n_channels)

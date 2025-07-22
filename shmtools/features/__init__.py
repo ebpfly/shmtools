@@ -11,9 +11,7 @@ from .time_series import *
 # from .active_sensing_features import *
 
 __all__ = [
-    # Time series features - MATLAB compatible
-    "ar_model_shm",
-    # Time series features - Modern Python interface
+    # Time series features
     "ar_model",
     "arx_model", 
     "ar_model_order",

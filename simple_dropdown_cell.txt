@@ -1,0 +1,242 @@
+%%javascript
+console.log('Creating SHM Functions Dropdown...');
+
+// Remove any existing SHM elements
+var existing = document.querySelectorAll('[id*="shm-dropdown"]');
+existing.forEach(function(el) { el.remove(); });
+
+// SHM Functions data
+var shmFunctions = {
+    'Spectral Analysis': [
+        {
+            name: 'psd_welch',
+            display: 'PSD Welch',
+            code: `# Power spectral density using Welch method
+frequencies, power_spectrum = shmtools.psd_welch(
+    x=data,  # Input signal
+    fs=sampling_rate,  # Sampling frequency
+    nperseg=1024  # Segment length
+)`
+        },
+        {
+            name: 'spectrogram',
+            display: 'Spectrogram',
+            code: `# Compute spectrogram
+f, t, Sxx = shmtools.spectrogram(
+    x=signal,  # Input signal
+    fs=sampling_rate,  # Sampling frequency
+    nperseg=1024  # Segment length
+)`
+        }
+    ],
+    'Time Series': [
+        {
+            name: 'ar_model',
+            display: 'AR Model',
+            code: `# Autoregressive model parameters
+features, residuals = shmtools.ar_model(
+    X=data,  # Input time series
+    ar_order=15  # AR model order
+)`
+        }
+    ],
+    'Outlier Detection': [
+        {
+            name: 'learn_pca',
+            display: 'Learn PCA',
+            code: `# Learn PCA outlier detection model
+pca_model = shmtools.learn_pca(
+    X=features,  # Training features
+    per_var=0.95  # Variance to retain
+)`
+        },
+        {
+            name: 'score_pca',
+            display: 'Score PCA',
+            code: `# Score data using PCA model
+scores, outliers = shmtools.score_pca(
+    Y=test_features,  # Test features
+    model=pca_model  # Trained model
+)`
+        }
+    ],
+    'Filtering': [
+        {
+            name: 'bandpass_filter',
+            display: 'Bandpass Filter',
+            code: `# Apply bandpass filter
+filtered_signal = shmtools.bandpass_filter(
+    x=signal,  # Input signal
+    lowcut=10.0,  # Low frequency
+    highcut=100.0,  # High frequency
+    fs=sampling_rate  # Sampling frequency
+)`
+        }
+    ]
+};
+
+// Create floating dropdown panel
+var dropdownPanel = document.createElement('div');
+dropdownPanel.id = 'shm-dropdown-panel';
+dropdownPanel.style.cssText = `
+    position: fixed;
+    top: 60px;
+    right: 20px;
+    background: white;
+    border: 2px solid #007bff;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    z-index: 1000;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    width: 280px;
+`;
+
+// Create header
+var header = document.createElement('div');
+header.style.cssText = `
+    background: #007bff;
+    color: white;
+    padding: 12px 16px;
+    font-weight: bold;
+    font-size: 14px;
+    border-radius: 6px 6px 0 0;
+    cursor: move;
+`;
+header.innerHTML = '🔧 SHM Functions';
+
+// Make it draggable
+var isDragging = false;
+var dragOffset = {x: 0, y: 0};
+
+header.onmousedown = function(e) {
+    isDragging = true;
+    dragOffset.x = e.clientX - dropdownPanel.offsetLeft;
+    dragOffset.y = e.clientY - dropdownPanel.offsetTop;
+    document.body.style.userSelect = 'none';
+};
+
+document.onmousemove = function(e) {
+    if (isDragging) {
+        dropdownPanel.style.left = (e.clientX - dragOffset.x) + 'px';
+        dropdownPanel.style.top = (e.clientY - dragOffset.y) + 'px';
+        dropdownPanel.style.right = 'auto'; // Remove right positioning
+    }
+};
+
+document.onmouseup = function() {
+    isDragging = false;
+    document.body.style.userSelect = 'auto';
+};
+
+dropdownPanel.appendChild(header);
+
+// Create content area
+var content = document.createElement('div');
+content.style.cssText = `
+    max-height: 400px;
+    overflow-y: auto;
+`;
+
+// Add functions by category
+Object.keys(shmFunctions).forEach(function(category) {
+    // Category header
+    var categoryHeader = document.createElement('div');
+    categoryHeader.style.cssText = `
+        padding: 10px 16px;
+        background: #f8f9fa;
+        font-weight: bold;
+        color: #495057;
+        font-size: 12px;
+        border-bottom: 1px solid #dee2e6;
+    `;
+    categoryHeader.textContent = category;
+    content.appendChild(categoryHeader);
+    
+    // Functions in category
+    shmFunctions[category].forEach(function(func) {
+        var funcItem = document.createElement('div');
+        funcItem.style.cssText = `
+            padding: 10px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f1f3f4;
+            transition: background-color 0.2s;
+        `;
+        funcItem.textContent = func.display;
+        
+        // Hover effect
+        funcItem.onmouseover = function() {
+            this.style.backgroundColor = '#e3f2fd';
+        };
+        funcItem.onmouseout = function() {
+            this.style.backgroundColor = 'transparent';
+        };
+        
+        // Click handler
+        funcItem.onclick = function() {
+            insertCode(func);
+        };
+        
+        content.appendChild(funcItem);
+    });
+});
+
+dropdownPanel.appendChild(content);
+
+// Add minimize button
+var minimizeBtn = document.createElement('button');
+minimizeBtn.innerHTML = '−';
+minimizeBtn.style.cssText = `
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+`;
+
+var isMinimized = false;
+minimizeBtn.onclick = function(e) {
+    e.stopPropagation();
+    isMinimized = !isMinimized;
+    content.style.display = isMinimized ? 'none' : 'block';
+    minimizeBtn.innerHTML = isMinimized ? '+' : '−';
+};
+
+header.appendChild(minimizeBtn);
+
+// Add to page
+document.body.appendChild(dropdownPanel);
+
+// Function to insert code
+function insertCode(func) {
+    console.log('Inserting:', func.name);
+    
+    // Show the code in an alert for now (most reliable method)
+    var message = `SHM Function: ${func.display}\n\n${func.code}\n\nCode copied to console - check browser console (F12) to copy.`;
+    alert(message);
+    
+    // Also log to console for easy copying
+    console.log(`\n=== ${func.display} ===`);
+    console.log(func.code);
+    console.log('=== End Code ===\n');
+    
+    // Try to copy to clipboard
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(func.code).then(function() {
+            console.log('✅ Code copied to clipboard!');
+        }).catch(function() {
+            console.log('❌ Could not copy to clipboard');
+        });
+    }
+}
+
+console.log('✅ SHM Functions dropdown created!');
+console.log('📍 Look for floating panel in top-right corner');
+console.log('🖱️ Drag the blue header to move it around');
+console.log('📋 Click any function to get the code');

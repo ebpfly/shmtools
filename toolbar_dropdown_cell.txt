@@ -1,0 +1,273 @@
+%%javascript
+console.log('Adding SHM Functions to Jupyter Toolbar...');
+
+// Remove any existing SHM toolbar elements
+var existingSHM = document.querySelectorAll('[id*="shm-toolbar"], .shm-dropdown');
+existingSHM.forEach(function(el) { el.remove(); });
+
+// SHM Functions data
+var shmFunctions = [
+    {
+        name: 'psd_welch',
+        category: 'Spectral Analysis',
+        display_name: 'PSD Welch',
+        code: `# Power spectral density using Welch method
+frequencies, power_spectrum = shmtools.psd_welch(
+    x=data,  # Input signal
+    fs=sampling_rate,  # Sampling frequency
+    nperseg=1024  # Segment length
+)`
+    },
+    {
+        name: 'ar_model',
+        category: 'Time Series',
+        display_name: 'AR Model',
+        code: `# Autoregressive model parameters
+features, residuals = shmtools.ar_model(
+    X=data,  # Input time series
+    ar_order=15  # AR model order
+)`
+    },
+    {
+        name: 'learn_pca',
+        category: 'Outlier Detection',
+        display_name: 'Learn PCA',
+        code: `# Learn PCA outlier detection model
+pca_model = shmtools.learn_pca(
+    X=features,  # Training features
+    per_var=0.95  # Variance to retain
+)`
+    },
+    {
+        name: 'score_pca',
+        category: 'Outlier Detection', 
+        display_name: 'Score PCA',
+        code: `# Score data using PCA model
+scores, outliers = shmtools.score_pca(
+    Y=test_features,  # Test features
+    model=pca_model  # Trained model
+)`
+    },
+    {
+        name: 'bandpass_filter',
+        category: 'Filtering',
+        display_name: 'Bandpass Filter',
+        code: `# Apply bandpass filter
+filtered_signal = shmtools.bandpass_filter(
+    x=signal,  # Input signal
+    lowcut=10.0,  # Low frequency
+    highcut=100.0,  # High frequency
+    fs=sampling_rate  # Sampling frequency
+)`
+    }
+];
+
+// Find the notebook toolbar
+var toolbar = document.querySelector('#maintoolbar, .toolbar, [class*="toolbar"]');
+if (!toolbar) {
+    // Fallback: look for any toolbar-like container
+    var toolbars = document.querySelectorAll('div[class*="toolbar"], div[class*="header"]');
+    if (toolbars.length > 0) {
+        toolbar = toolbars[0];
+    }
+}
+
+if (!toolbar) {
+    console.log('Could not find toolbar, adding to top of page');
+    // Create our own toolbar at the top
+    toolbar = document.createElement('div');
+    toolbar.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        padding: 8px 15px;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    `;
+    document.body.appendChild(toolbar);
+    
+    // Add some top margin to the main content
+    var main = document.querySelector('#main, .main, [role="main"]') || document.body;
+    main.style.marginTop = '50px';
+}
+
+// Create the dropdown container
+var dropdownContainer = document.createElement('div');
+dropdownContainer.id = 'shm-toolbar-dropdown';
+dropdownContainer.className = 'shm-dropdown';
+dropdownContainer.style.cssText = `
+    position: relative;
+    display: inline-block;
+    margin-left: 10px;
+`;
+
+// Create the dropdown button
+var dropdownButton = document.createElement('button');
+dropdownButton.className = 'btn btn-outline-primary btn-sm';
+dropdownButton.style.cssText = `
+    background: #fff;
+    border: 1px solid #007bff;
+    color: #007bff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+`;
+dropdownButton.innerHTML = '🔧 SHM Functions ▼';
+
+// Create the dropdown menu
+var dropdownMenu = document.createElement('div');
+dropdownMenu.style.cssText = `
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    min-width: 250px;
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 1001;
+    display: none;
+`;
+
+// Group functions by category
+var categories = {};
+shmFunctions.forEach(function(func) {
+    if (!categories[func.category]) {
+        categories[func.category] = [];
+    }
+    categories[func.category].push(func);
+});
+
+// Populate the dropdown menu
+Object.keys(categories).forEach(function(category, catIndex) {
+    // Add category header
+    var categoryHeader = document.createElement('div');
+    categoryHeader.style.cssText = `
+        padding: 8px 12px;
+        background: #f8f9fa;
+        font-weight: bold;
+        color: #495057;
+        font-size: 12px;
+        border-bottom: 1px solid #dee2e6;
+    `;
+    categoryHeader.textContent = category;
+    dropdownMenu.appendChild(categoryHeader);
+    
+    // Add functions in this category
+    categories[category].forEach(function(func) {
+        var menuItem = document.createElement('div');
+        menuItem.style.cssText = `
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f1f3f4;
+            transition: background-color 0.2s;
+        `;
+        menuItem.textContent = func.display_name;
+        
+        // Hover effect
+        menuItem.onmouseover = function() {
+            this.style.backgroundColor = '#e3f2fd';
+        };
+        menuItem.onmouseout = function() {
+            this.style.backgroundColor = 'transparent';
+        };
+        
+        // Click handler
+        menuItem.onclick = function() {
+            insertSHMFunction(func);
+            dropdownMenu.style.display = 'none';
+        };
+        
+        dropdownMenu.appendChild(menuItem);
+    });
+});
+
+// Toggle dropdown visibility
+dropdownButton.onclick = function(e) {
+    e.stopPropagation();
+    var isVisible = dropdownMenu.style.display === 'block';
+    dropdownMenu.style.display = isVisible ? 'none' : 'block';
+};
+
+// Close dropdown when clicking elsewhere
+document.addEventListener('click', function() {
+    dropdownMenu.style.display = 'none';
+});
+
+// Assemble the dropdown
+dropdownContainer.appendChild(dropdownButton);
+dropdownContainer.appendChild(dropdownMenu);
+
+// Add to toolbar
+toolbar.appendChild(dropdownContainer);
+
+// Function to insert SHM code
+function insertSHMFunction(func) {
+    console.log('Inserting SHM function:', func.name);
+    
+    // Method 1: Try to find the current code cell and insert code
+    var codeCells = document.querySelectorAll('.code_cell, [class*="code"]');
+    var activeCell = document.querySelector('.selected, .active, .jp-mod-active');
+    
+    if (activeCell && activeCell.querySelector('textarea, .CodeMirror')) {
+        // Try to insert directly into active cell
+        var codeArea = activeCell.querySelector('textarea, .CodeMirror-code');
+        if (codeArea) {
+            // For CodeMirror, we need to access the editor
+            var cm = activeCell.querySelector('.CodeMirror');
+            if (cm && cm.CodeMirror) {
+                cm.CodeMirror.setValue(func.code);
+                console.log('✅ Code inserted into active cell');
+                return;
+            }
+        }
+    }
+    
+    // Method 2: Create a new cell (fallback)
+    var cellsContainer = document.querySelector('#notebook-container, .jp-Notebook, [class*="notebook"]');
+    if (cellsContainer) {
+        var newCell = document.createElement('div');
+        newCell.className = 'cell code_cell';
+        newCell.style.cssText = `
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f8f9fa;
+        `;
+        newCell.innerHTML = `
+            <div style="font-weight: bold; margin-bottom: 8px; color: #28a745;">
+                ✅ ${func.display_name} - Generated Code:
+            </div>
+            <pre style="background: white; padding: 10px; border-radius: 4px; margin: 0; font-family: Monaco, monospace; font-size: 13px;">${func.code}</pre>
+            <div style="margin-top: 8px; font-size: 12px; color: #666;">
+                📋 Copy this code and paste into a new notebook cell
+            </div>
+        `;
+        cellsContainer.appendChild(newCell);
+        newCell.scrollIntoView({behavior: 'smooth'});
+        console.log('✅ Code displayed in new section');
+        return;
+    }
+    
+    // Method 3: Show in alert (final fallback)
+    alert('📋 SHM Function Code:\n\n' + func.code + '\n\nCopy this and paste into a new cell.');
+    console.log('Generated code for', func.name + ':');
+    console.log(func.code);
+}
+
+console.log('✅ SHM Functions dropdown added to toolbar!');
+console.log('📋 Functions available:', shmFunctions.length);
+console.log('📁 Categories:', Object.keys(categories).length);
+console.log('👆 Look for the "🔧 SHM Functions" button in the toolbar above');

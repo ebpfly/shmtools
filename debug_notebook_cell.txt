@@ -1,0 +1,44 @@
+%%javascript
+// Simple debug test
+console.log('=== SHM Extension Debug Test ===');
+console.log('Jupyter object:', typeof Jupyter);
+console.log('Document:', typeof document);
+console.log('jQuery available:', typeof $);
+
+// Test basic DOM manipulation
+try {
+    var testDiv = document.createElement('div');
+    testDiv.innerHTML = '<h3 style="color: red; background: yellow; padding: 10px; margin: 10px;">🔧 SHM Extension Debug Test - If you see this, JavaScript is working!</h3>';
+    document.body.appendChild(testDiv);
+    
+    console.log('✅ DOM manipulation works');
+    
+    // Test button creation
+    var button = document.createElement('button');
+    button.textContent = 'Test SHM Button';
+    button.style.cssText = 'background: #337ab7; color: white; padding: 10px; margin: 10px; border: none; border-radius: 4px; font-size: 14px;';
+    button.onclick = function() {
+        alert('SHM button clicked! JavaScript is working.');
+        console.log('Button click detected');
+    };
+    
+    document.body.appendChild(button);
+    console.log('✅ Button created and added');
+    
+} catch (error) {
+    console.error('❌ Error in DOM manipulation:', error);
+}
+
+// Test if we can detect Jupyter specifically
+if (typeof Jupyter !== 'undefined') {
+    console.log('✅ Jupyter object exists');
+    if (Jupyter.notebook) {
+        console.log('✅ Jupyter.notebook exists');
+    } else {
+        console.log('❌ Jupyter.notebook is undefined');
+    }
+} else {
+    console.log('❌ Jupyter object not found');
+}
+
+console.log('=== Debug test complete ===');

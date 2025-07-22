@@ -12,6 +12,7 @@ from bokeh.models import (
 from bokeh.layouts import column
 import inspect
 from typing import Dict, Any, Optional, List
+from bokeh_shmtools.utils.docstring_parser import parse_shmtools_docstring, parse_verbose_call
 
 
 class ParameterControlsPanel:
@@ -100,10 +101,38 @@ class ParameterControlsPanel:
             step_name = f"Step {i+1}: {step['function']}"
             outputs.append(step_name)
             
-            # If step has specific outputs, add those too
-            if 'outputs' in step and step['outputs']:
-                for output_name in step['outputs'].keys():
-                    outputs.append(f"{step_name}.{output_name}")
+            # Add specific output references that match session format
+            function_name = step['function']
+            step_number = i + 1
+            
+            # Add multi-output function specific references with human-readable names
+            from bokeh_shmtools.workflows.execution_engine import WorkflowExecutor
+            executor = WorkflowExecutor()
+            
+            # Get human-readable names first, fallback to technical names
+            human_readable_names = executor._get_human_readable_output_names(function_name)
+            technical_names = executor._get_output_names(function_name)
+            function_display_name = executor._get_function_display_name(function_name)
+            
+            if human_readable_names:
+                # Use human-readable names as primary options
+                for human_name in human_readable_names:
+                    display_text = f"Step {step_number}: {function_display_name} → {human_name}"
+                    # Store the reference in a way that can be resolved later
+                    outputs.append(display_text)
+                    
+                # Also add technical names for backward compatibility (marked as technical)
+                if technical_names:
+                    for tech_name in technical_names:
+                        display_text = f"Step {step_number}: {function_name}_{tech_name} (technical)"
+                        outputs.append(display_text)
+            elif technical_names:
+                # Fallback to technical names only
+                for tech_name in technical_names:
+                    outputs.append(f"Step {step_number}: {function_name}_{tech_name}")
+            else:
+                # Fallback for functions without multi-output
+                outputs.append(f"Step {step_number}: {function_display_name}")
                     
         return outputs
     
@@ -118,55 +147,500 @@ class ParameterControlsPanel:
             print(f"Could not get function object for {function_name}: {e}")
             return None
     
+    def _get_display_name_for_function(self, function_name: str, func_obj=None):
+        """
+        Get human-readable display name for a function.
+        
+        Parameters
+        ----------
+        function_name : str
+            Technical function name
+        func_obj : callable, optional
+            Function object for metadata parsing
+            
+        Returns
+        -------
+        str
+            Human-readable display name
+        """
+        if func_obj:
+            try:
+                metadata = parse_shmtools_docstring(func_obj)
+                if metadata:
+                    # First try explicit display_name
+                    if metadata.display_name:
+                        return metadata.display_name
+                        
+                    # Next try parsing verbose_call
+                    if metadata.verbose_call:
+                        parsed = parse_verbose_call(metadata.verbose_call)
+                        if parsed["function_display_name"]:
+                            return parsed["function_display_name"]
+            except Exception:
+                pass
+        
+        # Fall back to technical name conversion
+        return self._technical_to_readable(function_name)
+    
+    def _technical_to_readable(self, technical_name):
+        """Convert technical function name to human-readable format."""
+        # Remove _shm suffix if present
+        name = technical_name.replace('_shm', '')
+        
+        # Split on underscores and capitalize each word
+        words = name.split('_')
+        
+        # Handle common abbreviations
+        abbrev_map = {
+            'pca': 'PCA',
+            'svd': 'SVD', 
+            'ar': 'AR',
+            'rms': 'RMS',
+            'fft': 'FFT',
+            'stft': 'STFT',
+            'psd': 'PSD',
+            'cbm': 'CBM'
+        }
+        
+        readable_words = []
+        for word in words:
+            if word.lower() in abbrev_map:
+                readable_words.append(abbrev_map[word.lower()])
+            else:
+                readable_words.append(word.capitalize())
+                
+        return ' '.join(readable_words)
+    
+    def _parameter_to_readable(self, param_name: str) -> str:
+        """
+        Convert parameter name to human-readable format.
+        
+        Parameters
+        ----------
+        param_name : str
+            Technical parameter name like 'n_components' or 'max_iter'
+            
+        Returns
+        -------
+        str
+            Human-readable name like 'Number of Components' or 'Max Iterations'
+        """
+        # Handle common parameter patterns
+        special_cases = {
+            'X': 'Input Data',
+            'Y': 'Target Data',
+            'n_components': 'Number of Components',
+            'n_neighbors': 'Number of Neighbors',
+            'max_iter': 'Max Iterations',
+            'tol': 'Tolerance',
+            'alpha': 'Alpha',
+            'beta': 'Beta',
+            'gamma': 'Gamma',
+            'eps': 'Epsilon',
+            'C': 'Regularization Parameter',
+            'nu': 'Nu Parameter',
+            'kernel': 'Kernel Type',
+            'degree': 'Polynomial Degree',
+            'coef0': 'Coefficient 0',
+            'shrinking': 'Use Shrinking',
+            'probability': 'Enable Probability',
+            'cache_size': 'Cache Size',
+            'class_weight': 'Class Weight',
+            'verbose': 'Verbose Output',
+            'n_jobs': 'Number of Jobs',
+            'random_state': 'Random State',
+            'shuffle': 'Shuffle Data',
+            'normalize': 'Normalize',
+            'fit_intercept': 'Fit Intercept',
+            'copy_X': 'Copy X',
+            'warm_start': 'Warm Start',
+            'positive': 'Force Positive',
+            'selection': 'Selection Method',
+            'squared': 'Use Squared',
+            'fs': 'Sampling Frequency',
+            'nperseg': 'Points per Segment',
+            'noverlap': 'Overlap Points',
+            'window': 'Window Type',
+            'detrend': 'Detrend Method',
+            'scaling': 'Scaling Method',
+            'return_onesided': 'Return One-Sided',
+            'axis': 'Axis',
+            'average': 'Average Method',
+            'nfft': 'FFT Length',
+            'f_min': 'Min Frequency',
+            'f_max': 'Max Frequency',
+            'order': 'Model Order',
+            'method': 'Method',
+            'criterion': 'Criterion',
+            'center': 'Center Data',
+            'scale': 'Scale Data',
+            'stand': 'Standardize',
+            'standardize': 'Standardize',
+            'with_mean': 'Center to Mean',
+            'with_std': 'Scale to Unit Variance',
+            'copy': 'Copy Data',
+            'quantile_range': 'Quantile Range',
+            'n_quantiles': 'Number of Quantiles',
+            'output_distribution': 'Output Distribution',
+            'subsample': 'Subsample Size',
+            'threshold': 'Threshold',
+            'contamination': 'Contamination',
+            'support_fraction': 'Support Fraction',
+            'keep_dims': 'Keep Dimensions',
+            'whiten': 'Whiten',
+            'svd_solver': 'SVD Solver',
+            'iterated_power': 'Iterated Power',
+            'n_oversamples': 'Oversamples',
+            'power_iteration_normalizer': 'Power Iteration Normalizer',
+            'flip': 'Flip',
+            'data': 'Input Data',
+            'labels': 'Labels',
+            'features': 'Features',
+            'targets': 'Target Values',
+            'weights': 'Weights',
+            'scores': 'Scores',
+            'predictions': 'Predictions',
+            'residuals': 'Residuals',
+            'coefficients': 'Coefficients',
+            'intercept': 'Intercept',
+            'support': 'Support Vectors',
+            'dual_coef': 'Dual Coefficients',
+            'coef': 'Coefficients',
+            'classes': 'Classes',
+            'n_support': 'Number of Support Vectors',
+            'probabilities': 'Probabilities',
+            'log_likelihood': 'Log Likelihood',
+            'n_iter': 'Number of Iterations',
+            'dual_gap': 'Dual Gap',
+            'eps_abs': 'Absolute Epsilon',
+            'eps_rel': 'Relative Epsilon',
+            'rho': 'Rho',
+            'adaptive_rho': 'Adaptive Rho',
+            'psi': 'Psi',
+            'max_iters': 'Max Iterations',
+            'abstol': 'Absolute Tolerance',
+            'reltol': 'Relative Tolerance',
+            'feastol': 'Feasibility Tolerance',
+            'alpha_tol': 'Alpha Tolerance',
+            'lambda_tol': 'Lambda Tolerance',
+            'precompute': 'Precompute',
+            'xy': 'XY Product',
+            'copy_Gram': 'Copy Gram Matrix',
+            'overwrite_a': 'Overwrite A',
+            'overwrite_b': 'Overwrite B',
+            'overwrite_x': 'Overwrite X',
+            'overwrite_y': 'Overwrite Y',
+            'lower': 'Lower Triangle',
+            'sym_pos': 'Symmetric Positive',
+            'unit_diagonal': 'Unit Diagonal'
+        }
+        
+        # Check special cases first
+        if param_name in special_cases:
+            return special_cases[param_name]
+        
+        # Handle snake_case to Title Case
+        words = param_name.split('_')
+        
+        # Handle common abbreviations
+        abbrev_map = {
+            'n': 'Number of',
+            'num': 'Number of',
+            'max': 'Maximum',
+            'min': 'Minimum',
+            'tol': 'Tolerance',
+            'eps': 'Epsilon',
+            'coef': 'Coefficient',
+            'std': 'Standard Deviation',
+            'var': 'Variance',
+            'cov': 'Covariance',
+            'corr': 'Correlation',
+            'pca': 'PCA',
+            'svd': 'SVD',
+            'fft': 'FFT',
+            'stft': 'STFT',
+            'rms': 'RMS',
+            'psd': 'PSD',
+            'ar': 'AR',
+            'ma': 'MA',
+            'arma': 'ARMA',
+            'arima': 'ARIMA',
+            'acf': 'ACF',
+            'pacf': 'PACF',
+            'ccf': 'CCF',
+            'df': 'Degrees of Freedom',
+            'dof': 'Degrees of Freedom',
+            'aic': 'AIC',
+            'bic': 'BIC',
+            'rmse': 'RMSE',
+            'mse': 'MSE',
+            'mae': 'MAE',
+            'r2': 'R²',
+            'adj': 'Adjusted',
+            'inv': 'Inverse',
+            'sqrt': 'Square Root',
+            'abs': 'Absolute',
+            'rel': 'Relative',
+            'cum': 'Cumulative',
+            'dist': 'Distance',
+            'sim': 'Similarity',
+            'dissim': 'Dissimilarity',
+            'init': 'Initial',
+            'params': 'Parameters',
+            'hyperparams': 'Hyperparameters',
+            'config': 'Configuration',
+            'opts': 'Options',
+            'args': 'Arguments',
+            'kwargs': 'Keyword Arguments',
+            'attr': 'Attributes',
+            'props': 'Properties',
+            'vals': 'Values',
+            'feat': 'Feature',
+            'feats': 'Features',
+            'pred': 'Prediction',
+            'preds': 'Predictions',
+            'prob': 'Probability',
+            'probs': 'Probabilities',
+            'freq': 'Frequency',
+            'freqs': 'Frequencies',
+            'coeff': 'Coefficient',
+            'coeffs': 'Coefficients',
+            'param': 'Parameter',
+            'params': 'Parameters',
+            'dim': 'Dimension',
+            'dims': 'Dimensions',
+            'vec': 'Vector',
+            'vecs': 'Vectors',
+            'mat': 'Matrix',
+            'mats': 'Matrices',
+            'arr': 'Array',
+            'arrs': 'Arrays',
+            'val': 'Value',
+            'vals': 'Values',
+            'opt': 'Option',
+            'opts': 'Options',
+            'est': 'Estimate',
+            'ests': 'Estimates',
+            'iter': 'Iteration',
+            'iters': 'Iterations',
+            'conv': 'Convergence',
+            'diverge': 'Divergence',
+            'reg': 'Regularization',
+            'regul': 'Regularization',
+            'norm': 'Normalization',
+            'denorm': 'Denormalization',
+            'preproc': 'Preprocessing',
+            'postproc': 'Postprocessing',
+            'xform': 'Transform',
+            'trans': 'Transform',
+            'inv': 'Inverse',
+            'pseudo': 'Pseudo',
+            'diag': 'Diagonal',
+            'offdiag': 'Off-Diagonal',
+            'sym': 'Symmetric',
+            'asym': 'Asymmetric',
+            'pos': 'Positive',
+            'neg': 'Negative',
+            'nonneg': 'Non-Negative',
+            'nonpos': 'Non-Positive',
+            'incr': 'Increasing',
+            'decr': 'Decreasing',
+            'mono': 'Monotonic',
+            'const': 'Constant',
+            'lin': 'Linear',
+            'nonlin': 'Nonlinear',
+            'quad': 'Quadratic',
+            'cubic': 'Cubic',
+            'poly': 'Polynomial',
+            'exp': 'Exponential',
+            'log': 'Logarithmic',
+            'trig': 'Trigonometric',
+            'sin': 'Sine',
+            'cos': 'Cosine',
+            'tan': 'Tangent',
+            'asin': 'Arc Sine',
+            'acos': 'Arc Cosine',
+            'atan': 'Arc Tangent',
+            'sinh': 'Hyperbolic Sine',
+            'cosh': 'Hyperbolic Cosine',
+            'tanh': 'Hyperbolic Tangent',
+            'rad': 'Radians',
+            'deg': 'Degrees',
+            'rect': 'Rectangular',
+            'polar': 'Polar',
+            'cart': 'Cartesian',
+            'sph': 'Spherical',
+            'cyl': 'Cylindrical'
+        }
+        
+        readable_words = []
+        skip_next = False
+        
+        for i, word in enumerate(words):
+            if skip_next:
+                skip_next = False
+                continue
+                
+            lower_word = word.lower()
+            
+            # Check if this word should expand to multiple words
+            if lower_word in abbrev_map:
+                expanded = abbrev_map[lower_word]
+                # Only use expansion if it's at the beginning or makes sense in context
+                if i == 0 or (i > 0 and words[i-1].lower() not in ['is', 'has', 'with', 'use']):
+                    readable_words.append(expanded)
+                else:
+                    readable_words.append(word.capitalize())
+            else:
+                readable_words.append(word.capitalize())
+        
+        result = ' '.join(readable_words)
+        
+        # Clean up any double spaces
+        result = ' '.join(result.split())
+        
+        return result
+    
+    def _get_parameter_metadata(self, function_name: str) -> Dict[str, Dict[str, Any]]:
+        """Get human-readable parameter metadata from docstrings."""
+        # Try _shm version first for better docstring metadata
+        shm_func_obj = self._get_function_object(f"{function_name}_shm")
+        if shm_func_obj:
+            try:
+                metadata = parse_shmtools_docstring(shm_func_obj)
+                if metadata and metadata.parameters:
+                    param_info = {}
+                    for param_spec in metadata.parameters:
+                        param_info[param_spec.name] = {
+                            'description': param_spec.description,
+                            'type_hint': param_spec.type_hint,
+                            'default': param_spec.default,
+                            'widget': param_spec.widget,
+                            'widget_params': param_spec.widget_params
+                        }
+                    return param_info
+            except Exception:
+                pass
+        
+        # Fallback to regular function
+        func_obj = self._get_function_object(function_name)
+        if not func_obj:
+            return {}
+        
+        try:
+            # Parse docstring to get parameter metadata
+            metadata = parse_shmtools_docstring(func_obj)
+            if not metadata or not metadata.parameters:
+                return {}
+            
+            param_info = {}
+            for param_spec in metadata.parameters:
+                param_info[param_spec.name] = {
+                    'description': param_spec.description,
+                    'type_hint': param_spec.type_hint,
+                    'default': param_spec.default,
+                    'widget': param_spec.widget,
+                    'widget_params': param_spec.widget_params
+                }
+            
+            return param_info
+            
+        except Exception as e:
+            print(f"Error parsing docstring for {function_name}: {e}")
+            return {}
+    
     def _create_parameter_widget_from_signature(self, param_name: str, param_info, current_value, step_index: int):
         """Create parameter widget based on function signature introspection."""
         # Get available workflow step outputs
         available_outputs = self.get_available_outputs(step_index)
         
-        # Determine parameter type from annotation
+        # Get human-readable parameter information from docstring
+        param_metadata = self._get_parameter_metadata(self.current_function)
+        param_meta = param_metadata.get(param_name, {})
+        
+        # Use human-readable description if available
+        param_description = param_meta.get('description', '')
         param_type = param_info.annotation
         has_default = param_info.default != inspect.Parameter.empty
         
-        # Create title with type info
+        # Get type name for widget creation
         type_name = getattr(param_type, '__name__', str(param_type))
-        title = f"{param_name}: {type_name}"
+        
+        # Create human-readable parameter name
+        # First check if we have a human-readable name from verbose_call
+        if hasattr(self, 'human_readable_param_names') and param_name in self.human_readable_param_names:
+            readable_param_name = self.human_readable_param_names[param_name]
+        else:
+            readable_param_name = self._parameter_to_readable(param_name)
+        
+        # Create title with parameter name and type
+        title = f"{readable_param_name} ({type_name})"
+        
         if has_default:
-            title += f" (default: {param_info.default})"
+            title += f" [default: {param_info.default}]"
+        
+        # Handle variable reference (from session loading)
+        selected_output = available_outputs[0]  # Default to first option
+        if isinstance(current_value, str) and current_value.startswith("Step "):
+            # This is a variable reference from a loaded session
+            if current_value in available_outputs:
+                selected_output = current_value
+            else:
+                # Try to find matching step reference
+                for output in available_outputs:
+                    if current_value in output or output in current_value:
+                        selected_output = output
+                        break
         
         # Create dropdown for workflow step output selection
         output_select = Select(
             title=f"{title} - Data Source:",
-            value=current_value if isinstance(current_value, str) and current_value in available_outputs else available_outputs[0],
+            value=selected_output,
             options=available_outputs,
             width=280
         )
         
         # Create direct value input based on type
         value_widget = None
+        
+        # Determine the direct value (not variable reference)
+        direct_value = None
+        if current_value is not None and not (isinstance(current_value, str) and current_value.startswith("Step ")):
+            direct_value = current_value
+        elif has_default:
+            direct_value = param_info.default
+        
         if param_type == int or type_name == 'int':
+            default_int = int(direct_value) if direct_value is not None else 1
             value_widget = NumericInput(
                 title=f"{title} - Direct Value:",
-                value=int(current_value) if current_value and not isinstance(current_value, str) else (param_info.default if has_default else 1),
+                value=default_int,
                 width=280
             )
         elif param_type == float or type_name == 'float':
+            default_float = float(direct_value) if direct_value is not None else 1.0
             value_widget = NumericInput(
                 title=f"{title} - Direct Value:",
-                value=float(current_value) if current_value and not isinstance(current_value, str) else (param_info.default if has_default else 1.0),
+                value=default_float,
                 width=280
             )
         else:
             # Default to text input for other types
-            default_val = str(param_info.default) if has_default else ""
+            default_str = str(direct_value) if direct_value is not None else ""
             value_widget = TextInput(
                 title=f"{title} - Direct Value:",
-                value=str(current_value) if current_value and not isinstance(current_value, str) else default_val,
+                value=default_str,
                 width=280
             )
         
+        # Create parameter section with description
+        param_header = f"<b>{readable_param_name}</b>"
+        if param_description:
+            param_header += f"<br><small><em>{param_description}</em></small>"
+        
         # Return container with both options
         container = Column(
-            Div(text=f"<b>Parameter: {param_name}</b>"),
+            Div(text=param_header),
             output_select,
             value_widget,
             width=300,
@@ -202,8 +676,38 @@ class ParameterControlsPanel:
         # Get the actual function object for introspection
         self.current_function_obj = self._get_function_object(function_name)
         
-        # Update function info
-        self.function_info.text = f"<h4>{function_name}</h4><p>Configure parameters for this function.</p>"
+        # Get function metadata for human-readable info
+        func_obj = self._get_function_object(function_name)
+        function_description = "Configure parameters for this function."
+        human_readable_param_names = {}
+        
+        if func_obj:
+            try:
+                metadata = parse_shmtools_docstring(func_obj)
+                if metadata:
+                    function_description = metadata.brief_description or function_description
+                    
+                    # Extract human-readable parameter names from verbose_call
+                    if metadata.verbose_call:
+                        parsed = parse_verbose_call(metadata.verbose_call)
+                        input_names = parsed.get('input_names', [])
+                        
+                        # Map parameter names to human-readable names
+                        if self.current_function_obj:
+                            sig = inspect.signature(self.current_function_obj)
+                            param_list = list(sig.parameters.keys())
+                            for i, (param_name, human_name) in enumerate(zip(param_list, input_names)):
+                                if i < len(input_names):
+                                    human_readable_param_names[param_name] = human_name
+            except Exception:
+                pass
+        
+        # Store human-readable parameter names for later use
+        self.human_readable_param_names = human_readable_param_names
+        
+        # Update function info with human-readable description and name
+        display_name = self._get_display_name_for_function(function_name, func_obj)
+        self.function_info.text = f"<h4>{display_name}</h4><p>{function_description}</p>"
         
         # Clear existing parameter controls
         self.params_container.children = []
@@ -214,9 +718,28 @@ class ParameterControlsPanel:
                 sig = inspect.signature(self.current_function_obj)
                 widgets = []
                 
+                # Map session parameter names to function signature parameters  
+                param_name_mapping = {
+                    'data': 'X',  # Session 'data' maps to function 'X'
+                    'Y': 'X',     # Session 'Y' maps to function 'X' (for score functions)
+                }
+                
                 for param_name, param_info in sig.parameters.items():
+                    # Find the session parameter value for this function parameter
+                    session_param_value = None
+                    
+                    # Check direct match first
+                    if param_name in parameters:
+                        session_param_value = parameters[param_name]
+                    else:
+                        # Check reverse mapping (session name -> function name)
+                        for session_name, func_name in param_name_mapping.items():
+                            if func_name == param_name and session_name in parameters:
+                                session_param_value = parameters[session_name]
+                                break
+                    
                     widget_wrapper = self._create_parameter_widget_from_signature(
-                        param_name, param_info, parameters.get(param_name), step_index
+                        param_name, param_info, session_param_value, step_index
                     )
                     if widget_wrapper:
                         widgets.append(widget_wrapper.container)  # Add container to display

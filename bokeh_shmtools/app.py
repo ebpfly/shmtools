@@ -13,6 +13,7 @@ from bokeh_shmtools.panels.function_library import FunctionLibraryPanel
 from bokeh_shmtools.panels.workflow_builder import WorkflowBuilderPanel  
 from bokeh_shmtools.panels.parameter_controls import ParameterControlsPanel
 from bokeh_shmtools.panels.results_viewer import ResultsViewerPanel
+from bokeh_shmtools.panels.variable_workspace import VariableWorkspacePanel
 
 
 def create_app():
@@ -32,13 +33,18 @@ def create_app():
     workflow_panel = WorkflowBuilderPanel()
     params_panel = ParameterControlsPanel()
     results_panel = ResultsViewerPanel()
+    workspace_panel = VariableWorkspacePanel(executor=workflow_panel.executor)
     
     # Communication
     def add_function_to_workflow():
         try:
             if hasattr(function_panel, 'selected_function') and function_panel.selected_function:
-                workflow_panel.add_function(function_panel.selected_function)
-                print(f"✅ Added {function_panel.selected_function} to workflow")
+                # Get both technical and display names
+                technical_name = function_panel.selected_function
+                display_name = getattr(function_panel, 'selected_display_name', technical_name)
+                
+                workflow_panel.add_function(technical_name, display_name)
+                print(f"✅ Added {display_name} to workflow")
             else:
                 print("❌ No function selected")
         except Exception as e:
@@ -66,7 +72,7 @@ def create_app():
             
     workflow_panel.steps_table.source.selected.on_change("indices", on_step_select)
     
-    # Workflow execution -> Results viewer update
+    # Workflow execution -> Results viewer and workspace update
     def update_results_viewer():
         # Get the latest workflow results and update results viewer
         if hasattr(workflow_panel, 'executor') and workflow_panel.executor.variables:
@@ -86,6 +92,9 @@ def create_app():
             
             # Update results viewer
             results_panel.update_results(results)
+            
+            # Update workspace panel
+            workspace_panel.update_from_executor(workflow_panel.executor)
     
     # Connect workflow execution to results viewer
     workflow_panel.update_results_callback = update_results_viewer
@@ -121,13 +130,21 @@ def create_app():
         sizing_mode="stretch_width"
     )
     
+    # Bottom layout with workspace and results
+    bottom_layout = row(
+        workspace_panel.panel,
+        Spacer(width=40),
+        results_panel.panel,
+        sizing_mode="stretch_width"
+    )
+    
     # Add vertical spacer between sections
     app_layout = column(
         title,
         Spacer(height=20),
         top_layout,
         Spacer(height=30),  # More space before results
-        results_panel.panel,
+        bottom_layout,
         sizing_mode="stretch_both"
     )
     

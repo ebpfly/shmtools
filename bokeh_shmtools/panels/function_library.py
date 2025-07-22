@@ -11,7 +11,7 @@ from bokeh.models import (
 )
 from bokeh.layouts import column
 import shmtools
-from bokeh_shmtools.utils.docstring_parser import parse_shmtools_docstring
+from bokeh_shmtools.utils.docstring_parser import parse_shmtools_docstring, parse_verbose_call
 
 
 class FunctionLibraryPanel:
@@ -26,6 +26,7 @@ class FunctionLibraryPanel:
         """Initialize the function library panel."""
         self.panel = self._create_panel()
         self.selected_function = None
+        self.selected_display_name = None
         
     def _create_panel(self):
         """
@@ -130,10 +131,96 @@ class FunctionLibraryPanel:
         else:
             functions = discovered_functions.get(category, [])
         
+        # Build the data with human-readable names
+        names = []
+        descriptions = []
+        technical_names = []
+        
+        for f in functions:
+            display_name = self._get_display_name(f)
+            names.append(display_name)
+            descriptions.append(f["description"])
+            technical_names.append(f["name"])
+        
         return {
-            "name": [f["name"] for f in functions],
-            "description": [f["description"] for f in functions]
+            "name": names,  # This is what shows in the "Function" column
+            "description": descriptions,
+            "technical_name": technical_names  # Keep technical name for execution
         }
+    
+    def _get_display_name(self, function_info):
+        """
+        Get human-readable display name for a function.
+        
+        Parameters
+        ----------
+        function_info : dict
+            Function info dictionary with 'metadata' key containing FunctionMetadata.
+            
+        Returns
+        -------
+        str
+            Human-readable display name, falling back to technical name if not available.
+        """
+        technical_name = function_info["name"]
+        
+        # Check if we have metadata
+        if "metadata" in function_info and function_info["metadata"]:
+            metadata = function_info["metadata"]
+            
+            # First try explicit display_name
+            if metadata.display_name:
+                return metadata.display_name
+                
+            # Next try parsing verbose_call
+            if metadata.verbose_call:
+                parsed = parse_verbose_call(metadata.verbose_call)
+                if parsed["function_display_name"]:
+                    return parsed["function_display_name"]
+        
+        # Always fall back to converting technical name to readable format
+        return self._technical_to_readable(technical_name)
+    
+    def _technical_to_readable(self, technical_name):
+        """
+        Convert technical function name to human-readable format.
+        
+        Parameters
+        ----------
+        technical_name : str
+            Technical function name like 'learn_pca' or 'ar_model_shm'
+            
+        Returns
+        -------
+        str
+            Human-readable name like 'Learn PCA' or 'AR Model'
+        """
+        # Remove _shm suffix if present
+        name = technical_name.replace('_shm', '')
+        
+        # Split on underscores and capitalize each word
+        words = name.split('_')
+        
+        # Handle common abbreviations
+        abbrev_map = {
+            'pca': 'PCA',
+            'svd': 'SVD', 
+            'ar': 'AR',
+            'rms': 'RMS',
+            'fft': 'FFT',
+            'stft': 'STFT',
+            'psd': 'PSD',
+            'cbm': 'CBM'
+        }
+        
+        readable_words = []
+        for word in words:
+            if word.lower() in abbrev_map:
+                readable_words.append(abbrev_map[word.lower()])
+            else:
+                readable_words.append(word.capitalize())
+                
+        return ' '.join(readable_words)
     
     def _discover_shmtools_functions(self):
         """
@@ -160,20 +247,25 @@ class FunctionLibraryPanel:
             try:
                 for attr_name in dir(module):
                     if not attr_name.startswith('_'):
-                        attr = getattr(module, attr_name)
-                        if callable(attr):
-                            # Parse docstring for metadata
-                            metadata = parse_shmtools_docstring(attr)
-                            if metadata:
-                                category = metadata.category
-                                if category not in functions_by_category:
-                                    functions_by_category[category] = []
-                                
-                                functions_by_category[category].append({
-                                    "name": metadata.name,
-                                    "description": metadata.brief_description,
-                                    "metadata": metadata
-                                })
+                        try:
+                            attr = getattr(module, attr_name)
+                            # Check if it's a callable function (not a type annotation)
+                            if callable(attr) and hasattr(attr, '__call__'):
+                                # Parse docstring for metadata
+                                metadata = parse_shmtools_docstring(attr)
+                                if metadata:
+                                    category = metadata.category
+                                    if category not in functions_by_category:
+                                        functions_by_category[category] = []
+                                    
+                                    functions_by_category[category].append({
+                                        "name": metadata.name,
+                                        "description": metadata.brief_description,
+                                        "metadata": metadata
+                                    })
+                        except AttributeError:
+                            # Skip type annotations and other non-callable attributes
+                            continue
             except Exception as e:
                 print(f"Warning: Failed to scan module {module_name}: {e}")
         
@@ -181,25 +273,25 @@ class FunctionLibraryPanel:
         if not functions_by_category:
             functions_by_category = {
                 "Data Loading": [
-                    {"name": "load_3story_data", "description": "Load 3-story structure dataset"},
-                    {"name": "create_synthetic_data", "description": "Create synthetic test data"},
+                    {"name": "load_3story_data", "description": "Load 3-story structure dataset", "metadata": None},
+                    {"name": "create_synthetic_data", "description": "Create synthetic test data", "metadata": None},
                 ],
                 "Core - Spectral Analysis": [
-                    {"name": "psd_welch", "description": "Power spectral density via Welch's method"},
-                    {"name": "stft", "description": "Short-time Fourier transform"},
+                    {"name": "psd_welch", "description": "Power spectral density via Welch's method", "metadata": None},
+                    {"name": "stft", "description": "Short-time Fourier transform", "metadata": None},
                 ],
                 "Core - Statistics": [
-                    {"name": "rms", "description": "Root mean square value"},
-                    {"name": "crest_factor", "description": "Crest factor (peak-to-RMS ratio)"},
-                    {"name": "statistical_moments", "description": "Statistical moments calculation"},
+                    {"name": "rms", "description": "Root mean square value", "metadata": None},
+                    {"name": "crest_factor", "description": "Crest factor (peak-to-RMS ratio)", "metadata": None},
+                    {"name": "statistical_moments", "description": "Statistical moments calculation", "metadata": None},
                 ],
                 "Features - Time Series": [
-                    {"name": "ar_model", "description": "Autoregressive model fitting"},
+                    {"name": "ar_model", "description": "Autoregressive model fitting", "metadata": None},
                 ],
                 "Classification - Outlier Detection": [
-                    {"name": "learn_pca", "description": "Train PCA outlier detection model"},
-                    {"name": "score_pca", "description": "Score data with PCA model"},
-                    {"name": "mahalanobis_distance", "description": "Mahalanobis distance outlier detection"},
+                    {"name": "learn_pca", "description": "Train PCA outlier detection model", "metadata": None},
+                    {"name": "score_pca", "description": "Score data with PCA model", "metadata": None},
+                    {"name": "mahalanobis_distance", "description": "Mahalanobis distance outlier detection", "metadata": None},
                 ],
             }
         
@@ -207,9 +299,9 @@ class FunctionLibraryPanel:
         all_functions_exist = any(functions_by_category.values())
         if not all_functions_exist:
             functions_by_category["Core - Spectral Analysis"] = [
-                {"name": "psd_welch", "description": "Power spectral density via Welch's method"},
-                {"name": "rms", "description": "Root mean square value"},
-                {"name": "ar_model", "description": "Autoregressive model fitting"},
+                {"name": "psd_welch", "description": "Power spectral density via Welch's method", "metadata": None},
+                {"name": "rms", "description": "Root mean square value", "metadata": None},
+                {"name": "ar_model", "description": "Autoregressive model fitting", "metadata": None},
             ]
         
         return functions_by_category
@@ -225,11 +317,19 @@ class FunctionLibraryPanel:
         """Handle function selection."""
         if new:
             idx = new[0]
-            function_name = self.functions_table.source.data["name"][idx]
-            self.selected_function = function_name
+            # Use technical name for execution but store both names
+            data = self.functions_table.source.data
+            if "technical_name" in data:
+                self.selected_function = data["technical_name"][idx]
+                self.selected_display_name = data["name"][idx]
+            else:
+                # Fallback for older data structure
+                self.selected_function = data["name"][idx]
+                self.selected_display_name = data["name"][idx]
             self.add_button.disabled = False
         else:
             self.selected_function = None
+            self.selected_display_name = None
             self.add_button.disabled = True
     
     def _add_to_workflow(self):

@@ -10,16 +10,18 @@ from typing import Tuple, Optional, Dict, Any
 from scipy import linalg
 
 
-def ar_model_shm(X: np.ndarray, ar_order: int = 5) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def ar_model(X: np.ndarray, ar_order: int = 5) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Estimate autoregressive model parameters and compute RMSE.
     
     .. meta::
         :category: Features - Time Series Models  
-        :matlab_equivalent: arModel_shm
+        :matlab_equivalent: arModel
         :complexity: Intermediate
         :data_type: Time Series
         :output_type: Features
+        :display_name: AR Model Parameters & Residuals
+        :verbose_call: [AR Parameters Feature Vectors, RMS Residuals Feature Vectors, AR Parameters, AR Residuals, AR Prediction] = AR Model (Time Series Data, AR Model Order)
         
     Parameters
     ----------
@@ -57,14 +59,14 @@ def ar_model_shm(X: np.ndarray, ar_order: int = 5) -> Tuple[np.ndarray, np.ndarr
     Examples
     --------
     >>> import numpy as np
-    >>> from shmtools.features import ar_model_shm
+    >>> from shmtools.features import ar_model
     >>> 
     >>> # Generate sample data: 100 time points, 2 channels, 3 instances
     >>> np.random.seed(42)
     >>> X = np.random.randn(100, 2, 3)
     >>> 
     >>> # Fit AR(5) model
-    >>> ar_params_fv, rms_fv, ar_params, residuals, prediction = ar_model_shm(X, 5)
+    >>> ar_params_fv, rms_fv, ar_params, residuals, prediction = ar_model(X, 5)
     >>> print(f"AR parameters FV shape: {ar_params_fv.shape}")  # (3, 10)
     >>> print(f"RMS residuals FV shape: {rms_fv.shape}")        # (3, 2)
     """
@@ -120,34 +122,6 @@ def ar_model_shm(X: np.ndarray, ar_order: int = 5) -> Tuple[np.ndarray, np.ndarr
     return ar_parameters_fv, rms_residuals_fv, ar_parameters, ar_residuals, ar_prediction
 
 
-def ar_model(x: np.ndarray, order: int) -> np.ndarray:
-    """
-    Modern Python interface for AR model fitting.
-    
-    Parameters
-    ----------
-    x : np.ndarray
-        Input time series data. If 2D, AR model is fit to each column.
-    order : int
-        AR model order.
-        
-    Returns
-    -------
-    coefficients : np.ndarray
-        AR model coefficients.
-    """
-    # Convert to format expected by ar_model_shm
-    if x.ndim == 1:
-        x = x.reshape(-1, 1, 1)
-    elif x.ndim == 2:
-        x = x.reshape(x.shape[0], x.shape[1], 1)
-    
-    ar_params_fv, _, ar_params, _, _ = ar_model_shm(x, order)
-    
-    # Return just the parameters in modern format
-    return ar_params[:, :, 0]
-
-
 def arx_model(
     y: np.ndarray, 
     x: Optional[np.ndarray] = None, 
@@ -158,7 +132,7 @@ def arx_model(
     """
     Fit ARX (autoregressive with exogenous input) model.
     
-    Python equivalent of MATLAB's arxModel_shm function.
+    Python equivalent of MATLAB's arxModel function.
     
     Parameters
     ----------
@@ -185,10 +159,17 @@ def arx_model(
     # This is a placeholder for the actual implementation
     
     if x is None:
-        # Pure AR model
-        coeffs = ar_model(y, na)
+        # Pure AR model - convert to expected format
+        if y.ndim == 1:
+            y_formatted = y.reshape(-1, 1, 1)
+        elif y.ndim == 2:
+            y_formatted = y.reshape(y.shape[0], y.shape[1], 1)
+        else:
+            y_formatted = y
+            
+        _, _, ar_params, _, _ = ar_model(y_formatted, na)
         return {
-            'a': coeffs,
+            'a': ar_params[:, :, 0],
             'b': None,
             'variance': np.var(y)  # Placeholder
         }
@@ -205,7 +186,7 @@ def ar_model_order(
     """
     Determine optimal AR model order.
     
-    Python equivalent of MATLAB's arModelOrder_shm function.
+    Python equivalent of MATLAB's arModelOrder function.
     
     Parameters
     ----------
@@ -228,11 +209,18 @@ def ar_model_order(
     criteria = np.zeros(max_order)
     
     for p in range(1, max_order + 1):
-        # Fit AR model of order p
-        coeffs = ar_model(x, p)
+        # Fit AR model of order p - convert to expected format
+        if x.ndim == 1:
+            x_formatted = x.reshape(-1, 1, 1)
+        elif x.ndim == 2:
+            x_formatted = x.reshape(x.shape[0], x.shape[1], 1)
+        else:
+            x_formatted = x
+            
+        _, _, _, residuals, _ = ar_model(x_formatted, p)
         
-        # Compute residuals (placeholder)
-        residual_var = np.var(x)  # This needs proper residual calculation
+        # Compute residuals variance
+        residual_var = np.var(residuals[:, :, 0])
         
         # Compute information criterion
         if criterion == "aic":

@@ -1,0 +1,118 @@
+{
+  "version": "1.0.0",
+  "name": "PCA Outlier Detection Example",
+  "description": "Complete PCA-based outlier detection workflow using 3-story structure data. Demonstrates AR model feature extraction, PCA training, and damage detection.",
+  "author": "SHMTools Development Team",
+  "created": "2025-07-21T12:36:01.877280",
+  "modified": "2025-07-21T12:36:02.797967",
+  "steps": [
+    {
+      "step_number": 1,
+      "function_name": "load_3story_data",
+      "description": "Load 3-story structure dataset with multiple damage conditions",
+      "category": "Data Loading",
+      "parameters": [],
+      "outputs": [
+        "load_3story_data_1_out"
+      ],
+      "status": "pending",
+      "execution_time": null,
+      "error_message": null,
+      "comments": null,
+      "display_name": "Load 3story Data"
+    },
+    {
+      "step_number": 2,
+      "function_name": "ar_model",
+      "description": "Extract AR(15) model RMSE features from time series data",
+      "category": "Feature Extraction",
+      "parameters": [
+        {
+          "name": "data",
+          "value": "",
+          "parameter_type": "variable_reference",
+          "widget_type": "text",
+          "source_step": "Step 1: load_3story_data",
+          "validation": null
+        },
+        {
+          "name": "order",
+          "value": 15,
+          "parameter_type": "user",
+          "widget_type": "text",
+          "source_step": null,
+          "validation": null
+        }
+      ],
+      "outputs": [
+        "ar_model_2_out"
+      ],
+      "status": "configured",
+      "execution_time": null,
+      "error_message": null,
+      "comments": null,
+      "display_name": "AR Model Parameters & Residuals"
+    },
+    {
+      "step_number": 3,
+      "function_name": "learn_pca",
+      "description": "Learn PCA transformation from baseline training data",
+      "category": "Classification - Parametric Detectors",
+      "parameters": [
+        {
+          "name": "X",
+          "value": "",
+          "parameter_type": "variable_reference",
+          "widget_type": "text",
+          "source_step": "Step 2: ar_model_rms_residuals_fv",
+          "validation": null
+        }
+      ],
+      "outputs": [
+        "learn_pca_3_out"
+      ],
+      "status": "configured",
+      "execution_time": null,
+      "error_message": null,
+      "comments": null,
+      "display_name": "Learn PCA Model"
+    },
+    {
+      "step_number": 4,
+      "function_name": "score_pca",
+      "description": "Score test data using learned PCA model for outlier detection",
+      "category": "Classification - Parametric Detectors",
+      "parameters": [
+        {
+          "name": "Y",
+          "value": "",
+          "parameter_type": "variable_reference",
+          "widget_type": "text",
+          "source_step": "Step 2: ar_model_rms_residuals_fv",
+          "validation": null
+        },
+        {
+          "name": "model",
+          "value": "",
+          "parameter_type": "variable_reference",
+          "widget_type": "text",
+          "source_step": "Step 3: learn_pca",
+          "validation": null
+        }
+      ],
+      "outputs": [
+        "score_pca_4_out"
+      ],
+      "status": "configured",
+      "execution_time": null,
+      "error_message": null,
+      "comments": null,
+      "display_name": "Score PCA Model"
+    }
+  ],
+  "save_variables_to_workspace": true,
+  "generate_comments": true,
+  "export_format": "script",
+  "variables": null,
+  "execution_history": []
+}

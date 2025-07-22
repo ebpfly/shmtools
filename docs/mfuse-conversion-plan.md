@@ -136,6 +136,7 @@
 2. **Example-Driven Testing**: Use Phase 1 PCA example as primary test case
 3. **Backward Compatibility**: Ensure mFUSE workflows can be imported
 4. **Progressive Enhancement**: Start with core workflows, add advanced features incrementally
+5. **Learn from mFUSE**: Reference original Java implementation for proven patterns
 
 ### Testing Strategy
 1. **Unit Tests**: Each panel component individually
@@ -148,6 +149,198 @@
 2. **Variable Storage**: In-memory workspace with optional persistence
 3. **Function Discovery**: Docstring-based with fallback to manual specifications
 4. **Plot Integration**: Bokeh native plots with matplotlib fallback for complex visualizations
+
+---
+
+## 🔍 mFUSE Java Source Code Analysis 
+
+> **💡 Key Insight**: The original mFUSE Java implementation (located in `/Users/eric/repo/shm/shmtool-matlab/mFUSE/JavaSource/`) already solved all the complex workflow execution, variable resolution, and data flow problems. We should study and adapt its proven patterns rather than reinventing them.
+
+### Critical mFUSE Patterns for Python Implementation
+
+#### 1. **Sophisticated Variable Resolution System** 
+*From `Parameter.java` and `SequenceStep.java`*
+
+**mFUSE Pattern**:
+```java
+// Unique variable naming: variableName_stepNumber_direction
+public String getMatlabVariableName(){
+    if (isInput){
+        return matlabVariable + "_" + (getStepNumber() +1) + "in";
+    } else {
+        return matlabVariable + "_" + (getStepNumber() +1) + "out";  
+    }
+}
+```
+
+**Python Implementation**:
+```python
+def get_matlab_variable_name(self, parameter_name: str, step_number: int, is_input: bool) -> str:
+    """Generate unique MATLAB-compatible variable names like mFUSE."""
+    base_name = self._make_matlab_legal(parameter_name)
+    suffix = "in" if is_input else "out"
+    return f"{base_name}_{step_number + 1}{suffix}"
+```
+
+**Why This Matters**: 
+- ✅ **Guaranteed Uniqueness**: Step numbering ensures no variable name conflicts
+- ✅ **MATLAB Compatibility**: Automatic legal name generation with fallback patterns
+- ✅ **Connection Tracking**: Easy parsing of source/target relationships
+
+#### 2. **Multi-State Parameter Value System**
+*From `Parameter.java` - Lines 8-11*
+
+**mFUSE Pattern**:
+```java
+public final int NO_VALUE = -1;           // Red status
+public final int USE_CONNECTION_VALUE = 0; // Green status  
+public final int USE_DEFAULT_VALUE = 1;   // Green/Yellow status
+public final int USE_USER_VALUE = 2;      // Green status
+```
+
+**Python Implementation**:
+```python
+class ParameterValueState(Enum):
+    NO_VALUE = -1          # Parameter has no value assigned (RED)
+    USE_CONNECTION = 0     # Connected to another step's output (GREEN)
+    USE_DEFAULT = 1        # Using function's default value (GREEN/YELLOW)
+    USE_USER = 2          # User-entered value (GREEN)
+
+class Parameter:
+    def get_effective_value(self) -> str:
+        """Resolve parameter value following mFUSE precedence rules."""
+        if self.value_state == ParameterValueState.USE_CONNECTION:
+            return self.data_source.get_matlab_variable_name() if self.data_source else "[]"
+        elif self.value_state == ParameterValueState.USE_USER:
+            return self.user_value or "[]" 
+        elif self.value_state == ParameterValueState.USE_DEFAULT:
+            return self.default_value if self.has_default else "[]"
+        else:
+            return "[]"  # NO_VALUE case
+```
+
+**Why This Matters**:
+- ✅ **Clear Value Hierarchy**: Explicit precedence rules prevent ambiguity
+- ✅ **Status Propagation**: Parameter state drives step status (Red > Yellow > Green)
+- ✅ **Smart Defaults**: Distinguishes between assigned and unassigned defaults
+
+#### 3. **Robust Session File Format**
+*From `Session.java` and `.ses` file examples*
+
+**mFUSE Session Structure**:
+```
+VERSION:-> 0.3.01
+NAME:-> PCA Outlier Detection  
+STARTSTEP:-> 1
+QUICKSTEP:-> FALSE
+FILENAME:-> arModel_shm
+USED CALL METHOD:-> [features] = arModel_shm(data, order)
+INPUTS:->
+data<U>[]<V>data_1_out
+order<U>15<V>USER  
+<-:INPUTS
+OUTPUTS:->
+features<T>TRUE
+<-:OUTPUTS
+<-:ENDSTEP
+```
+
+**Python Session Compatibility**:
+```python
+class SessionFormat:
+    def parse_mfuse_session(self, filepath: str) -> WorkflowSession:
+        """Parse mFUSE .ses files maintaining full compatibility."""
+        # Parse structured sections with clear delimiters
+        # Extract connection info as variableName_stepNumber format
+        # Support multiple call method variants
+        # Handle QuickStep code blocks
+        
+    def serialize_step(self, step: WorkflowStep) -> str:
+        """Generate mFUSE-compatible step serialization."""
+        lines = [f"STARTSTEP:-> {step.step_number + 1}"]
+        if not step.is_quick_step:
+            lines.append(f"FILENAME:-> {step.function_name}")
+            lines.append(f"USED CALL METHOD:-> {step.selected_call_method}")
+        # ... serialize inputs with connection markers
+```
+
+**Why This Matters**:
+- ✅ **Backward Compatibility**: Existing mFUSE workflows can be imported directly
+- ✅ **Connection Persistence**: Stores parameter connections as `variable_stepNumber`
+- ✅ **Version Awareness**: Handles migration between format versions
+
+#### 4. **Advanced Function Metadata Parser** 
+*From `MFileParser.java` (1150+ lines of parsing logic!)*
+
+**mFUSE Capabilities**:
+- **Multi-Call Method Support**: Functions can have multiple calling signatures
+- **Verbose Name Mapping**: Automatic user-friendly parameter descriptions  
+- **Header Validation**: Comprehensive error checking with specific messages
+- **Dynamic Discovery**: Runtime extraction of parameters and outputs
+
+**Python Implementation Strategy**:
+```python
+class FunctionMetadata:
+    def __init__(self):
+        self.call_methods: List[Dict] = []  # Support multiple calling methods
+        self.verbose_names: Dict[str, str] = {}  # User-friendly names
+        self.parameter_descriptions: Dict[str, str] = {}
+        
+    def add_call_method(self, signature: str, inputs: List[str], outputs: List[str]):
+        """Add alternative calling method like mFUSE."""
+        method_data = {
+            'signature': signature,
+            'verbose_signature': self._create_verbose_signature(signature),
+            'inputs': inputs, 
+            'outputs': outputs
+        }
+        self.call_methods.append(method_data)
+```
+
+#### 5. **Connection Validation and Cleanup**
+*From `Parameter.java` - Lines 85-108*
+
+**mFUSE Validation Rules**:
+```java
+// Temporal constraints - inputs only connect to earlier outputs
+if (input.dataSource.stepNumber >= step.stepNumber) {
+    input.removeConnection(); // Automatic cleanup
+}
+
+// Usage tracking - source must be used in its step  
+if (!input.dataSource.isUsedInStep()) {
+    input.removeConnection();
+}
+```
+
+**Python Implementation**:
+```python
+class ConnectionValidator:
+    def validate_connections(self, workflow: Workflow) -> List[str]:
+        """Validate connections following mFUSE rules."""
+        errors = []
+        for step in workflow.steps:
+            for input_param in step.inputs:
+                if input_param.data_source:
+                    # Temporal constraint
+                    if input_param.data_source.step_number >= step.step_number:
+                        errors.append(f"Invalid temporal connection")
+                        input_param.remove_connection()
+                    # Usage validation  
+                    if not input_param.data_source.is_used_in_step():
+                        input_param.remove_connection()
+        return errors
+```
+
+### 🚀 **Recommended Implementation Priority**
+
+1. **Adopt mFUSE Variable Naming** (`variable_stepNumber_direction`)
+2. **Implement Multi-State Parameters** with proper value precedence
+3. **Add Connection Validation** with automatic cleanup
+4. **Enhance Session Compatibility** for mFUSE import/export  
+5. **Improve Function Metadata** parsing with multi-call method support
+
+> **📁 Reference Location**: All mFUSE Java source code is available in `/Users/eric/repo/shm/shmtool-matlab/mFUSE/JavaSource/` for detailed implementation patterns and algorithm references.
 
 ---
 

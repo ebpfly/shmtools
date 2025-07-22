@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHM Function Selector - Jupyter Extension Demo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .notebook-cell {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 10px 0;
+            background: white;
+        }
+        .cell-toolbar {
+            background: #f8f9fa;
+            padding: 5px 10px;
+            border-bottom: 1px solid #ddd;
+            font-size: 12px;
+        }
+        .cell-content {
+            padding: 15px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 14px;
+            background: #f8f8f8;
+        }
+        .shm-dropdown {
+            max-height: 400px;
+            overflow-y: auto;
+            min-width: 300px;
+        }
+        .context-menu {
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            padding: 8px 0;
+            z-index: 1000;
+            display: none;
+        }
+        .context-menu div {
+            padding: 4px 12px;
+            cursor: pointer;
+        }
+        .context-menu div:hover {
+            background-color: #f5f5f5;
+        }
+        .parameter-highlight {
+            background-color: rgba(255, 235, 59, 0.3);
+            border-radius: 2px;
+            cursor: pointer;
+        }
+        .function-category {
+            font-weight: bold;
+            color: #337ab7;
+            background-color: #f5f5f5;
+        }
+        .demo-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <h1><i class="fas fa-tools"></i> SHM Function Selector - Jupyter Extension Demo</h1>
+                <p class="lead">Phase 1 Implementation: Function Selection, Code Generation, and Parameter Linking</p>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-12">
+                <!-- Simulated Jupyter Toolbar -->
+                <div class="demo-section">
+                    <h3><i class="fas fa-bars"></i> Jupyter Notebook Toolbar Integration</h3>
+                    <div class="alert alert-info">
+                        <strong>Demo:</strong> This shows how the SHM function selector appears in the Jupyter notebook toolbar.
+                    </div>
+                    
+                    <div class="btn-toolbar" role="toolbar" style="background: #f8f9fa; padding: 10px; border: 1px solid #ddd;">
+                        <!-- Standard Jupyter buttons (simulated) -->
+                        <div class="btn-group me-2" role="group">
+                            <button type="button" class="btn btn-outline-secondary btn-sm"><i class="fas fa-save"></i></button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm"><i class="fas fa-plus"></i></button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm"><i class="fas fa-cut"></i></button>
+                        </div>
+                        
+                        <!-- Our SHM Function Selector -->
+                        <div class="btn-group me-2" role="group">
+                            <div class="dropdown">
+                                <button class="btn btn-primary btn-sm dropdown-toggle" type="button" id="shmDropdown" data-bs-toggle="dropdown">
+                                    <i class="fas fa-function"></i> SHM Functions
+                                </button>
+                                <ul class="dropdown-menu shm-dropdown" id="functionDropdown">
+                                    <li><h6 class="dropdown-header function-category"><i class="fas fa-wave-square"></i> Core - Spectral Analysis</h6></li>
+                                    <li><a class="dropdown-item" href="#" data-function="psd_welch">Power Spectral Density (Welch)</a></li>
+                                    <li><a class="dropdown-item" href="#" data-function="spectrogram">Spectrogram</a></li>
+                                    <li><a class="dropdown-item" href="#" data-function="stft">Short-Time Fourier Transform</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    
+                                    <li><h6 class="dropdown-header function-category"><i class="fas fa-chart-line"></i> Features - Time Series Models</h6></li>
+                                    <li><a class="dropdown-item" href="#" data-function="ar_model">AR Model Parameters & Residuals</a></li>
+                                    <li><a class="dropdown-item" href="#" data-function="ar_model_order">AR Model Order Selection</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    
+                                    <li><h6 class="dropdown-header function-category"><i class="fas fa-search"></i> Classification - Outlier Detection</h6></li>
+                                    <li><a class="dropdown-item" href="#" data-function="learn_pca">Learn PCA Model</a></li>
+                                    <li><a class="dropdown-item" href="#" data-function="score_pca">Score PCA Model</a></li>
+                                    <li><a class="dropdown-item" href="#" data-function="learn_mahalanobis">Learn Mahalanobis Model</a></li>
+                                    <li><a class="dropdown-item" href="#" data-function="score_mahalanobis">Score Mahalanobis Model</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <!-- Standard Jupyter controls -->
+                        <select class="form-select form-select-sm me-2" style="width: auto;">
+                            <option>Code</option>
+                            <option>Markdown</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Simulated Notebook Cells -->
+                <div class="demo-section">
+                    <h3><i class="fas fa-code"></i> Generated Code Examples</h3>
+                    <div class="alert alert-success">
+                        <strong>Demo:</strong> Click a function above to see the generated code appear in a new cell below.
+                    </div>
+                    
+                    <!-- Cell 1: Data Loading -->
+                    <div class="notebook-cell">
+                        <div class="cell-toolbar">
+                            <span class="badge bg-secondary">In [1]:</span>
+                            <span class="text-muted">Code Cell</span>
+                        </div>
+                        <div class="cell-content">
+# Load example SHM data<br>
+import shmtools<br>
+import numpy as np<br>
+<br>
+<span style="color: green;"># Load 3-story structure data</span><br>
+acceleration_data, fs = shmtools.utils.load_3story_data()<br>
+print(f"Data shape: {acceleration_data.shape}, Sampling rate: {fs} Hz")
+                        </div>
+                    </div>
+                    
+                    <!-- Cell 2: Generated Function Call -->
+                    <div class="notebook-cell" id="generatedCell" style="display: none;">
+                        <div class="cell-toolbar">
+                            <span class="badge bg-secondary">In [2]:</span>
+                            <span class="text-muted">Code Cell - Generated by SHM Extension</span>
+                        </div>
+                        <div class="cell-content" id="generatedCode">
+                            <!-- Generated code will appear here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Parameter Linking Demo -->
+                <div class="demo-section">
+                    <h3><i class="fas fa-link"></i> Parameter Linking Demo</h3>
+                    <div class="alert alert-warning">
+                        <strong>Demo:</strong> Right-click on highlighted parameters below to see the context menu.
+                    </div>
+                    
+                    <div class="notebook-cell">
+                        <div class="cell-toolbar">
+                            <span class="badge bg-secondary">In [3]:</span>
+                            <span class="text-muted">Code Cell</span>
+                        </div>
+                        <div class="cell-content">
+# Example: AR Model with parameter linking<br>
+features, residuals = shmtools.ar_model(<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="parameter-highlight" data-param="X">X=None</span>,  # REQUIRED: Input data<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="parameter-highlight" data-param="ar_order">ar_order=5</span>  # AR model order<br>
+)
+                        </div>
+                    </div>
+                    
+                    <!-- Context Menu -->
+                    <div class="context-menu" id="contextMenu">
+                        <div><strong><i class="fas fa-link"></i> Link to variable:</strong></div>
+                        <div data-variable="acceleration_data">📊 acceleration_data (numpy.ndarray) - Cell 1</div>
+                        <div data-variable="test_features">📈 test_features (numpy.ndarray) - Cell 2</div>
+                        <div data-variable="preprocessed_data">🔧 preprocessed_data (numpy.ndarray) - Cell 4</div>
+                    </div>
+                </div>
+                
+                <!-- Feature Summary -->
+                <div class="demo-section">
+                    <h3><i class="fas fa-check-circle"></i> Phase 1 Features Implemented</h3>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title"><i class="fas fa-list"></i> Function Discovery</h5>
+                                    <p class="card-text">✅ 31 SHM functions discovered<br>
+                                    ✅ 5 categories organized<br>
+                                    ✅ Automatic docstring parsing</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title"><i class="fas fa-code"></i> Code Generation</h5>
+                                    <p class="card-text">✅ Smart parameter handling<br>
+                                    ✅ Default value population<br>
+                                    ✅ Type-aware placeholders</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title"><i class="fas fa-mouse-pointer"></i> Parameter Linking</h5>
+                                    <p class="card-text">✅ Context menu system<br>
+                                    ✅ Variable type matching<br>
+                                    ✅ Cross-cell references</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Next Steps -->
+                <div class="demo-section">
+                    <h3><i class="fas fa-road"></i> Next Implementation Phases</h3>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Phase 2: Variable Tracking</h5>
+                            <ul>
+                                <li>Cell execution monitoring</li>
+                                <li>Output parsing for variables</li>
+                                <li>Kernel namespace inspection</li>
+                                <li>Type inference system</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Phase 3: Advanced Features</h5>
+                            <ul>
+                                <li>Parameter validation</li>
+                                <li>Function templates</li>
+                                <li>Undo/redo support</li>
+                                <li>Settings and preferences</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Function templates for code generation
+        const functionTemplates = {
+            'psd_welch': `# Estimate power spectral density using Welch's method
+frequencies, power_spectrum = shmtools.psd_welch(
+    x=acceleration_data,  # Input signal
+    fs=fs,  # Sampling frequency  
+    nperseg=1024,  # Length of each segment
+    noverlap=512   # Overlap between segments
+)`,
+            'ar_model': `# Estimate autoregressive model parameters
+features, residuals = shmtools.ar_model(
+    X=acceleration_data,  # Input time series
+    ar_order=15  # AR model order
+)`,
+            'learn_pca': `# Learn PCA model for outlier detection
+pca_model = shmtools.learn_pca(
+    X=features,  # Training features
+    per_var=0.95,  # Variance to retain
+    stand=1  # Standardize features
+)`,
+            'score_pca': `# Score data using PCA model
+scores, outliers = shmtools.score_pca(
+    Y=test_features,  # Test features
+    model=pca_model  # Trained PCA model
+)`,
+            'learn_mahalanobis': `# Learn Mahalanobis distance model
+maha_model = shmtools.learn_mahalanobis(
+    X=features  # Training features
+)`,
+            'score_mahalanobis': `# Score using Mahalanobis distance
+scores, outliers = shmtools.score_mahalanobis(
+    Y=test_features,  # Test features
+    model=maha_model  # Trained model
+)`,
+            'spectrogram': `# Compute spectrogram
+frequencies, times, Sxx = shmtools.spectrogram(
+    x=acceleration_data[:, 0],  # Single channel
+    fs=fs,  # Sampling frequency
+    nperseg=1024  # Segment length
+)`,
+            'stft': `# Short-Time Fourier Transform
+frequencies, times, Zxx = shmtools.stft(
+    x=acceleration_data[:, 0],  # Input signal
+    fs=fs,  # Sampling frequency
+    nperseg=1024  # Window length
+)`,
+            'ar_model_order': `# Determine optimal AR model order
+optimal_order = shmtools.ar_model_order(
+    X=acceleration_data,  # Input data
+    max_order=25  # Maximum order to test
+)`
+        };
+        
+        // Handle dropdown function selection
+        document.querySelectorAll('[data-function]').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const funcName = this.dataset.function;
+                const template = functionTemplates[funcName];
+                
+                if (template) {
+                    const cell = document.getElementById('generatedCell');
+                    const code = document.getElementById('generatedCode');
+                    code.innerHTML = template.replace(/\n/g, '<br>').replace(/  /g, '&nbsp;&nbsp;');
+                    cell.style.display = 'block';
+                    cell.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+        
+        // Handle parameter right-click context menu
+        document.querySelectorAll('.parameter-highlight').forEach(param => {
+            param.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                const menu = document.getElementById('contextMenu');
+                menu.style.display = 'block';
+                menu.style.left = e.pageX + 'px';
+                menu.style.top = e.pageY + 'px';
+            });
+        });
+        
+        // Handle context menu selections
+        document.querySelectorAll('[data-variable]').forEach(item => {
+            item.addEventListener('click', function() {
+                const variable = this.dataset.variable;
+                alert(`Parameter linked to: ${variable}`);
+                document.getElementById('contextMenu').style.display = 'none';
+            });
+        });
+        
+        // Hide context menu on click outside
+        document.addEventListener('click', function() {
+            document.getElementById('contextMenu').style.display = 'none';
+        });
+    </script>
+</body>
+</html>

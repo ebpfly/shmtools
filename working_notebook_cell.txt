@@ -1,0 +1,180 @@
+%%javascript
+console.log('=== SHM Extension - Standalone Version ===');
+
+// Remove any existing SHM buttons to avoid duplicates
+var existingButtons = document.querySelectorAll('[id*="shm-button"]');
+existingButtons.forEach(function(btn) { btn.remove(); });
+
+// Mock SHM functions data
+var mockFunctions = [
+    {
+        name: 'psd_welch',
+        category: 'Core - Spectral Analysis',
+        display_name: 'Power Spectral Density (Welch)',
+        description: 'Estimate power spectral density using Welch method',
+        template: `# Estimate power spectral density using Welch method
+frequencies, power_spectrum = shmtools.psd_welch(
+    x=None,  # REQUIRED: numpy.ndarray
+    fs=1.0,  # Sampling frequency  
+    nperseg=1024  # Segment length
+)`
+    },
+    {
+        name: 'ar_model',
+        category: 'Features - Time Series Models',
+        display_name: 'AR Model Parameters & Residuals', 
+        description: 'Estimate autoregressive model parameters',
+        template: `# Estimate autoregressive model parameters
+features, residuals = shmtools.ar_model(
+    X=None,  # REQUIRED: numpy.ndarray
+    ar_order=15  # AR model order
+)`
+    },
+    {
+        name: 'learn_pca',
+        category: 'Classification - Outlier Detection',
+        display_name: 'Learn PCA Model',
+        description: 'Learn PCA model for outlier detection',
+        template: `# Learn PCA model for outlier detection
+pca_model = shmtools.learn_pca(
+    X=None,  # REQUIRED: numpy.ndarray
+    per_var=0.95  # Variance to retain
+)`
+    },
+    {
+        name: 'score_mahalanobis',
+        category: 'Classification - Outlier Detection', 
+        display_name: 'Score Mahalanobis Distance',
+        description: 'Score data using Mahalanobis distance',
+        template: `# Score data using Mahalanobis distance
+scores, outliers = shmtools.score_mahalanobis(
+    Y=None,  # REQUIRED: numpy.ndarray
+    model=None  # REQUIRED: trained model
+)`
+    },
+    {
+        name: 'bandpass_filter',
+        category: 'Core - Filtering',
+        display_name: 'Bandpass Filter',
+        description: 'Apply bandpass filter to signal',
+        template: `# Apply bandpass filter to signal
+filtered_signal = shmtools.bandpass_filter(
+    x=None,  # REQUIRED: numpy.ndarray
+    lowcut=10.0,  # Low cutoff frequency
+    highcut=100.0,  # High cutoff frequency
+    fs=1000.0  # Sampling frequency
+)`
+    }
+];
+
+// Create main container
+var container = document.createElement('div');
+container.id = 'shm-button-container';
+container.style.cssText = `
+    margin: 20px 0;
+    padding: 15px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+`;
+
+// Create title
+var title = document.createElement('h3');
+title.textContent = '🔧 SHM Function Selector';
+title.style.cssText = 'margin: 0 0 15px 0; color: #337ab7;';
+container.appendChild(title);
+
+// Group functions by category
+var categories = {};
+mockFunctions.forEach(function(func) {
+    if (!categories[func.category]) {
+        categories[func.category] = [];
+    }
+    categories[func.category].push(func);
+});
+
+// Create buttons for each category
+Object.keys(categories).forEach(function(category) {
+    var categoryDiv = document.createElement('div');
+    categoryDiv.style.cssText = 'margin-bottom: 20px;';
+    
+    var categoryTitle = document.createElement('h4');
+    categoryTitle.textContent = category;
+    categoryTitle.style.cssText = 'color: #495057; font-size: 16px; margin-bottom: 10px;';
+    categoryDiv.appendChild(categoryTitle);
+    
+    var buttonGroup = document.createElement('div');
+    buttonGroup.style.cssText = 'display: flex; flex-wrap: wrap; gap: 10px;';
+    
+    categories[category].forEach(function(func) {
+        var button = document.createElement('button');
+        button.textContent = func.display_name;
+        button.title = func.description;
+        button.style.cssText = `
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        `;
+        
+        // Add hover effect
+        button.onmouseover = function() {
+            this.style.background = '#0056b3';
+        };
+        button.onmouseout = function() {
+            this.style.background = '#007bff';
+        };
+        
+        // Add click handler
+        button.onclick = function() {
+            showGeneratedCode(func);
+        };
+        
+        buttonGroup.appendChild(button);
+    });
+    
+    categoryDiv.appendChild(buttonGroup);
+    container.appendChild(categoryDiv);
+});
+
+// Create code display area
+var codeDisplay = document.createElement('div');
+codeDisplay.id = 'shm-code-display';
+codeDisplay.style.cssText = 'margin-top: 20px; display: none;';
+container.appendChild(codeDisplay);
+
+// Add to page
+document.body.appendChild(container);
+
+// Function to show generated code
+function showGeneratedCode(func) {
+    var codeDisplay = document.getElementById('shm-code-display');
+    
+    codeDisplay.innerHTML = `
+        <h4 style="color: #28a745; margin-bottom: 10px;">✅ Generated Code for: ${func.display_name}</h4>
+        <div style="background: #ffffff; border: 1px solid #ddd; border-radius: 4px; padding: 15px;">
+            <pre style="margin: 0; font-family: Monaco, monospace; font-size: 13px; white-space: pre-wrap;">${func.template}</pre>
+        </div>
+        <div style="margin-top: 10px; padding: 10px; background: #d4edda; border-radius: 4px; font-size: 14px;">
+            <strong>💡 Next steps:</strong><br>
+            1. Copy the code above<br>
+            2. Create a new code cell below<br>
+            3. Paste and modify the parameters as needed
+        </div>
+    `;
+    
+    codeDisplay.style.display = 'block';
+    codeDisplay.scrollIntoView({behavior: 'smooth'});
+    
+    // Also log to console for easy copying
+    console.log(`Generated code for ${func.name}:`);
+    console.log(func.template);
+}
+
+console.log('✅ SHM Function Selector loaded successfully!');
+console.log(`📋 ${mockFunctions.length} functions available across ${Object.keys(categories).length} categories`);
+console.log('👆 Click any function button above to generate code!');

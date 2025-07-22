@@ -233,44 +233,196 @@ function createSHMExtension(Jupyter, events, utils, codecell) {
             
             // Add context menu to code cells
             $(document).on('contextmenu', '.code_cell .input_area', function(e) {
-                // Check if we're right-clicking on a parameter
-                var cursor = Jupyter.notebook.get_selected_cell().code_mirror.getCursor();
-                var line = Jupyter.notebook.get_selected_cell().code_mirror.getLine(cursor.line);
+                var cell = Jupyter.notebook.get_selected_cell();
+                if (!cell || cell.cell_type !== 'code') return;
                 
-                // Simple check for parameter context (this would need more sophisticated parsing)
-                if (line.includes('=') && line.includes('None')) {
-                    that.showParameterContextMenu(e, cursor);
+                var cursor = cell.code_mirror.getCursor();
+                var parameterContext = that.detectParameterContext(cell, cursor);
+                
+                if (parameterContext) {
+                    that.showParameterContextMenu(e, cursor, parameterContext);
                 }
             });
         },
         
+        // Enhanced parameter context detection
+        detectParameterContext: function(cell, cursor) {
+            var code = cell.get_text();
+            var lines = code.split('\n');
+            var line = lines[cursor.line] || '';
+            
+            // Get character position in line
+            var ch = cursor.ch;
+            
+            // Check if cursor is on or near a parameter assignment
+            var parameterInfo = this.parseParameterAtPosition(line, ch);
+            
+            if (!parameterInfo) {
+                // Also check adjacent lines for multi-line function calls
+                var context = this.getMultilineContext(lines, cursor.line, cursor.ch);
+                if (context) {
+                    parameterInfo = this.parseParameterInContext(context, ch);
+                }
+            }
+            
+            return parameterInfo;
+        },
+        
+        // Parse parameter at specific position in line
+        parseParameterAtPosition: function(line, ch) {
+            // Patterns to match parameter assignments
+            var patterns = [
+                // Named parameter: param=value
+                {
+                    regex: /([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*([^,)]*)/g,
+                    type: 'named_param'
+                },
+                // Function call with placeholder
+                {
+                    regex: /(shmtools\.[a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g,
+                    type: 'function_call'
+                },
+                // TODO comments for parameters
+                {
+                    regex: /#\s*TODO:\s*[Ss]et\s+([a-zA-Z_][a-zA-Z0-9_]*)/g,
+                    type: 'todo_param'
+                }
+            ];
+            
+            for (var i = 0; i < patterns.length; i++) {
+                var pattern = patterns[i];
+                var match;
+                
+                while ((match = pattern.regex.exec(line)) !== null) {
+                    var startPos = match.index;
+                    var endPos = startPos + match[0].length;
+                    
+                    // Check if cursor is within this match
+                    if (ch >= startPos && ch <= endPos) {
+                        if (pattern.type === 'named_param') {
+                            var paramName = match[1];
+                            var paramValue = match[2].trim();
+                            
+                            // Only show context menu for placeholder values
+                            if (paramValue === 'None' || paramValue.includes('TODO') || paramValue === '') {
+                                return {
+                                    parameterName: paramName,
+                                    parameterValue: paramValue,
+                                    startPosition: startPos,
+                                    endPosition: endPos,
+                                    replacementStart: match.index + match[1].length + 1, // After 'param='
+                                    replacementEnd: endPos,
+                                    type: 'named_parameter'
+                                };
+                            }
+                        } else if (pattern.type === 'todo_param') {
+                            return {
+                                parameterName: match[1],
+                                type: 'todo_parameter',
+                                startPosition: startPos,
+                                endPosition: endPos
+                            };
+                        }
+                    }
+                }
+                // Reset regex lastIndex for next iteration
+                pattern.regex.lastIndex = 0;
+            }
+            
+            return null;
+        },
+        
+        // Get multi-line context for function calls
+        getMultilineContext: function(lines, lineIndex, ch) {
+            // Look for function calls that span multiple lines
+            var startLine = lineIndex;
+            var endLine = lineIndex;
+            
+            // Find the start of function call (look backward for opening parenthesis)
+            for (var i = lineIndex; i >= Math.max(0, lineIndex - 5); i--) {
+                if (lines[i].includes('shmtools.') && lines[i].includes('(')) {
+                    startLine = i;
+                    break;
+                }
+            }
+            
+            // Find the end of function call (look forward for closing parenthesis)
+            var parenCount = 0;
+            for (var i = startLine; i < Math.min(lines.length, lineIndex + 5); i++) {
+                var line = lines[i];
+                for (var j = 0; j < line.length; j++) {
+                    if (line[j] === '(') parenCount++;
+                    if (line[j] === ')') parenCount--;
+                    if (parenCount === 0 && i >= startLine) {
+                        endLine = i;
+                        break;
+                    }
+                }
+                if (parenCount === 0) break;
+            }
+            
+            if (startLine < lineIndex && endLine >= lineIndex) {
+                return {
+                    lines: lines.slice(startLine, endLine + 1),
+                    startLine: startLine,
+                    endLine: endLine,
+                    currentLine: lineIndex
+                };
+            }
+            
+            return null;
+        },
+        
+        // Parse parameter in multi-line context
+        parseParameterInContext: function(context, ch) {
+            var fullText = context.lines.join('\n');
+            var currentLineStart = 0;
+            
+            // Calculate character position in full context
+            for (var i = 0; i < context.currentLine - context.startLine; i++) {
+                currentLineStart += context.lines[i].length + 1; // +1 for newline
+            }
+            var absoluteCh = currentLineStart + ch;
+            
+            // Use the single-line parser on the full context
+            return this.parseParameterAtPosition(fullText, absoluteCh);
+        },
+        
         // Show context menu for parameter linking
-        showParameterContextMenu: function(event, cursor) {
+        showParameterContextMenu: function(event, cursor, parameterContext) {
             event.preventDefault();
             
             // Parse current notebook variables
             this.parseNotebookVariables();
             
-            // Create context menu
+            // Create enhanced context menu
             var menu = $('<div class="shm-context-menu" style="' +
                 'position: absolute; ' +
                 'z-index: 1000; ' +
                 'background: white; ' +
                 'border: 1px solid #ccc; ' +
                 'border-radius: 3px; ' +
-                'padding: 5px; ' +
+                'padding: 8px; ' +
                 'box-shadow: 0 2px 10px rgba(0,0,0,0.2); ' +
-                'max-height: 200px; ' +
-                'overflow-y: auto;' +
+                'max-height: 300px; ' +
+                'overflow-y: auto; ' +
+                'min-width: 250px; ' +
+                'font-family: monospace; ' +
+                'font-size: 12px;' +
                 '">' +
-                '<div><strong>Link to variable:</strong></div>' +
+                '<div style="font-weight: bold; color: #333; border-bottom: 1px solid #eee; padding-bottom: 4px; margin-bottom: 6px;">' +
+                'Link parameter: ' + parameterContext.parameterName +
+                '</div>' +
                 '</div>');
             
             var that = this;
             
-            // Add variables to menu
+            // Store parameter context for later use
+            this.currentParameterContext = parameterContext;
+            
+            // Add variables to menu with smart filtering and grouping
             if (this.parsedVariables.length === 0) {
-                menu.append('<div style="color: #999; font-style: italic;">No variables found</div>');
+                menu.append('<div style="color: #999; font-style: italic; padding: 4px;">No variables found</div>');
             } else {
                 // Get current cell index to only show variables from previous cells
                 var currentCellIndex = Jupyter.notebook.get_selected_index();
@@ -279,22 +431,39 @@ function createSHMExtension(Jupyter, events, utils, codecell) {
                 });
                 
                 if (availableVars.length === 0) {
-                    menu.append('<div style="color: #999; font-style: italic;">No variables from previous cells</div>');
+                    menu.append('<div style="color: #999; font-style: italic; padding: 4px;">No variables from previous cells</div>');
                 } else {
+                    // Group variables by compatibility
+                    var compatibleVars = [];
+                    var otherVars = [];
+                    
                     availableVars.forEach(function(variable) {
-                        var displayText = variable.name + ' (' + variable.type + ') - ' + variable.source;
-                        var item = $('<div><a href="#" data-variable="' + variable.name + 
-                                    '" data-type="' + variable.type + 
-                                    '" style="display: block; padding: 2px; text-decoration: none; color: #333;">' +
-                                    displayText + '</a></div>');
-                        
-                        item.find('a').hover(
-                            function() { $(this).css('background-color', '#f0f0f0'); },
-                            function() { $(this).css('background-color', 'transparent'); }
-                        );
-                        
-                        menu.append(item);
+                        if (that.isVariableCompatible(variable, parameterContext)) {
+                            compatibleVars.push(variable);
+                        } else {
+                            otherVars.push(variable);
+                        }
                     });
+                    
+                    // Add compatible variables first (with visual emphasis)
+                    if (compatibleVars.length > 0) {
+                        menu.append('<div style="color: #388e3c; font-size: 11px; font-weight: bold; margin: 4px 0;">Recommended:</div>');
+                        compatibleVars.forEach(function(variable) {
+                            var item = that.createVariableMenuItem(variable, true);
+                            menu.append(item);
+                        });
+                    }
+                    
+                    // Add other variables (dimmed)
+                    if (otherVars.length > 0) {
+                        if (compatibleVars.length > 0) {
+                            menu.append('<div style="color: #757575; font-size: 11px; font-weight: bold; margin: 4px 0; border-top: 1px solid #eee; padding-top: 4px;">Other variables:</div>');
+                        }
+                        otherVars.forEach(function(variable) {
+                            var item = that.createVariableMenuItem(variable, false);
+                            menu.append(item);
+                        });
+                    }
                 }
             }
             
@@ -321,15 +490,142 @@ function createSHMExtension(Jupyter, events, utils, codecell) {
             });
         },
         
-        // Link parameter to selected variable
-        linkParameterToVariable: function(cursor, variable) {
+        // Check if a variable is compatible with a parameter
+        isVariableCompatible: function(variable, parameterContext) {
+            var paramName = parameterContext.parameterName.toLowerCase();
+            var varType = variable.type.toLowerCase();
+            
+            // Data parameter compatibility rules
+            if (paramName === 'data' || paramName === 'features' || paramName === 'input_data') {
+                return varType.includes('numpy') || varType.includes('array') || varType.includes('ndarray');
+            }
+            
+            // Model parameter compatibility
+            if (paramName === 'model' || paramName.includes('model')) {
+                return varType.includes('dict') || varType.includes('tuple') || varType.includes('unknown');
+            }
+            
+            // Frequency/sampling rate parameters
+            if (paramName === 'fs' || paramName === 'sampling_rate' || paramName === 'freq') {
+                return varType.includes('float') || varType.includes('int') || varType.includes('number');
+            }
+            
+            // Order parameters
+            if (paramName === 'order' || paramName === 'n_components' || paramName.includes('_order')) {
+                return varType.includes('int') || varType.includes('float');
+            }
+            
+            // Channel-related parameters
+            if (paramName === 'channels' || paramName === 'channel_names') {
+                return varType.includes('list') || varType.includes('array');
+            }
+            
+            // Default: arrays are generally compatible, basic types less so
+            if (varType.includes('numpy') || varType.includes('array')) return true;
+            if (varType.includes('tuple') && (paramName.includes('model') || paramName.includes('result'))) return true;
+            
+            return false;
+        },
+        
+        // Create a menu item for a variable
+        createVariableMenuItem: function(variable, isRecommended) {
+            var that = this;
+            var typeColor = isRecommended ? '#388e3c' : '#757575';
+            var opacity = isRecommended ? '1.0' : '0.7';
+            
+            // Format variable display with type information
+            var typeInfo = this.formatVariableType(variable);
+            var sourceInfo = variable.source || ('Cell ' + (variable.cellIndex + 1));
+            
+            var item = $('<div style="margin: 2px 0;">' +
+                '<a href="#" ' +
+                'data-variable="' + variable.name + '" ' +
+                'data-type="' + variable.type + '" ' +
+                'style="display: block; padding: 4px 6px; text-decoration: none; ' +
+                'border: 1px solid transparent; border-radius: 2px; opacity: ' + opacity + ';">' +
+                '<div style="color: #333; font-weight: bold;">' + variable.name + '</div>' +
+                '<div style="color: ' + typeColor + '; font-size: 10px;">' + typeInfo + ' • ' + sourceInfo + '</div>' +
+                '</a>' +
+                '</div>');
+            
+            // Enhanced hover effects
+            item.find('a')
+                .hover(
+                    function() { 
+                        $(this).css({
+                            'background-color': '#f5f5f5',
+                            'border-color': '#ddd'
+                        });
+                    },
+                    function() { 
+                        $(this).css({
+                            'background-color': 'transparent',
+                            'border-color': 'transparent'
+                        });
+                    }
+                )
+                .click(function(e) {
+                    e.preventDefault();
+                    var variableName = $(this).data('variable');
+                    that.linkParameterToVariable(that.currentParameterContext, variableName);
+                    $('.shm-context-menu').remove();
+                });
+            
+            return item;
+        },
+        
+        // Format variable type information for display
+        formatVariableType: function(variable) {
+            var type = variable.type;
+            
+            // Simplify common type names
+            if (type === 'numpy.ndarray' || type === 'ndarray') {
+                return 'array';
+            } else if (type === 'unknown') {
+                return '?';
+            } else if (type.length > 12) {
+                return type.substring(0, 10) + '...';
+            }
+            
+            return type;
+        },
+        
+        // Enhanced parameter linking with precise positioning
+        linkParameterToVariable: function(parameterContext, variableName) {
             var cell = Jupyter.notebook.get_selected_cell();
-            var line = cell.code_mirror.getLine(cursor.line);
             
-            // Replace 'None' with the variable name (simplified)
-            var newLine = line.replace(/=\\s*None\\s*#.*$/, '=' + variable);
-            
-            cell.code_mirror.replaceRange(newLine, {line: cursor.line, ch: 0}, {line: cursor.line, ch: line.length});
+            if (parameterContext.type === 'named_parameter') {
+                // Use precise replacement positions
+                var line = cell.code_mirror.getLine(cell.code_mirror.getCursor().line);
+                var beforeParam = line.substring(0, parameterContext.replacementStart);
+                var afterParam = line.substring(parameterContext.replacementEnd);
+                
+                // Construct new line with proper spacing
+                var newValue = variableName;
+                if (parameterContext.parameterValue.includes('TODO')) {
+                    // Remove TODO comment when replacing
+                    afterParam = afterParam.replace(/\s*#.*$/, '');
+                }
+                
+                var newLine = beforeParam + newValue + afterParam;
+                
+                cell.code_mirror.replaceRange(
+                    newLine, 
+                    {line: cell.code_mirror.getCursor().line, ch: 0}, 
+                    {line: cell.code_mirror.getCursor().line, ch: line.length}
+                );
+            } else {
+                // Fallback to simple replacement for other types
+                var cursor = cell.code_mirror.getCursor();
+                var line = cell.code_mirror.getLine(cursor.line);
+                var newLine = line.replace(/=\s*None(\s*#.*)?$/, '=' + variableName);
+                
+                cell.code_mirror.replaceRange(
+                    newLine, 
+                    {line: cursor.line, ch: 0}, 
+                    {line: cursor.line, ch: line.length}
+                );
+            }
         },
         
         // Show error in dropdown

@@ -16,16 +16,121 @@ Each phase converts **one complete example** with all its dependencies, validate
 
 ### Quality Gates for Each Example
 1. **MATLAB Analysis**: Read and understand the original `.m` file completely
-2. **Dependency Mapping**: Identify all required SHMTools functions
-3. **Function Conversion**: Convert each dependency following `docs/docstring-format.md`
-4. **Algorithm Verification**: Validate Python output matches MATLAB with same inputs
-5. **Notebook Creation**: Create educational Jupyter notebook with explanations
-6. **Execution Testing**: Ensure notebook runs end-to-end without errors
-7. **HTML Publishing**: Export to clean HTML with proper formatting
+2. **MATLAB Metadata Extraction**: Extract "VERBOSE FUNCTION CALL" and other UI metadata from original MATLAB files
+3. **Dependency Mapping**: Identify all required SHMTools functions and locate their MATLAB source files
+4. **Function Conversion**: Convert each dependency following `docs/docstring-format.md` including exact VERBOSE FUNCTION CALL reproduction
+5. **Algorithm Verification**: Validate Python output matches MATLAB with same inputs
+6. **UI Metadata Validation**: Ensure human-readable names match original MATLAB exactly
+7. **Notebook Creation**: Create educational Jupyter notebook with explanations
+8. **Execution Testing**: Ensure notebook runs end-to-end without errors
+9. **HTML Publishing**: Export to clean HTML with proper formatting
 
 ### Development Order: Simple to Complex
 
 Start with fundamental outlier detection methods that share common dependencies, then progress to specialized algorithms.
+
+## MATLAB Reference Files: Critical Requirement
+
+**⚠️ MANDATORY**: Every function conversion MUST reference the original MATLAB file for complete algorithm understanding and UI metadata extraction.
+
+### MATLAB File Locations
+
+The original MATLAB SHMTools library is located at:
+```
+/Users/eric/repo/shm/shmtool-matlab/SHMTools/
+```
+
+**Core function directories:**
+- **Feature Extraction**: `SHMTools/SHMFunctions/FeatureExtraction/`
+  - `TimeSeriesModels/arModel_shm.m` - AR model parameter estimation
+  - `SpectralAnalysis/psdWelch_shm.m` - Power spectral density 
+  - `Statistics/rms_shm.m`, `crestFactor_shm.m` - Statistical moments
+  - `Preprocessing/filter_shm.m` - Digital filtering
+
+- **Feature Classification**: `SHMTools/SHMFunctions/FeatureClassification/`
+  - `OutlierDetection/ParametricDetectors/learnPCA_shm.m`, `scorePCA_shm.m`
+  - `OutlierDetection/ParametricDetectors/learnMahalanobis_shm.m`, `scoreMahalanobis_shm.m`
+  - `OutlierDetection/ParametricDetectors/learnSVD_shm.m`, `scoreSVD_shm.m`
+
+- **Data Acquisition**: `SHMTools/SHMFunctions/DataAcquisition/`
+- **Auxiliary Functions**: `SHMTools/SHMFunctions/Auxiliary/`
+
+### Required MATLAB Metadata Extraction
+
+Every MATLAB function contains essential UI metadata in its header:
+
+```matlab
+function [output1, output2] = functionName_shm (input1, input2)
+% Category: Description of function purpose
+%
+% VERBOSE FUNCTION CALL:
+%   [Output Description 1, Output Description 2] = Function Display Name (Input Description 1, Input Description 2)
+%
+% CALL METHODS:
+%   [output1, output2] = functionName_shm (input1, input2)
+%
+% DESCRIPTION:
+%   Detailed algorithm description...
+%
+% INPUTS:
+%   input1 (dimensions) : description
+%   input2 (dimensions) : description  
+%
+% OUTPUTS:
+%   output1 (dimensions) : description
+%   output2 (dimensions) : description
+```
+
+### Function Conversion Protocol
+
+**🔍 Step 1: Locate MATLAB File**
+- Search in appropriate `SHMFunctions/` subdirectory
+- If not found, search recursively through entire `SHMTools/` directory
+- Use file system search if necessary - **DO NOT give up**
+- MATLAB functions may be in unexpected locations
+
+**📋 Step 2: Extract Complete Metadata**
+- **VERBOSE FUNCTION CALL**: Copy exactly for `:verbose_call:` field
+- **Category**: Map to `:category:` field 
+- **Function description**: Use for docstring brief description
+- **Input descriptions**: Use for parameter documentation with `:description:` in `.. gui::` blocks
+- **Output descriptions**: Use for return value documentation
+- **Algorithm details**: Include in docstring body
+
+**✅ Step 3: Validate Metadata Accuracy**
+```python
+# Python docstring must match MATLAB exactly:
+.. meta::
+    :display_name: Function Display Name
+    :verbose_call: [Output Description 1, Output Description 2] = Function Display Name (Input Description 1, Input Description 2)
+```
+
+### Example: ar_model Conversion
+
+**MATLAB Source** (`TimeSeriesModels/arModel_shm.m`):
+```matlab
+% VERBOSE FUNCTION CALL:
+%   [AR Parameters Feature Vectors, RMS Residuals Feature Vectors, AR
+%   Parameters, AR Residuals, AR Prediction] = AR Model (Time Series Data,
+%   AR Model Order)
+```
+
+**Python Result** (must match exactly):
+```python
+:verbose_call: [AR Parameters Feature Vectors, RMS Residuals Feature Vectors, AR Parameters, AR Residuals, AR Prediction] = AR Model (Time Series Data, AR Model Order)
+```
+
+### File Search Strategy
+
+If a function cannot be found in the expected location:
+
+1. **Search by pattern**: `find /Users/eric/repo/shm/shmtool-matlab -name "*functionname*.m"`
+2. **Search by content**: `grep -r "function.*functionname" /Users/eric/repo/shm/shmtool-matlab/`  
+3. **Check alternative names**: Some functions may have variations or be in wrapper directories
+4. **Verify in mFUSE library**: Check `mFUSE/mFUSElibrary.txt` for function locations
+5. **Search example scripts**: Function may be referenced in `Examples/ExampleUsageScripts/`
+
+**⚠️ CRITICAL**: If a MATLAB function truly cannot be found, this indicates a missing dependency that must be resolved before conversion can proceed.
 
 ## Phase 1: PCA Outlier Detection
 *Target: 2-3 weeks*
@@ -38,14 +143,19 @@ Start with fundamental outlier detection methods that share common dependencies,
 ### Required Dependencies
 
 #### Core Functions to Convert
+
+**⚠️ MANDATORY FOR EACH FUNCTION**: Read the complete MATLAB source file and extract all UI metadata before conversion.
+
 1. **`arModel_shm`** → `shmtools.features.ar_model_shm()`
-   - **Source**: `../shmtool-matlab/SHMTools/SHMFunctions/FeatureExtraction/TimeSeriesModels/arModel_shm.m`
+   - **MATLAB Source**: `/Users/eric/repo/shm/shmtool-matlab/SHMTools/SHMFunctions/FeatureExtraction/TimeSeriesModels/arModel_shm.m`
    - **Purpose**: AR model parameter estimation and RMSE calculation
+   - **VERBOSE CALL**: Must extract from MATLAB header (lines 4-7)
    - **Dependencies**: Basic matrix operations only
 
 2. **`learnPCA_shm`** → `shmtools.classification.learn_pca_shm()`
-   - **Source**: `../shmtool-matlab/SHMTools/SHMFunctions/FeatureClassification/OutlierDetection/ParametricDetectors/learnPCA_shm.m`
-   - **Purpose**: Train PCA-based outlier detection model
+   - **MATLAB Source**: `/Users/eric/repo/shm/shmtool-matlab/SHMTools/SHMFunctions/FeatureClassification/OutlierDetection/ParametricDetectors/learnPCA_shm.m`
+   - **Purpose**: Train PCA-based outlier detection model  
+   - **VERBOSE CALL**: Must extract from MATLAB header (lines 4-6)
    - **Dependencies**: PCA decomposition, normalization
 
 3. **`scorePCA_shm`** → `shmtools.classification.score_pca_shm()`

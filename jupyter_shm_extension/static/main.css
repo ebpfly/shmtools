@@ -37,39 +37,114 @@
     color: #d9534f;
 }
 
-/* Context menu styling */
+/* Enhanced Phase 3 Context Menu styling */
 .shm-context-menu {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
     font-size: 12px;
     background: white;
     border: 1px solid #ccc;
     border-radius: 4px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-    padding: 8px 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    padding: 8px;
     z-index: 1000;
+    min-width: 250px;
+    max-height: 300px;
+    overflow-y: auto;
 }
 
-.shm-context-menu div {
-    padding: 4px 12px;
-}
-
-.shm-context-menu div:first-child {
+/* Menu header */
+.shm-context-menu > div:first-child {
     font-weight: bold;
+    color: #333;
     border-bottom: 1px solid #eee;
-    margin-bottom: 4px;
-    padding-bottom: 8px;
+    padding-bottom: 4px;
+    margin-bottom: 6px;
+    font-size: 13px;
 }
 
+/* Section headers (Recommended, Other variables) */
+.shm-context-menu div[style*="color: #388e3c"],
+.shm-context-menu div[style*="color: #757575"] {
+    font-size: 11px;
+    font-weight: bold;
+    margin: 4px 0;
+    padding: 2px 0;
+}
+
+/* Variable menu items */
 .shm-context-menu a {
     display: block;
     color: #333;
     text-decoration: none;
-    padding: 4px 12px;
-    margin: 0 -12px;
+    padding: 4px 6px;
+    border-radius: 2px;
+    border: 1px solid transparent;
+    margin: 2px 0;
+    transition: all 0.15s ease;
 }
 
 .shm-context-menu a:hover {
     background-color: #f5f5f5;
-    color: #337ab7;
+    border-color: #ddd;
+    transform: translateX(2px);
+}
+
+/* Variable name styling */
+.shm-context-menu a div:first-child {
+    color: #333;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+/* Variable type and source styling */  
+.shm-context-menu a div:last-child {
+    font-size: 10px;
+    margin-top: 1px;
+}
+
+/* Recommended variables (green accent) */
+.shm-context-menu a[style*="opacity: 1.0"] div:last-child {
+    color: #388e3c;
+}
+
+/* Other variables (gray accent) */
+.shm-context-menu a[style*="opacity: 0.7"] {
+    opacity: 0.7;
+}
+
+.shm-context-menu a[style*="opacity: 0.7"] div:last-child {
+    color: #757575;
+}
+
+.shm-context-menu a[style*="opacity: 0.7"]:hover {
+    opacity: 1.0;
+}
+
+/* Empty state styling */
+.shm-context-menu div[style*="color: #999"] {
+    font-style: italic;
+    padding: 8px 4px;
+    text-align: center;
+    color: #999;
+}
+
+/* Scrollbar styling for webkit browsers */
+.shm-context-menu::-webkit-scrollbar {
+    width: 6px;
+}
+
+.shm-context-menu::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.shm-context-menu::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.shm-context-menu::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
 }
 
 /* Toolbar button styling */

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SHM Extension Test</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h2>Testing SHM Extension JavaScript</h2>
+        
+        <div id="test-results"></div>
+        
+        <button id="test-btn" class="btn btn-primary">Test Extension Loading</button>
+        
+        <div id="toolbar-test" class="mt-4" style="background: #f8f9fa; padding: 10px; border: 1px solid #ddd;">
+            <div class="btn-group">
+                <div class="dropdown">
+                    <button class="btn btn-primary dropdown-toggle" type="button" id="shmDropdown" data-bs-toggle="dropdown">
+                        SHM Functions
+                    </button>
+                    <ul class="dropdown-menu" id="shm-function-dropdown">
+                        <li><a class="dropdown-item" href="#">Loading...</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock Jupyter object for testing
+        window.Jupyter = {
+            notebook: {
+                base_url: '',
+                get_selected_cell: function() {
+                    return {
+                        cell_type: 'code',
+                        get_text: function() { return ''; },
+                        set_text: function(text) { 
+                            console.log('Would set cell text to:', text); 
+                        }
+                    };
+                },
+                insert_cell_below: function(type) {
+                    console.log('Would insert cell of type:', type);
+                    return {
+                        set_text: function(text) {
+                            console.log('New cell text:', text);
+                        }
+                    };
+                },
+                select_next: function() {
+                    console.log('Would select next cell');
+                }
+            },
+            toolbar: {
+                add_buttons_group: function(buttons) {
+                    console.log('Would add toolbar buttons:', buttons);
+                }
+            }
+        };
+
+        // Mock functions data
+        window.mockFunctions = [
+            {
+                name: 'psd_welch',
+                category: 'Core - Spectral Analysis',
+                display_name: 'Power Spectral Density (Welch)',
+                description: 'Estimate power spectral density using Welch method',
+                parameters: [
+                    {name: 'x', type: 'numpy.ndarray', optional: false},
+                    {name: 'fs', type: 'float', default: '1.0', optional: true}
+                ]
+            },
+            {
+                name: 'ar_model',
+                category: 'Features - Time Series Models', 
+                display_name: 'AR Model Parameters & Residuals',
+                description: 'Estimate autoregressive model parameters',
+                parameters: [
+                    {name: 'X', type: 'numpy.ndarray', optional: false},
+                    {name: 'ar_order', type: 'int', default: '5', optional: true}
+                ]
+            }
+        ];
+
+        document.getElementById('test-btn').onclick = function() {
+            var results = document.getElementById('test-results');
+            results.innerHTML = '<h4>Test Results:</h4>';
+            
+            try {
+                // Test 1: Load our extension script
+                var script = document.createElement('script');
+                script.src = '/Users/eric/Library/Jupyter/nbextensions/shm_function_selector/main.js';
+                script.onload = function() {
+                    results.innerHTML += '<p>✓ Extension script loaded</p>';
+                    
+                    // Populate dropdown with mock data
+                    populateTestDropdown();
+                };
+                script.onerror = function() {
+                    results.innerHTML += '<p>✗ Failed to load extension script</p>';
+                    
+                    // Try inline test instead
+                    testInline();
+                };
+                document.head.appendChild(script);
+                
+            } catch (e) {
+                results.innerHTML += '<p>✗ Error: ' + e.message + '</p>';
+                testInline();
+            }
+        };
+
+        function testInline() {
+            console.log('Running inline test...');
+            var results = document.getElementById('test-results');
+            results.innerHTML += '<p>Running inline functionality test...</p>';
+            
+            populateTestDropdown();
+        }
+
+        function populateTestDropdown() {
+            var dropdown = document.getElementById('shm-function-dropdown');
+            dropdown.innerHTML = '';
+            
+            // Group by category
+            var categories = {};
+            mockFunctions.forEach(function(func) {
+                if (!categories[func.category]) {
+                    categories[func.category] = [];
+                }
+                categories[func.category].push(func);
+            });
+            
+            // Populate dropdown
+            Object.keys(categories).forEach(function(category) {
+                var header = document.createElement('li');
+                header.innerHTML = '<h6 class="dropdown-header">' + category + '</h6>';
+                dropdown.appendChild(header);
+                
+                categories[category].forEach(function(func) {
+                    var item = document.createElement('li');
+                    var link = document.createElement('a');
+                    link.className = 'dropdown-item';
+                    link.href = '#';
+                    link.textContent = func.display_name;
+                    link.onclick = function(e) {
+                        e.preventDefault();
+                        testCodeGeneration(func);
+                    };
+                    item.appendChild(link);
+                    dropdown.appendChild(item);
+                });
+                
+                var divider = document.createElement('li');
+                divider.innerHTML = '<hr class="dropdown-divider">';
+                dropdown.appendChild(divider);
+            });
+            
+            var results = document.getElementById('test-results');
+            results.innerHTML += '<p>✓ Dropdown populated with ' + mockFunctions.length + ' functions</p>';
+        }
+
+        function testCodeGeneration(func) {
+            console.log('Generating code for:', func.name);
+            
+            var code = '# ' + func.description + '\n';
+            var params = [];
+            
+            func.parameters.forEach(function(param) {
+                var paramStr = param.name + '=';
+                if (param.default) {
+                    paramStr += param.default;
+                } else {
+                    paramStr += 'None  # REQUIRED: ' + param.type;
+                }
+                params.push(paramStr);
+            });
+            
+            var outputs = 'result';
+            if (func.name.includes('ar_model')) {
+                outputs = 'features, residuals';
+            } else if (func.name.includes('psd')) {
+                outputs = 'frequencies, power';
+            }
+            
+            code += outputs + ' = shmtools.' + func.name + '(\n    ';
+            code += params.join(',\n    ') + '\n)';
+            
+            var results = document.getElementById('test-results');
+            results.innerHTML += '<div class="mt-3"><h5>Generated Code:</h5><pre>' + code + '</pre></div>';
+            
+            alert('Code generation successful! Check the results section.');
+        }
+    </script>
+</body>
+</html>
