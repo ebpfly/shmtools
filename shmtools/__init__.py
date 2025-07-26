@@ -25,6 +25,7 @@ from .core.filtering import filter_signal, bandpass_filter
 from .core.statistics import statistical_moments, rms, crest_factor
 from .features.time_series import ar_model, arx_model
 from .classification.outlier_detection import learn_mahalanobis, score_mahalanobis, learn_pca, score_pca
+from .classification.semiparametric import k_medians_shm, learn_gmm_shm, score_gmm_shm, learn_gmm_semiparametric_model_shm, score_gmm_semiparametric_model_shm
 
 # Load introspection capabilities for Jupyter notebooks
 try:
@@ -143,5 +144,11 @@ __all__ = [
     "score_mahalanobis", 
     "learn_pca",
     "score_pca",
+    # Semi-parametric functions
+    "k_medians_shm",
+    "learn_gmm_shm",
+    "score_gmm_shm",
+    "learn_gmm_semiparametric_model_shm",
+    "score_gmm_semiparametric_model_shm",
     "gui",
 ]

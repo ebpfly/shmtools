@@ -21,9 +21,42 @@ Each phase converts **one complete example** with all its dependencies, validate
 4. **Function Conversion**: Convert each dependency following `docs/docstring-format.md` including exact VERBOSE FUNCTION CALL reproduction
 5. **Algorithm Verification**: Validate Python output matches MATLAB with same inputs
 6. **UI Metadata Validation**: Ensure human-readable names match original MATLAB exactly
-7. **Notebook Creation**: Create educational Jupyter notebook with explanations
+7. **Notebook Creation**: **CRITICAL**: Direct translation of MATLAB workflow preserving ALL educational comments and explanations from original
 8. **Execution Testing**: Ensure notebook runs end-to-end without errors
 9. **HTML Publishing**: Export to clean HTML with proper formatting
+
+### Notebook Conversion Rules
+**⚠️ MANDATORY**: Notebooks must be direct translations of MATLAB examples, preserving ALL educational content:
+
+- **Section Headings**: Match MATLAB `%% Section Name` comments exactly as `## Section Name`
+- **Educational Comments**: Convert ALL MATLAB comments to markdown cells - preserve introduction, methodology explanations, and step descriptions
+- **Workflow Preservation**: Include only the workflow steps present in the original MATLAB file (no additions)
+- **Function Calls**: Use exact Python equivalents of MATLAB function calls with same parameters
+- **Code Comments**: Preserve MATLAB code comments as Python comments where appropriate
+- **Educational Value**: Maintain the instructional purpose of the original MATLAB examples
+
+**Example Translation**:
+```matlab
+%% Load data
+% The data here is in the form of time series in a 3 dimensional matrix
+% (time, sensors, instances) and also a state vector representing the
+% various environmental conditions under which the data is collected.
+load('data3SS.mat');
+```
+
+**Python Translation**:
+```markdown
+## Load data
+
+The data here is in the form of time series in a 3 dimensional matrix
+(time, sensors, instances) and also a state vector representing the
+various environmental conditions under which the data is collected.
+```
+```python
+data = load_3story_data()
+dataset = data['dataset'] 
+states = data['damage_states']
+```
 
 ### Development Order: Simple to Complex
 
