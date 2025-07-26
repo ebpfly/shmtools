@@ -239,6 +239,7 @@ def discover_functions_locally():
         'shmtools.core.filtering',
         'shmtools.features.time_series',
         'shmtools.classification.outlier_detection',
+        'shmtools.utils.data_io',
     ]
     
     for module_name in modules_to_scan:
@@ -273,6 +274,7 @@ def _get_category_from_module_name(module_name):
         'shmtools.core.filtering': 'Core - Filtering',
         'shmtools.features.time_series': 'Features - Time Series Models',
         'shmtools.classification.outlier_detection': 'Classification - Outlier Detection',
+        'shmtools.utils.data_io': 'Data - Import Functions',
     }
     return category_map.get(module_name, 'Other')
 
@@ -290,12 +292,13 @@ def _extract_function_info(func, name, category):
         # Extract basic info
         func_info = {
             'name': name,
+            'displayName': _extract_display_name(docstring, name),
             'category': category,
             'signature': str(sig),
+            'description': _extract_description(docstring),
             'docstring': docstring,
             'parameters': [],
-            'display_name': _extract_display_name(docstring, name),
-            'description': _extract_description(docstring)
+            'returns': _extract_return_info(docstring)
         }
         
         # Extract parameter information
@@ -303,8 +306,8 @@ def _extract_function_info(func, name, category):
             param_info = {
                 'name': param_name,
                 'type': str(param.annotation) if param.annotation != param.empty else 'Any',
-                'default': str(param.default) if param.default != param.empty else None,
-                'optional': param.default != param.empty
+                'optional': param.default != param.empty,
+                'default': str(param.default) if param.default != param.empty else None
             }
             func_info['parameters'].append(param_info)
         
@@ -338,6 +341,62 @@ def _extract_description(docstring):
             return line
     
     return ""
+
+
+def _extract_return_info(docstring):
+    """Extract return value information from docstring."""
+    returns = []
+    
+    if not docstring:
+        return returns
+    
+    lines = docstring.split('\n')
+    in_returns = False
+    current_return = None
+    
+    for line in lines:
+        stripped = line.strip()
+        
+        # Look for Returns section
+        if stripped.lower() in ['returns', 'returns:', '-------']:
+            in_returns = True
+            continue
+        
+        # Stop at next major section
+        if in_returns and stripped.lower() in ['notes', 'notes:', 'examples', 'examples:', 'see also', 'references', 'raises', 'raises:']:
+            break
+        
+        # Parse return value
+        if in_returns and ':' in stripped and not stripped.startswith(' '):
+            if current_return:
+                returns.append(current_return)
+            
+            parts = stripped.split(':', 1)
+            name_type = parts[0].strip()
+            description = parts[1].strip() if len(parts) > 1 else ""
+            
+            # Parse name and type (format: "name : type")
+            if ' : ' in name_type:
+                name, type_str = name_type.split(' : ', 1)
+                current_return = {
+                    'name': name.strip(),
+                    'type': type_str.strip(),
+                    'description': description
+                }
+            else:
+                current_return = {
+                    'name': name_type,
+                    'type': 'unknown',
+                    'description': description
+                }
+        elif in_returns and current_return and stripped:
+            # Continuation of description
+            current_return['description'] += ' ' + stripped
+    
+    if current_return:
+        returns.append(current_return)
+    
+    return returns
 
 def summarize_discovered_parameters():
     """

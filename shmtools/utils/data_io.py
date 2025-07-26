@@ -1,259 +1,279 @@
 """
-Data input/output utilities for SHMTools.
+MATLAB-compatible data import functions for SHMTools example datasets.
 
-This module provides functions for loading various data formats commonly
-used in structural health monitoring applications.
+These functions replicate the exact behavior and signatures of the original 
+MATLAB import functions from shmtool-matlab/SHMTools/Examples/ExampleData/
 """
 
 import numpy as np
-from typing import Tuple, Optional, Dict, Any
-import warnings
-
-try:
-    from scipy.io import loadmat
-    HAS_SCIPY = True
-except ImportError:
-    HAS_SCIPY = False
-    warnings.warn("scipy not available - .mat file loading disabled")
+import scipy.io
+from pathlib import Path
+from typing import Tuple, Dict, Any, List
+import os
 
 
-def import_cbm_data(filename: Optional[str] = None) -> Tuple[np.ndarray, np.ndarray, np.ndarray, float]:
+def _get_example_data_path(filename: str) -> Path:
+    """Get path to example data file, searching multiple possible locations."""
+    # Get current file directory
+    current_dir = Path(__file__).parent
+    
+    # Try different possible locations
+    search_paths = [
+        # From shmtools/utils/ -> examples/data/
+        current_dir.parent.parent / "examples" / "data" / filename,
+        # From shmtools/utils/ -> ../../shmtool-matlab/SHMTools/Examples/ExampleData/
+        current_dir.parent.parent.parent / "shmtool-matlab" / "SHMTools" / "Examples" / "ExampleData" / filename,
+        # From current working directory
+        Path.cwd() / "examples" / "data" / filename,
+        Path.cwd() / filename,
+    ]
+    
+    for path in search_paths:
+        if path.exists():
+            return path
+    
+    # If not found, return the preferred location for error message
+    return current_dir.parent.parent / "examples" / "data" / filename
+
+
+def import_3StoryStructure_shm() -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
-    Import condition-based monitoring dataset.
+    Data Import: Import 3 story structure data
     
-    Python equivalent of MATLAB's import_CBMData_shm function. Loads
-    multi-channel time series data for condition-based monitoring analysis.
-    
-    .. meta::
-        :category: Data Import
-        :matlab_equivalent: import_CBMData_shm
-        :complexity: Basic
-        :data_type: Time Series
-        :output_type: Multi-channel Data
-    
-    Parameters
-    ----------
-    filename : str, optional
-        Path to the CBM data file. If None, loads default example data.
-        
-        .. gui::
-            :widget: file_upload
-            :formats: [".mat"]
-            :description: "CBM dataset file"
+    Replicates import_3StoryStructure_shm.m exactly.
     
     Returns
     -------
-    dataset : ndarray, shape (n_samples, n_channels, n_instances)
-        Multi-channel time series data. Channel 1 is typically tachometer,
-        Channel 2 is accelerometer.
-    damage_states : ndarray, shape (n_instances,)
-        Damage state labels (0=baseline, 1=damaged, etc.).
-    state_list : ndarray, shape (n_instances,)
-        Detailed state condition numbers.
-    fs : float
+    dataset : np.ndarray
+        Shape (TIME, CHANNELS, INSTANCES). Observations from C channels for T trials.
+    damageStates : np.ndarray  
+        Shape (INSTANCES, 1). Binary classification vector of known damage states 
+        (0-undamaged and 1-damaged).
+    stateList : np.ndarray
+        Shape (1, INSTANCES). State for each instance.
+        
+    Raises
+    ------
+    FileNotFoundError
+        If data3SS.mat cannot be found.
+    """
+    data_file = _get_example_data_path("data3SS.mat")
+    
+    if not data_file.exists():
+        raise FileNotFoundError(
+            f"Could not find data3SS.mat at {data_file}. "
+            f"Please ensure the file exists in the examples/data directory."
+        )
+    
+    # Load the MATLAB file
+    mat_data = scipy.io.loadmat(str(data_file))
+    
+    # Extract dataset and states (following MATLAB exactly)
+    dataset = mat_data['dataset']  # Shape should be (8192, 5, 170)
+    states = mat_data['states'].flatten()  # Convert to 1D array
+    
+    # Create stateList as row vector (1, INSTANCES) - MATLAB: states'
+    stateList = states.reshape(1, -1)
+    
+    # Create damageStates as column vector (INSTANCES, 1) - MATLAB: logical([zeros(90,1);ones(80,1)])
+    damageStates = np.concatenate([
+        np.zeros(90, dtype=bool),
+        np.ones(80, dtype=bool)
+    ]).reshape(-1, 1)
+    
+    return dataset, damageStates, stateList
+
+
+def import_CBMData_shm() -> Tuple[np.ndarray, np.ndarray, np.ndarray, float]:
+    """
+    Data Import: Import condition-based monitoring example data
+    
+    Replicates import_CBMData_shm.m exactly.
+    
+    Returns
+    -------
+    dataset : np.ndarray
+        Shape (TIME, CHANNELS, INSTANCES). Data set in concatenated format,
+        4 channels are tachometer (ch 1) and 3 accelerometers.
+    damageStates : np.ndarray
+        Shape (INSTANCES, 1). Binary classification vector of known damage states 
+        (0-undamaged and 1-damaged).
+    stateList : np.ndarray  
+        Shape (INSTANCES, 1). State for each instance.
+    Fs : float
         Sampling frequency in Hz.
         
     Raises
     ------
-    ImportError
-        If scipy is not available for .mat file loading.
     FileNotFoundError
-        If specified file cannot be found.
-        
-    Examples
-    --------
-    Load default CBM dataset:
-    
-    >>> from shmtools.utils import import_cbm_data
-    >>> dataset, damage_states, state_list, fs = import_cbm_data()
-    >>> print(f"Data shape: {dataset.shape}")
-    >>> print(f"Sampling frequency: {fs} Hz")
-    >>> print(f"Unique states: {np.unique(state_list)}")
-    
-    Load specific file:
-    
-    >>> dataset, damage_states, state_list, fs = import_cbm_data("my_data.mat")
+        If data_CBM.mat cannot be found.
     """
-    if not HAS_SCIPY:
-        raise ImportError("scipy is required for .mat file loading. Install with: pip install scipy")
+    data_file = _get_example_data_path("data_CBM.mat")
     
-    if filename is None:
-        # Generate synthetic CBM data for testing
-        return _generate_synthetic_cbm_data()
+    if not data_file.exists():
+        raise FileNotFoundError(
+            f"Could not find data_CBM.mat at {data_file}. "
+            f"Please ensure the file exists in the examples/data directory."
+        )
     
-    try:
-        # Load MATLAB .mat file
-        mat_data = loadmat(filename)
-        
-        # Extract data based on typical CBM data structure
-        # Adjust these keys based on actual .mat file structure
-        dataset = mat_data.get('dataset', mat_data.get('data'))
-        damage_states = mat_data.get('damageStates', mat_data.get('labels'))
-        state_list = mat_data.get('stateList', mat_data.get('states'))
-        fs = float(mat_data.get('Fs', mat_data.get('fs', 1000.0)))
-        
-        if dataset is None:
-            raise ValueError("Could not find dataset in .mat file")
-        
-        # Ensure proper array shapes
-        if dataset.ndim == 2:
-            dataset = dataset[:, :, np.newaxis]
-        
-        if damage_states is not None:
-            damage_states = np.squeeze(damage_states)
-        else:
-            damage_states = np.zeros(dataset.shape[2])
-            
-        if state_list is not None:
-            state_list = np.squeeze(state_list)
-        else:
-            state_list = np.arange(dataset.shape[2]) + 1
-        
-        return dataset, damage_states, state_list, fs
-        
-    except Exception as e:
-        raise FileNotFoundError(f"Could not load CBM data from {filename}: {e}")
+    # Load the MATLAB file
+    mat_data = scipy.io.loadmat(str(data_file))
+    
+    # Extract variables (names from MATLAB file)
+    dataset = mat_data['dataset']
+    damageStates = mat_data['damageStates'] 
+    stateList = mat_data['stateList']
+    Fs = float(mat_data['Fs'][0, 0])  # Extract scalar from array
+    
+    return dataset, damageStates, stateList, Fs
 
 
-def _generate_synthetic_cbm_data() -> Tuple[np.ndarray, np.ndarray, np.ndarray, float]:
+def import_ActiveSense1_shm() -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, Dict, float, np.ndarray, np.ndarray]:
     """
-    Generate synthetic condition-based monitoring data for testing.
+    Data Import: Import active sensing dataset #1
+    
+    Replicates import_ActiveSense1_shm.m exactly.
     
     Returns
     -------
-    dataset : ndarray
-        Synthetic multi-channel time series.
-    damage_states : ndarray
-        Binary damage labels.
-    state_list : ndarray
-        State condition numbers.
-    fs : float
-        Sampling frequency.
+    waveformBase : np.ndarray
+        Shape (TIME, SENSORPAIRS). Matrix of waveforms acquired before damage was introduced.
+    waveformTest : np.ndarray  
+        Shape (TIME, SENSORPAIRS). Matrix of waveforms acquired after damage was introduced.
+    sensorLayout : np.ndarray
+        Shape (SENSORINFO, SENSORS). Sensor layout IDs and coordinates,
+        SENSORINFO is the ordered set [sensorID, xCoord, yCoord].
+    pairList : np.ndarray
+        Shape (SENSORIDS, PAIRS). Matrix of actuator-sensor PAIRS,
+        SENSORIDS is the ordered set of integer IDs [actuatorID, sensorID].
+    borderStruct : dict
+        Contains 'outside' and 'inside' fields with plate border definitions.
+    sampleRate : float
+        Sampling rate (points/time).
+    actuationWaveform : np.ndarray
+        Shape (TIME, 1). Waveform used for actuation.
+    damageLocation : np.ndarray
+        Shape (COORDINATES, 1). x and y coordinates of damage location,
+        COORDINATES is the ordered set [x, y].
+        
+    Raises
+    ------
+    FileNotFoundError
+        If data_example_ActiveSense.mat cannot be found.
     """
-    # Simulation parameters
-    fs = 25600.0  # Sampling frequency
-    n_samples = 8192  # Samples per instance
-    n_baseline = 10   # Baseline instances
-    n_damaged = 10    # Damaged instances
-    n_instances = n_baseline + n_damaged
+    data_file = _get_example_data_path("data_example_ActiveSense.mat")
     
-    # Time vector
-    t = np.arange(n_samples) / fs
+    if not data_file.exists():
+        raise FileNotFoundError(
+            f"Could not find data_example_ActiveSense.mat at {data_file}. "
+            f"Please ensure the file exists in the examples/data directory."
+        )
     
-    # Gear parameters
-    main_shaft_freq = 30.0  # Hz (1800 RPM)
-    gear_ratio = 3.71
-    gear_freq = main_shaft_freq * gear_ratio
-    n_gear_teeth = 27
-    gear_mesh_freq = gear_freq * n_gear_teeth
+    # Load the MATLAB file with specific variables (following MATLAB exactly)
+    mat_data = scipy.io.loadmat(
+        str(data_file), 
+        variable_names=['waveformBase', 'waveformTest', 'sensorLayout', 'pairList',
+                       'borderStruct', 'sampleRate', 'actuationWaveform', 'damageLocation']
+    )
     
-    # Initialize data arrays
-    dataset = np.zeros((n_samples, 2, n_instances))  # [time, channels, instances]
-    damage_states = np.zeros(n_instances)
-    state_list = np.zeros(n_instances)
+    waveformBase = mat_data['waveformBase']
+    waveformTest = mat_data['waveformTest'] 
+    sensorLayout = mat_data['sensorLayout']
+    pairList = mat_data['pairList']
+    borderStruct = mat_data['borderStruct']
+    sampleRate = float(mat_data['sampleRate'][0, 0])  # Extract scalar
+    actuationWaveform = mat_data['actuationWaveform']
+    damageLocation = mat_data['damageLocation']
     
-    np.random.seed(42)  # For reproducible results
+    # Convert borderStruct from MATLAB struct to Python dict
+    # MATLAB structs are loaded as numpy structured arrays
+    border_dict = {}
+    if borderStruct.dtype.names:
+        for field_name in borderStruct.dtype.names:
+            border_dict[field_name] = borderStruct[field_name][0, 0]
     
-    for i in range(n_instances):
-        is_damaged = i >= n_baseline
-        
-        # Channel 1: Tachometer signal (pulse per revolution)
-        tach_freq = main_shaft_freq + np.random.normal(0, 0.5)  # Small speed variation
-        tach_signal = 0.5 * np.sin(2 * np.pi * tach_freq * t)
-        
-        # Add tachometer pulses
-        pulse_times = np.arange(0, t[-1], 1/tach_freq)
-        for pulse_time in pulse_times:
-            if pulse_time < t[-1]:
-                pulse_idx = int(pulse_time * fs)
-                if pulse_idx < n_samples:
-                    tach_signal[pulse_idx:pulse_idx+10] += 2.0
-        
-        dataset[:, 0, i] = tach_signal + 0.1 * np.random.randn(n_samples)
-        
-        # Channel 2: Accelerometer signal
-        # Base vibration components
-        accel_signal = (0.1 * np.sin(2 * np.pi * main_shaft_freq * t) +
-                       0.2 * np.sin(2 * np.pi * gear_freq * t) +
-                       0.3 * np.sin(2 * np.pi * gear_mesh_freq * t))
-        
-        # Add gear mesh harmonics
-        for h in range(2, 6):
-            accel_signal += 0.1/h * np.sin(2 * np.pi * h * gear_mesh_freq * t)
-        
-        if is_damaged:
-            # Add damage characteristics
-            # Increased sidebands around gear mesh frequency
-            sideband_freq = 1.0  # Hz
-            accel_signal += (0.05 * np.sin(2 * np.pi * (gear_mesh_freq + sideband_freq) * t) +
-                           0.05 * np.sin(2 * np.pi * (gear_mesh_freq - sideband_freq) * t))
-            
-            # Add random impulses (tooth wear/damage)
-            n_impulses = 5
-            impulse_times = np.random.uniform(0, t[-1], n_impulses)
-            for imp_time in impulse_times:
-                imp_idx = int(imp_time * fs)
-                if imp_idx < n_samples - 50:
-                    # Exponentially decaying impulse
-                    imp_duration = 50
-                    imp_t = np.arange(imp_duration) / fs
-                    impulse = 0.5 * np.exp(-imp_t * 200) * np.sin(2 * np.pi * 2000 * imp_t)
-                    accel_signal[imp_idx:imp_idx+imp_duration] += impulse
-            
-            # Increase overall noise level
-            accel_signal += 0.05 * np.random.randn(n_samples)
-            
-            damage_states[i] = 1
-            state_list[i] = 3  # Damaged state
-        else:
-            # Baseline condition
-            accel_signal += 0.02 * np.random.randn(n_samples)
-            damage_states[i] = 0
-            state_list[i] = 1  # Baseline state
-        
-        dataset[:, 1, i] = accel_signal
-    
-    return dataset, damage_states, state_list, fs
+    return waveformBase, waveformTest, sensorLayout, pairList, border_dict, sampleRate, actuationWaveform, damageLocation
 
 
-def load_mat_file(filename: str) -> Dict[str, Any]:
+def import_SensorDiagnostic_shm() -> Tuple[np.ndarray, np.ndarray]:
     """
-    Load MATLAB .mat file with error handling.
+    Data Import: Import sensor diagnostic dataset
     
-    Parameters
-    ----------
-    filename : str
-        Path to .mat file.
-        
+    Replicates import_SensorDiagnostic_shm.m exactly.
+    
     Returns
     -------
-    data : dict
-        Dictionary containing .mat file contents.
+    healthyData : np.ndarray
+        Shape (FREQUENCY, SENSORS). Susceptance data from healthy sensors only,
+        first column contains frequencies.
+    exampleSensorData : np.ndarray
+        Shape (FREQUENCY, SENSORS). Susceptance data from healthy, debonded, 
+        and broken sensors, first column contains frequencies.
+        
+    Raises
+    ------
+    FileNotFoundError
+        If dataSensorDiagnostic.mat cannot be found.
     """
-    if not HAS_SCIPY:
-        raise ImportError("scipy is required for .mat file loading")
+    data_file = _get_example_data_path("dataSensorDiagnostic.mat")
     
-    try:
-        return loadmat(filename)
-    except Exception as e:
-        raise FileNotFoundError(f"Could not load .mat file {filename}: {e}")
+    if not data_file.exists():
+        raise FileNotFoundError(
+            f"Could not find dataSensorDiagnostic.mat at {data_file}. "
+            f"Please ensure the file exists in the examples/data directory."
+        )
+    
+    # Load the MATLAB file with specific variables
+    mat_data = scipy.io.loadmat(str(data_file), variable_names=['sd_ex', 'sd_ex_broken'])
+    
+    # Following MATLAB exactly:
+    # healthyData = sd_ex;
+    # exampleSensorData = sd_ex_broken;
+    healthyData = mat_data['sd_ex']
+    exampleSensorData = mat_data['sd_ex_broken']
+    
+    return healthyData, exampleSensorData
 
 
-def save_results(data: Dict[str, Any], filename: str) -> None:
+def import_ModalOSP_shm() -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
-    Save analysis results to file.
+    Data Import: Import Modal Optimal Sensor Placement Data
     
-    Parameters
-    ----------
-    data : dict
-        Dictionary containing results to save.
-    filename : str
-        Output filename (.npz or .mat).
+    Replicates import_ModalOSP_shm.m exactly.
+    
+    Returns
+    -------
+    nodeLayout : np.ndarray
+        Shape (NODEINFO, NODES, INSTANCES). ID and coordinates of each node,
+        NODEINFO is the ordered set [ID XCoord YCoord ZCoord].
+    elements : np.ndarray
+        Shape (NODES, ELEMENTS). Indices of the nodes that construct each element.
+    modeShapes : np.ndarray
+        Shape (DOFS, MODES). Mode shapes of interest.
+    respDOF : np.ndarray
+        Shape (DOFS, DOFINFO). Definitions of the degrees of freedom for the response vector.
+        DOFINFO is the ordered set [coordID, responseDirection].
+        
+    Raises
+    ------
+    FileNotFoundError
+        If data_OSPExampleModal.mat cannot be found.
     """
-    if filename.endswith('.npz'):
-        np.savez(filename, **data)
-    elif filename.endswith('.mat') and HAS_SCIPY:
-        from scipy.io import savemat
-        savemat(filename, data)
-    else:
-        raise ValueError("Unsupported file format. Use .npz or .mat")
+    data_file = _get_example_data_path("data_OSPExampleModal.mat")
+    
+    if not data_file.exists():
+        raise FileNotFoundError(
+            f"Could not find data_OSPExampleModal.mat at {data_file}. "
+            f"Please ensure the file exists in the examples/data directory."
+        )
+    
+    # Load the MATLAB file (load all variables like MATLAB)
+    mat_data = scipy.io.loadmat(str(data_file))
+    
+    # Extract the required variables
+    nodeLayout = mat_data['nodeLayout']
+    elements = mat_data['elements']
+    modeShapes = mat_data['modeShapes']
+    respDOF = mat_data['respDOF']
+    
+    return nodeLayout, elements, modeShapes, respDOF

@@ -65,26 +65,13 @@ class SHMFunctionHandler(APIHandler):
             
             # Try to use the built-in introspection system first
             try:
-                from shmtools.utils.introspection import discover_functions_locally
+                from shmtools.introspection import discover_functions_locally
                 discovered_functions = discover_functions_locally()
                 
                 self.log.info(f"Found {len(discovered_functions)} functions using introspection system")
                 
-                # Convert to our format
-                for func_info in discovered_functions:
-                    try:
-                        # Get the actual function object
-                        module = importlib.import_module(func_info['module'])
-                        func = getattr(module, func_info['name'])
-                        
-                        # Extract detailed information
-                        detailed_info = self._extract_function_info(func, func_info['name'], func_info['category'])
-                        if detailed_info:
-                            functions.append(detailed_info)
-                            
-                    except Exception as e:
-                        self.log.warning(f"Could not process function {func_info['name']}: {e}")
-                        continue
+                # The introspection system returns functions in our format already
+                return discovered_functions
                         
             except ImportError:
                 self.log.info("Introspection system not available, using manual discovery")
@@ -110,6 +97,7 @@ class SHMFunctionHandler(APIHandler):
             'shmtools.core.preprocessing',
             'shmtools.features.time_series',
             'shmtools.classification.outlier_detection',
+            'shmtools.utils.data_loading',
         ]
         
         for module_name in modules_to_scan:
@@ -197,6 +185,7 @@ class SHMFunctionHandler(APIHandler):
             'shmtools.core.preprocessing': 'Core - Preprocessing',
             'shmtools.features.time_series': 'Features - Time Series Models',
             'shmtools.classification.outlier_detection': 'Classification - Outlier Detection',
+            'shmtools.utils.data_loading': 'Data - Loading & Setup',
         }
         return category_map.get(module_name, 'Other')
     

@@ -23,9 +23,19 @@ from . import utils
 from .core.spectral import psd_welch, stft
 from .core.filtering import filter_signal, bandpass_filter
 from .core.statistics import statistical_moments, rms, crest_factor
-from .features.time_series import ar_model, arx_model
-from .classification.outlier_detection import learn_mahalanobis, score_mahalanobis, learn_pca, score_pca
+from .features.time_series import ar_model, arx_model, ar_model_order_shm
+from .classification.outlier_detection import learn_mahalanobis_shm, score_mahalanobis_shm, learn_pca, score_pca, learn_svd_shm, score_svd_shm, roc_shm, learn_factor_analysis_shm, score_factor_analysis_shm
+from .core.preprocessing import scale_min_max_shm
 from .classification.semiparametric import k_medians_shm, learn_gmm_shm, score_gmm_shm, learn_gmm_semiparametric_model_shm, score_gmm_semiparametric_model_shm
+
+# MATLAB-compatible data import functions  
+from .utils.data_io import (
+    import_3StoryStructure_shm,
+    import_CBMData_shm,
+    import_ActiveSense1_shm,
+    import_SensorDiagnostic_shm,
+    import_ModalOSP_shm,
+)
 
 # Load introspection capabilities for Jupyter notebooks
 try:
@@ -140,15 +150,28 @@ __all__ = [
     "crest_factor",
     "ar_model",
     "arx_model", 
-    "learn_mahalanobis",
-    "score_mahalanobis", 
+    "learn_mahalanobis_shm",
+    "score_mahalanobis_shm", 
     "learn_pca",
     "score_pca",
+    "learn_svd_shm",
+    "score_svd_shm",
+    "roc_shm",
+    "scale_min_max_shm",
+    "learn_factor_analysis_shm",
+    "score_factor_analysis_shm",
+    "ar_model_order_shm",
     # Semi-parametric functions
     "k_medians_shm",
     "learn_gmm_shm",
     "score_gmm_shm",
     "learn_gmm_semiparametric_model_shm",
     "score_gmm_semiparametric_model_shm",
+    # MATLAB-compatible data import functions
+    "import_3StoryStructure_shm",
+    "import_CBMData_shm",
+    "import_ActiveSense1_shm",
+    "import_SensorDiagnostic_shm",
+    "import_ModalOSP_shm",
     "gui",
 ]
