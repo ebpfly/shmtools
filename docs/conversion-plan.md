@@ -675,14 +675,45 @@ shmtools-python/
 
 #### 5. Testing and Publication Phase
 ```bash
-# Run complete notebook end-to-end
-pytest examples/test_notebooks/test_*.py
+# Method 1: Execute and convert in one step using ExecutePreprocessor
+python -c "
+import nbformat
+from nbconvert import HTMLExporter
+from nbconvert.preprocessors import ExecutePreprocessor
+import os
+import sys
 
-# Export to HTML
-jupyter nbconvert --to html notebook.ipynb
+# Add shmtools to path
+sys.path.insert(0, os.getcwd())
 
-# Validate HTML renders correctly
-# Check all plots display properly
+# Read notebook
+with open('examples/notebooks/{category}/{notebook_name}.ipynb', 'r') as f:
+    nb = nbformat.read(f, as_version=4)
+
+# Execute notebook with proper kernel
+ep = ExecutePreprocessor(timeout=600, kernel_name='python3')
+ep.preprocess(nb, {'metadata': {'path': os.getcwd()}})
+
+# Convert to HTML with executed outputs
+html_exporter = HTMLExporter()
+(body, resources) = html_exporter.from_notebook_node(nb)
+
+# Save HTML with executed outputs
+os.makedirs('examples/published/html', exist_ok=True)
+with open('examples/published/html/{notebook_name}.html', 'w') as f:
+    f.write(body)
+
+print(f'Published {notebook_name}.html with executed outputs')
+"
+
+# Alternative Method 2: Use jupyter nbconvert directly (if nbconvert works)
+# jupyter nbconvert --to html --execute {notebook_path} --output-dir=examples/published/html/
+
+# Step 3: Validate HTML renders correctly
+# - Check all plots display properly  
+# - Verify code outputs are visible (text outputs, print statements)
+# - Confirm execution results are shown (dataframes, arrays, plots)
+# - Look for "Found shmtools at:" or similar output text in HTML
 ```
 
 ### Quality Assurance Checklist
@@ -693,9 +724,20 @@ For each converted example:
 - [ ] Docstrings include all required GUI metadata
 - [ ] Outputs match MATLAB within numerical tolerance
 - [ ] Jupyter notebook runs without errors
-- [ ] HTML export renders cleanly
+- [ ] **HTML export created and renders cleanly**
 - [ ] All visualizations display correctly
 - [ ] Educational content explains the methodology
+
+### Phase Completion Criteria
+
+**A phase is considered COMPLETE when:**
+1. ✅ All required functions are implemented and working
+2. ✅ Jupyter notebook executes end-to-end without errors (`jupyter execute notebook.ipynb`)
+3. ✅ **HTML export is created with executed outputs visible** and saved to `examples/published/html/`
+4. ✅ All plots, code outputs, and execution results render correctly in HTML
+5. ✅ Functions are exported in appropriate module `__init__.py` files
+
+**Critical Note**: The HTML publication must show executed code outputs, plots, and results. Empty code cells or missing outputs indicate incomplete publication.
 
 ### Success Metrics
 

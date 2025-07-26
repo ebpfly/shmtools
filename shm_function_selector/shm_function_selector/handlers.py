@@ -190,7 +190,9 @@ class SHMFunctionHandler(APIHandler):
                 'signature': str(sig),
                 'description': self._extract_description(docstring),
                 'docstring': docstring,
-                'parameters': []
+                'parameters': [],
+                'guiMetadata': self._extract_gui_metadata(docstring),
+                'returns': self._extract_return_info(docstring)
             }
             
             # Extract parameter information
@@ -206,6 +208,16 @@ class SHMFunctionHandler(APIHandler):
                 param_description = self._extract_parameter_description(docstring, param_name)
                 if param_description:
                     param_info['description'] = param_description
+                
+                # Extract GUI widget metadata for the parameter
+                gui_widget = self._extract_parameter_gui_widget(docstring, param_name)
+                if gui_widget:
+                    param_info['widget'] = gui_widget
+                
+                # Extract validation rules
+                validation = self._extract_parameter_validation(docstring, param_name)
+                if validation:
+                    param_info['validation'] = validation
                 
                 func_info['parameters'].append(param_info)
             
@@ -282,6 +294,184 @@ class SHMFunctionHandler(APIHandler):
                     return ' '.join(desc_parts)
         
         return ""
+    
+    def _extract_gui_metadata(self, docstring: str) -> Dict[str, Any]:
+        """Extract GUI metadata from function docstring."""
+        metadata = {}
+        
+        if not docstring:
+            return metadata
+        
+        lines = docstring.split('\n')
+        in_meta = False
+        
+        for line in lines:
+            stripped = line.strip()
+            
+            # Look for meta section
+            if stripped.startswith('.. meta::'):
+                in_meta = True
+                continue
+            
+            # Stop at next major section
+            if in_meta and stripped and not stripped.startswith(':') and not stripped.startswith(' '):
+                break
+            
+            # Extract meta properties
+            if in_meta and ':' in stripped:
+                if stripped.startswith(':category:'):
+                    metadata['category'] = stripped.split(':', 2)[2].strip()
+                elif stripped.startswith(':complexity:'):
+                    metadata['complexity'] = stripped.split(':', 2)[2].strip()
+                elif stripped.startswith(':data_type:'):
+                    metadata['data_type'] = stripped.split(':', 2)[2].strip()
+                elif stripped.startswith(':output_type:'):
+                    metadata['output_type'] = stripped.split(':', 2)[2].strip()
+                elif stripped.startswith(':matlab_equivalent:'):
+                    metadata['matlab_equivalent'] = stripped.split(':', 2)[2].strip()
+        
+        return metadata
+    
+    def _extract_return_info(self, docstring: str) -> List[Dict[str, Any]]:
+        """Extract return value information from docstring."""
+        returns = []
+        
+        if not docstring:
+            return returns
+        
+        lines = docstring.split('\n')
+        in_returns = False
+        current_return = None
+        
+        for line in lines:
+            stripped = line.strip()
+            
+            # Look for Returns section
+            if stripped.lower() in ['returns', 'returns:', '-------']:
+                in_returns = True
+                continue
+            
+            # Stop at next major section
+            if in_returns and stripped.lower() in ['notes', 'notes:', 'examples', 'examples:', 'see also', 'references']:
+                break
+            
+            # Parse return value
+            if in_returns and ':' in stripped and not stripped.startswith(' '):
+                if current_return:
+                    returns.append(current_return)
+                
+                parts = stripped.split(':', 1)
+                name_type = parts[0].strip()
+                description = parts[1].strip() if len(parts) > 1 else ""
+                
+                # Parse name and type (format: "name : type")
+                if ' : ' in name_type:
+                    name, type_str = name_type.split(' : ', 1)
+                    current_return = {
+                        'name': name.strip(),
+                        'type': type_str.strip(),
+                        'description': description
+                    }
+                else:
+                    current_return = {
+                        'name': name_type,
+                        'type': 'unknown',
+                        'description': description
+                    }
+            elif in_returns and current_return and stripped:
+                # Continuation of description
+                current_return['description'] += ' ' + stripped
+        
+        if current_return:
+            returns.append(current_return)
+        
+        return returns
+    
+    def _extract_parameter_gui_widget(self, docstring: str, param_name: str) -> Dict[str, Any]:
+        """Extract GUI widget metadata for a parameter."""
+        widget = {}
+        
+        if not docstring:
+            return widget
+        
+        lines = docstring.split('\n')
+        in_param_section = False
+        in_gui_section = False
+        
+        for i, line in enumerate(lines):
+            stripped = line.strip()
+            
+            # Look for the specific parameter
+            if param_name in stripped and ':' in stripped:
+                in_param_section = True
+                continue
+            
+            # Reset if we hit another parameter
+            if in_param_section and ':' in stripped and any(p in stripped for p in ['array_like', 'int', 'float', 'str', 'bool']) and param_name not in stripped:
+                in_param_section = False
+                continue
+            
+            # Look for GUI section within parameter
+            if in_param_section and stripped.startswith('.. gui::'):
+                in_gui_section = True
+                continue
+            
+            # Stop GUI section at next directive or parameter
+            if in_gui_section and (stripped.startswith('..') or (stripped and not stripped.startswith(':'))):
+                in_gui_section = False
+            
+            # Extract GUI properties
+            if in_gui_section and ':' in stripped:
+                if stripped.startswith(':widget:'):
+                    widget['widget'] = stripped.split(':', 2)[2].strip()
+                elif stripped.startswith(':min:'):
+                    widget['min'] = float(stripped.split(':', 2)[2].strip())
+                elif stripped.startswith(':max:'):
+                    widget['max'] = float(stripped.split(':', 2)[2].strip())
+                elif stripped.startswith(':default:'):
+                    widget['default'] = stripped.split(':', 2)[2].strip()
+                elif stripped.startswith(':options:'):
+                    # Parse list format [option1, option2, ...]
+                    options_str = stripped.split(':', 2)[2].strip()
+                    if options_str.startswith('[') and options_str.endswith(']'):
+                        options = [opt.strip(' "\'') for opt in options_str[1:-1].split(',')]
+                        widget['options'] = options
+                elif stripped.startswith(':formats:'):
+                    # Parse formats for file uploads
+                    formats_str = stripped.split(':', 2)[2].strip()
+                    if formats_str.startswith('[') and formats_str.endswith(']'):
+                        formats = [fmt.strip(' "\'') for fmt in formats_str[1:-1].split(',')]
+                        widget['formats'] = formats
+        
+        return widget
+    
+    def _extract_parameter_validation(self, docstring: str, param_name: str) -> List[Dict[str, Any]]:
+        """Extract validation rules for a parameter."""
+        validation = []
+        
+        # For now, infer basic validation from GUI widget info
+        widget = self._extract_parameter_gui_widget(docstring, param_name)
+        
+        if 'min' in widget:
+            validation.append({
+                'type': 'range',
+                'min': widget['min'],
+                'max': widget.get('max', float('inf'))
+            })
+        
+        if 'options' in widget:
+            validation.append({
+                'type': 'choice',
+                'options': widget['options']
+            })
+        
+        if 'formats' in widget:
+            validation.append({
+                'type': 'file_format',
+                'formats': widget['formats']
+            })
+        
+        return validation
 
 
 class SHMVariableHandler(APIHandler):

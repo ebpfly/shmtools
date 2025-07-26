@@ -163,6 +163,33 @@ interface SHMFunction {
     optional: boolean;
     default: string | null;
     description?: string;
+    widget?: {
+      widget?: string;
+      min?: number;
+      max?: number;
+      default?: string;
+      options?: string[];
+      formats?: string[];
+    };
+    validation?: Array<{
+      type: string;
+      min?: number;
+      max?: number;
+      options?: string[];
+      formats?: string[];
+    }>;
+  }>;
+  guiMetadata?: {
+    category?: string;
+    complexity?: string;
+    data_type?: string;
+    output_type?: string;
+    matlab_equivalent?: string;
+  };
+  returns?: Array<{
+    name: string;
+    type: string;
+    description: string;
   }>;
 }
 
@@ -384,47 +411,27 @@ class SHMFunctionSelector {
     const params = func.parameters;
     const hasRequiredParams = params.some(p => !p.optional);
     
-    // Generate parameter string
+    // Generate parameter string with enhanced defaults and validation
     let paramStrings: string[] = [];
     
     params.forEach(param => {
       let paramStr = `    ${param.name}=`;
+      let paramValue = this.getEnhancedParameterDefault(param);
       
-      if (param.default && param.default !== 'None') {
-        // Use default value
-        paramStr += param.default;
-      } else if (param.type.includes('array') || param.type.includes('ndarray')) {
-        paramStr += 'data';  // Placeholder for array data
-      } else if (param.type.includes('int')) {
-        paramStr += '1';
-      } else if (param.type.includes('float')) {
-        paramStr += '1.0';
-      } else if (param.type.includes('str')) {
-        paramStr += "'value'";
-      } else {
-        paramStr += 'None';
-      }
+      paramStr += paramValue;
       
-      // Add comment with type info
-      if (param.description) {
-        paramStr += `,  # ${param.description}`;
-      } else {
-        paramStr += `,  # ${param.type}`;
-      }
-      
-      // Mark optional parameters
-      if (param.optional) {
-        paramStr += ' (optional)';
-      }
+      // Add comprehensive comment with validation info
+      let comment = this.generateParameterComment(param);
+      paramStr += `,  # ${comment}`;
       
       paramStrings.push(paramStr);
     });
     
-    // Generate function call
-    let code = `# ${func.description}\n`;
+    // Generate function call with enhanced output handling
+    let code = this.generateFunctionHeader(func);
     
-    // Determine output variable name
-    const outputVar = this.suggestOutputVariable(func.name);
+    // Determine output variables based on return info
+    const outputVar = this.suggestOutputVariables(func);
     
     if (paramStrings.length > 0) {
       code += `${outputVar} = shmtools.${func.name}(\n${paramStrings.join('\n')}\n)`;
@@ -432,7 +439,157 @@ class SHMFunctionSelector {
       code += `${outputVar} = shmtools.${func.name}()`;
     }
     
+    // Add validation comments if validation rules exist
+    if (this.hasValidationRules(func)) {
+      code += '\n\n# Validation: ' + this.generateValidationComment(func);
+    }
+    
     return code;
+  }
+
+  private getEnhancedParameterDefault(param: any): string {
+    // Priority 1: Use GUI widget default if available
+    if (param.widget && param.widget.default) {
+      return param.widget.default;
+    }
+    
+    // Priority 2: Use function signature default
+    if (param.default && param.default !== 'None' && param.default !== '<inspect.Parameter.empty>') {
+      return param.default;
+    }
+    
+    // Priority 3: Smart defaults based on parameter name and type
+    const paramName = param.name.toLowerCase();
+    
+    // Data parameters
+    if (['data', 'x', 'y', 'input_data', 'features', 'signals'].includes(paramName)) {
+      return 'None  # TODO: Provide input data';
+    }
+    
+    // Sampling frequency parameters
+    if (['fs', 'sampling_rate', 'sample_rate', 'freq'].includes(paramName)) {
+      return '1000.0  # Hz';
+    }
+    
+    // Order parameters
+    if (['order', 'ar_order', 'n_components', 'n_features'].includes(paramName)) {
+      return '10';
+    }
+    
+    // Window parameters
+    if (['window', 'window_type'].includes(paramName)) {
+      return "'hann'";
+    }
+    
+    // Segment length parameters
+    if (['nperseg', 'n_per_seg', 'segment_length'].includes(paramName)) {
+      return '256';
+    }
+    
+    // File parameters
+    if (['filename', 'filepath', 'path'].includes(paramName)) {
+      return "'data.csv'  # TODO: Specify file path";
+    }
+    
+    // Type-based defaults
+    if (param.type.includes('array') || param.type.includes('ndarray')) {
+      return 'None  # TODO: Provide array data';
+    } else if (param.type.includes('int')) {
+      return '1';
+    } else if (param.type.includes('float')) {
+      return '1.0';
+    } else if (param.type.includes('str')) {
+      return "'value'";
+    } else if (param.type.includes('bool')) {
+      return 'True';
+    } else {
+      return 'None';
+    }
+  }
+
+  private generateParameterComment(param: any): string {
+    let comment = '';
+    
+    // Add description if available
+    if (param.description) {
+      comment += param.description;
+    } else {
+      comment += param.type;
+    }
+    
+    // Add validation info
+    if (param.validation && param.validation.length > 0) {
+      const validationInfo = param.validation.map((rule: any) => {
+        if (rule.type === 'range') {
+          return `range: ${rule.min}-${rule.max}`;
+        } else if (rule.type === 'choice') {
+          return `options: ${rule.options.join(', ')}`;
+        } else if (rule.type === 'file_format') {
+          return `formats: ${rule.formats.join(', ')}`;
+        }
+        return '';
+      }).filter(Boolean).join(', ');
+      
+      if (validationInfo) {
+        comment += ` (${validationInfo})`;
+      }
+    }
+    
+    // Mark optional parameters
+    if (param.optional) {
+      comment += ' (optional)';
+    } else {
+      comment += ' (required)';
+    }
+    
+    return comment;
+  }
+
+  private generateFunctionHeader(func: SHMFunction): string {
+    let header = `# ${func.description}\n`;
+    
+    // Add complexity and data type info if available
+    if (func.guiMetadata) {
+      if (func.guiMetadata.complexity) {
+        header += `# Complexity: ${func.guiMetadata.complexity}\n`;
+      }
+      if (func.guiMetadata.data_type) {
+        header += `# Data Type: ${func.guiMetadata.data_type}\n`;
+      }
+      if (func.guiMetadata.matlab_equivalent) {
+        header += `# MATLAB Equivalent: ${func.guiMetadata.matlab_equivalent}\n`;
+      }
+    }
+    
+    return header;
+  }
+
+  private suggestOutputVariables(func: SHMFunction): string {
+    // Use return info if available
+    if (func.returns && func.returns.length > 0) {
+      const returnNames = func.returns.map((ret: any) => ret.name).filter(Boolean);
+      if (returnNames.length > 1) {
+        return returnNames.join(', ');
+      } else if (returnNames.length === 1) {
+        return returnNames[0];
+      }
+    }
+    
+    // Fall back to name-based suggestions
+    return this.suggestOutputVariable(func.name);
+  }
+
+  private hasValidationRules(func: SHMFunction): boolean {
+    return func.parameters.some((param: any) => param.validation && param.validation.length > 0);
+  }
+
+  private generateValidationComment(func: SHMFunction): string {
+    const validationComments = func.parameters
+      .filter((param: any) => param.validation && param.validation.length > 0)
+      .map((param: any) => `${param.name}: ${param.validation.map((rule: any) => rule.type).join(', ')}`)
+      .join('; ');
+    
+    return validationComments || 'Parameter validation available';
   }
 
   private suggestOutputVariable(funcName: string): string {
@@ -1313,6 +1470,13 @@ class SHMContextMenuManager {
     const activeCell = notebook.activeCell;
     if (!activeCell) return;
 
+    // Validate the parameter replacement before applying
+    const validationResult = this.validateParameterReplacement(variable, parameterContext);
+    if (!validationResult.isValid) {
+      this.showValidationError(validationResult.error!);
+      return;
+    }
+
     const editor = activeCell.editor;
     const currentText = editor.model.sharedModel.getSource();
     
@@ -1387,5 +1551,131 @@ class SHMContextMenuManager {
       this.contextMenu.parentNode.removeChild(this.contextMenu);
     }
     this.contextMenu = null;
+  }
+
+  /**
+   * Validate parameter replacement before applying
+   */
+  validateParameterReplacement(variable: Variable, parameterContext: ParameterContext): { isValid: boolean; error?: string } {
+    // Basic type compatibility check
+    const paramName = parameterContext.parameterName.toLowerCase();
+    const varType = variable.type.toLowerCase();
+    
+    // Array/data parameters should receive array-like variables
+    if (['data', 'features', 'input_data', 'signals', 'x', 'y'].includes(paramName)) {
+      if (!['numpy.ndarray', 'pandas.dataframe', 'list', 'tuple'].includes(varType)) {
+        return {
+          isValid: false,
+          error: `Parameter "${parameterContext.parameterName}" expects array data, but "${variable.name}" is of type ${variable.type}`
+        };
+      }
+    }
+    
+    // Frequency parameters should receive numeric variables
+    if (['fs', 'sampling_rate', 'freq', 'frequency'].includes(paramName)) {
+      if (!['int', 'float', 'numpy.float64', 'numpy.int64'].includes(varType) && !variable.name.toLowerCase().includes('freq') && !variable.name.toLowerCase().includes('fs')) {
+        return {
+          isValid: false,
+          error: `Parameter "${parameterContext.parameterName}" expects a frequency value, but "${variable.name}" may not be a frequency`
+        };
+      }
+    }
+    
+    // Order parameters should receive integer variables
+    if (['order', 'n_components', 'ar_order'].includes(paramName)) {
+      if (!['int', 'numpy.int64'].includes(varType) && isNaN(parseInt(variable.name))) {
+        return {
+          isValid: false,
+          error: `Parameter "${parameterContext.parameterName}" expects an integer value, but "${variable.name}" is of type ${variable.type}`
+        };
+      }
+    }
+    
+    // Model parameters should receive dict/tuple variables
+    if (paramName.includes('model')) {
+      if (!['dict', 'tuple', 'unknown'].includes(varType)) {
+        return {
+          isValid: false,
+          error: `Parameter "${parameterContext.parameterName}" expects a model object, but "${variable.name}" is of type ${variable.type}`
+        };
+      }
+    }
+    
+    return { isValid: true };
+  }
+
+  /**
+   * Show validation error to user
+   */
+  showValidationError(error: string): void {
+    const notification = document.createElement('div');
+    notification.textContent = `⚠️ Validation Error: ${error}`;
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #ff5722;
+      color: white;
+      padding: 12px 16px;
+      border-radius: 4px;
+      z-index: 10000;
+      font-family: monospace;
+      font-size: 12px;
+      max-width: 400px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 5000);
+  }
+
+  /**
+   * Enhanced parameter validation with specific rules
+   */
+  validateParameterValue(value: string, parameterName: string, validation: any[]): { isValid: boolean; error?: string } {
+    if (!validation || validation.length === 0) {
+      return { isValid: true };
+    }
+    
+    for (const rule of validation) {
+      if (rule.type === 'range') {
+        const numValue = parseFloat(value);
+        if (isNaN(numValue)) {
+          return {
+            isValid: false,
+            error: `Parameter "${parameterName}" must be a number for range validation`
+          };
+        }
+        if (numValue < rule.min || numValue > rule.max) {
+          return {
+            isValid: false,
+            error: `Parameter "${parameterName}" must be between ${rule.min} and ${rule.max}, got ${numValue}`
+          };
+        }
+      } else if (rule.type === 'choice') {
+        const cleanValue = value.replace(/['"]/g, '');
+        if (!rule.options.includes(cleanValue)) {
+          return {
+            isValid: false,
+            error: `Parameter "${parameterName}" must be one of: ${rule.options.join(', ')}, got "${cleanValue}"`
+          };
+        }
+      } else if (rule.type === 'file_format') {
+        const cleanValue = value.replace(/['"]/g, '');
+        const hasValidExtension = rule.formats.some((fmt: string) => cleanValue.endsWith(fmt));
+        if (!hasValidExtension) {
+          return {
+            isValid: false,
+            error: `Parameter "${parameterName}" file must have one of these extensions: ${rule.formats.join(', ')}`
+          };
+        }
+      }
+    }
+    
+    return { isValid: true };
   }
 }

@@ -8,7 +8,7 @@ for detecting anomalies in structural response data.
 import numpy as np
 from typing import Dict, Any, Optional, Tuple
 from scipy import linalg
-from sklearn.decomposition import PCA
+from sklearn.decomposition import PCA, FactorAnalysis
 from sklearn.covariance import EmpiricalCovariance
 
 
@@ -643,3 +643,262 @@ def roc(
         FPR[i] = FP / N  # False Positive Rate (1 - Specificity)
 
     return TPR, FPR
+
+
+def learn_factor_analysis(
+    X: np.ndarray, 
+    num_factors: int = 2, 
+    est_method: str = "thomson"
+) -> Dict[str, Any]:
+    """
+    Learn Factor Analysis model for outlier detection.
+    
+    Factor analysis is a statistical method used to describe variability among 
+    observed, correlated variables in terms of a potentially lower number of 
+    unobserved variables called factors. In the context of damage detection, 
+    the common factors are assumed to capture the operational and environmental 
+    variations, while the unique factors capture damage-related changes.
+    
+    .. meta::
+        :category: Classification - Parametric Detectors
+        :matlab_equivalent: learnFactorAnalysis_shm
+        :complexity: Intermediate
+        :data_type: Features
+        :output_type: Model
+        :display_name: Learn Factor Analysis Model
+        :verbose_call: [Factor Analysis Model] = Learn Factor Analysis (Training Features, Number of Factors, Estimation Method)
+        
+    Parameters
+    ----------
+    X : array_like
+        Training features where each row (INSTANCES) is a feature vector.
+        Shape: (INSTANCES, FEATURES)
+        
+        .. gui::
+            :widget: file_upload
+            :formats: [".csv", ".mat", ".npy"]
+            
+    num_factors : int, optional
+        Number of common factors (default: 2).
+        
+        .. gui::
+            :widget: number_input
+            :min: 1
+            :max: 10
+            :default: 2
+            
+    est_method : str, optional
+        Factor scores estimation method ('thomson', 'regression', 'bartlett').
+        Default is 'thomson'.
+        
+        .. gui::
+            :widget: select
+            :options: ["thomson", "regression", "bartlett"]
+            :default: "thomson"
+            
+    Returns
+    -------
+    model : dict
+        Parameters of the model with fields:
+        - 'lambda': Factor loadings matrix (FEATURES, NUMFACTORS)
+        - 'psi': Specific variances diagonal matrix (FEATURES, FEATURES)
+        - 'dataMean': Mean vector of the features (FEATURES,)
+        - 'dataStd': Standard deviation vector of the features (FEATURES,)
+        - 'numFactors': Number of common factors
+        - 'estMethod': Factor scores estimation method
+        
+    References
+    ----------
+    Kerschen, G., Poncelet, F., & Golinval, J.-C. (2007). Physical interpretation 
+    of independent component analysis in structural dynamics. Mechanical Systems 
+    and Signal Processing, 21(4), 1561-1575.
+    
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from shmtools.classification import learn_factor_analysis
+    >>> 
+    >>> # Generate sample training data
+    >>> np.random.seed(42)
+    >>> X = np.random.randn(100, 5)
+    >>> 
+    >>> # Learn Factor Analysis model
+    >>> model = learn_factor_analysis(X, num_factors=2)
+    >>> print(f"Loadings shape: {model['lambda'].shape}")
+    >>> print(f"Specific variances shape: {model['psi'].shape}")
+    """
+    X = np.asarray(X, dtype=np.float64)
+    
+    if X.ndim != 2:
+        raise ValueError("Input X must be 2-dimensional")
+    
+    n, m = X.shape
+    
+    if num_factors >= m:
+        raise ValueError(f"Number of factors ({num_factors}) must be less than number of features ({m})")
+    
+    if est_method not in ["thomson", "regression", "bartlett"]:
+        raise ValueError(f"Unknown estimation method: {est_method}. Choose from 'thomson', 'regression', 'bartlett'")
+    
+    # Standardize data to zero mean and unit variance
+    data_mean = np.mean(X, axis=0)
+    data_std = np.std(X, axis=0, ddof=1)  # Use ddof=1 to match MATLAB
+    
+    # Handle zero standard deviation (defensive programming)
+    data_std = np.where(data_std == 0, 1.0, data_std)
+    
+    X_standardized = (X - data_mean) / data_std
+    
+    # Perform factor analysis using sklearn
+    # Note: sklearn's FactorAnalysis uses maximum likelihood estimation like MATLAB's factoran
+    fa = FactorAnalysis(n_components=num_factors, random_state=42)
+    fa.fit(X_standardized)
+    
+    # Extract loadings (components_) and specific variances (noise_variance_)
+    lambda_matrix = fa.components_.T  # Transpose to match MATLAB format (FEATURES x FACTORS)
+    psi_vector = fa.noise_variance_
+    
+    # Create diagonal matrix for psi (specific variances)
+    psi_matrix = np.diag(psi_vector)
+    
+    # Store as dictionary (matching MATLAB struct)
+    model = {
+        "lambda": lambda_matrix,
+        "psi": psi_matrix,
+        "dataMean": data_mean,
+        "dataStd": data_std,
+        "numFactors": num_factors,
+        "estMethod": est_method
+    }
+    
+    return model
+
+
+def score_factor_analysis(
+    Y: np.ndarray, 
+    model: Dict[str, Any]
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Score features using trained Factor Analysis outlier detection model.
+    
+    The factor analysis model assumes that the observed variables are linear 
+    combinations of the common factors plus unique factors. The unique factors 
+    are used as damage indicators since they capture the variance not explained 
+    by the common factors (operational/environmental variations).
+    
+    .. meta::
+        :category: Classification - Parametric Detectors
+        :matlab_equivalent: scoreFactorAnalysis_shm
+        :complexity: Intermediate
+        :data_type: Features
+        :output_type: Scores
+        :display_name: Score Factor Analysis Model
+        :verbose_call: [Scores, Unique Factors, Factor Scores] = Score Factor Analysis (Test Features, Factor Analysis Model)
+        
+    Parameters
+    ----------
+    Y : array_like
+        Test features where each row (INSTANCES) is a feature vector.
+        Shape: (INSTANCES, FEATURES)
+        
+        .. gui::
+            :widget: file_upload
+            :formats: [".csv", ".mat", ".npy"]
+            
+    model : dict
+        Parameters of the model with fields:
+        - 'lambda': Factor loadings matrix (FEATURES, NUMFACTORS)
+        - 'psi': Specific variances diagonal matrix (FEATURES, FEATURES)
+        - 'dataMean': Mean vector of the features
+        - 'dataStd': Standard deviation vector of the features
+        - 'numFactors': Number of common factors
+        - 'estMethod': Factor scores estimation method
+        
+    Returns
+    -------
+    scores : ndarray
+        Vector of damage indicator scores (negative Euclidean norm of unique factors).
+        Shape: (INSTANCES,)
+        
+    unique_factors : ndarray
+        Unique factors (residuals after removing common factors).
+        Shape: (INSTANCES, FEATURES)
+        
+    factor_scores : ndarray
+        Estimated factor scores.
+        Shape: (INSTANCES, NUMFACTORS)
+        
+    References
+    ----------
+    Kerschen, G., Poncelet, F., & Golinval, J.-C. (2007). Physical interpretation 
+    of independent component analysis in structural dynamics. Mechanical Systems 
+    and Signal Processing, 21(4), 1561-1575.
+    
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from shmtools.classification import learn_factor_analysis, score_factor_analysis
+    >>> 
+    >>> # Generate training and test data
+    >>> np.random.seed(42)
+    >>> X_train = np.random.randn(100, 5)
+    >>> X_test = np.random.randn(20, 5)
+    >>> 
+    >>> # Learn and score
+    >>> model = learn_factor_analysis(X_train, num_factors=2)
+    >>> scores, unique_factors, factor_scores = score_factor_analysis(X_test, model)
+    >>> print(f"Scores shape: {scores.shape}")  # (20,)
+    >>> print(f"Unique factors shape: {unique_factors.shape}")  # (20, 5)
+    >>> print(f"Factor scores shape: {factor_scores.shape}")  # (20, 2)
+    """
+    Y = np.asarray(Y, dtype=np.float64)
+    
+    if Y.ndim != 2:
+        raise ValueError("Input Y must be 2-dimensional")
+    
+    n, m = Y.shape
+    
+    # Extract model parameters
+    lambda_matrix = model["lambda"]
+    psi_matrix = model["psi"]
+    data_mean = model["dataMean"]
+    data_std = model["dataStd"]
+    num_factors = model["numFactors"]
+    est_method = model["estMethod"]
+    
+    # Standardize test data using training mean and std
+    Y_standardized = (Y - data_mean) / data_std
+    
+    # Estimate factor scores based on the selected method
+    if est_method == "thomson":
+        # Thomson's method: (I + λ'ψ^(-1)λ)^(-1)λ'ψ^(-1)Y'
+        psi_inv = np.linalg.inv(psi_matrix)
+        lambda_t_psi_inv = lambda_matrix.T @ psi_inv
+        factor_scores_cov = np.eye(num_factors) + lambda_t_psi_inv @ lambda_matrix
+        factor_scores_cov_inv = np.linalg.inv(factor_scores_cov)
+        factor_scores = (factor_scores_cov_inv @ lambda_t_psi_inv @ Y_standardized.T).T
+        
+    elif est_method == "regression":
+        # Regression method: λ'(ψ + λλ')^(-1)Y'
+        cov_matrix = psi_matrix + lambda_matrix @ lambda_matrix.T
+        cov_inv = np.linalg.inv(cov_matrix)
+        factor_scores = (lambda_matrix.T @ cov_inv @ Y_standardized.T).T
+        
+    elif est_method == "bartlett":
+        # Bartlett's method: (λ'ψ^(-1)λ)^(-1)λ'ψ^(-1)Y'
+        psi_inv = np.linalg.inv(psi_matrix)
+        lambda_t_psi_inv = lambda_matrix.T @ psi_inv
+        factor_scores_cov = lambda_t_psi_inv @ lambda_matrix
+        factor_scores_cov_inv = np.linalg.inv(factor_scores_cov)
+        factor_scores = (factor_scores_cov_inv @ lambda_t_psi_inv @ Y_standardized.T).T
+    
+    # Compute unique factors: Y' - λ * factorScores'
+    unique_factors = Y_standardized - factor_scores @ lambda_matrix.T
+    
+    # Calculate damage indicators as Euclidean norm of unique factors
+    scores = np.sqrt(np.sum(unique_factors**2, axis=1))
+    
+    # Make negative as in MATLAB (convention: damaged states have lower scores)
+    scores = -scores
+    
+    return scores, unique_factors, factor_scores

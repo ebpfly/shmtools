@@ -15,5 +15,7 @@ __all__ = [
     "score_pca",
     "learn_svd",
     "score_svd",
+    "learn_factor_analysis",
+    "score_factor_analysis",
     "roc",
 ]

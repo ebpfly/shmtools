@@ -180,54 +180,203 @@ def arx_model(
 
 def ar_model_order(
     x: np.ndarray, 
-    max_order: int = 20, 
-    criterion: str = "aic"
-) -> int:
+    max_order: int = 30, 
+    method: str = "aic",
+    tolerance: float = 0.078
+) -> Tuple[int, np.ndarray]:
     """
-    Determine optimal AR model order.
+    Determine optimal AR model order using various criteria.
     
-    Python equivalent of MATLAB's arModelOrder function.
+    Python equivalent of MATLAB's arModelOrder_shm function.
+    
+    .. meta::
+        :category: Features - Time Series Models
+        :matlab_equivalent: arModelOrder_shm
+        :complexity: Intermediate
+        :data_type: Time Series
+        :output_type: Model Parameters
+        :display_name: AR Model Order Selection
+        :verbose_call: [Optimal Order, Criterion Values] = AR Model Order Selection (Time Series Data, Maximum Order, Selection Method, Tolerance)
     
     Parameters
     ----------
     x : np.ndarray
-        Input time series.
+        Input time series data. Can be:
+        - 1D: single time series
+        - 2D: (TIME, CHANNELS) 
+        - 3D: (TIME, CHANNELS, INSTANCES)
+        
+        .. gui::
+            :widget: file_upload
+            :formats: [".csv", ".mat", ".npy"]
+    
     max_order : int, optional
-        Maximum order to test. Default is 20.
-    criterion : str, optional
-        Information criterion ('aic', 'bic'). Default is 'aic'.
+        Maximum AR order to test (default: 30).
+        
+        .. gui::
+            :widget: number_input
+            :min: 1
+            :max: 50
+            :default: 30
+        
+    method : str, optional
+        Order selection method: 'aic', 'bic', 'paf', 'svd', 'rms' (default: 'aic').
+        
+        .. gui::
+            :widget: select
+            :options: ["aic", "bic", "paf", "svd", "rms"]
+            :default: "aic"
+        
+    tolerance : float, optional
+        Tolerance threshold for PAF and RMS methods (default: 0.078).
+        
+        .. gui::
+            :widget: number_input
+            :min: 0.001
+            :max: 1.0
+            :default: 0.078
+            :step: 0.001
         
     Returns
     -------
     optimal_order : int
         Optimal AR model order.
+        
+    criterion_values : ndarray
+        Values of the selection criterion for each tested order.
+        Shape: (max_order,)
+        
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from shmtools.features import ar_model_order
+    >>> 
+    >>> # Generate sample AR(5) time series
+    >>> np.random.seed(42)
+    >>> n = 1000
+    >>> # True AR(5) process: x[t] = 0.5*x[t-1] - 0.3*x[t-2] + 0.1*x[t-3] + noise
+    >>> x = np.zeros(n)
+    >>> for t in range(5, n):
+    ...     x[t] = 0.5*x[t-1] - 0.3*x[t-2] + 0.1*x[t-3] + 0.1*np.random.randn()
+    >>> 
+    >>> # Find optimal order using AIC
+    >>> order, aic_values = ar_model_order(x, max_order=15, method='aic')
+    >>> print(f"Optimal AR order: {order}")
+    
+    References
+    ----------
+    Akaike, H. (1974). A new look at the statistical model identification. 
+    IEEE transactions on automatic control, 19(6), 716-723.
+    
+    Schwarz, G. (1978). Estimating the dimension of a model. 
+    The annals of statistics, 6(2), 461-464.
     """
-    # TODO: Implement model order selection using information criteria
-    # This is a placeholder for the actual implementation
+    x = np.asarray(x, dtype=np.float64)
     
-    n = len(x)
-    criteria = np.zeros(max_order)
+    # Handle different input dimensions
+    if x.ndim == 1:
+        # Single time series
+        x_formatted = x.reshape(-1, 1, 1)
+        t, m, n_instances = x_formatted.shape
+    elif x.ndim == 2:
+        # (TIME, CHANNELS)
+        x_formatted = x.reshape(x.shape[0], x.shape[1], 1)
+        t, m, n_instances = x_formatted.shape
+    elif x.ndim == 3:
+        # (TIME, CHANNELS, INSTANCES)
+        x_formatted = x
+        t, m, n_instances = x.shape
+    else:
+        raise ValueError("Input must be 1D, 2D, or 3D array")
     
-    for p in range(1, max_order + 1):
-        # Fit AR model of order p - convert to expected format
-        if x.ndim == 1:
-            x_formatted = x.reshape(-1, 1, 1)
-        elif x.ndim == 2:
-            x_formatted = x.reshape(x.shape[0], x.shape[1], 1)
+    if max_order >= t:
+        raise ValueError(f"Maximum order ({max_order}) must be less than time series length ({t})")
+    
+    # Initialize output arrays
+    criterion_values = np.zeros(max_order)
+    
+    if method.lower() == "paf":
+        # Partial Autocorrelation Function method
+        ar_param_last = np.zeros((max_order, m, n_instances))
+        
+        # Compute AR parameters for each order
+        for order in range(1, max_order + 1):
+            _, _, ar_params, _, _ = ar_model(x_formatted, order)
+            # Extract last AR parameter for each channel and instance
+            ar_param_last[order-1, :, :] = ar_params[-1, :, :]
+        
+        # Average across channels and instances
+        ar_param_last_avg = np.mean(ar_param_last, axis=(1, 2))
+        criterion_values = ar_param_last_avg
+        
+        # Find optimal order using confidence interval threshold
+        # 95% confidence interval for white noise: ±2/sqrt(N)
+        k = 2.0 / np.sqrt(t)
+        optimal_indices = np.where(np.abs(criterion_values) < k)[0]
+        optimal_order = optimal_indices[0] + 1 if len(optimal_indices) > 0 else max_order
+    
+    elif method.lower() == "svd":
+        # Singular Value Decomposition method
+        # Build Hankel matrix from time series (average across channels and instances)
+        x_avg = np.mean(x_formatted, axis=(1, 2))  # Average across channels and instances
+        
+        # Construct Hankel matrix
+        hankel_rows = t - max_order + 1
+        A = np.zeros((hankel_rows, max_order))
+        for i in range(hankel_rows):
+            A[i, :] = x_avg[i:i+max_order]
+        
+        # Compute singular values
+        singular_values = np.linalg.svd(A, compute_uv=False)
+        criterion_values = singular_values[:max_order]
+        
+        # Find optimal order where singular values drop significantly
+        # Use relative change threshold
+        if len(singular_values) > 1:
+            relative_changes = np.abs(np.diff(singular_values)) / singular_values[:-1]
+            optimal_indices = np.where(relative_changes < tolerance)[0]
+            optimal_order = optimal_indices[0] + 1 if len(optimal_indices) > 0 else max_order
         else:
-            x_formatted = x
+            optimal_order = 1
+    
+    else:
+        # Information criteria methods (AIC, BIC, RMS)
+        sum_squared_errors = np.zeros(max_order)
+        
+        # Compute AR models for all orders
+        for order in range(1, max_order + 1):
+            _, _, _, residuals, _ = ar_model(x_formatted, order)
+            # Sum squared errors across all dimensions
+            sum_squared_errors[order-1] = np.sum(residuals**2)
+        
+        # Effective sample sizes
+        n_effective = t - np.arange(1, max_order + 1)
+        
+        if method.lower() == "aic":
+            # Akaike Information Criterion
+            log_likelihood = -0.5 * t * np.log(sum_squared_errors / t)
+            criterion_values = -2 * log_likelihood + 2 * np.arange(1, max_order + 1)
+            optimal_order = np.argmin(criterion_values) + 1
             
-        _, _, _, residuals, _ = ar_model(x_formatted, p)
-        
-        # Compute residuals variance
-        residual_var = np.var(residuals[:, :, 0])
-        
-        # Compute information criterion
-        if criterion == "aic":
-            criteria[p-1] = n * np.log(residual_var) + 2 * p
-        elif criterion == "bic":
-            criteria[p-1] = n * np.log(residual_var) + p * np.log(n)
+        elif method.lower() == "bic":
+            # Bayesian Information Criterion  
+            log_likelihood = -0.5 * t * np.log(sum_squared_errors / t)
+            criterion_values = -2 * log_likelihood + np.arange(1, max_order + 1) * np.log(t)
+            optimal_order = np.argmin(criterion_values) + 1
+            
+        elif method.lower() == "rms":
+            # Root Mean Square error criterion
+            criterion_values = np.sqrt(sum_squared_errors / n_effective)
+            
+            # Find first order where RMS improvement is below tolerance
+            if len(criterion_values) > 1:
+                rms_changes = np.abs(np.diff(criterion_values)) / criterion_values[:-1]
+                optimal_indices = np.where(rms_changes < tolerance)[0]
+                optimal_order = optimal_indices[0] + 1 if len(optimal_indices) > 0 else max_order
+            else:
+                optimal_order = 1
+                
         else:
-            raise ValueError(f"Unknown criterion: {criterion}")
+            raise ValueError(f"Unknown method: {method}. Choose from 'aic', 'bic', 'paf', 'svd', 'rms'")
     
-    return np.argmin(criteria) + 1
+    return optimal_order, criterion_values
