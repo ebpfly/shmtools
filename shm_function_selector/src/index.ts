@@ -214,9 +214,22 @@ class SHMFunctionSelector {
   private async loadFunctions(): Promise<void> {
     try {
       console.log('📥 Loading SHM functions from server...');
-      const functions = await requestAPI<SHMFunction[]>('functions');
+      console.log('📡 Making API request to: shm-function-selector/functions');
+      const response = await requestAPI<any>('functions');
+      
+      // Check if response is a string that needs parsing
+      let functions: SHMFunction[];
+      if (typeof response === 'string') {
+        console.log('📝 Response is string, parsing JSON...');
+        functions = JSON.parse(response);
+      } else if (Array.isArray(response)) {
+        functions = response;
+      } else {
+        throw new Error(`Unexpected response type: ${typeof response}`);
+      }
+      
       this.functions = functions;
-      console.log(`✅ Loaded ${functions.length} SHM functions`, functions);
+      console.log(`✅ Loaded ${functions.length} SHM functions`, functions.slice(0, 3));
       
       // If dropdown exists, populate it
       if (this.dropdown) {
@@ -225,6 +238,9 @@ class SHMFunctionSelector {
     } catch (error) {
       console.error('❌ Failed to load SHM functions:', error);
       console.error('Error details:', error);
+      console.error('Error type:', typeof error);
+      console.error('Error message:', error?.message);
+      console.error('Error stack:', error?.stack);
       
       // Show error notification
       this.showNotification('⚠️ Failed to load SHM functions. Check browser console.', '#ff9800');

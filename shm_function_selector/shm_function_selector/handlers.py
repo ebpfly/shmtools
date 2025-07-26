@@ -6,12 +6,38 @@ Provides API endpoints for function discovery and variable parsing.
 import json
 import inspect
 import importlib
+import math
 from typing import List, Dict, Any
 
 from jupyter_server.base.handlers import APIHandler
 from jupyter_server.utils import url_path_join
 import tornado
 from tornado.web import authenticated
+
+
+class InfinityJSONEncoder(json.JSONEncoder):
+    """Custom JSON encoder that handles infinity values."""
+    
+    def encode(self, obj):
+        # Replace infinity values in the object before encoding
+        cleaned_obj = self._clean_infinity(obj)
+        return super().encode(cleaned_obj)
+    
+    def _clean_infinity(self, obj):
+        """Recursively replace infinity values with a large number."""
+        if isinstance(obj, dict):
+            return {k: self._clean_infinity(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self._clean_infinity(item) for item in obj]
+        elif isinstance(obj, float):
+            if math.isinf(obj):
+                return 1e10 if obj > 0 else -1e10  # Replace infinity with large number
+            elif math.isnan(obj):
+                return None  # Replace NaN with null
+            else:
+                return obj
+        else:
+            return obj
 
 
 class SHMFunctionHandler(APIHandler):
@@ -22,7 +48,8 @@ class SHMFunctionHandler(APIHandler):
         """Get list of available SHM functions with metadata."""
         try:
             functions = self._discover_shm_functions()
-            self.finish(json.dumps(functions))
+            # Use custom JSON encoder to handle infinity values
+            self.finish(json.dumps(functions, cls=InfinityJSONEncoder))
         except Exception as e:
             self.log.error(f"Error discovering SHM functions: {e}")
             self.set_status(500)
@@ -487,7 +514,7 @@ class SHMVariableHandler(APIHandler):
             
             # Parse variables from all code cells
             variables = self._parse_notebook_variables(notebook_cells)
-            self.finish(json.dumps(variables))
+            self.finish(json.dumps(variables, cls=InfinityJSONEncoder))
             
         except Exception as e:
             self.log.error(f"Error parsing variables: {e}")
