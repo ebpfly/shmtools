@@ -11,6 +11,6 @@ including National Instruments and generic DAQ devices.
 
 __all__ = [
     # "acquire_data",
-    # "ni_multiplexed_acquisition", 
+    # "ni_multiplexed_acquisition",
     # "excite_and_acquire",
 ]

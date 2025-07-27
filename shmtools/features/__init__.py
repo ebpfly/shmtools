@@ -14,8 +14,8 @@ from .condition_based_monitoring import time_sync_avg_shm
 
 __all__ = [
     # Time series modeling
-    "ar_model_shm", "ar_model_order_shm",
-    
+    "ar_model_shm",
+    "ar_model_order_shm",
     # Condition-based monitoring
     "time_sync_avg_shm",
 ]

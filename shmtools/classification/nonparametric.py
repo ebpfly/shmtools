@@ -161,10 +161,10 @@ def uniform_kernel_shm(delta: np.ndarray) -> np.ndarray:
 
     # Uniform kernel: (1/2)^D * indicator(|delta| < 1 for all coordinates)
     within_box = np.all(np.abs(delta) < 1, axis=1)
-    
+
     W = np.zeros(n)
     W[within_box] = (0.5) ** D
-    
+
     return W
 
 
@@ -213,12 +213,14 @@ def quartic_kernel_shm(delta: np.ndarray) -> np.ndarray:
 
     # Quartic kernel: (15/16)^D * prod((1-delta^2)^2) * indicator(|delta| < 1)
     within_box = np.all(np.abs(delta) < 1, axis=1)
-    
+
     W = np.zeros(n)
     if np.any(within_box):
         valid_delta = delta[within_box]
-        W[within_box] = ((15.0 / 16.0) ** D) * np.prod((1.0 - valid_delta**2)**2, axis=1)
-    
+        W[within_box] = ((15.0 / 16.0) ** D) * np.prod(
+            (1.0 - valid_delta**2) ** 2, axis=1
+        )
+
     return W
 
 
@@ -267,12 +269,12 @@ def triangle_kernel_shm(delta: np.ndarray) -> np.ndarray:
 
     # Triangle kernel: prod(1-|delta|) * indicator(|delta| < 1)
     within_box = np.all(np.abs(delta) < 1, axis=1)
-    
+
     W = np.zeros(n)
     if np.any(within_box):
         valid_delta = delta[within_box]
         W[within_box] = np.prod(1.0 - np.abs(valid_delta), axis=1)
-    
+
     return W
 
 
@@ -321,12 +323,14 @@ def triweight_kernel_shm(delta: np.ndarray) -> np.ndarray:
 
     # Triweight kernel: (35/32)^D * prod((1-delta^2)^3) * indicator(|delta| < 1)
     within_box = np.all(np.abs(delta) < 1, axis=1)
-    
+
     W = np.zeros(n)
     if np.any(within_box):
         valid_delta = delta[within_box]
-        W[within_box] = ((35.0 / 32.0) ** D) * np.prod((1.0 - valid_delta**2)**3, axis=1)
-    
+        W[within_box] = ((35.0 / 32.0) ** D) * np.prod(
+            (1.0 - valid_delta**2) ** 3, axis=1
+        )
+
     return W
 
 
@@ -375,12 +379,14 @@ def cosine_kernel_shm(delta: np.ndarray) -> np.ndarray:
 
     # Cosine kernel: (π/4)^D * prod(cos(π*delta/2)) * indicator(|delta| < 1)
     within_box = np.all(np.abs(delta) < 1, axis=1)
-    
+
     W = np.zeros(n)
     if np.any(within_box):
         valid_delta = delta[within_box]
-        W[within_box] = ((np.pi / 4.0) ** D) * np.prod(np.cos(np.pi * valid_delta / 2.0), axis=1)
-    
+        W[within_box] = ((np.pi / 4.0) ** D) * np.prod(
+            np.cos(np.pi * valid_delta / 2.0), axis=1
+        )
+
     return W
 
 
@@ -696,7 +702,7 @@ def roc_shm(
     # Calculate rates - following MATLAB exactly
     # MATLAB uses 1-based indexing but the algorithm logic is the same
     ukk = 0  # Index for undamaged sorted scores
-    tkk = 0  # Index for damaged sorted scores  
+    tkk = 0  # Index for damaged sorted scores
     TPR = np.zeros(num_thresholds)  # True positive rate
     FPR = np.zeros(num_thresholds)  # False positive rate
 
@@ -706,7 +712,7 @@ def roc_shm(
             FPR[j] += 1
             ukk += 1
 
-        # Count damaged instances above threshold (true positives)  
+        # Count damaged instances above threshold (true positives)
         while tkk < P and ordered_dam[tkk] > threshold_values[j]:
             TPR[j] += 1
             tkk += 1

@@ -441,66 +441,72 @@ def estimate_group_velocity_shm(
         sensor1_idx = pair[0] - 1
         sensor2_idx = pair[1] - 1
 
-        if sensor1_idx >= 0 and sensor1_idx < n_channels and \
-           sensor2_idx >= 0 and sensor2_idx < n_channels:
-            
+        if (
+            sensor1_idx >= 0
+            and sensor1_idx < n_channels
+            and sensor2_idx >= 0
+            and sensor2_idx < n_channels
+        ):
+
             coord1 = sensor_layout[sensor1_idx, :]
             coord2 = sensor_layout[sensor2_idx, :]
             distance = np.sqrt(np.sum((coord1 - coord2) ** 2))
-            
+
             distances.append(distance)
             valid_pairs.append((sensor1_idx, sensor2_idx))
 
     distances = np.array(distances)
-    
+
     if len(valid_pairs) == 0:
         return 0.0, np.array([])
 
     # Estimate time delays using cross-correlation
     time_delays = []
-    
+
     for i, (sensor1_idx, sensor2_idx) in enumerate(valid_pairs):
         # Use first instance for velocity estimation
         signal1 = waveform[:, sensor1_idx, 0]
         signal2 = waveform[:, sensor2_idx, 0]
-        
+
         # Cross-correlation to find time delay
-        correlation = np.correlate(signal1, signal2, mode='full')
+        correlation = np.correlate(signal1, signal2, mode="full")
         lag_max = np.argmax(np.abs(correlation))
-        
+
         # Convert lag to time delay
         max_lag = len(signal1) - 1
         actual_lag = lag_max - max_lag
         time_delay = actual_lag / sample_rate
-        
+
         # Only use positive delays that make physical sense
-        if time_delay > 0 and time_delay < distances[i] / 100:  # Minimum reasonable velocity: 100 m/s
+        if (
+            time_delay > 0 and time_delay < distances[i] / 100
+        ):  # Minimum reasonable velocity: 100 m/s
             time_delays.append(time_delay)
         else:
             time_delays.append(np.nan)
 
     time_delays = np.array(time_delays)
-    
+
     # Calculate velocities
     valid_mask = ~np.isnan(time_delays) & (time_delays > 0)
-    
+
     if not np.any(valid_mask):
         return 0.0, np.array([])
-        
+
     valid_distances = distances[valid_mask]
     valid_delays = time_delays[valid_mask]
-    
+
     speed_list = valid_distances / valid_delays
-    
+
     # Remove outliers (simple approach: remove speeds outside 1-3 std from median)
     median_speed = np.median(speed_list)
     std_speed = np.std(speed_list)
-    
+
     outlier_mask = np.abs(speed_list - median_speed) < 3 * std_speed
     if np.any(outlier_mask):
         filtered_speeds = speed_list[outlier_mask]
         estimated_speed = np.mean(filtered_speeds)
     else:
         estimated_speed = median_speed
-    
+
     return estimated_speed, speed_list

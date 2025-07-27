@@ -82,14 +82,14 @@ def k_medians_shm(X: np.ndarray, k: int) -> Tuple[np.ndarray, np.ndarray]:
     for j in range(N - 1):
         # Compute distances from point j to all subsequent points
         z = X[j, :]
-        remaining = X[j + 1:, :]
+        remaining = X[j + 1 :, :]
 
         # Squared Euclidean distances
         sq_diffs = remaining - z
         dist = np.sum(sq_diffs * sq_diffs, axis=1)
 
-        distances[j, j + 1:] = dist
-        distances[j + 1:, j] = dist
+        distances[j, j + 1 :] = dist
+        distances[j + 1 :, j] = dist
 
     # Select k points as cluster centers
     i_c = [np.random.randint(0, N)]  # First center chosen randomly
@@ -120,9 +120,7 @@ def k_medians_shm(X: np.ndarray, k: int) -> Tuple[np.ndarray, np.ndarray]:
     return idx, np.array(i_c) + 1
 
 
-def learn_gmm_shm(
-    X: np.ndarray, idx: Optional[np.ndarray] = None
-) -> Dict[str, Any]:
+def learn_gmm_shm(X: np.ndarray, idx: Optional[np.ndarray] = None) -> Dict[str, Any]:
     """
     Learn gaussian mixture model.
 
@@ -332,14 +330,10 @@ def score_gmm_shm(
                 centered = Y - mu_i
 
                 # Mahalanobis distance
-                mahal_dist = np.sum(
-                    (centered @ inv_cov) * centered, axis=1
-                )
+                mahal_dist = np.sum((centered @ inv_cov) * centered, axis=1)
 
                 # Gaussian density
-                normalizer = 1.0 / (
-                    (2 * np.pi) ** (D / 2) * np.sqrt(det_cov)
-                )
+                normalizer = 1.0 / ((2 * np.pi) ** (D / 2) * np.sqrt(det_cov))
                 component_likelihoods[:, i] = (
                     p[i] * normalizer * np.exp(-0.5 * mahal_dist)
                 )

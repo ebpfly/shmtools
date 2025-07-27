@@ -87,7 +87,9 @@ def coherent_matched_filter_shm(
 
     # Check dimensions
     if waveform.shape[1] != matched_waveform.shape[1]:
-        raise ValueError("Waveform and matched waveform must have same number of channels")
+        raise ValueError(
+            "Waveform and matched waveform must have same number of channels"
+        )
 
     time_points, n_channels = waveform.shape
     template_length = matched_waveform.shape[0]
@@ -109,7 +111,7 @@ def coherent_matched_filter_shm(
 
         # Compute cross-correlation using scipy correlate
         # 'full' mode gives the full discrete linear cross-correlation
-        correlation = correlate(signal, template_normalized, mode='same')
+        correlation = correlate(signal, template_normalized, mode="same")
         filter_result[:, ch] = correlation
 
     # Return original shape if input was 1D
@@ -209,7 +211,7 @@ def incoherent_matched_filter_shm(
     for ch in range(coherent_result.shape[1]):
         # Compute analytic signal using Hilbert transform
         analytic_signal = hilbert(coherent_result[:, ch])
-        
+
         # Take magnitude for incoherent result
         incoherent_result[:, ch] = np.abs(analytic_signal)
 

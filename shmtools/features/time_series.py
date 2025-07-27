@@ -191,10 +191,10 @@ def ar_model_order_shm(
 ) -> Tuple[np.ndarray, np.ndarray, dict]:
     """
     Determine appropriate autoregressive model order (MATLAB-compatible).
-    
-    This function determines the appropriate AutoRegressive (AR) model order 
+
+    This function determines the appropriate AutoRegressive (AR) model order
     using one of five available methods for time series analysis.
-    
+
     .. meta::
         :category: Features - Time Series Models
         :matlab_equivalent: arModelOrder_shm
@@ -203,19 +203,19 @@ def ar_model_order_shm(
         :output_type: Model Parameters
         :display_name: AR Model Order
         :verbose_call: [Mean AR Order, AR Orders, Model] = AR Model Order (Time Series Data, Method, Maximum AR Order, Tolerance)
-    
+
     Parameters
     ----------
     X : array_like
         Input time series data.
         - 1D: Single time series (TIME,)
-        - 2D: Multi-channel (TIME, CHANNELS) 
+        - 2D: Multi-channel (TIME, CHANNELS)
         - 3D: Multi-instance (TIME, CHANNELS, INSTANCES)
-        
+
         .. gui::
             :widget: file_upload
             :formats: [".csv", ".mat", ".npy"]
-    
+
     method : str, optional
         AR order selection method (default: 'PAF').
         - 'PAF': Partial Autocorrelation Function
@@ -223,31 +223,31 @@ def ar_model_order_shm(
         - 'BIC': Bayesian Information Criterion
         - 'RMS': Root Mean Square error
         - 'SVD': Singular Value Decomposition
-        
+
         .. gui::
             :widget: select
             :options: ["PAF", "AIC", "BIC", "RMS", "SVD"]
             :default: "PAF"
-    
+
     ar_order_max : int, optional
         Maximum AR order to test (default: 30).
-        
+
         .. gui::
             :widget: number_input
             :min: 2
             :max: 100
             :default: 30
-    
+
     tolerance : float, optional
         Tolerance threshold for convergence criteria (default: 0.078).
-        
+
         .. gui::
             :widget: number_input
             :min: 0.001
             :max: 1.0
             :default: 0.078
             :step: 0.001
-    
+
     Returns
     -------
     mean_ar_order : ndarray
@@ -259,14 +259,14 @@ def ar_model_order_shm(
         - 'control_limits': Control limits for selection criterion
         - 'out_data': Criterion values for each tested order
         - 'method': Method used for order selection
-        
+
     Examples
     --------
     >>> import numpy as np
     >>> from shmtools.features import ar_model_order_shm
     >>>
     >>> # Generate test AR(5) process
-    >>> np.random.seed(42) 
+    >>> np.random.seed(42)
     >>> t = np.arange(1000)
     >>> x = np.zeros(1000)
     >>> for i in range(5, 1000):
@@ -276,13 +276,13 @@ def ar_model_order_shm(
     >>> # Determine optimal AR order
     >>> mean_order, orders, model = ar_model_order_shm(X, method='PAF')
     >>> print(f"Optimal AR order: {mean_order[0]:.0f}")
-    
+
     References
     ----------
     Original MATLAB implementation from SHMTools (LA-CC-14-046).
     """
     X = np.asarray(X, dtype=np.float64)
-    
+
     # Handle different input dimensions
     if X.ndim == 1:
         # Single time series: (TIME,) -> (TIME, 1, 1)
@@ -292,57 +292,57 @@ def ar_model_order_shm(
         X = X[:, :, np.newaxis]
     elif X.ndim != 3:
         raise ValueError("Input X must be 1D, 2D, or 3D array")
-    
+
     time_points, n_channels, n_instances = X.shape
-    
+
     # Initialize outputs
     ar_orders = np.zeros((n_channels, n_instances))
     ar_order_list = np.arange(1, ar_order_max + 1)
     out_data = np.zeros(ar_order_max)
-    
+
     # Process each channel and instance
     for ch in range(n_channels):
         for inst in range(n_instances):
             # Extract single time series
             x = X[:, ch, inst]
-            
+
             # Find optimal order for this time series using internal method
             optimal_order, criterion_values = _ar_order_selection(
                 x, max_order=ar_order_max, method=method.lower(), tolerance=tolerance
             )
-            
+
             ar_orders[ch, inst] = optimal_order
-            
+
             # Accumulate criterion values (average across instances)
             if inst == 0:
                 out_data = criterion_values
             else:
                 out_data += criterion_values
-    
+
     # Average outputs across instances
     out_data = out_data / n_instances
-    
+
     # Calculate mean AR order across instances
     mean_ar_order = np.ceil(np.mean(ar_orders, axis=1))
-    
+
     # Set control limits based on method
-    if method.upper() == 'PAF':
+    if method.upper() == "PAF":
         # PAF uses 95% confidence bounds: ±2/√N
         n_eff = time_points
-        control_limit = [2/np.sqrt(n_eff), -2/np.sqrt(n_eff)]
+        control_limit = [2 / np.sqrt(n_eff), -2 / np.sqrt(n_eff)]
     else:
         # Other methods use data-driven limits
         control_limit = [np.min(out_data), np.max(out_data)]
-    
+
     # Create output model dictionary
     model = {
-        'control_limits': control_limit,
-        'out_data': out_data,
-        'method': method.upper(),
-        'tolerance': tolerance,
-        'ar_order_max': ar_order_max
+        "control_limits": control_limit,
+        "out_data": out_data,
+        "method": method.upper(),
+        "tolerance": tolerance,
+        "ar_order_max": ar_order_max,
     }
-    
+
     return mean_ar_order, ar_orders, model
 
 
@@ -351,13 +351,13 @@ def _ar_order_selection(
 ) -> Tuple[int, np.ndarray]:
     """
     Internal function to determine optimal AR model order using various criteria.
-    
+
     This is a simplified version of the ar_model_order function for use within
     ar_model_order_shm.
     """
     x = np.asarray(x, dtype=np.float64).flatten()
     t = len(x)
-    
+
     if max_order >= t:
         raise ValueError(
             f"Maximum order ({max_order}) must be less than time series length ({t})"

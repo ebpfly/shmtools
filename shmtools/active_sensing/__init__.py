@@ -15,7 +15,7 @@ __all__ = [
     "incoherent_matched_filter_shm",
     # Geometry functions
     "propagation_dist_2_points_shm",
-    "distance_2_index_shm", 
+    "distance_2_index_shm",
     "build_contained_grid_shm",
     "sensor_pair_line_of_sight_shm",
     "fill_2d_map_shm",

@@ -15,17 +15,19 @@ from dataclasses import dataclass, field
 @dataclass
 class ParameterSpec:
     """Parameter specification for GUI generation."""
+
     name: str
     type_hint: str
     description: str
     default: Any = None
     widget: str = "text_input"
     widget_params: Dict[str, Any] = field(default_factory=dict)
-    
-    
-@dataclass 
+
+
+@dataclass
 class ReturnSpec:
     """Return value specification."""
+
     name: str
     type_hint: str
     description: str
@@ -35,6 +37,7 @@ class ReturnSpec:
 @dataclass
 class FunctionMetadata:
     """Complete function metadata for workflow builder."""
+
     name: str
     brief_description: str
     full_description: str
@@ -57,62 +60,58 @@ class FunctionMetadata:
 def parse_verbose_call(verbose_call: str) -> Dict[str, Any]:
     """
     Parse verbose function call to extract human-readable names.
-    
+
     Format: [Output1, Output2] = Function Name (Input1, Input2)
-    
+
     Returns
     -------
     dict with keys:
         - 'function_display_name': Human-readable function name
-        - 'input_names': List of human-readable input names  
+        - 'input_names': List of human-readable input names
         - 'output_names': List of human-readable output names
     """
-    result = {
-        'function_display_name': '',
-        'input_names': [],
-        'output_names': []
-    }
-    
+    result = {"function_display_name": "", "input_names": [], "output_names": []}
+
     if not verbose_call:
         return result
-        
+
     try:
         # Match pattern: [outputs] = function_name (inputs)
         # or just: function_name (inputs) for functions with no outputs
-        pattern = r'^(?:\[([^\]]+)\]\s*=\s*)?([^(]+)\s*\(([^)]*)\)$'
+        pattern = r"^(?:\[([^\]]+)\]\s*=\s*)?([^(]+)\s*\(([^)]*)\)$"
         match = re.match(pattern, verbose_call.strip())
-        
+
         if match:
             outputs_part, function_part, inputs_part = match.groups()
-            
+
             # Extract function display name
-            result['function_display_name'] = function_part.strip()
-            
+            result["function_display_name"] = function_part.strip()
+
             # Extract input names
             if inputs_part:
-                inputs = [name.strip() for name in inputs_part.split(',')]
-                result['input_names'] = [inp for inp in inputs if inp]
-            
+                inputs = [name.strip() for name in inputs_part.split(",")]
+                result["input_names"] = [inp for inp in inputs if inp]
+
             # Extract output names
             if outputs_part:
-                outputs = [name.strip() for name in outputs_part.split(',')]
-                result['output_names'] = [out for out in outputs if out]
-                
+                outputs = [name.strip() for name in outputs_part.split(",")]
+                result["output_names"] = [out for out in outputs if out]
+
     except Exception as e:
         print(f"Error parsing verbose call '{verbose_call}': {e}")
-    
+
     return result
 
 
 def parse_shmtools_docstring(func) -> Optional[FunctionMetadata]:
     """
     Parse SHMTools function docstring to extract metadata.
-    
+
     Parameters
     ----------
     func : callable
         Function to parse.
-        
+
     Returns
     -------
     metadata : FunctionMetadata or None
@@ -121,51 +120,51 @@ def parse_shmtools_docstring(func) -> Optional[FunctionMetadata]:
     docstring = inspect.getdoc(func)
     if not docstring:
         return None
-    
+
     try:
         # Extract basic information
-        lines = docstring.split('\n')
+        lines = docstring.split("\n")
         brief_desc = lines[0].strip()
-        
+
         # Extract meta section
         meta_info = _extract_meta_section(docstring)
-        
+
         # Parse parameters with GUI specifications
         parameters = _parse_parameters_with_gui(docstring)
-        
+
         # Parse returns section
         returns = _parse_returns_section(docstring)
-        
+
         # Extract examples
         examples = _extract_examples(docstring)
-        
+
         # Extract full description (first paragraph)
         full_desc = _extract_full_description(docstring)
-        
+
         # Extract notes and references
         notes = _extract_section(docstring, "Notes")
         references = _extract_references(docstring)
-        
+
         return FunctionMetadata(
             name=func.__name__,
             brief_description=brief_desc,
             full_description=full_desc,
-            category=meta_info.get('category', 'Uncategorized'),
-            matlab_equivalent=meta_info.get('matlab_equivalent'),
-            complexity=meta_info.get('complexity', 'Unknown'),
-            data_type=meta_info.get('data_type', 'Unknown'),
-            output_type=meta_info.get('output_type', 'Unknown'),
+            category=meta_info.get("category", "Uncategorized"),
+            matlab_equivalent=meta_info.get("matlab_equivalent"),
+            complexity=meta_info.get("complexity", "Unknown"),
+            data_type=meta_info.get("data_type", "Unknown"),
+            output_type=meta_info.get("output_type", "Unknown"),
             parameters=parameters,
             returns=returns,
             examples=examples,
-            interactive_plot=meta_info.get('interactive_plot', False),
-            typical_usage=meta_info.get('typical_usage', []),
+            interactive_plot=meta_info.get("interactive_plot", False),
+            typical_usage=meta_info.get("typical_usage", []),
             notes=notes,
             references=references,
-            display_name=meta_info.get('display_name'),
-            verbose_call=meta_info.get('verbose_call')
+            display_name=meta_info.get("display_name"),
+            verbose_call=meta_info.get("verbose_call"),
         )
-        
+
     except Exception as e:
         print(f"Warning: Failed to parse docstring for {func.__name__}: {e}")
         return None
@@ -174,125 +173,127 @@ def parse_shmtools_docstring(func) -> Optional[FunctionMetadata]:
 def _extract_meta_section(docstring: str) -> Dict[str, Any]:
     """Extract metadata from .. meta:: section."""
     # Match meta section until we hit a section header or empty line followed by non-indented content
-    meta_pattern = r'\.\. meta::\s*\n((?:\s{4,}:.*\n?)*)'
+    meta_pattern = r"\.\. meta::\s*\n((?:\s{4,}:.*\n?)*)"
     meta_match = re.search(meta_pattern, docstring)
     meta_info = {}
-    
+
     if meta_match:
         meta_text = meta_match.group(1)
-        for line in meta_text.strip().split('\n'):
+        for line in meta_text.strip().split("\n"):
             line = line.strip()
-            if line.startswith(':') and ':' in line[1:]:
+            if line.startswith(":") and ":" in line[1:]:
                 # Handle lines like ":category: Core - Spectral Analysis"
-                parts = line[1:].split(':', 1)
+                parts = line[1:].split(":", 1)
                 if len(parts) == 2:
                     key, value = parts
                     key = key.strip()
                     value = value.strip()
-                    
+
                     # Try to evaluate lists and booleans
-                    if value.startswith('[') and value.endswith(']'):
+                    if value.startswith("[") and value.endswith("]"):
                         try:
                             meta_info[key] = ast.literal_eval(value)
                         except:
                             meta_info[key] = value
-                    elif value.lower() in ('true', 'false'):
-                        meta_info[key] = value.lower() == 'true'
+                    elif value.lower() in ("true", "false"):
+                        meta_info[key] = value.lower() == "true"
                     else:
                         meta_info[key] = value
-    
+
     return meta_info
 
 
 def _parse_parameters_with_gui(docstring: str) -> List[ParameterSpec]:
     """Parse parameters section with GUI widget specifications."""
     parameters = []
-    
+
     # Find Parameters section
-    param_pattern = r'Parameters\s*\n\s*-+\s*\n(.*?)(?=\n\s*(?:Returns|Raises|See Also|Notes|Examples|\Z))'
+    param_pattern = r"Parameters\s*\n\s*-+\s*\n(.*?)(?=\n\s*(?:Returns|Raises|See Also|Notes|Examples|\Z))"
     param_match = re.search(param_pattern, docstring, re.DOTALL)
-    
+
     if not param_match:
         return parameters
-    
+
     param_text = param_match.group(1)
-    
+
     # Split into individual parameter blocks
     # Match parameter names that can have spaces around the colon (e.g., "X : array_like")
-    param_blocks = re.split(r'\n(\w+)\s*:\s*', param_text)[1:]  # Skip first empty element
-    
+    param_blocks = re.split(r"\n(\w+)\s*:\s*", param_text)[
+        1:
+    ]  # Skip first empty element
+
     for i in range(0, len(param_blocks), 2):
         if i + 1 >= len(param_blocks):
             break
-            
+
         param_name = param_blocks[i].strip()
         param_content = param_blocks[i + 1]
-        
+
         # Extract parameter info
         param_spec = _parse_single_parameter(param_name, param_content)
         if param_spec:
             parameters.append(param_spec)
-    
+
     return parameters
 
 
 def _parse_single_parameter(name: str, content: str) -> Optional[ParameterSpec]:
     """Parse a single parameter with its GUI specifications."""
-    lines = content.strip().split('\n')
-    
+    lines = content.strip().split("\n")
+
     # First line contains type and description
     if not lines:
         return None
-        
+
     first_line = lines[0].strip()
-    
+
     # Extract type hint and description
-    type_desc_match = re.match(r'([^,\n]*?)(?:,\s*(.*))?$', first_line)
+    type_desc_match = re.match(r"([^,\n]*?)(?:,\s*(.*))?$", first_line)
     if not type_desc_match:
         return None
-        
+
     type_hint = type_desc_match.group(1).strip()
     description_parts = [type_desc_match.group(2) or ""]
-    
+
     # Collect multi-line description
     gui_section_start = None
     for i, line in enumerate(lines[1:], 1):
         line = line.strip()
-        if line.startswith('.. gui::'):
+        if line.startswith(".. gui::"):
             gui_section_start = i
             break
         elif line:
             description_parts.append(line)
-    
-    description = ' '.join(filter(None, description_parts)).strip()
-    
+
+    description = " ".join(filter(None, description_parts)).strip()
+
     # Extract default value from type hint
     default = None
-    if 'default=' in type_hint:
-        default_match = re.search(r'default=([^,\)]+)', type_hint)
+    if "default=" in type_hint:
+        default_match = re.search(r"default=([^,\)]+)", type_hint)
         if default_match:
             default_str = default_match.group(1).strip()
             try:
                 default = ast.literal_eval(default_str)
             except:
                 default = default_str
-    
+
     # Parse GUI section
     widget = "text_input"
     widget_params = {}
-    
+
     if gui_section_start:
         gui_lines = lines[gui_section_start:]
         for line in gui_lines:
             line = line.strip()
-            if line.startswith(':') and ':' in line[1:]:
-                key_val = line[1:].split(':', 1)
+            if line.startswith(":") and ":" in line[1:]:
+                key_val = line[1:].split(":", 1)
                 if len(key_val) == 2:
                     key, value = key_val
                     key = key.strip()
                     value = value.strip()
-                    
-                    if key == 'widget':
+
+                    if key == "widget":
                         widget = value
                     else:
                         # Try to evaluate the value
@@ -300,156 +301,166 @@ def _parse_single_parameter(name: str, content: str) -> Optional[ParameterSpec]:
                             widget_params[key] = ast.literal_eval(value)
                         except:
                             widget_params[key] = value
-    
+
     return ParameterSpec(
         name=name,
         type_hint=type_hint,
         description=description,
         default=default,
         widget=widget,
-        widget_params=widget_params
+        widget_params=widget_params,
     )
 
 
 def _parse_returns_section(docstring: str) -> List[ReturnSpec]:
     """Parse Returns section with plot specifications."""
     returns = []
-    
+
     # Find Returns section
-    returns_pattern = r'Returns\s*\n\s*-+\s*\n(.*?)(?=\n\s*(?:Raises|See Also|Notes|Examples|\Z))'
+    returns_pattern = (
+        r"Returns\s*\n\s*-+\s*\n(.*?)(?=\n\s*(?:Raises|See Also|Notes|Examples|\Z))"
+    )
     returns_match = re.search(returns_pattern, docstring, re.DOTALL)
-    
+
     if not returns_match:
         return returns
-    
+
     returns_text = returns_match.group(1)
-    
+
     # Split into individual return blocks
     # First, handle the case where first return doesn't start with newline
-    returns_text_with_newline = '\n' + returns_text.lstrip()
-    return_blocks = re.split(r'\n(\w+)\s*:', returns_text_with_newline)[1:]
-    
+    returns_text_with_newline = "\n" + returns_text.lstrip()
+    return_blocks = re.split(r"\n(\w+)\s*:", returns_text_with_newline)[1:]
+
     for i in range(0, len(return_blocks), 2):
         if i + 1 >= len(return_blocks):
             break
-            
+
         return_name = return_blocks[i].strip()
         return_content = return_blocks[i + 1]
-        
+
         # Parse return specification
         return_spec = _parse_single_return(return_name, return_content)
         if return_spec:
             returns.append(return_spec)
-    
+
     return returns
 
 
 def _parse_single_return(name: str, content: str) -> Optional[ReturnSpec]:
     """Parse a single return value with plot specifications."""
-    lines = content.strip().split('\n')
-    
+    lines = content.strip().split("\n")
+
     if not lines:
         return None
-        
+
     first_line = lines[0].strip()
-    
+
     # Extract type hint and description
-    type_desc_match = re.match(r'([^,\n]*?)(?:,\s*(.*))?$', first_line)
+    type_desc_match = re.match(r"([^,\n]*?)(?:,\s*(.*))?$", first_line)
     if not type_desc_match:
         return None
-        
+
     type_hint = type_desc_match.group(1).strip()
     description_parts = [type_desc_match.group(2) or ""]
-    
+
     # Collect description and parse GUI specs
     plot_specs = {}
     gui_section_start = None
-    
+
     for i, line in enumerate(lines[1:], 1):
         line = line.strip()
-        if line.startswith('.. gui::'):
+        if line.startswith(".. gui::"):
             gui_section_start = i
             break
         elif line:
             description_parts.append(line)
-    
-    description = ' '.join(filter(None, description_parts)).strip()
-    
+
+    description = " ".join(filter(None, description_parts)).strip()
+
     # Parse plot specifications
     if gui_section_start:
         gui_lines = lines[gui_section_start:]
         for line in gui_lines:
             line = line.strip()
-            if line.startswith(':') and ':' in line[1:]:
-                key_val = line[1:].split(':', 1)
+            if line.startswith(":") and ":" in line[1:]:
+                key_val = line[1:].split(":", 1)
                 if len(key_val) == 2:
                     key, value = key_val
                     key = key.strip()
                     value = value.strip().strip('"')
                     plot_specs[key] = value
-    
+
     return ReturnSpec(
-        name=name,
-        type_hint=type_hint,
-        description=description,
-        plot_specs=plot_specs
+        name=name, type_hint=type_hint, description=description, plot_specs=plot_specs
     )
 
 
 def _extract_examples(docstring: str) -> List[str]:
     """Extract examples from Examples section."""
-    examples_pattern = r'Examples\s*\n\s*-+\s*\n(.*?)(?=\n\s*(?:\.\. |$))'
+    examples_pattern = r"Examples\s*\n\s*-+\s*\n(.*?)(?=\n\s*(?:\.\. |$))"
     examples_match = re.search(examples_pattern, docstring, re.DOTALL)
-    
+
     if not examples_match:
         return []
-    
+
     examples_text = examples_match.group(1)
-    
+
     # Split by example headers (lines that don't start with spaces or >>>)
     example_blocks = []
     current_block = []
-    
-    for line in examples_text.split('\n'):
-        if line and not line.startswith((' ', '\t', '>>>')):
+
+    for line in examples_text.split("\n"):
+        if line and not line.startswith((" ", "\t", ">>>")):
             # New example block
             if current_block:
-                example_blocks.append('\n'.join(current_block))
+                example_blocks.append("\n".join(current_block))
             current_block = [line]
         else:
             current_block.append(line)
-    
+
     if current_block:
-        example_blocks.append('\n'.join(current_block))
-    
+        example_blocks.append("\n".join(current_block))
+
     return example_blocks
 
 
 def _extract_full_description(docstring: str) -> str:
     """Extract the full description (first paragraph after brief)."""
-    lines = docstring.split('\n')
-    
+    lines = docstring.split("\n")
+
     # Skip brief description and empty lines
     start_idx = 1
     while start_idx < len(lines) and not lines[start_idx].strip():
         start_idx += 1
-    
+
     # Collect description until we hit a section or meta directive
     desc_lines = []
     for i in range(start_idx, len(lines)):
         line = lines[i].strip()
-        if (line.startswith('..') or 
-            line in ['Parameters', 'Returns', 'Raises', 'See Also', 'Notes', 'Examples', 'References'] or
-            (line and all(c == '-' for c in line))):
+        if (
+            line.startswith("..")
+            or line
+            in [
+                "Parameters",
+                "Returns",
+                "Raises",
+                "See Also",
+                "Notes",
+                "Examples",
+                "References",
+            ]
+            or (line and all(c == "-" for c in line))
+        ):
             break
         desc_lines.append(lines[i])
-    
-    return '\n'.join(desc_lines).strip()
+
+    return "\n".join(desc_lines).strip()
 
 
 def _extract_section(docstring: str, section_name: str) -> str:
     """Extract a named section from the docstring."""
-    pattern = f'{section_name}\\s*\\n\\s*-+\\s*\\n(.*?)(?=\\n\\s*(?:[A-Z][a-z]+\\s*\\n\\s*-+|\\.\\.|\Z))'
+    pattern = f"{section_name}\\s*\\n\\s*-+\\s*\\n(.*?)(?=\\n\\s*(?:[A-Z][a-z]+\\s*\\n\\s*-+|\\.\\.|\Z))"
     match = re.search(pattern, docstring, re.DOTALL)
     return match.group(1).strip() if match else ""
 
@@ -459,14 +470,14 @@ def _extract_references(docstring: str) -> List[str]:
     refs_text = _extract_section(docstring, "References")
     if not refs_text:
         return []
-    
+
     # Split by reference markers like ".. [1]"
-    ref_pattern = r'\.\.\s*\[(\d+)\]\s*(.*?)(?=\n\s*\.\.\s*\[\d+\]|\Z)'
+    ref_pattern = r"\.\.\s*\[(\d+)\]\s*(.*?)(?=\n\s*\.\.\s*\[\d+\]|\Z)"
     matches = re.findall(ref_pattern, refs_text, re.DOTALL)
-    
+
     references = []
     for ref_num, ref_text in matches:
-        cleaned_ref = re.sub(r'\s+', ' ', ref_text.strip())
+        cleaned_ref = re.sub(r"\s+", " ", ref_text.strip())
         references.append(f"[{ref_num}] {cleaned_ref}")
-    
+
     return references

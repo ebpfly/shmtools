@@ -10,9 +10,9 @@ from .session_manager import SessionManager, WorkflowSession
 from .session_formats import SessionSchema, StepSchema, ParameterSchema
 
 __all__ = [
-    'SessionManager',
-    'WorkflowSession', 
-    'SessionSchema',
-    'StepSchema',
-    'ParameterSchema'
+    "SessionManager",
+    "WorkflowSession",
+    "SessionSchema",
+    "StepSchema",
+    "ParameterSchema",
 ]

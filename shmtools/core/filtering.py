@@ -19,7 +19,7 @@ def filter_signal(
 ) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     """
     Apply digital filter to signal.
-    
+
     Parameters
     ----------
     x : np.ndarray
@@ -32,7 +32,7 @@ def filter_signal(
         Axis along which to apply filter. Default is -1.
     zi : np.ndarray, optional
         Initial conditions for filter delays.
-        
+
     Returns
     -------
     y : np.ndarray
@@ -59,7 +59,7 @@ def bandpass_filter(
 ) -> np.ndarray:
     """
     Apply bandpass filter to signal.
-    
+
     Parameters
     ----------
     x : np.ndarray
@@ -76,7 +76,7 @@ def bandpass_filter(
         Filter type ('butter', 'cheby1', 'cheby2', 'ellip'). Default is 'butter'.
     zero_phase : bool, optional
         If True, use filtfilt for zero-phase filtering. Default is True.
-        
+
     Returns
     -------
     y : np.ndarray
@@ -85,7 +85,7 @@ def bandpass_filter(
     nyquist = 0.5 * fs
     low = lowcut / nyquist
     high = highcut / nyquist
-    
+
     if ftype == "butter":
         b, a = signal.butter(order, [low, high], btype="band")
     elif ftype == "cheby1":
@@ -96,12 +96,12 @@ def bandpass_filter(
         b, a = signal.ellip(order, 1, 20, [low, high], btype="band")
     else:
         raise ValueError(f"Unknown filter type: {ftype}")
-    
+
     if zero_phase:
         y = signal.filtfilt(b, a, x, axis=0)
     else:
         y = signal.lfilter(b, a, x, axis=0)
-    
+
     return y
 
 
@@ -115,7 +115,7 @@ def lowpass_filter(
 ) -> np.ndarray:
     """
     Apply lowpass filter to signal.
-    
+
     Parameters
     ----------
     x : np.ndarray
@@ -130,7 +130,7 @@ def lowpass_filter(
         Filter type. Default is 'butter'.
     zero_phase : bool, optional
         If True, use filtfilt for zero-phase filtering. Default is True.
-        
+
     Returns
     -------
     y : np.ndarray
@@ -138,17 +138,17 @@ def lowpass_filter(
     """
     nyquist = 0.5 * fs
     normal_cutoff = cutoff / nyquist
-    
+
     if ftype == "butter":
         b, a = signal.butter(order, normal_cutoff, btype="low")
     else:
         raise ValueError(f"Filter type {ftype} not implemented")
-    
+
     if zero_phase:
         y = signal.filtfilt(b, a, x, axis=0)
     else:
         y = signal.lfilter(b, a, x, axis=0)
-    
+
     return y
 
 
@@ -162,7 +162,7 @@ def highpass_filter(
 ) -> np.ndarray:
     """
     Apply highpass filter to signal.
-    
+
     Parameters
     ----------
     x : np.ndarray
@@ -177,7 +177,7 @@ def highpass_filter(
         Filter type. Default is 'butter'.
     zero_phase : bool, optional
         If True, use filtfilt for zero-phase filtering. Default is True.
-        
+
     Returns
     -------
     y : np.ndarray
@@ -185,15 +185,15 @@ def highpass_filter(
     """
     nyquist = 0.5 * fs
     normal_cutoff = cutoff / nyquist
-    
+
     if ftype == "butter":
         b, a = signal.butter(order, normal_cutoff, btype="high")
     else:
         raise ValueError(f"Filter type {ftype} not implemented")
-    
+
     if zero_phase:
         y = signal.filtfilt(b, a, x, axis=0)
     else:
         y = signal.lfilter(b, a, x, axis=0)
-    
+
     return y
