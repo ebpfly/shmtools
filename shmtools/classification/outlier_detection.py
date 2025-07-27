@@ -12,18 +12,18 @@ from sklearn.decomposition import PCA, FactorAnalysis
 from sklearn.covariance import EmpiricalCovariance
 
 
-def learn_mahalanobis(X: np.ndarray) -> Dict[str, Any]:
+def learn_mahalanobis_shm(X: np.ndarray) -> Dict[str, Any]:
     """
     Learn Mahalanobis distance model from training data.
 
     .. meta::
         :category: Classification - Parametric Detectors
-        :matlab_equivalent: learnMahalanobis
+        :matlab_equivalent: learnMahalanobis_shm
         :complexity: Basic
         :data_type: Features
         :output_type: Model
-        :display_name: Learn Mahalanobis Model
-        :verbose_call: Learn_Mahalanobis(training_features)
+        :display_name: Learn Mahalanobis
+        :verbose_call: [Model] = Learn Mahalanobis (Training Features)
 
     Parameters
     ----------
@@ -45,14 +45,14 @@ def learn_mahalanobis(X: np.ndarray) -> Dict[str, Any]:
     Examples
     --------
     >>> import numpy as np
-    >>> from shmtools.classification import learn_mahalanobis
+    >>> from shmtools.classification import learn_mahalanobis_shm
     >>>
     >>> # Generate sample training data
     >>> np.random.seed(42)
     >>> X = np.random.randn(100, 5)
     >>>
     >>> # Learn Mahalanobis model
-    >>> model = learn_mahalanobis(X)
+    >>> model = learn_mahalanobis_shm(X)
     >>> print(f"Mean shape: {model['dataMean'].shape}")
     >>> print(f"Covariance shape: {model['dataCov'].shape}")
     """
@@ -74,7 +74,7 @@ def learn_mahalanobis(X: np.ndarray) -> Dict[str, Any]:
     return model
 
 
-def score_mahalanobis(Y: np.ndarray, model: Dict[str, Any]) -> np.ndarray:
+def score_mahalanobis_shm(Y: np.ndarray, model: Dict[str, Any]) -> np.ndarray:
     """
     Score Mahalanobis distance for outlier detection.
 
@@ -84,8 +84,8 @@ def score_mahalanobis(Y: np.ndarray, model: Dict[str, Any]) -> np.ndarray:
         :complexity: Basic
         :data_type: Features
         :output_type: Scores
-        :display_name: Score Mahalanobis Model
-        :verbose_call: Score_Mahalanobis(test_features, mahalanobis_model)
+        :display_name: Score Mahalanobis
+        :verbose_call: [Scores] = Score Mahalanobis (Test Features, Model)
 
     Parameters
     ----------
@@ -111,7 +111,7 @@ def score_mahalanobis(Y: np.ndarray, model: Dict[str, Any]) -> np.ndarray:
     Examples
     --------
     >>> import numpy as np
-    >>> from shmtools.classification import learn_mahalanobis, score_mahalanobis
+    >>> from shmtools.classification import learn_mahalanobis_shm, score_mahalanobis_shm
     >>>
     >>> # Generate training and test data
     >>> np.random.seed(42)
@@ -119,8 +119,8 @@ def score_mahalanobis(Y: np.ndarray, model: Dict[str, Any]) -> np.ndarray:
     >>> X_test = np.random.randn(20, 5)
     >>>
     >>> # Learn and score
-    >>> model = learn_mahalanobis(X_train)
-    >>> scores = score_mahalanobis(X_test, model)
+    >>> model = learn_mahalanobis_shm(X_train)
+    >>> scores = score_mahalanobis_shm(X_test, model)
     >>> print(f"Scores shape: {scores.shape}")  # (20, 1)
     """
     # Check parameters (following MATLAB exactly)
@@ -148,7 +148,7 @@ def score_mahalanobis(Y: np.ndarray, model: Dict[str, Any]) -> np.ndarray:
     return scores
 
 
-def learn_svd(X: np.ndarray, param_stand: bool = True) -> Dict[str, Any]:
+def learn_svd_shm(X: np.ndarray, param_stand: bool = True) -> Dict[str, Any]:
     """
     Learn SVD-based outlier detection model from training features.
 
@@ -161,12 +161,12 @@ def learn_svd(X: np.ndarray, param_stand: bool = True) -> Dict[str, Any]:
 
     .. meta::
         :category: Classification - Parametric Detectors
-        :matlab_equivalent: learnSVD
+        :matlab_equivalent: learnSVD_shm
         :complexity: Basic
         :data_type: Features
         :output_type: Model
-        :display_name: Learn SVD Model
-        :verbose_call: Learn_SVD(training_features, standardization_flag)
+        :display_name: Learn Singular Value Decomposition
+        :verbose_call: [Model] = Learn Singular Value Decomposition (Training Features, Standardization)
 
     Parameters
     ----------
@@ -233,7 +233,7 @@ def learn_svd(X: np.ndarray, param_stand: bool = True) -> Dict[str, Any]:
     return model
 
 
-def score_svd(Y: np.ndarray, model: Dict[str, Any]) -> Tuple[np.ndarray, np.ndarray]:
+def score_svd_shm(Y: np.ndarray, model: Dict[str, Any]) -> Tuple[np.ndarray, np.ndarray]:
     """
     Score features using trained SVD outlier detection model.
 
@@ -245,12 +245,12 @@ def score_svd(Y: np.ndarray, model: Dict[str, Any]) -> Tuple[np.ndarray, np.ndar
 
     .. meta::
         :category: Classification - Parametric Detectors
-        :matlab_equivalent: scoreSVD
+        :matlab_equivalent: scoreSVD_shm
         :complexity: Basic
         :data_type: Features
         :output_type: Scores
-        :display_name: Score SVD Model
-        :verbose_call: Score_SVD(test_features, svd_model)
+        :display_name: Score Singular Value Decomposition
+        :verbose_call: [Scores, Residuals] = Score Singular Value Decomposition (Test Features, SVD Model)
 
     Parameters
     ----------
@@ -645,7 +645,84 @@ def roc(
     return TPR, FPR
 
 
-def learn_factor_analysis(
+def roc_shm(
+    scores: np.ndarray,
+    damage_states: np.ndarray,
+    num_pts: Optional[int] = None,
+    threshold_type: str = "below",
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Receiver operating characteristic (ROC) curve (MATLAB-compatible).
+
+    Tool to compare and evaluate the performance of classification algorithms.
+    Note that the scores should decrease for the damaged instances.
+
+    .. meta::
+        :category: Classification - Performance Evaluation
+        :matlab_equivalent: ROC_shm
+        :complexity: Basic
+        :data_type: Scores
+        :output_type: Performance Metrics
+        :display_name: ROC Curve
+        :verbose_call: [True Positive Rate, False Positive Rate] = ROC Curve (Scores, Damage States, Number of Points, Threshold Type)
+
+    Parameters
+    ----------
+    scores : array_like
+        Vector composed of scores for each instance.
+        Shape: (INSTANCES,)
+
+        .. gui::
+            :widget: file_upload
+            :formats: [".csv", ".mat", ".npy"]
+
+    damage_states : array_like
+        Binary classification vector of known damage states
+        (0-undamaged and 1-damaged) corresponding to vector of scores.
+        Shape: (INSTANCES,)
+
+        .. gui::
+            :widget: file_upload
+            :formats: [".csv", ".mat", ".npy"]
+
+    num_pts : int, optional
+        Number of points to evaluate ROC curve at. If None (recommended),
+        each score value from a damaged state is used as a threshold.
+
+        .. gui::
+            :widget: spinner
+            :min: 10
+            :max: 1000
+            :default: 100
+
+    threshold_type : str, optional
+        'above' or 'below' to define if scores above or below a given
+        threshold should be flagged as damaged (default: 'below')
+
+        .. gui::
+            :widget: dropdown
+            :options: ["below", "above"]
+            :default: "below"
+
+    Returns
+    -------
+    TPR : ndarray
+        Vector composed of true positive rates.
+        Shape: (POINTS,)
+
+    FPR : ndarray
+        Vector composed of false positive rates.
+        Shape: (POINTS,)
+
+    References
+    ----------
+    MATLAB ROC_shm function from SHMTools.
+    """
+    # Use the existing roc function implementation 
+    return roc(scores, damage_states, num_pts, threshold_type)
+
+
+def learn_factor_analysis_shm(
     X: np.ndarray, 
     num_factors: int = 2, 
     est_method: str = "thomson"
@@ -665,7 +742,7 @@ def learn_factor_analysis(
         :complexity: Intermediate
         :data_type: Features
         :output_type: Model
-        :display_name: Learn Factor Analysis Model
+        :display_name: Learn Factor Analysis
         :verbose_call: [Factor Analysis Model] = Learn Factor Analysis (Training Features, Number of Factors, Estimation Method)
         
     Parameters
@@ -716,14 +793,14 @@ def learn_factor_analysis(
     Examples
     --------
     >>> import numpy as np
-    >>> from shmtools.classification import learn_factor_analysis
+    >>> from shmtools.classification import learn_factor_analysis_shm
     >>> 
     >>> # Generate sample training data
     >>> np.random.seed(42)
     >>> X = np.random.randn(100, 5)
     >>> 
     >>> # Learn Factor Analysis model
-    >>> model = learn_factor_analysis(X, num_factors=2)
+    >>> model = learn_factor_analysis_shm(X, num_factors=2)
     >>> print(f"Loadings shape: {model['lambda'].shape}")
     >>> print(f"Specific variances shape: {model['psi'].shape}")
     """
@@ -774,7 +851,7 @@ def learn_factor_analysis(
     return model
 
 
-def score_factor_analysis(
+def score_factor_analysis_shm(
     Y: np.ndarray, 
     model: Dict[str, Any]
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -792,7 +869,7 @@ def score_factor_analysis(
         :complexity: Intermediate
         :data_type: Features
         :output_type: Scores
-        :display_name: Score Factor Analysis Model
+        :display_name: Score Factor Analysis
         :verbose_call: [Scores, Unique Factors, Factor Scores] = Score Factor Analysis (Test Features, Factor Analysis Model)
         
     Parameters
@@ -837,7 +914,7 @@ def score_factor_analysis(
     Examples
     --------
     >>> import numpy as np
-    >>> from shmtools.classification import learn_factor_analysis, score_factor_analysis
+    >>> from shmtools.classification import learn_factor_analysis_shm, score_factor_analysis_shm
     >>> 
     >>> # Generate training and test data
     >>> np.random.seed(42)
@@ -845,8 +922,8 @@ def score_factor_analysis(
     >>> X_test = np.random.randn(20, 5)
     >>> 
     >>> # Learn and score
-    >>> model = learn_factor_analysis(X_train, num_factors=2)
-    >>> scores, unique_factors, factor_scores = score_factor_analysis(X_test, model)
+    >>> model = learn_factor_analysis_shm(X_train, num_factors=2)
+    >>> scores, unique_factors, factor_scores = score_factor_analysis_shm(X_test, model)
     >>> print(f"Scores shape: {scores.shape}")  # (20,)
     >>> print(f"Unique factors shape: {unique_factors.shape}")  # (20, 5)
     >>> print(f"Factor scores shape: {factor_scores.shape}")  # (20, 2)

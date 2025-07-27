@@ -752,6 +752,7 @@ interface SHMFunction {
   name: string;
   displayName: string;
   category: string;
+  module: string;
   signature: string;
   description: string;
   docstring: string;
@@ -1971,9 +1972,9 @@ class SHMFunctionSelector {
     const outputVar = this.suggestOutputVariables(func);
     
     if (paramStrings.length > 0) {
-      code += `${outputVar} = shmtools.${func.name}(\n${paramStrings.join('\n')}\n)`;
+      code += `${outputVar} = ${func.module}.${func.name}(\n${paramStrings.join('\n')}\n)`;
     } else {
-      code += `${outputVar} = shmtools.${func.name}()`;
+      code += `${outputVar} = ${func.module}.${func.name}()`;
     }
     
     // Add validation comments if validation rules exist

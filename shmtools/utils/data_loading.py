@@ -13,7 +13,13 @@ from typing import Dict, Any, Optional
 
 def get_data_dir() -> Path:
     """
-    Get the standard data directory.
+    Get the standard data directory with robust path resolution.
+    
+    This function handles multiple execution contexts including:
+    - Jupyter notebooks in different directories
+    - Python scripts run from various locations  
+    - Different working directories
+    - Development and production environments
     
     Returns
     -------
@@ -25,27 +31,44 @@ def get_data_dir() -> Path:
     FileNotFoundError
         If the data directory cannot be located.
     """
-    # Try to find data directory relative to current working directory
-    current = Path.cwd()
+    # Get current working directory and this file's location
+    current_dir = Path.cwd()
+    this_file = Path(__file__).resolve()
     
-    # Check common locations
+    # Calculate project root from this file location
+    # shmtools/utils/data_loading.py -> shmtools-python/
+    project_root = this_file.parent.parent.parent
+    
+    # Define possible data directory locations in order of preference
     possible_paths = [
-        current / "examples" / "data",  # From project root
-        current / "data",  # From examples directory
-        current.parent / "data",  # From examples subdirectory
+        # From current working directory (most common notebook case)
+        current_dir / "examples" / "data",           # From project root
+        current_dir / "data",                        # From examples directory  
+        current_dir.parent / "data",                 # From examples/notebooks/
+        current_dir.parent.parent / "data",          # From examples/notebooks/basic/
+        current_dir.parent.parent.parent / "data",   # From examples/notebooks/basic/subdir/
+        
+        # Relative to this file (most reliable)
+        project_root / "examples" / "data",
+        
+        # Additional fallback paths for different execution contexts
+        Path.cwd().resolve() / "shmtools-python" / "examples" / "data",
+        Path.home() / "repo" / "shm" / "shmtools-python" / "examples" / "data",  # Common dev location
+        
+        # Check if we're in a subdirectory of the project
+        *[p / "examples" / "data" for p in Path.cwd().resolve().parents if (p / "shmtools").exists()],
     ]
     
-    # Try to find relative to this file
-    this_file = Path(__file__).parent
-    project_root = this_file.parent.parent  # shmtools/utils -> shmtools-python
-    possible_paths.append(project_root / "examples" / "data")
-    
+    # Find the first valid data directory
     for path in possible_paths:
         if path.exists() and path.is_dir():
-            return path
+            # Verify it contains expected data files
+            expected_files = ["data3SS.mat", "dataSensorDiagnostic.mat", "data_CBM.mat"]
+            if any((path / f).exists() for f in expected_files):
+                return path.resolve()
     
     # If not found, return the expected location for better error messages
-    return project_root / "examples" / "data"
+    return (project_root / "examples" / "data").resolve()
 
 
 def load_3story_data() -> Dict[str, Any]:
@@ -340,3 +363,148 @@ def check_data_availability() -> None:
         print("Missing datasets can be downloaded and placed in:")
         print(f"  {data_dir}")
         print("See README.md in that directory for instructions.")
+
+
+# Notebook-specific convenience functions
+def setup_notebook_environment():
+    """
+    Setup imports and paths for Jupyter notebooks.
+    
+    This function handles the path setup that's repeated in every notebook,
+    making it easy to drop into notebook cells.
+    
+    Returns
+    -------
+    dict
+        Dictionary with commonly used imports and data loading functions.
+        
+    Examples
+    --------
+    In a notebook cell:
+    
+    >>> from shmtools.utils.data_loading import setup_notebook_environment
+    >>> nb = setup_notebook_environment()
+    >>> data = nb['load_3story_data']()
+    >>> plt = nb['plt']
+    >>> np = nb['np']
+    """
+    import sys
+    from pathlib import Path
+    
+    # Setup path to find shmtools (same logic as in notebooks)
+    current_dir = Path.cwd()
+    
+    # Try different relative paths to find shmtools  
+    possible_paths = [
+        current_dir,                        # From project root
+        current_dir.parent,                 # From examples/
+        current_dir.parent.parent,          # From examples/notebooks/
+        current_dir.parent.parent.parent,   # From examples/notebooks/basic/
+    ]
+    
+    # Also try relative to this file
+    this_file = Path(__file__).resolve()
+    project_root = this_file.parent.parent.parent
+    possible_paths.append(project_root)
+    
+    shmtools_found = False
+    for path in possible_paths:
+        if (path / 'shmtools').exists():
+            if str(path) not in sys.path:
+                sys.path.insert(0, str(path))
+            shmtools_found = True
+            print(f"Found shmtools at: {path}")
+            break
+    
+    if not shmtools_found:
+        print("Warning: Could not find shmtools module")
+    
+    # Import common packages
+    import numpy as np
+    import matplotlib.pyplot as plt
+    
+    # Set up plotting defaults (from notebooks)
+    plt.style.use('default')
+    plt.rcParams['figure.figsize'] = (12, 8)
+    plt.rcParams['font.size'] = 10
+    
+    # Return convenience dictionary
+    return {
+        'np': np,
+        'plt': plt,
+        'Path': Path,
+        'load_3story_data': load_3story_data,
+        'load_sensor_diagnostic_data': load_sensor_diagnostic_data,
+        'load_cbm_data': load_cbm_data,
+        'load_active_sensing_data': load_active_sensing_data,
+        'load_modal_osp_data': load_modal_osp_data,
+        'check_data_availability': check_data_availability,
+        'get_data_dir': get_data_dir,
+    }
+
+
+def load_example_data(example_type: str) -> Dict[str, Any]:
+    """
+    Load data for specific example types with convenience wrappers.
+    
+    Parameters
+    ----------
+    example_type : str
+        Type of example: 'pca', 'mahalanobis', 'svd', 'factor_analysis', 
+        'ar_model_order', 'cbm', 'active_sensing', 'sensor_diagnostic', 'modal'
+    
+    Returns
+    -------
+    dict
+        Loaded and preprocessed data ready for the specific example.
+        
+    Examples
+    --------
+    >>> # For PCA/Mahalanobis/SVD outlier detection examples
+    >>> data = load_example_data('pca')
+    >>> signals = data['signals']  # Shape: (8192, 4, 170) - channels 2-5 only
+    >>> fs = data['fs']
+    >>> damage_states = data['damage_states']
+    
+    >>> # For condition-based monitoring
+    >>> data = load_example_data('cbm')
+    >>> bearing_data = data['bearing_data']
+    """
+    if example_type in ['pca', 'mahalanobis', 'svd', 'factor_analysis', 'nlpca', 'ar_model_order']:
+        # For outlier detection examples - preprocess 3-story data
+        data_dict = load_3story_data()
+        dataset = data_dict['dataset']
+        
+        # Extract channels 2-5 (indices 1-4) as done in notebooks
+        signals = dataset[:, 1:5, :]  # Shape: (8192, 4, 170)
+        
+        return {
+            'dataset': dataset,              # Original full dataset 
+            'signals': signals,              # Channels 2-5 only (ready for analysis)
+            'fs': data_dict['fs'],
+            'channels': ['Ch2', 'Ch3', 'Ch4', 'Ch5'],  # Channel 2-5 labels
+            'all_channels': data_dict['channels'],      # All channel labels
+            'conditions': data_dict['conditions'],
+            'damage_states': data_dict['damage_states'],
+            'description': data_dict['description'],
+            't': signals.shape[0],           # Time points
+            'm': signals.shape[1],           # Channels (4)
+            'n': signals.shape[2],           # Conditions (170)
+        }
+        
+    elif example_type == 'cbm':
+        return load_cbm_data()
+        
+    elif example_type == 'active_sensing':
+        return load_active_sensing_data()
+        
+    elif example_type == 'sensor_diagnostic':
+        return load_sensor_diagnostic_data()
+        
+    elif example_type == 'modal':
+        return load_modal_osp_data()
+        
+    else:
+        raise ValueError(f"Unknown example type: {example_type}. "
+                        f"Supported types: pca, mahalanobis, svd, factor_analysis, "
+                        f"nlpca, ar_model_order, cbm, active_sensing, sensor_diagnostic, modal")

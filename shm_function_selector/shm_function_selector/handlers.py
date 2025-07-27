@@ -121,7 +121,7 @@ class SHMFunctionHandler(APIHandler):
                         if (callable(obj) and 
                             inspect.isfunction(obj)):
                             
-                            func_info = self._extract_function_info(obj, name, category)
+                            func_info = self._extract_function_info(obj, name, category, module_name)
                             if func_info:
                                 functions.append(func_info)
                     except Exception as e:
@@ -141,6 +141,7 @@ class SHMFunctionHandler(APIHandler):
                 'name': 'psd_welch',
                 'displayName': 'Welch Power Spectral Density',
                 'category': 'Core - Spectral Analysis',
+                'module': 'shmtools.core.spectral',
                 'signature': 'psd_welch(data, fs=1000, nperseg=256)',
                 'description': 'Compute power spectral density using Welch method',
                 'docstring': 'Estimates power spectral density using Welch method.',
@@ -154,6 +155,7 @@ class SHMFunctionHandler(APIHandler):
                 'name': 'ar_model',
                 'displayName': 'AR Model Parameters',
                 'category': 'Features - Time Series Models',
+                'module': 'shmtools.features.time_series',
                 'signature': 'ar_model(data, order=10)',
                 'description': 'Estimate autoregressive model parameters',
                 'docstring': 'Fits an autoregressive model to time series data.',
@@ -166,6 +168,7 @@ class SHMFunctionHandler(APIHandler):
                 'name': 'learn_pca',
                 'displayName': 'Learn PCA Model',
                 'category': 'Classification - Outlier Detection',
+                'module': 'shmtools.classification.outlier_detection',
                 'signature': 'learn_pca(features, n_components=5)',
                 'description': 'Learn PCA model for outlier detection',
                 'docstring': 'Learns a PCA model from feature data.',
@@ -189,7 +192,7 @@ class SHMFunctionHandler(APIHandler):
         }
         return category_map.get(module_name, 'Other')
     
-    def _extract_function_info(self, func, name: str, category: str) -> Dict[str, Any]:
+    def _extract_function_info(self, func, name: str, category: str, module_name: str) -> Dict[str, Any]:
         """Extract function information from docstring and signature."""
         try:
             # Get function signature
@@ -203,6 +206,7 @@ class SHMFunctionHandler(APIHandler):
                 'name': name,
                 'displayName': self._extract_display_name(docstring, name),
                 'category': category,
+                'module': module_name,
                 'signature': str(sig),
                 'description': self._extract_description(docstring),
                 'docstring': docstring,
