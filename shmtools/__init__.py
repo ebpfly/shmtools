@@ -18,15 +18,27 @@ from . import active_sensing
 from . import hardware
 from . import plotting
 from . import utils
+from . import sensor_diagnostics
 
 # Common functions for convenience
 from .core.spectral import psd_welch, stft
 from .core.filtering import filter_signal, bandpass_filter
 from .core.statistics import statistical_moments, rms, crest_factor
 from .features.time_series import ar_model, arx_model, ar_model_order_shm
+from .features.condition_based_monitoring import time_sync_avg_shm
 from .classification.outlier_detection import learn_mahalanobis_shm, score_mahalanobis_shm, learn_pca, score_pca, learn_svd_shm, score_svd_shm, roc_shm, learn_factor_analysis_shm, score_factor_analysis_shm
+from .classification.nonparametric import gaussian_kernel_shm, epanechnikov_kernel_shm, uniform_kernel_shm, quartic_kernel_shm, triangle_kernel_shm, triweight_kernel_shm, cosine_kernel_shm, learn_kernel_density_shm, score_kernel_density_shm
+from .active_sensing import coherent_matched_filter_shm, incoherent_matched_filter_shm, estimate_group_velocity_shm, propagation_dist_2_points_shm, distance_2_index_shm, build_contained_grid_shm, sensor_pair_line_of_sight_shm, fill_2d_map_shm, extract_subsets_shm, flex_logic_filter_shm, sum_mult_dims_shm
 from .core.preprocessing import scale_min_max_shm
 from .classification.semiparametric import k_medians_shm, learn_gmm_shm, score_gmm_shm, learn_gmm_semiparametric_model_shm, score_gmm_semiparametric_model_shm
+from .sensor_diagnostics import sd_feature_shm, sd_autoclassify_shm, sd_plot_shm
+from .modal import frf_shm, rpfit_shm
+
+# Import NLPCA functions if available
+try:
+    from .classification.nlpca import learn_nlpca_shm, score_nlpca_shm
+except ImportError:
+    pass  # TensorFlow not available
 
 # MATLAB-compatible data import functions  
 from .utils.data_io import (
@@ -149,7 +161,8 @@ __all__ = [
     "rms",
     "crest_factor",
     "ar_model",
-    "arx_model", 
+    "arx_model",
+    "time_sync_avg_shm",
     "learn_mahalanobis_shm",
     "score_mahalanobis_shm", 
     "learn_pca",
@@ -161,6 +174,28 @@ __all__ = [
     "learn_factor_analysis_shm",
     "score_factor_analysis_shm",
     "ar_model_order_shm",
+    # Nonparametric kernel functions
+    "gaussian_kernel_shm",
+    "epanechnikov_kernel_shm", 
+    "uniform_kernel_shm",
+    "quartic_kernel_shm",
+    "triangle_kernel_shm", 
+    "triweight_kernel_shm",
+    "cosine_kernel_shm",
+    "learn_kernel_density_shm",
+    "score_kernel_density_shm",
+    # Active sensing functions
+    "coherent_matched_filter_shm",
+    "incoherent_matched_filter_shm",
+    "estimate_group_velocity_shm",
+    "propagation_dist_2_points_shm",
+    "distance_2_index_shm",
+    "build_contained_grid_shm",
+    "sensor_pair_line_of_sight_shm",
+    "fill_2d_map_shm",
+    "extract_subsets_shm",
+    "flex_logic_filter_shm",
+    "sum_mult_dims_shm",
     # Semi-parametric functions
     "k_medians_shm",
     "learn_gmm_shm",
