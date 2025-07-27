@@ -44,6 +44,9 @@ function activate(
     }
   });
 
+  // Set up keyboard shortcuts
+  setupKeyboardShortcuts(app, notebookTracker, functionSelector);
+
   // Set up notebook tracking with full context menu functionality
   notebookTracker.widgetAdded.connect((sender, nbPanel) => {
     console.log('📓 Notebook added, setting up SHM context menu functionality');
@@ -110,8 +113,9 @@ function activate(
         event.preventDefault();
         event.stopPropagation();
         
-        // Show SHM context menu with current cell index
-        contextMenuManager.showContextMenu(event, parameterContext, notebook, currentCellIndex);
+        // Show SHM context menu with current cell index and validation setting
+        const enableValidation = functionSelector.getSettingValue('enableParameterValidation', false);
+        contextMenuManager.showContextMenu(event, parameterContext, notebook, currentCellIndex, enableValidation);
       } else {
         console.log('📝 No parameter detected at cursor position');
         
@@ -145,6 +149,600 @@ function activate(
 }
 
 export default plugin;
+
+// ============================================================================
+// KEYBOARD SHORTCUTS IMPLEMENTATION
+// ============================================================================
+
+function setupKeyboardShortcuts(
+  app: JupyterFrontEnd, 
+  notebookTracker: INotebookTracker, 
+  functionSelector: SHMFunctionSelector
+): void {
+  console.log('⌨️ Setting up SHM keyboard shortcuts');
+
+  // Shortcut 1: Ctrl+Shift+F - Open function browser
+  app.commands.addCommand('shm-selector:open-function-browser', {
+    label: 'Open SHM Function Browser',
+    caption: 'Open the SHM function browser dropdown',
+    execute: () => {
+      const activeNotebook = notebookTracker.currentWidget;
+      if (activeNotebook) {
+        const trigger = activeNotebook.node.querySelector('.shm-dropdown-trigger') as HTMLElement;
+        if (trigger) {
+          trigger.click();
+          console.log('📚 Opened function browser via keyboard shortcut');
+        } else {
+          console.log('⚠️ Function browser trigger not found');
+        }
+      }
+    }
+  });
+
+  // Shortcut 2: Ctrl+Shift+H - Show help for current function
+  app.commands.addCommand('shm-selector:show-function-help', {
+    label: 'Show SHM Function Help',
+    caption: 'Show documentation for the current function under cursor',
+    execute: () => {
+      const activeNotebook = notebookTracker.currentWidget;
+      if (activeNotebook) {
+        const activeCell = activeNotebook.content.activeCell;
+        if (activeCell && activeCell.model.type === 'code') {
+          const editor = activeCell.editor;
+          if (editor) {
+            const cursor = editor.getCursorPosition();
+            const code = editor.model.sharedModel.getSource();
+            
+            // Find function name at cursor position
+            const functionName = extractFunctionNameAtCursor(code, cursor);
+            if (functionName) {
+              // Get the function from the selector and show its documentation
+              const func = functionSelector.getFunctionByName(functionName);
+              if (func) {
+                functionSelector.showDocumentationPopup(func);
+                console.log(`📖 Showed help for function: ${functionName}`);
+              } else {
+                showKeyboardNotification(`Function "${functionName}" not found in SHM library`, '#ff9800');
+              }
+            } else {
+              showKeyboardNotification('No SHM function found at cursor position', '#ff9800');
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // Shortcut 3: Ctrl+Shift+I - Insert popular function
+  app.commands.addCommand('shm-selector:insert-popular-function', {
+    label: 'Insert Popular SHM Function',
+    caption: 'Quick insert of commonly used SHM functions',
+    execute: () => {
+      showPopularFunctionsQuickSelect(functionSelector, notebookTracker);
+    }
+  });
+
+  // Shortcut 4: Ctrl+Shift+L - Link parameter to variable (context-aware)
+  app.commands.addCommand('shm-selector:smart-parameter-link', {
+    label: 'Smart Parameter Link',
+    caption: 'Intelligently link parameter at cursor to compatible variable',
+    execute: () => {
+      const activeNotebook = notebookTracker.currentWidget;
+      if (activeNotebook) {
+        smartParameterLink(activeNotebook.content);
+      }
+    }
+  });
+
+  // Shortcut 5: Ctrl+Shift+S - Search functions
+  app.commands.addCommand('shm-selector:search-functions', {
+    label: 'Search SHM Functions',
+    caption: 'Open function search dialog',
+    execute: () => {
+      showFunctionSearchDialog(functionSelector, notebookTracker);
+    }
+  });
+
+  // Register keyboard bindings
+  app.commands.addKeyBinding({
+    command: 'shm-selector:open-function-browser',
+    keys: ['Ctrl Shift F'],
+    selector: '.jp-Notebook'
+  });
+
+  app.commands.addKeyBinding({
+    command: 'shm-selector:show-function-help',
+    keys: ['Ctrl Shift H'],
+    selector: '.jp-Notebook'
+  });
+
+  app.commands.addKeyBinding({
+    command: 'shm-selector:insert-popular-function',
+    keys: ['Ctrl Shift I'],
+    selector: '.jp-Notebook'
+  });
+
+  app.commands.addKeyBinding({
+    command: 'shm-selector:smart-parameter-link',
+    keys: ['Ctrl Shift L'],
+    selector: '.jp-Notebook'
+  });
+
+  app.commands.addKeyBinding({
+    command: 'shm-selector:search-functions',
+    keys: ['Ctrl Shift S'],
+    selector: '.jp-Notebook'
+  });
+
+  console.log('✅ SHM keyboard shortcuts registered:');
+  console.log('   📚 Ctrl+Shift+F - Open function browser');
+  console.log('   📖 Ctrl+Shift+H - Show function help');
+  console.log('   ⚡ Ctrl+Shift+I - Insert popular function');
+  console.log('   🔗 Ctrl+Shift+L - Smart parameter link');
+  console.log('   🔍 Ctrl+Shift+S - Search functions');
+}
+
+// Helper functions for keyboard shortcuts
+
+function extractFunctionNameAtCursor(code: string, cursor: any): string | null {
+  const lines = code.split('\n');
+  const line = lines[cursor.line] || '';
+  
+  // Look for function calls like shmtools.function_name or just function_name
+  const beforeCursor = line.substring(0, cursor.column);
+  const afterCursor = line.substring(cursor.column);
+  
+  // Pattern to match function names
+  const functionPattern = /(?:shmtools\.)?(\w+)(?:_shm)?\s*\(/;
+  
+  // Look backwards from cursor for function call
+  for (let i = beforeCursor.length; i >= 0; i--) {
+    const segment = beforeCursor.substring(i) + afterCursor.substring(0, 20);
+    const match = segment.match(functionPattern);
+    if (match) {
+      return match[1] + '_shm'; // Always add _shm suffix for internal lookup
+    }
+  }
+  
+  return null;
+}
+
+function showKeyboardNotification(message: string, color: string): void {
+  const notification = document.createElement('div');
+  notification.textContent = message;
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: ${color};
+    color: white;
+    padding: 10px 15px;
+    border-radius: 4px;
+    z-index: 10000;
+    font-family: monospace;
+    font-size: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  `;
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.parentNode.removeChild(notification);
+    }
+  }, 3000);
+}
+
+function showPopularFunctionsQuickSelect(
+  functionSelector: SHMFunctionSelector, 
+  notebookTracker: INotebookTracker
+): void {
+  // Create quick select overlay
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  `;
+
+  const popup = document.createElement('div');
+  popup.style.cssText = `
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    max-width: 400px;
+    width: 90%;
+  `;
+
+  const title = document.createElement('h3');
+  title.textContent = 'Popular SHM Functions';
+  title.style.cssText = `
+    margin: 0 0 16px 0;
+    color: #333;
+    font-size: 16px;
+    text-align: center;
+  `;
+
+  // Popular functions list
+  const popularFunctions = [
+    'psd_welch_shm',
+    'ar_model_shm',
+    'score_pca_shm',
+    'learn_pca_shm',
+    'score_mahalanobis_shm',
+    'learn_mahalanobis_shm',
+    'filter_butterworth_shm',
+    'statistical_moments_shm'
+  ];
+
+  const functionsList = document.createElement('div');
+  
+  popularFunctions.forEach((funcName, index) => {
+    const func = functionSelector.getFunctionByName(funcName);
+    if (func) {
+      const item = document.createElement('div');
+      item.style.cssText = `
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: background 0.2s;
+      `;
+
+      const numberSpan = document.createElement('span');
+      numberSpan.textContent = `${index + 1}. `;
+      numberSpan.style.cssText = `
+        font-weight: bold;
+        color: #666;
+        margin-right: 8px;
+      `;
+
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = func.displayName;
+      nameSpan.style.cssText = `
+        font-weight: bold;
+        color: #333;
+      `;
+
+      item.appendChild(numberSpan);
+      item.appendChild(nameSpan);
+
+      item.addEventListener('mouseenter', () => {
+        item.style.background = '#f0f0f0';
+      });
+
+      item.addEventListener('mouseleave', () => {
+        item.style.background = 'white';
+      });
+
+      item.addEventListener('click', () => {
+        functionSelector.insertFunction(func);
+        overlay.remove();
+        showKeyboardNotification(`✅ Inserted ${func.displayName}`, '#4caf50');
+      });
+
+      functionsList.appendChild(item);
+    }
+  });
+
+  const instructions = document.createElement('div');
+  instructions.textContent = 'Click a function or press 1-8 to insert';
+  instructions.style.cssText = `
+    text-align: center;
+    color: #666;
+    font-size: 11px;
+    margin-top: 12px;
+  `;
+
+  popup.appendChild(title);
+  popup.appendChild(functionsList);
+  popup.appendChild(instructions);
+  overlay.appendChild(popup);
+
+  // Add number key handlers
+  const keyHandler = (e: KeyboardEvent) => {
+    const num = parseInt(e.key);
+    if (num >= 1 && num <= popularFunctions.length) {
+      const funcName = popularFunctions[num - 1];
+      const func = functionSelector.getFunctionByName(funcName);
+      if (func) {
+        functionSelector.insertFunction(func);
+        overlay.remove();
+        showKeyboardNotification(`✅ Inserted ${func.displayName}`, '#4caf50');
+      }
+    } else if (e.key === 'Escape') {
+      overlay.remove();
+    }
+    document.removeEventListener('keydown', keyHandler);
+  };
+
+  // Close on overlay click
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      overlay.remove();
+      document.removeEventListener('keydown', keyHandler);
+    }
+  });
+
+  document.addEventListener('keydown', keyHandler);
+  document.body.appendChild(overlay);
+}
+
+function smartParameterLink(notebook: any): void {
+  const activeCell = notebook.activeCell;
+  if (!activeCell || activeCell.model.type !== 'code') {
+    showKeyboardNotification('No active code cell', '#ff9800');
+    return;
+  }
+
+  const editor = activeCell.editor;
+  if (!editor) return;
+
+  const cursor = editor.getCursorPosition();
+  const code = editor.model.sharedModel.getSource();
+  
+  // Find current line and check for parameter pattern
+  const lines = code.split('\n');
+  const currentLine = lines[cursor.line] || '';
+  
+  // Look for parameter=value pattern at cursor
+  const paramMatch = currentLine.match(/(\w+)\s*=\s*([^,)]+)/g);
+  if (paramMatch) {
+    // Find the closest parameter to cursor position
+    let targetParam = null;
+    let minDistance = Infinity;
+    
+    paramMatch.forEach(match => {
+      const paramIndex = currentLine.indexOf(match);
+      const distance = Math.abs(paramIndex - cursor.column);
+      if (distance < minDistance) {
+        minDistance = distance;
+        targetParam = match;
+      }
+    });
+    
+    if (targetParam) {
+      const [paramName] = targetParam.split('=').map(s => s.trim());
+      showKeyboardNotification(`🔗 Smart linking for parameter: ${paramName}`, '#2196f3');
+      
+      // Trigger context menu programmatically
+      const contextMenuManager = new SHMContextMenuManager();
+      const parameterContext = {
+        parameterName: paramName,
+        currentValue: 'None',
+        functionName: 'unknown',
+        position: cursor,
+        replacementRange: { start: 0, end: 0 }
+      };
+      
+      // Show context menu at a calculated position
+      const fakeEvent = {
+        pageX: window.innerWidth / 2,
+        pageY: window.innerHeight / 2,
+        preventDefault: () => {},
+        stopPropagation: () => {}
+      } as MouseEvent;
+      
+      contextMenuManager.showContextMenu(fakeEvent, parameterContext, notebook, notebook.activeCellIndex, false);
+    } else {
+      showKeyboardNotification('No parameter found at cursor position', '#ff9800');
+    }
+  } else {
+    showKeyboardNotification('Cursor not on a parameter assignment', '#ff9800');
+  }
+}
+
+function showFunctionSearchDialog(
+  functionSelector: SHMFunctionSelector, 
+  notebookTracker: INotebookTracker
+): void {
+  // Create search overlay
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 10vh;
+  `;
+
+  const popup = document.createElement('div');
+  popup.style.cssText = `
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    max-width: 500px;
+    width: 90%;
+    max-height: 70vh;
+    overflow-y: auto;
+  `;
+
+  const title = document.createElement('h3');
+  title.textContent = 'Search SHM Functions';
+  title.style.cssText = `
+    margin: 0 0 16px 0;
+    color: #333;
+    font-size: 16px;
+    text-align: center;
+  `;
+
+  const searchInput = document.createElement('input');
+  searchInput.type = 'text';
+  searchInput.placeholder = 'Type to search functions...';
+  searchInput.style.cssText = `
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-bottom: 16px;
+    box-sizing: border-box;
+  `;
+
+  const resultsContainer = document.createElement('div');
+  resultsContainer.style.cssText = `
+    max-height: 300px;
+    overflow-y: auto;
+  `;
+
+  popup.appendChild(title);
+  popup.appendChild(searchInput);
+  popup.appendChild(resultsContainer);
+  overlay.appendChild(popup);
+
+  // Search functionality
+  let searchTimeout: number;
+  searchInput.addEventListener('input', () => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      const query = searchInput.value.toLowerCase();
+      updateSearchResults(resultsContainer, functionSelector, query, overlay);
+    }, 200);
+  });
+
+  // Close handlers
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      overlay.remove();
+    }
+  });
+
+  const escapeHandler = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      overlay.remove();
+      document.removeEventListener('keydown', escapeHandler);
+    }
+  };
+  document.addEventListener('keydown', escapeHandler);
+
+  document.body.appendChild(overlay);
+  searchInput.focus();
+}
+
+function updateSearchResults(
+  container: HTMLElement, 
+  functionSelector: SHMFunctionSelector, 
+  query: string, 
+  overlay: HTMLElement
+): void {
+  container.innerHTML = '';
+
+  if (query.length < 2) {
+    const placeholder = document.createElement('div');
+    placeholder.textContent = 'Type at least 2 characters to search...';
+    placeholder.style.cssText = `
+      color: #666;
+      font-style: italic;
+      text-align: center;
+      padding: 20px;
+    `;
+    container.appendChild(placeholder);
+    return;
+  }
+
+  const functions = functionSelector.getAllFunctions();
+  const filteredFunctions = functions.filter(func => 
+    func.displayName.toLowerCase().includes(query) ||
+    func.description.toLowerCase().includes(query) ||
+    func.category.toLowerCase().includes(query) ||
+    func.name.toLowerCase().includes(query)
+  );
+
+  if (filteredFunctions.length === 0) {
+    const noResults = document.createElement('div');
+    noResults.textContent = 'No functions found matching your search.';
+    noResults.style.cssText = `
+      color: #666;
+      font-style: italic;
+      text-align: center;
+      padding: 20px;
+    `;
+    container.appendChild(noResults);
+    return;
+  }
+
+  filteredFunctions.slice(0, 10).forEach(func => { // Limit to 10 results
+    const item = document.createElement('div');
+    item.style.cssText = `
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    `;
+
+    const nameDiv = document.createElement('div');
+    nameDiv.textContent = func.displayName;
+    nameDiv.style.cssText = `
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 4px;
+    `;
+
+    const descDiv = document.createElement('div');
+    descDiv.textContent = func.description;
+    descDiv.style.cssText = `
+      color: #666;
+      font-size: 12px;
+      margin-bottom: 4px;
+    `;
+
+    const categoryDiv = document.createElement('div');
+    categoryDiv.textContent = func.category;
+    categoryDiv.style.cssText = `
+      color: #999;
+      font-size: 10px;
+    `;
+
+    item.appendChild(nameDiv);
+    item.appendChild(descDiv);
+    item.appendChild(categoryDiv);
+
+    item.addEventListener('mouseenter', () => {
+      item.style.background = '#f0f0f0';
+    });
+
+    item.addEventListener('mouseleave', () => {
+      item.style.background = 'white';
+    });
+
+    item.addEventListener('click', () => {
+      functionSelector.insertFunction(func);
+      overlay.remove();
+      showKeyboardNotification(`✅ Inserted ${func.displayName}`, '#4caf50');
+    });
+
+    container.appendChild(item);
+  });
+
+  if (filteredFunctions.length > 10) {
+    const moreResults = document.createElement('div');
+    moreResults.textContent = `... and ${filteredFunctions.length - 10} more results`;
+    moreResults.style.cssText = `
+      color: #666;
+      font-style: italic;
+      text-align: center;
+      padding: 12px;
+    `;
+    container.appendChild(moreResults);
+  }
+}
 
 // ============================================================================
 // PHASE 1: FUNCTION SELECTOR DROPDOWN IMPLEMENTATION
@@ -251,16 +849,18 @@ class SHMFunctionSelector {
     this.notebookTracker.widgetAdded.connect((sender, nbPanel) => {
       console.log('📓 Adding function selector to notebook toolbar');
       
-      // Create the dropdown container
+      // Create the dropdown container with responsive behavior
       const container = document.createElement('div');
+      const isMobile = window.innerWidth < 768;
       container.style.cssText = `
         display: inline-flex;
         align-items: center;
         margin: 2px 5px;
-        gap: 5px;
+        gap: ${isMobile ? '8px' : '5px'};
         flex-shrink: 0;
         white-space: nowrap;
         z-index: 1000;
+        ${isMobile ? 'width: 100%; justify-content: center;' : ''}
       `;
 
       // Create label
@@ -289,9 +889,28 @@ class SHMFunctionSelector {
       // Add automatic insertion on selection change
       this.dropdown.onchange = () => this.insertSelectedFunction(nbPanel);
 
+      // Create settings button
+      const settingsButton = document.createElement('button');
+      settingsButton.textContent = '⚙️';
+      settingsButton.title = 'SHM Extension Settings';
+      settingsButton.style.cssText = `
+        padding: 4px 6px;
+        font-size: 11px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        background: white;
+        cursor: pointer;
+        min-width: 28px;
+      `;
+
+      settingsButton.addEventListener('click', () => {
+        this.showSettingsPanel();
+      });
+
       // Add elements to container
       container.appendChild(label);
       container.appendChild(this.dropdown);
+      container.appendChild(settingsButton);
 
       // Add to notebook toolbar
       const toolbar = nbPanel.toolbar;
@@ -308,31 +927,168 @@ class SHMFunctionSelector {
   private populateDropdown(): void {
     if (!this.dropdown) return;
 
-    // Clear existing options
-    this.dropdown.innerHTML = '';
+    // Replace simple dropdown with enhanced folding interface
+    this.createFoldingDropdown();
+  }
 
-    // Add default option
-    const defaultOption = document.createElement('option');
-    defaultOption.value = '';
-    defaultOption.textContent = '-- Select a function --';
-    this.dropdown.appendChild(defaultOption);
+  private createFoldingDropdown(): void {
+    if (!this.dropdown) return;
+
+    // Clear existing content
+    this.dropdown.innerHTML = '';
+    this.dropdown.style.display = 'none';
+
+    // Create the enhanced dropdown container
+    const container = this.dropdown.parentElement!;
+    let enhancedDropdown = container.querySelector('.shm-enhanced-dropdown') as HTMLElement;
+    
+    if (!enhancedDropdown) {
+      enhancedDropdown = document.createElement('div');
+      enhancedDropdown.className = 'shm-enhanced-dropdown';
+      enhancedDropdown.style.cssText = `
+        position: relative;
+        min-width: min(280px, 80vw);
+        max-width: min(350px, 90vw);
+        width: 100%;
+      `;
+      container.appendChild(enhancedDropdown);
+    }
+
+    enhancedDropdown.innerHTML = '';
+
+    // Create the trigger button
+    const triggerButton = document.createElement('button');
+    triggerButton.className = 'shm-dropdown-trigger';
+    triggerButton.textContent = '📚 Browse SHM Functions';
+    triggerButton.style.cssText = `
+      width: 100%;
+      padding: 6px 12px;
+      font-size: 11px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      background: white;
+      cursor: pointer;
+      text-align: left;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    `;
+
+    // Add dropdown arrow
+    const arrow = document.createElement('span');
+    arrow.textContent = '▼';
+    arrow.style.cssText = `
+      font-size: 8px;
+      transition: transform 0.2s;
+    `;
+    triggerButton.appendChild(arrow);
+
+    // Create the dropdown content
+    const dropdownContent = document.createElement('div');
+    dropdownContent.className = 'shm-dropdown-content';
+    dropdownContent.style.cssText = `
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #ccc;
+      border-top: none;
+      border-radius: 0 0 4px 4px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      max-height: min(400px, 60vh);
+      overflow-y: auto;
+      z-index: 1000;
+      display: none;
+    `;
+    
+    // Add responsive behavior for mobile
+    const addResponsiveStyles = () => {
+      if (window.innerWidth < 768) {
+        dropdownContent.style.position = 'fixed';
+        dropdownContent.style.top = '50%';
+        dropdownContent.style.left = '50%';
+        dropdownContent.style.transform = 'translate(-50%, -50%)';
+        dropdownContent.style.right = 'auto';
+        dropdownContent.style.width = '90vw';
+        dropdownContent.style.maxWidth = '400px';
+        dropdownContent.style.maxHeight = '70vh';
+        dropdownContent.style.borderRadius = '8px';
+        dropdownContent.style.border = '1px solid #ccc';
+      } else {
+        dropdownContent.style.position = 'absolute';
+        dropdownContent.style.top = '100%';
+        dropdownContent.style.left = '0';
+        dropdownContent.style.transform = 'none';
+        dropdownContent.style.right = '0';
+        dropdownContent.style.width = 'auto';
+        dropdownContent.style.maxHeight = 'min(400px, 60vh)';
+        dropdownContent.style.borderRadius = '0 0 4px 4px';
+        dropdownContent.style.borderTop = 'none';
+      }
+    };
+    
+    addResponsiveStyles();
+    window.addEventListener('resize', addResponsiveStyles);
+
+    this.populateFoldingContent(dropdownContent);
+
+    // Add click handler for trigger
+    triggerButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isVisible = dropdownContent.style.display !== 'none';
+      
+      if (isVisible) {
+        dropdownContent.style.display = 'none';
+        arrow.style.transform = 'rotate(0deg)';
+      } else {
+        dropdownContent.style.display = 'block';
+        arrow.style.transform = 'rotate(180deg)';
+      }
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!enhancedDropdown.contains(e.target as Node)) {
+        dropdownContent.style.display = 'none';
+        arrow.style.transform = 'rotate(0deg)';
+      }
+    });
+
+    enhancedDropdown.appendChild(triggerButton);
+    enhancedDropdown.appendChild(dropdownContent);
+  }
+
+  private populateFoldingContent(container: HTMLElement): void {
+    container.innerHTML = '';
+
+    // Add search box
+    const searchBox = document.createElement('input');
+    searchBox.type = 'text';
+    searchBox.placeholder = '🔍 Search functions...';
+    searchBox.style.cssText = `
+      width: calc(100% - 16px);
+      padding: 8px;
+      margin: 8px;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      font-size: 11px;
+    `;
+    container.appendChild(searchBox);
 
     // Add recently used section if any
     if (this.recentlyUsed.length > 0) {
-      const recentGroup = document.createElement('optgroup');
-      recentGroup.label = '⏱️ Recently Used';
+      const recentSection = this.createFoldingSection('⏱️ Recently Used', true);
       
       this.recentlyUsed.forEach(funcName => {
         const func = this.functions.find(f => f.name === funcName);
         if (func) {
-          const option = document.createElement('option');
-          option.value = func.name;
-          option.textContent = func.displayName;
-          recentGroup.appendChild(option);
+          const item = this.createFunctionItem(func, true);
+          recentSection.content.appendChild(item);
         }
       });
       
-      this.dropdown.appendChild(recentGroup);
+      container.appendChild(recentSection.container);
     }
 
     // Group functions by category
@@ -344,21 +1100,786 @@ class SHMFunctionSelector {
       categories.get(func.category)!.push(func);
     });
 
-    // Add categorized functions
-    categories.forEach((funcs, category) => {
-      const optgroup = document.createElement('optgroup');
-      optgroup.label = category;
+    // Add categorized sections
+    const sortedCategories = Array.from(categories.entries()).sort(([a], [b]) => a.localeCompare(b));
+    
+    sortedCategories.forEach(([category, funcs]) => {
+      const section = this.createFoldingSection(category, false);
       
-      funcs.forEach(func => {
-        const option = document.createElement('option');
-        option.value = func.name;
-        option.textContent = func.displayName;
-        option.title = func.description;
-        optgroup.appendChild(option);
+      // Sort functions within category
+      const sortedFuncs = funcs.sort((a, b) => a.displayName.localeCompare(b.displayName));
+      
+      sortedFuncs.forEach(func => {
+        const item = this.createFunctionItem(func, false);
+        section.content.appendChild(item);
       });
       
-      this.dropdown.appendChild(optgroup);
+      container.appendChild(section.container);
     });
+
+    // Add search functionality
+    searchBox.addEventListener('input', (e) => {
+      const searchTerm = (e.target as HTMLInputElement).value.toLowerCase();
+      this.filterFunctions(container, searchTerm);
+    });
+  }
+
+  private createFoldingSection(title: string, expanded: boolean = false): {
+    container: HTMLElement;
+    header: HTMLElement;
+    content: HTMLElement;
+  } {
+    const container = document.createElement('div');
+    container.className = 'shm-category-section';
+
+    const header = document.createElement('div');
+    header.className = 'shm-category-header';
+    header.style.cssText = `
+      padding: 8px 12px;
+      background: #f8f9fa;
+      border-bottom: 1px solid #e9ecef;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+      font-size: 11px;
+      color: #495057;
+      user-select: none;
+    `;
+
+    const titleSpan = document.createElement('span');
+    titleSpan.textContent = title;
+
+    const arrow = document.createElement('span');
+    arrow.textContent = expanded ? '▼' : '▶';
+    arrow.style.cssText = `
+      font-size: 8px;
+      transition: transform 0.2s;
+    `;
+
+    header.appendChild(titleSpan);
+    header.appendChild(arrow);
+
+    const content = document.createElement('div');
+    content.className = 'shm-category-content';
+    content.style.cssText = `
+      display: ${expanded ? 'block' : 'none'};
+      border-bottom: 1px solid #e9ecef;
+    `;
+
+    // Add click handler for folding
+    header.addEventListener('click', () => {
+      const isExpanded = content.style.display !== 'none';
+      
+      if (isExpanded) {
+        content.style.display = 'none';
+        arrow.textContent = '▶';
+      } else {
+        content.style.display = 'block';
+        arrow.textContent = '▼';
+      }
+    });
+
+    container.appendChild(header);
+    container.appendChild(content);
+
+    return { container, header, content };
+  }
+
+  private createFunctionItem(func: SHMFunction, isRecent: boolean = false): HTMLElement {
+    const item = document.createElement('div');
+    item.className = 'shm-function-item';
+    item.style.cssText = `
+      padding: 8px 16px;
+      cursor: pointer;
+      border-bottom: 1px solid #f1f3f4;
+      transition: background 0.2s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      ${isRecent ? 'background: #fff3e0;' : ''}
+    `;
+
+    // Create main content area
+    const contentDiv = document.createElement('div');
+    contentDiv.style.cssText = `
+      flex: 1;
+      min-width: 0;
+    `;
+
+    const nameDiv = document.createElement('div');
+    nameDiv.style.cssText = `
+      font-weight: bold;
+      font-size: 11px;
+      color: ${isRecent ? '#f57c00' : '#333'};
+      margin-bottom: 2px;
+    `;
+    nameDiv.textContent = func.displayName;
+
+    const descDiv = document.createElement('div');
+    descDiv.style.cssText = `
+      font-size: 9px;
+      color: #666;
+      line-height: 1.3;
+    `;
+    descDiv.textContent = func.description.substring(0, 60) + (func.description.length > 60 ? '...' : '');
+
+    contentDiv.appendChild(nameDiv);
+    contentDiv.appendChild(descDiv);
+
+    // Create actions area with help button
+    const actionsDiv = document.createElement('div');
+    actionsDiv.style.cssText = `
+      display: flex;
+      gap: 4px;
+      margin-left: 8px;
+    `;
+
+    const helpButton = document.createElement('button');
+    helpButton.textContent = '📖';
+    helpButton.title = 'Show function documentation';
+    helpButton.style.cssText = `
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 10px;
+      padding: 2px 4px;
+      border-radius: 2px;
+      opacity: 0.6;
+      transition: opacity 0.2s, background 0.2s;
+    `;
+
+    // Add help button functionality
+    helpButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.showFunctionDocumentation(func, helpButton);
+    });
+
+    helpButton.addEventListener('mouseenter', () => {
+      helpButton.style.opacity = '1';
+      helpButton.style.background = '#e3f2fd';
+    });
+
+    helpButton.addEventListener('mouseleave', () => {
+      helpButton.style.opacity = '0.6';
+      helpButton.style.background = 'none';
+    });
+
+    actionsDiv.appendChild(helpButton);
+
+    item.appendChild(contentDiv);
+    item.appendChild(actionsDiv);
+
+    // Add hover effects
+    item.addEventListener('mouseenter', () => {
+      item.style.background = isRecent ? '#fff8e1' : '#f8f9fa';
+    });
+
+    item.addEventListener('mouseleave', () => {
+      item.style.background = isRecent ? '#fff3e0' : 'white';
+    });
+
+    // Add click handler for main area
+    contentDiv.addEventListener('click', () => {
+      this.selectFunction(func);
+      // Close the dropdown
+      const dropdown = item.closest('.shm-dropdown-content') as HTMLElement;
+      if (dropdown) {
+        dropdown.style.display = 'none';
+        const trigger = dropdown.parentElement?.querySelector('.shm-dropdown-trigger');
+        const arrow = trigger?.querySelector('span');
+        if (arrow) {
+          arrow.style.transform = 'rotate(0deg)';
+        }
+      }
+    });
+
+    return item;
+  }
+
+  private showFunctionDocumentation(func: SHMFunction, triggerElement: HTMLElement): void {
+    // Remove existing popup if any
+    const existingPopup = document.querySelector('.shm-documentation-popup');
+    if (existingPopup) {
+      existingPopup.remove();
+    }
+
+    // Create documentation popup
+    const popup = document.createElement('div');
+    popup.className = 'shm-documentation-popup';
+    popup.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      max-width: min(600px, 90vw);
+      width: 90vw;
+      max-height: 80vh;
+      overflow-y: auto;
+      z-index: 10001;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: clamp(10px, 2vw, 12px);
+    `;
+    
+    // Add responsive font sizes for mobile
+    if (window.innerWidth < 768) {
+      popup.style.width = '95vw';
+      popup.style.maxHeight = '85vh';
+    }
+
+    // Create popup content
+    const content = this.createDocumentationContent(func);
+    popup.appendChild(content);
+
+    // Add close button
+    const closeButton = document.createElement('button');
+    closeButton.textContent = '✕';
+    closeButton.style.cssText = `
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      border: none;
+      background: #f5f5f5;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      font-size: 12px;
+      line-height: 1;
+      color: #666;
+    `;
+
+    closeButton.addEventListener('click', () => {
+      popup.remove();
+    });
+
+    closeButton.addEventListener('mouseenter', () => {
+      closeButton.style.background = '#e0e0e0';
+      closeButton.style.color = '#333';
+    });
+
+    closeButton.addEventListener('mouseleave', () => {
+      closeButton.style.background = '#f5f5f5';
+      closeButton.style.color = '#666';
+    });
+
+    popup.appendChild(closeButton);
+
+    // Add overlay
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 10000;
+    `;
+
+    overlay.addEventListener('click', () => {
+      popup.remove();
+      overlay.remove();
+    });
+
+    // Add to DOM
+    document.body.appendChild(overlay);
+    document.body.appendChild(popup);
+
+    // Focus management
+    popup.focus();
+    
+    // Close on Escape key
+    const escapeHandler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        popup.remove();
+        overlay.remove();
+        document.removeEventListener('keydown', escapeHandler);
+      }
+    };
+    document.addEventListener('keydown', escapeHandler);
+  }
+
+  private createDocumentationContent(func: SHMFunction): HTMLElement {
+    const content = document.createElement('div');
+    content.style.cssText = `
+      padding: 20px;
+      line-height: 1.5;
+    `;
+
+    // Header section
+    const header = document.createElement('div');
+    header.style.cssText = `
+      border-bottom: 2px solid #e9ecef;
+      padding-bottom: 16px;
+      margin-bottom: 16px;
+    `;
+
+    const title = document.createElement('h2');
+    title.textContent = func.displayName;
+    title.style.cssText = `
+      margin: 0 0 8px 0;
+      color: #333;
+      font-size: 18px;
+      font-weight: bold;
+    `;
+
+    const subtitle = document.createElement('div');
+    subtitle.textContent = `${func.name} • ${func.category}`;
+    subtitle.style.cssText = `
+      color: #666;
+      font-size: 11px;
+      margin-bottom: 8px;
+    `;
+
+    const description = document.createElement('div');
+    description.textContent = func.description;
+    description.style.cssText = `
+      color: #555;
+      font-size: 12px;
+      font-style: italic;
+    `;
+
+    header.appendChild(title);
+    header.appendChild(subtitle);
+    header.appendChild(description);
+
+    // Function signature section
+    const signatureSection = document.createElement('div');
+    signatureSection.style.cssText = `
+      margin-bottom: 16px;
+    `;
+
+    const signatureTitle = document.createElement('h3');
+    signatureTitle.textContent = 'Function Signature';
+    signatureTitle.style.cssText = `
+      margin: 0 0 8px 0;
+      color: #333;
+      font-size: 14px;
+      font-weight: bold;
+    `;
+
+    const signatureCode = document.createElement('div');
+    signatureCode.textContent = func.signature;
+    signatureCode.style.cssText = `
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 4px;
+      padding: 12px;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 11px;
+      color: #333;
+      overflow-x: auto;
+    `;
+
+    signatureSection.appendChild(signatureTitle);
+    signatureSection.appendChild(signatureCode);
+
+    // Parameters section
+    if (func.parameters && func.parameters.length > 0) {
+      const parametersSection = this.createParametersSection(func.parameters);
+      content.appendChild(parametersSection);
+    }
+
+    // Returns section
+    if (func.returns && func.returns.length > 0) {
+      const returnsSection = this.createReturnsSection(func.returns);
+      content.appendChild(returnsSection);
+    }
+
+    // GUI metadata section
+    if (func.guiMetadata) {
+      const metadataSection = this.createMetadataSection(func.guiMetadata);
+      content.appendChild(metadataSection);
+    }
+
+    // Full docstring section
+    if (func.docstring) {
+      const docstringSection = this.createDocstringSection(func.docstring);
+      content.appendChild(docstringSection);
+    }
+
+    content.appendChild(header);
+    content.appendChild(signatureSection);
+
+    return content;
+  }
+
+  private createParametersSection(parameters: any[]): HTMLElement {
+    const section = document.createElement('div');
+    section.style.cssText = `
+      margin-bottom: 16px;
+    `;
+
+    const title = document.createElement('h3');
+    title.textContent = 'Parameters';
+    title.style.cssText = `
+      margin: 0 0 8px 0;
+      color: #333;
+      font-size: 14px;
+      font-weight: bold;
+    `;
+
+    const paramList = document.createElement('div');
+
+    parameters.forEach(param => {
+      const paramItem = document.createElement('div');
+      paramItem.style.cssText = `
+        margin-bottom: 12px;
+        padding: 8px;
+        background: #f8f9fa;
+        border-left: 3px solid ${param.optional ? '#ffc107' : '#28a745'};
+        border-radius: 0 4px 4px 0;
+      `;
+
+      const paramHeader = document.createElement('div');
+      paramHeader.style.cssText = `
+        font-weight: bold;
+        margin-bottom: 4px;
+        color: #333;
+      `;
+
+      const paramName = document.createElement('span');
+      paramName.textContent = param.name;
+      paramName.style.cssText = `
+        color: #0d47a1;
+      `;
+
+      const paramType = document.createElement('span');
+      paramType.textContent = ` : ${param.type}`;
+      paramType.style.cssText = `
+        color: #666;
+      `;
+
+      const paramStatus = document.createElement('span');
+      paramStatus.textContent = param.optional ? ' (optional)' : ' (required)';
+      paramStatus.style.cssText = `
+        color: ${param.optional ? '#f57c00' : '#2e7d2e'};
+        font-size: 10px;
+      `;
+
+      paramHeader.appendChild(paramName);
+      paramHeader.appendChild(paramType);
+      paramHeader.appendChild(paramStatus);
+
+      paramItem.appendChild(paramHeader);
+
+      if (param.description) {
+        const paramDesc = document.createElement('div');
+        paramDesc.textContent = param.description;
+        paramDesc.style.cssText = `
+          color: #555;
+          font-size: 11px;
+          margin-bottom: 4px;
+        `;
+        paramItem.appendChild(paramDesc);
+      }
+
+      if (param.default) {
+        const paramDefault = document.createElement('div');
+        paramDefault.textContent = `Default: ${param.default}`;
+        paramDefault.style.cssText = `
+          color: #666;
+          font-size: 10px;
+          font-style: italic;
+        `;
+        paramItem.appendChild(paramDefault);
+      }
+
+      if (param.widget) {
+        const widgetInfo = document.createElement('div');
+        widgetInfo.textContent = `Widget: ${param.widget.widget || 'default'}`;
+        widgetInfo.style.cssText = `
+          color: #666;
+          font-size: 10px;
+          font-style: italic;
+        `;
+        paramItem.appendChild(widgetInfo);
+      }
+
+      paramList.appendChild(paramItem);
+    });
+
+    section.appendChild(title);
+    section.appendChild(paramList);
+    return section;
+  }
+
+  private createReturnsSection(returns: any[]): HTMLElement {
+    const section = document.createElement('div');
+    section.style.cssText = `
+      margin-bottom: 16px;
+    `;
+
+    const title = document.createElement('h3');
+    title.textContent = 'Returns';
+    title.style.cssText = `
+      margin: 0 0 8px 0;
+      color: #333;
+      font-size: 14px;
+      font-weight: bold;
+    `;
+
+    const returnsList = document.createElement('div');
+
+    returns.forEach(ret => {
+      const returnItem = document.createElement('div');
+      returnItem.style.cssText = `
+        margin-bottom: 8px;
+        padding: 8px;
+        background: #e8f5e8;
+        border-left: 3px solid #4caf50;
+        border-radius: 0 4px 4px 0;
+      `;
+
+      const returnHeader = document.createElement('div');
+      returnHeader.style.cssText = `
+        font-weight: bold;
+        margin-bottom: 4px;
+        color: #333;
+      `;
+
+      const returnName = document.createElement('span');
+      returnName.textContent = ret.name;
+      returnName.style.cssText = `
+        color: #2e7d2e;
+      `;
+
+      const returnType = document.createElement('span');
+      returnType.textContent = ` : ${ret.type}`;
+      returnType.style.cssText = `
+        color: #666;
+      `;
+
+      returnHeader.appendChild(returnName);
+      returnHeader.appendChild(returnType);
+
+      returnItem.appendChild(returnHeader);
+
+      if (ret.description) {
+        const returnDesc = document.createElement('div');
+        returnDesc.textContent = ret.description;
+        returnDesc.style.cssText = `
+          color: #555;
+          font-size: 11px;
+        `;
+        returnItem.appendChild(returnDesc);
+      }
+
+      returnsList.appendChild(returnItem);
+    });
+
+    section.appendChild(title);
+    section.appendChild(returnsList);
+    return section;
+  }
+
+  private createMetadataSection(metadata: any): HTMLElement {
+    const section = document.createElement('div');
+    section.style.cssText = `
+      margin-bottom: 16px;
+    `;
+
+    const title = document.createElement('h3');
+    title.textContent = 'Additional Information';
+    title.style.cssText = `
+      margin: 0 0 8px 0;
+      color: #333;
+      font-size: 14px;
+      font-weight: bold;
+    `;
+
+    const metadataGrid = document.createElement('div');
+    metadataGrid.style.cssText = `
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px;
+      background: #f0f4f8;
+      padding: 12px;
+      border-radius: 4px;
+      border: 1px solid #e1e8ed;
+    `;
+
+    const metadataEntries = [
+      ['Complexity', metadata.complexity],
+      ['Data Type', metadata.data_type],
+      ['Output Type', metadata.output_type],
+      ['MATLAB Equivalent', metadata.matlab_equivalent]
+    ].filter(([_, value]) => value);
+
+    metadataEntries.forEach(([key, value]) => {
+      const keyElement = document.createElement('div');
+      keyElement.textContent = `${key}:`;
+      keyElement.style.cssText = `
+        font-weight: bold;
+        color: #333;
+        font-size: 11px;
+      `;
+
+      const valueElement = document.createElement('div');
+      valueElement.textContent = value;
+      valueElement.style.cssText = `
+        color: #555;
+        font-size: 11px;
+      `;
+
+      metadataGrid.appendChild(keyElement);
+      metadataGrid.appendChild(valueElement);
+    });
+
+    section.appendChild(title);
+    section.appendChild(metadataGrid);
+    return section;
+  }
+
+  private createDocstringSection(docstring: string): HTMLElement {
+    const section = document.createElement('div');
+    section.style.cssText = `
+      margin-bottom: 16px;
+    `;
+
+    const title = document.createElement('h3');
+    title.textContent = 'Full Documentation';
+    title.style.cssText = `
+      margin: 0 0 8px 0;
+      color: #333;
+      font-size: 14px;
+      font-weight: bold;
+    `;
+
+    const docstringContent = document.createElement('div');
+    docstringContent.textContent = docstring;
+    docstringContent.style.cssText = `
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      padding: 12px;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 10px;
+      line-height: 1.4;
+      color: #333;
+      white-space: pre-wrap;
+      max-height: 200px;
+      overflow-y: auto;
+    `;
+
+    section.appendChild(title);
+    section.appendChild(docstringContent);
+    return section;
+  }
+
+  private filterFunctions(container: HTMLElement, searchTerm: string): void {
+    const sections = container.querySelectorAll('.shm-category-section');
+    
+    sections.forEach(section => {
+      const items = section.querySelectorAll('.shm-function-item');
+      let hasVisibleItems = false;
+      
+      items.forEach(item => {
+        const nameElement = item.querySelector('div');
+        const descElement = item.querySelector('div:last-child');
+        const name = nameElement?.textContent?.toLowerCase() || '';
+        const desc = descElement?.textContent?.toLowerCase() || '';
+        
+        const matches = name.includes(searchTerm) || desc.includes(searchTerm);
+        (item as HTMLElement).style.display = matches ? 'block' : 'none';
+        
+        if (matches) hasVisibleItems = true;
+      });
+      
+      // Show/hide entire section based on whether it has visible items
+      (section as HTMLElement).style.display = hasVisibleItems ? 'block' : 'none';
+      
+      // Expand sections that have matches
+      if (hasVisibleItems && searchTerm.length > 0) {
+        const content = section.querySelector('.shm-category-content') as HTMLElement;
+        const arrow = section.querySelector('.shm-category-header span:last-child') as HTMLElement;
+        if (content && arrow) {
+          content.style.display = 'block';
+          arrow.textContent = '▼';
+        }
+      }
+    });
+  }
+
+  private selectFunction(func: SHMFunction): void {
+    // Add to recently used (max 5)
+    this.recentlyUsed = [func.name, ...this.recentlyUsed.filter(n => n !== func.name)].slice(0, 5);
+    
+    // Insert the function directly
+    this.insertFunctionDirect(func);
+  }
+
+  private insertFunctionDirect(func: SHMFunction): void {
+    console.log('🔧 Inserting function directly:', func.name);
+    
+    // Generate code snippet
+    const codeSnippet = this.generateCodeSnippet(func);
+    console.log('📝 Generated code snippet:', codeSnippet);
+    
+    // Get current notebook widget
+    const currentWidget = this.notebookTracker.currentWidget;
+    if (!currentWidget) {
+      console.log('❌ No current notebook widget');
+      this.showNotification('No active notebook found', '#ff9800');
+      return;
+    }
+
+    const notebook = currentWidget.content;
+    const activeCell = notebook.activeCell;
+    
+    if (activeCell && activeCell.model.type === 'code') {
+      console.log('📝 Inserting into active code cell');
+      // Insert at cursor position in active cell
+      const editor = activeCell.editor;
+      if (editor) {
+        const cursorPos = editor.getCursorPosition();
+        const currentText = editor.model.sharedModel.getSource();
+        
+        // Insert code at cursor position
+        const lines = currentText.split('\n');
+        const line = lines[cursorPos.line] || '';
+        const before = line.substring(0, cursorPos.column);
+        const after = line.substring(cursorPos.column);
+        
+        // If we're in the middle of a line, add newlines
+        const insertion = (before.trim() ? '\n' : '') + codeSnippet + (after.trim() ? '\n' : '');
+        lines[cursorPos.line] = before + insertion + after;
+        
+        editor.model.sharedModel.setSource(lines.join('\n'));
+        
+        // Move cursor to first parameter
+        const newCursorLine = cursorPos.line + (before.trim() ? 1 : 0);
+        editor.setCursorPosition({ line: newCursorLine, column: codeSnippet.indexOf('=') + 1 });
+        
+        console.log('✅ Successfully inserted function into active cell');
+      }
+    } else {
+      console.log('📄 Creating new code cell');
+      // Create new code cell
+      const cellIndex = notebook.activeCellIndex !== -1 ? notebook.activeCellIndex + 1 : notebook.widgets.length;
+      notebook.model.sharedModel.insertCell(cellIndex, {
+        cell_type: 'code',
+        source: codeSnippet
+      });
+      
+      // Activate the new cell
+      notebook.activeCellIndex = cellIndex;
+      console.log('✅ Successfully created new cell with function');
+    }
+
+    // Show success notification
+    this.showNotification(`✅ Inserted ${func.displayName}`, '#4caf50');
+    
+    // Update the hidden dropdown for compatibility
+    if (this.dropdown) {
+      this.dropdown.value = func.name;
+    }
   }
 
   private insertSelectedFunction(nbPanel: any): void {
@@ -466,12 +1987,12 @@ class SHMFunctionSelector {
   private getEnhancedParameterDefault(param: any): string {
     // Priority 1: Use GUI widget default if available
     if (param.widget && param.widget.default) {
-      return param.widget.default;
+      return this.ensureProperQuoting(param.widget.default, param.type);
     }
     
     // Priority 2: Use function signature default
     if (param.default && param.default !== 'None' && param.default !== '<inspect.Parameter.empty>') {
-      return param.default;
+      return this.ensureProperQuoting(param.default, param.type);
     }
     
     // Priority 3: Smart defaults based on parameter name and type
@@ -561,6 +2082,34 @@ class SHMFunctionSelector {
     return comment;
   }
 
+  private ensureProperQuoting(value: string, paramType: string): string {
+    // If the value is already properly quoted, return as is
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      return value;
+    }
+    
+    // Check if this should be a string based on type information
+    const isStringType = paramType.toLowerCase().includes('str') || 
+                        paramType.includes('<class \'str\'>') ||
+                        paramType.includes('typing.Literal') ||
+                        paramType.includes('str]'); // for Union[str, ...]
+    
+    // Also check if the value looks like it should be a string:
+    // - Contains only letters (likely an enum/choice value)
+    // - Is a common Python literal that should be quoted
+    const looksLikeString = /^[a-zA-Z][a-zA-Z0-9_]*$/.test(value) && 
+                           !['True', 'False', 'None'].includes(value) &&
+                           isNaN(Number(value));
+    
+    if (isStringType || looksLikeString) {
+      // Add quotes if it's clearly a string
+      return `'${value}'`;
+    }
+    
+    // For other types, return as is
+    return value;
+  }
+
   private generateFunctionHeader(func: SHMFunction): string {
     let header = `# ${func.description}\n`;
     
@@ -585,9 +2134,22 @@ class SHMFunctionSelector {
     if (func.returns && func.returns.length > 0) {
       const returnNames = func.returns.map((ret: any) => ret.name).filter(Boolean);
       if (returnNames.length > 1) {
-        return returnNames.join(', ');
+        // Clean up the return names and remove any invalid characters
+        const cleanNames = returnNames.map(name => {
+          // Remove any invalid characters like '.', keep only valid Python identifiers
+          return name.replace(/[^a-zA-Z0-9_]/g, '').trim();
+        }).filter(name => name.length > 0); // Remove empty names
+        
+        if (cleanNames.length > 1) {
+          return cleanNames.join(', ');
+        } else if (cleanNames.length === 1) {
+          return cleanNames[0];
+        }
       } else if (returnNames.length === 1) {
-        return returnNames[0];
+        const cleanName = returnNames[0].replace(/[^a-zA-Z0-9_]/g, '').trim();
+        if (cleanName.length > 0) {
+          return cleanName;
+        }
       }
     }
     
@@ -655,6 +2217,399 @@ class SHMFunctionSelector {
         notification.parentNode.removeChild(notification);
       }
     }, 3000);
+  }
+
+  // Helper methods for keyboard shortcuts integration
+  public getFunctionByName(name: string): SHMFunction | null {
+    return this.functions.find(f => f.name === name) || null;
+  }
+
+  public getAllFunctions(): SHMFunction[] {
+    return this.functions;
+  }
+
+  public insertFunction(func: SHMFunction): void {
+    // Use the new direct insertion method
+    this.insertFunctionDirect(func);
+  }
+
+  public showDocumentationPopup(func: SHMFunction): void {
+    this.showFunctionDocumentation(func, document.body);
+  }
+
+  private showSettingsPanel(): void {
+    // Remove existing settings panel if any
+    const existingPanel = document.querySelector('.shm-settings-panel');
+    if (existingPanel) {
+      existingPanel.remove();
+    }
+
+    // Create settings overlay
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 10000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    `;
+
+    // Create settings panel
+    const panel = document.createElement('div');
+    panel.className = 'shm-settings-panel';
+    panel.style.cssText = `
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      max-width: min(500px, 90vw);
+      width: 90vw;
+      max-height: 80vh;
+      overflow-y: auto;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 12px;
+    `;
+
+    // Create panel content
+    const content = this.createSettingsContent();
+    panel.appendChild(content);
+
+    // Add close button
+    const closeButton = document.createElement('button');
+    closeButton.textContent = '✕';
+    closeButton.style.cssText = `
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      border: none;
+      background: #f5f5f5;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      color: #666;
+    `;
+
+    closeButton.addEventListener('click', () => {
+      overlay.remove();
+    });
+
+    panel.appendChild(closeButton);
+    overlay.appendChild(panel);
+
+    // Close on overlay click
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        overlay.remove();
+      }
+    });
+
+    // Close on Escape key
+    const escapeHandler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        overlay.remove();
+        document.removeEventListener('keydown', escapeHandler);
+      }
+    };
+    document.addEventListener('keydown', escapeHandler);
+
+    document.body.appendChild(overlay);
+  }
+
+  private createSettingsContent(): HTMLElement {
+    const content = document.createElement('div');
+
+    // Title
+    const title = document.createElement('h2');
+    title.textContent = 'SHM Function Selector Settings';
+    title.style.cssText = `
+      margin: 0 0 20px 0;
+      color: #333;
+      font-size: 18px;
+      text-align: center;
+    `;
+
+    // Settings sections
+    const settingsForm = document.createElement('div');
+
+    // Auto-insert setting
+    const autoInsertSection = this.createSettingSection(
+      'Auto Function Insertion',
+      'Automatically insert function when selected from dropdown',
+      'checkbox',
+      'autoInsert',
+      this.getSettingValue('autoInsert', true)
+    );
+
+    // Show recently used setting
+    const recentlyUsedSection = this.createSettingSection(
+      'Show Recently Used',
+      'Display recently used functions at the top of the dropdown',
+      'checkbox',
+      'showRecentlyUsed',
+      this.getSettingValue('showRecentlyUsed', true)
+    );
+
+    // Function count setting
+    const functionCountSection = this.createSettingSection(
+      'Recently Used Count',
+      'Number of recently used functions to remember',
+      'number',
+      'recentlyUsedCount',
+      this.getSettingValue('recentlyUsedCount', 5)
+    );
+
+    // Context menu delay setting
+    const contextMenuSection = this.createSettingSection(
+      'Context Menu Sensitivity',
+      'Right-click sensitivity for parameter detection',
+      'select',
+      'contextMenuSensitivity',
+      this.getSettingValue('contextMenuSensitivity', 'normal'),
+      ['high', 'normal', 'low']
+    );
+
+    // Keyboard shortcuts enabled
+    const keyboardSection = this.createSettingSection(
+      'Enable Keyboard Shortcuts',
+      'Enable Ctrl+Shift+[F,H,I,L,S] shortcuts',
+      'checkbox',
+      'keyboardShortcuts',
+      this.getSettingValue('keyboardShortcuts', true)
+    );
+
+    // Function documentation mode
+    const docModeSection = this.createSettingSection(
+      'Documentation Mode',
+      'How to display function documentation',
+      'select',
+      'documentationMode',
+      this.getSettingValue('documentationMode', 'popup'),
+      ['popup', 'inline', 'sidebar']
+    );
+
+    // Parameter validation setting
+    const validationSection = this.createSettingSection(
+      'Enable Parameter Validation',
+      'Validate parameter types when linking variables (disabled by default for flexibility)',
+      'checkbox',
+      'enableParameterValidation',
+      this.getSettingValue('enableParameterValidation', false)
+    );
+
+    settingsForm.appendChild(autoInsertSection);
+    settingsForm.appendChild(recentlyUsedSection);
+    settingsForm.appendChild(functionCountSection);
+    settingsForm.appendChild(contextMenuSection);
+    settingsForm.appendChild(keyboardSection);
+    settingsForm.appendChild(docModeSection);
+    settingsForm.appendChild(validationSection);
+
+    // Action buttons
+    const buttonSection = document.createElement('div');
+    buttonSection.style.cssText = `
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid #eee;
+    `;
+
+    const saveButton = document.createElement('button');
+    saveButton.textContent = 'Save Settings';
+    saveButton.style.cssText = `
+      padding: 8px 16px;
+      background: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    `;
+
+    const resetButton = document.createElement('button');
+    resetButton.textContent = 'Reset to Defaults';
+    resetButton.style.cssText = `
+      padding: 8px 16px;
+      background: #ff9800;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    `;
+
+    saveButton.addEventListener('click', () => {
+      this.saveSettings(settingsForm);
+      this.showNotification('Settings saved successfully', '#4caf50');
+      document.querySelector('.shm-settings-panel')?.parentElement?.remove();
+    });
+
+    resetButton.addEventListener('click', () => {
+      this.resetSettings();
+      this.showNotification('Settings reset to defaults', '#ff9800');
+      document.querySelector('.shm-settings-panel')?.parentElement?.remove();
+    });
+
+    buttonSection.appendChild(saveButton);
+    buttonSection.appendChild(resetButton);
+
+    content.appendChild(title);
+    content.appendChild(settingsForm);
+    content.appendChild(buttonSection);
+
+    return content;
+  }
+
+  private createSettingSection(
+    label: string,
+    description: string,
+    type: string,
+    key: string,
+    value: any,
+    options?: string[]
+  ): HTMLElement {
+    const section = document.createElement('div');
+    section.style.cssText = `
+      margin-bottom: 20px;
+      padding: 16px;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      background: #fafafa;
+    `;
+
+    const labelElement = document.createElement('div');
+    labelElement.textContent = label;
+    labelElement.style.cssText = `
+      font-weight: bold;
+      margin-bottom: 4px;
+      color: #333;
+    `;
+
+    const descElement = document.createElement('div');
+    descElement.textContent = description;
+    descElement.style.cssText = `
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 8px;
+    `;
+
+    let inputElement: HTMLElement;
+
+    if (type === 'checkbox') {
+      inputElement = document.createElement('input');
+      (inputElement as HTMLInputElement).type = 'checkbox';
+      (inputElement as HTMLInputElement).checked = value;
+    } else if (type === 'number') {
+      inputElement = document.createElement('input');
+      (inputElement as HTMLInputElement).type = 'number';
+      (inputElement as HTMLInputElement).value = value.toString();
+      (inputElement as HTMLInputElement).min = '1';
+      (inputElement as HTMLInputElement).max = '10';
+    } else if (type === 'select' && options) {
+      inputElement = document.createElement('select');
+      options.forEach(option => {
+        const optionElement = document.createElement('option');
+        optionElement.value = option;
+        optionElement.textContent = option.charAt(0).toUpperCase() + option.slice(1);
+        if (option === value) {
+          optionElement.selected = true;
+        }
+        (inputElement as HTMLSelectElement).appendChild(optionElement);
+      });
+    } else {
+      inputElement = document.createElement('input');
+      (inputElement as HTMLInputElement).type = 'text';
+      (inputElement as HTMLInputElement).value = value.toString();
+    }
+
+    inputElement.setAttribute('data-setting-key', key);
+    inputElement.style.cssText = `
+      padding: 4px 8px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      font-size: 11px;
+    `;
+
+    section.appendChild(labelElement);
+    section.appendChild(descElement);
+    section.appendChild(inputElement);
+
+    return section;
+  }
+
+  public getSettingValue(key: string, defaultValue: any): any {
+    try {
+      const stored = localStorage.getItem(`shm-selector-${key}`);
+      if (stored !== null) {
+        return typeof defaultValue === 'boolean' ? stored === 'true' : 
+               typeof defaultValue === 'number' ? parseInt(stored) : stored;
+      }
+    } catch (e) {
+      console.warn(`Failed to get setting ${key}:`, e);
+    }
+    return defaultValue;
+  }
+
+  private saveSettings(form: HTMLElement): void {
+    const inputs = form.querySelectorAll('[data-setting-key]');
+    inputs.forEach(input => {
+      const key = input.getAttribute('data-setting-key')!;
+      let value: string;
+      
+      if (input.getAttribute('type') === 'checkbox') {
+        value = (input as HTMLInputElement).checked.toString();
+      } else {
+        value = (input as HTMLInputElement | HTMLSelectElement).value;
+      }
+      
+      try {
+        localStorage.setItem(`shm-selector-${key}`, value);
+      } catch (e) {
+        console.warn(`Failed to save setting ${key}:`, e);
+      }
+    });
+
+    // Apply settings immediately
+    this.applySettings();
+  }
+
+  private resetSettings(): void {
+    const keys = [
+      'autoInsert',
+      'showRecentlyUsed', 
+      'recentlyUsedCount',
+      'contextMenuSensitivity',
+      'keyboardShortcuts',
+      'documentationMode',
+      'enableParameterValidation'
+    ];
+
+    keys.forEach(key => {
+      try {
+        localStorage.removeItem(`shm-selector-${key}`);
+      } catch (e) {
+        console.warn(`Failed to reset setting ${key}:`, e);
+      }
+    });
+
+    this.applySettings();
+  }
+
+  private applySettings(): void {
+    // Apply recently used count setting
+    const maxRecentlyUsed = this.getSettingValue('recentlyUsedCount', 5);
+    this.recentlyUsed = this.recentlyUsed.slice(0, maxRecentlyUsed);
+
+    console.log('✅ SHM settings applied');
   }
 }
 
@@ -1313,7 +3268,8 @@ class SHMContextMenuManager {
     event: MouseEvent, 
     parameterContext: ParameterContext, 
     notebook: any,
-    currentCellIndex: number = -1
+    currentCellIndex: number = -1,
+    enableValidation: boolean = false
   ): void {
     this.hideContextMenu();
     
@@ -1344,20 +3300,45 @@ class SHMContextMenuManager {
     // Create context menu
     this.contextMenu = document.createElement('div');
     this.contextMenu.className = 'shm-context-menu';
+    // Calculate responsive position and size
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const isMobile = viewportWidth < 768;
+    
+    let menuLeft = event.pageX;
+    let menuTop = event.pageY;
+    let menuWidth = isMobile ? 'min(300px, 80vw)' : '200px';
+    let maxHeight = isMobile ? '50vh' : '300px';
+    
+    // Adjust position for mobile or if menu would go off-screen
+    if (isMobile) {
+      menuLeft = Math.max(10, Math.min(event.pageX, viewportWidth - 300));
+      menuTop = Math.max(10, Math.min(event.pageY, viewportHeight - 200));
+    } else {
+      // Keep menu on screen for desktop
+      if (menuLeft + 200 > viewportWidth) {
+        menuLeft = viewportWidth - 210;
+      }
+      if (menuTop + 300 > viewportHeight) {
+        menuTop = viewportHeight - 310;
+      }
+    }
+    
     this.contextMenu.style.cssText = `
       position: fixed;
-      left: ${event.pageX}px;
-      top: ${event.pageY}px;
+      left: ${menuLeft}px;
+      top: ${menuTop}px;
       background: white;
       border: 1px solid #ccc;
       border-radius: 4px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
       font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-      font-size: 12px;
+      font-size: ${isMobile ? '13px' : '12px'};
       z-index: 10000;
-      max-height: 300px;
+      max-height: ${maxHeight};
       overflow-y: auto;
-      min-width: 200px;
+      min-width: ${menuWidth};
+      max-width: 90vw;
     `;
 
     // Add header
@@ -1386,7 +3367,7 @@ class SHMContextMenuManager {
       this.contextMenu.appendChild(compatibleHeader);
 
       compatibleVars.forEach(variable => {
-        this.addVariableMenuItem(variable, parameterContext, notebook, true);
+        this.addVariableMenuItem(variable, parameterContext, notebook, true, enableValidation);
       });
     }
 
@@ -1404,7 +3385,7 @@ class SHMContextMenuManager {
       this.contextMenu.appendChild(otherHeader);
 
       otherVars.forEach(variable => {
-        this.addVariableMenuItem(variable, parameterContext, notebook, false);
+        this.addVariableMenuItem(variable, parameterContext, notebook, false, enableValidation);
       });
     }
 
@@ -1438,16 +3419,21 @@ class SHMContextMenuManager {
     variable: Variable, 
     parameterContext: ParameterContext, 
     notebook: any,
-    isRecommended: boolean
+    isRecommended: boolean,
+    enableValidation: boolean = false
   ): void {
     const menuItem = document.createElement('div');
     menuItem.className = 'shm-context-menu-item';
+    const isMobile = window.innerWidth < 768;
     menuItem.style.cssText = `
-      padding: 8px 12px;
+      padding: ${isMobile ? '12px 16px' : '8px 12px'};
       cursor: pointer;
       border-bottom: 1px solid #eee;
       transition: background 0.2s;
       ${isRecommended ? 'background: #f0fff0;' : ''}
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
     `;
 
     menuItem.innerHTML = `
@@ -1468,7 +3454,7 @@ class SHMContextMenuManager {
     });
 
     menuItem.addEventListener('click', () => {
-      this.linkParameterToVariable(variable, parameterContext, notebook);
+      this.linkParameterToVariable(variable, parameterContext, notebook, enableValidation);
       this.hideContextMenu();
     });
 
@@ -1481,16 +3467,19 @@ class SHMContextMenuManager {
   linkParameterToVariable(
     variable: Variable, 
     parameterContext: ParameterContext, 
-    notebook: any
+    notebook: any,
+    enableValidation: boolean = false
   ): void {
     const activeCell = notebook.activeCell;
     if (!activeCell) return;
 
-    // Validate the parameter replacement before applying
-    const validationResult = this.validateParameterReplacement(variable, parameterContext);
-    if (!validationResult.isValid) {
-      this.showValidationError(validationResult.error!);
-      return;
+    // Validate the parameter replacement before applying (if validation is enabled)
+    if (enableValidation) {
+      const validationResult = this.validateParameterReplacement(variable, parameterContext);
+      if (!validationResult.isValid) {
+        this.showValidationError(validationResult.error!);
+        return;
+      }
     }
 
     const editor = activeCell.editor;
