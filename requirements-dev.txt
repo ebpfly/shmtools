@@ -1,12 +1,15 @@
 # Development dependencies
 pytest>=6.0
 pytest-cov
+pytest-xdist
 black
 flake8
 mypy
 pre-commit
 jupyter
 notebook
+nbval>=0.9.6
+nbconvert>=6.0
 sphinx>=4.0
 sphinx-rtd-theme
 myst-parser
