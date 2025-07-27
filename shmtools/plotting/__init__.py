@@ -2,14 +2,13 @@
 Plotting utilities for SHMTools visualization.
 
 This module provides specialized plotting functions for structural
-health monitoring data visualization using matplotlib and Bokeh.
+health monitoring data visualization using matplotlib.
 """
 
-from .spectral_plots import plot_psd, plot_spectrogram, plot_time_freq, plotPSD_shm
+from .spectral_plots import plot_psd_shm, plot_spectrogram_shm, plotPSD_shm
 
 __all__ = [
-    "plot_psd",
-    "plot_spectrogram", 
-    "plot_time_freq",
+    "plot_psd_shm",
+    "plot_spectrogram_shm", 
     "plotPSD_shm",
 ]

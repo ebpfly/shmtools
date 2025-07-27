@@ -329,18 +329,18 @@ def score_svd_shm(Y: np.ndarray, model: Dict[str, Any]) -> Tuple[np.ndarray, np.
     return scores, residuals
 
 
-def learn_pca(X: np.ndarray, per_var: float = 0.90, stand: int = 0) -> Dict[str, Any]:
+def learn_pca_shm(X: np.ndarray, per_var: float = 0.90, stand: int = 0) -> Dict[str, Any]:
     """
     Learn principal component analysis (PCA) for outlier detection.
 
     .. meta::
         :category: Classification - Parametric Detectors
-        :matlab_equivalent: learnPCA
+        :matlab_equivalent: learnPCA_shm
         :complexity: Basic
         :data_type: Features
         :output_type: Model
-        :display_name: Learn PCA Model
-        :verbose_call: [PCA Model] = Learn Principal Component Analysis (Training Features, Percentage of Variance, Standardization)
+        :display_name: Learn Principal Component Analysis
+        :verbose_call: [Model] = Learn Principal Component Analysis (Training Features, Percentage of Variance, Standardization)
 
     Parameters
     ----------
@@ -445,18 +445,18 @@ def learn_pca(X: np.ndarray, per_var: float = 0.90, stand: int = 0) -> Dict[str,
     return model
 
 
-def score_pca(Y: np.ndarray, model: Dict[str, Any]) -> tuple[np.ndarray, np.ndarray]:
+def score_pca_shm(Y: np.ndarray, model: Dict[str, Any]) -> tuple[np.ndarray, np.ndarray]:
     """
     Score principal component analysis (PCA) for outlier detection.
 
     .. meta::
         :category: Classification - Parametric Detectors
-        :matlab_equivalent: scorePCA
+        :matlab_equivalent: scorePCA_shm
         :complexity: Basic
         :data_type: Features
         :output_type: Scores
-        :display_name: Score PCA Model
-        :verbose_call: [Scores, Residuals] = Score Principal Component Analysis (Test Features, PCA Model)
+        :display_name: Score Principal Component Analysis
+        :verbose_call: [Scores, Residuals] = Score Principal Component Analysis (Test Features, Model)
 
     Parameters
     ----------
@@ -520,7 +520,7 @@ def score_pca(Y: np.ndarray, model: Dict[str, Any]) -> tuple[np.ndarray, np.ndar
     return scores, residuals
 
 
-def roc(
+def roc_shm(
     scores: np.ndarray,
     damage_states: np.ndarray,
     num_pts: Optional[int] = None,
@@ -534,10 +534,12 @@ def roc(
 
     .. meta::
         :category: Classification - Performance Evaluation
-        :matlab_equivalent: ROC
+        :matlab_equivalent: ROC_shm
         :complexity: Basic
         :data_type: Scores
         :output_type: Performance Metrics
+        :display_name: ROC Curve
+        :verbose_call: [True Positive Rate, False Positive Rate] = ROC Curve (Scores, Damage States, Number of Points, Threshold Type)
 
     Parameters
     ----------
@@ -644,82 +646,6 @@ def roc(
 
     return TPR, FPR
 
-
-def roc_shm(
-    scores: np.ndarray,
-    damage_states: np.ndarray,
-    num_pts: Optional[int] = None,
-    threshold_type: str = "below",
-) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Receiver operating characteristic (ROC) curve (MATLAB-compatible).
-
-    Tool to compare and evaluate the performance of classification algorithms.
-    Note that the scores should decrease for the damaged instances.
-
-    .. meta::
-        :category: Classification - Performance Evaluation
-        :matlab_equivalent: ROC_shm
-        :complexity: Basic
-        :data_type: Scores
-        :output_type: Performance Metrics
-        :display_name: ROC Curve
-        :verbose_call: [True Positive Rate, False Positive Rate] = ROC Curve (Scores, Damage States, Number of Points, Threshold Type)
-
-    Parameters
-    ----------
-    scores : array_like
-        Vector composed of scores for each instance.
-        Shape: (INSTANCES,)
-
-        .. gui::
-            :widget: file_upload
-            :formats: [".csv", ".mat", ".npy"]
-
-    damage_states : array_like
-        Binary classification vector of known damage states
-        (0-undamaged and 1-damaged) corresponding to vector of scores.
-        Shape: (INSTANCES,)
-
-        .. gui::
-            :widget: file_upload
-            :formats: [".csv", ".mat", ".npy"]
-
-    num_pts : int, optional
-        Number of points to evaluate ROC curve at. If None (recommended),
-        each score value from a damaged state is used as a threshold.
-
-        .. gui::
-            :widget: spinner
-            :min: 10
-            :max: 1000
-            :default: 100
-
-    threshold_type : str, optional
-        'above' or 'below' to define if scores above or below a given
-        threshold should be flagged as damaged (default: 'below')
-
-        .. gui::
-            :widget: dropdown
-            :options: ["below", "above"]
-            :default: "below"
-
-    Returns
-    -------
-    TPR : ndarray
-        Vector composed of true positive rates.
-        Shape: (POINTS,)
-
-    FPR : ndarray
-        Vector composed of false positive rates.
-        Shape: (POINTS,)
-
-    References
-    ----------
-    MATLAB ROC_shm function from SHMTools.
-    """
-    # Use the existing roc function implementation 
-    return roc(scores, damage_states, num_pts, threshold_type)
 
 
 def learn_factor_analysis_shm(

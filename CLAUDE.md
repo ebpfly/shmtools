@@ -127,7 +127,7 @@ cd .. && source venv/bin/activate && jupyter lab build
 
 ### Core Python Library (`shmtools/`)
 
-**Two-tier function architecture**: Each function has both a MATLAB-compatible version (with `_shm` suffix) and a modern Python version:
+**MATLAB-compatible function architecture**: All functions use the `_shm` suffix for MATLAB compatibility:
 
 - **`core/`** - Signal processing fundamentals (spectral analysis, filtering, statistics)
 - **`features/`** - Feature extraction (time series modeling, AR models) 
@@ -312,9 +312,11 @@ def load_3story_data() -> Dict[str, Any]:
 
 ### Function Naming Convention
 
-- **MATLAB-compatible**: `psdWelch_shm()` (with `_shm` suffix)
-- **Modern Python**: `psd_welch()` (exported in main `__init__.py`)
-- **Example**: Both `shmtools.core.psd_welch_shm()` and `shmtools.psd_welch()` available
+**CRITICAL**: All functions must use the `_shm` suffix for MATLAB compatibility.
+
+- **All functions**: `psd_welch_shm()` (with `_shm` suffix)
+- **Export pattern**: `shmtools.core.psd_welch_shm()` 
+- **No modern Python versions**: Only `_shm` functions should exist
 
 ### Docstring Format
 

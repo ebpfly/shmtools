@@ -20,7 +20,7 @@ except ImportError:
     HAS_BOKEH = False
 
 
-def plot_psd(
+def plot_psd_shm(
     psd_matrix: np.ndarray,
     channel: int = 1,
     is_one_sided: bool = True,
@@ -281,7 +281,7 @@ def _plot_psd_lines(
     return ax
 
 
-def plot_spectrogram(
+def plot_spectrogram_shm(
     f: np.ndarray,
     t: np.ndarray,
     Sxx: np.ndarray,
@@ -357,7 +357,7 @@ def plotPSD_shm(
         Axes object containing the plot.
     """
     # Use the existing plot_psd function with MATLAB-style interface
-    return plot_psd(
+    return plot_psd_shm(
         psd_matrix=psd_matrix,
         f=f,
         is_one_sided=is_one_sided,

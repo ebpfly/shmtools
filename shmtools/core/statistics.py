@@ -265,7 +265,7 @@ def fm4_shm(D: np.ndarray) -> np.ndarray:
 # Current placeholder implementations have been removed to prevent incorrect usage
 
 
-def peak_factor(x: np.ndarray, axis: int = 0) -> np.ndarray:
+def peak_factor_shm(x: np.ndarray, axis: int = 0) -> np.ndarray:
     """
     Compute peak factor (maximum value normalized by RMS).
     
@@ -304,7 +304,7 @@ def peak_factor(x: np.ndarray, axis: int = 0) -> np.ndarray:
     return peak / (rms_val + 1e-12)
 
 
-def impulse_factor(x: np.ndarray, axis: int = 0) -> np.ndarray:
+def impulse_factor_shm(x: np.ndarray, axis: int = 0) -> np.ndarray:
     """
     Compute impulse factor (peak divided by mean absolute value).
     
@@ -343,7 +343,7 @@ def impulse_factor(x: np.ndarray, axis: int = 0) -> np.ndarray:
     return peak / (mean_abs + 1e-12)
 
 
-def clearance_factor(x: np.ndarray, axis: int = 0) -> np.ndarray:
+def clearance_factor_shm(x: np.ndarray, axis: int = 0) -> np.ndarray:
     """
     Compute clearance factor (peak divided by square of mean square root).
     
@@ -382,7 +382,7 @@ def clearance_factor(x: np.ndarray, axis: int = 0) -> np.ndarray:
     return peak / (mean_sqrt**2 + 1e-12)
 
 
-def shape_factor(x: np.ndarray, axis: int = 0) -> np.ndarray:
+def shape_factor_shm(x: np.ndarray, axis: int = 0) -> np.ndarray:
     """
     Compute shape factor (RMS divided by mean absolute value).
     
@@ -421,7 +421,7 @@ def shape_factor(x: np.ndarray, axis: int = 0) -> np.ndarray:
     return rms_val / (mean_abs + 1e-12)
 
 
-def compute_damage_features(x: np.ndarray, fs: float = None, 
+def compute_damage_features_shm(x: np.ndarray, fs: float = None, 
                            axis: int = 0) -> Dict[str, Union[float, np.ndarray]]:
     """
     Compute comprehensive set of damage indicators.

@@ -1,26 +1,21 @@
 """
-Feature extraction module for SHMTools.
+Feature extraction functions for SHMTools.
 
-This module contains functions for extracting damage-sensitive features
-from structural response signals including time series modeling,
-modal analysis, and active sensing features.
+This module provides time series modeling and feature extraction functions
+for extracting damage-sensitive features from sensor data.
 """
 
-from .time_series import *
-from .condition_based_monitoring import *
-# from .modal_features import *
-# from .active_sensing_features import *
+# Time series modeling functions
+from .time_series import ar_model_shm, ar_model_order_shm
+
+# Condition-based monitoring functions
+from .condition_based_monitoring import time_sync_avg_shm
+
 
 __all__ = [
-    # Time series features
-    "ar_model",
-    "ar_model_shm",
-    "arx_model", 
-    "ar_model_order",
-    "ar_model_order_shm",
-    # Condition-based monitoring features
+    # Time series modeling
+    "ar_model_shm", "ar_model_order_shm",
+    
+    # Condition-based monitoring
     "time_sync_avg_shm",
-    "timeSyncAvg_shm",
-    # Modal features (TODO)
-    # Active sensing features (TODO)
 ]

@@ -12,7 +12,7 @@ from scipy import signal
 import warnings
 
 
-def residual_signal(
+def residual_signal_shm(
     x: np.ndarray,
     fs: float,
     shaft_freq: float,
@@ -134,7 +134,7 @@ def residual_signal(
     return x_residual
 
 
-def difference_signal(
+def difference_signal_shm(
     x_baseline: np.ndarray,
     x_test: np.ndarray,
     normalize: bool = True
@@ -215,7 +215,7 @@ def difference_signal(
     return x_diff
 
 
-def bandpass_condition_signal(
+def bandpass_condition_signal_shm(
     x: np.ndarray,
     fs: float,
     freq_range: Tuple[float, float],
@@ -317,7 +317,7 @@ def bandpass_condition_signal(
     return x_filtered
 
 
-def gear_mesh_filter(
+def gear_mesh_filter_shm(
     x: np.ndarray,
     fs: float,
     gear_mesh_freq: float,
@@ -437,7 +437,7 @@ def gear_mesh_filter(
     return x_mesh
 
 
-def envelope_signal(
+def envelope_signal_shm(
     x: np.ndarray,
     method: str = 'hilbert',
     smooth_length: Optional[int] = None

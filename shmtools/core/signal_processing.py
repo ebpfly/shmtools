@@ -11,7 +11,7 @@ from scipy import signal, interpolate
 import warnings
 
 
-def ars_tach(
+def ars_tach_shm(
     data: np.ndarray,
     tach: np.ndarray,
     fs: float,
@@ -264,7 +264,7 @@ def ars_tach(
     return data_ars, angle_uniform
 
 
-def fir1(n: int, Wn: Union[float, Tuple[float, float]], 
+def fir1_shm(n: int, Wn: Union[float, Tuple[float, float]], 
          ftype: str = 'low', window: str = 'hamming',
          fs: float = 2.0) -> np.ndarray:
     """

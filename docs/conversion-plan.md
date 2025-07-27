@@ -237,6 +237,15 @@ The `examplePCA.m` script demonstrates:
 
 ### Conversion Requirements
 
+#### Function Naming and Implementation Rules
+
+**CRITICAL**: All functions must use the `_shm` suffix for MATLAB compatibility.
+
+1. All functions MUST have the `_shm` suffix
+2. Functions contain the complete algorithm implementation
+3. No non-`_shm` versions should exist
+4. All function calls within `_shm` functions must use other `_shm` functions
+
 #### Function Signatures (MATLAB-compatible)
 ```python
 def ar_model_shm(data: np.ndarray, order: int) -> Tuple[np.ndarray, np.ndarray]:
@@ -249,6 +258,8 @@ def ar_model_shm(data: np.ndarray, order: int) -> Tuple[np.ndarray, np.ndarray]:
         :complexity: Intermediate
         :data_type: Time Series
         :output_type: Features
+        :display_name: AR Model
+        :verbose_call: [AR Parameters Feature Vectors, RMS Residuals Feature Vectors, AR Parameters, AR Residuals, AR Prediction] = AR Model (Time Series Data, AR Model Order)
     """
 
 def learn_pca_shm(features: np.ndarray, **kwargs) -> Dict[str, Any]:
@@ -261,6 +272,8 @@ def learn_pca_shm(features: np.ndarray, **kwargs) -> Dict[str, Any]:
         :complexity: Basic
         :data_type: Features
         :output_type: Model
+        :display_name: Learn Principal Component Analysis
+        :verbose_call: [Model] = Learn Principal Component Analysis (Training Features, Percentage of Variance, Standardization)
     """
 
 def score_pca_shm(features: np.ndarray, model: Dict[str, Any]) -> np.ndarray:
@@ -273,19 +286,35 @@ def score_pca_shm(features: np.ndarray, model: Dict[str, Any]) -> np.ndarray:
         :complexity: Basic  
         :data_type: Features
         :output_type: Scores
+        :display_name: Score Principal Component Analysis
+        :verbose_call: [Scores, Residuals] = Score Principal Component Analysis (Test Features, Model)
     """
 ```
 
-#### Modern Python Interfaces
+
+### Implementation Consistency Rules
+
+**CRITICAL REQUIREMENTS for all _shm functions:**
+
+1. **Complete Implementation**: `_shm` functions must contain the full algorithm, not be wrappers
+2. **Consistent Naming**: All MATLAB-compatible functions must have `_shm` suffix
+3. **Internal Calls**: Within `_shm` functions, only call other `_shm` functions
+4. **Docstring Format**: Must follow `docs/docstring-format.md` with `:verbose_call:` and `:display_name:`
+5. **MATLAB Equivalence**: Function signatures and behavior must match MATLAB exactly
+
+**Example of INCORRECT implementation:**
 ```python
-# Convenience functions for Pythonic usage
-def pca_outlier_detection(
-    train_features: np.ndarray,
-    test_features: np.ndarray, 
-    n_components: Optional[int] = None,
-    threshold_percentile: float = 95.0
-) -> Tuple[np.ndarray, Dict[str, Any]]:
-    """Modern interface combining learn + score + threshold."""
+def learn_pca_shm(features):
+    return learn_pca(features)  # ❌ Wrapper calling non-_shm function
+```
+
+**Example of CORRECT implementation:**
+```python
+def learn_pca_shm(features):
+    # ✅ Complete algorithm implementation
+    standardized = standardize_features_shm(features)
+    model = fit_pca_algorithm(standardized)
+    return model
 ```
 
 ### Success Criteria
@@ -313,7 +342,11 @@ This phase establishes foundation functions reused in later examples:
 
 ### Additional Dependencies
 - **`learnMahalanobis_shm`** → `shmtools.classification.learn_mahalanobis_shm()` ✅
+  - **VERBOSE CALL**: `[Model] = Learn Mahalanobis (Training Features)`
+  - **Display Name**: "Learn Mahalanobis"
 - **`scoreMahalanobis_shm`** → `shmtools.classification.score_mahalanobis_shm()` ✅
+  - **VERBOSE CALL**: `[Scores] = Score Mahalanobis (Test Features, Model)`
+  - **Display Name**: "Score Mahalanobis"
 
 **Reuses**: `arModel_shm` from Phase 1, same data loading patterns ✅
 
@@ -328,7 +361,11 @@ This phase establishes foundation functions reused in later examples:
 
 ### Additional Dependencies
 - **`learnSVD_shm`** → `shmtools.classification.learn_svd_shm()` ✅
+  - **VERBOSE CALL**: `[Model] = Learn Singular Value Decomposition (Training Features, Standardization)`
+  - **Display Name**: "Learn Singular Value Decomposition"
 - **`scoreSVD_shm`** → `shmtools.classification.score_svd_shm()` ✅
+  - **VERBOSE CALL**: `[Scores, Residuals] = Score Singular Value Decomposition (Test Features, Model)`
+  - **Display Name**: "Score Singular Value Decomposition"
 
 **Reuses**: `arModel_shm`, data patterns from Phases 1-2 ✅
 
@@ -343,7 +380,11 @@ This phase establishes foundation functions reused in later examples:
 
 ### Additional Dependencies
 - **`learnFactorAnalysis_shm`** → `shmtools.classification.learn_factor_analysis_shm()` ✅
+  - **VERBOSE CALL**: `[Model] = Learn Factor Analysis (Training Features, # Comum Factors, Factor Scores, Estimation Method)`
+  - **Display Name**: "Learn Factor Analysis"
 - **`scoreFactorAnalysis_shm`** → `shmtools.classification.score_factor_analysis_shm()` ✅
+  - **VERBOSE CALL**: `[Scores, Unique Factors, Factor Scores] = Score Factor Analysis (Test Features, Model)`
+  - **Display Name**: "Score Factor Analysis"
 
 ---
 
@@ -373,6 +414,8 @@ This phase requires complex neural network implementation (TensorFlow/PyTorch) f
 
 ### Additional Dependencies
 - **`arModelOrder_shm`** → `shmtools.features.ar_model_order_shm()` ✅
+  - **VERBOSE CALL**: `[Mean AR Order, AR Orders, Model] = AR Model Order (Time Series Data, Method, Maximum AR Order, Tolerance)`
+  - **Display Name**: "AR Model Order"
 - Information criteria (AIC, BIC) for model selection ✅
 
 ---
