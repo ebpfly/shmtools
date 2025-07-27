@@ -73,6 +73,58 @@ class NotebookPublisher:
         self.html_exporter.exclude_input_prompt = False
         self.html_exporter.exclude_output_prompt = False
         
+    def format_display_name(self, filename: str) -> str:
+        """
+        Convert filename to proper display name with correct acronym capitalization.
+        
+        Parameters
+        ----------
+        filename : str
+            Filename (without extension) to convert
+            
+        Returns
+        -------
+        display_name : str
+            Properly formatted display name
+        """
+        # Common technical acronyms that should stay uppercase
+        acronyms = {
+            'ar': 'AR',
+            'pca': 'PCA', 
+            'svd': 'SVD',
+            'roc': 'ROC',
+            'cbm': 'CBM',
+            'nlpca': 'NLPCA',
+            'gmm': 'GMM',
+            'frf': 'FRF',
+            'osp': 'OSP',
+            'ml': 'ML',
+            'ai': 'AI',
+            'gui': 'GUI',
+            'api': 'API',
+            'fft': 'FFT',
+            'dft': 'DFT',
+            'stft': 'STFT',
+            'cwt': 'CWT',
+            'ica': 'ICA',
+            'rms': 'RMS',
+            'shm': 'SHM'
+        }
+        
+        # Replace underscores with spaces and split into words
+        words = filename.replace('_', ' ').split()
+        
+        # Process each word
+        formatted_words = []
+        for word in words:
+            word_lower = word.lower()
+            if word_lower in acronyms:
+                formatted_words.append(acronyms[word_lower])
+            else:
+                formatted_words.append(word.capitalize())
+        
+        return ' '.join(formatted_words)
+        
     def find_notebooks(
         self, 
         examples_dir: Path,
@@ -273,7 +325,7 @@ class NotebookPublisher:
                 notebook.metadata = {}
                 
             notebook.metadata.update({
-                'title': notebook_path.stem.replace('_', ' ').title(),
+                'title': self.format_display_name(notebook_path.stem),
                 'authors': [{'name': 'SHMTools Development Team'}],
                 'generated_date': time.strftime('%Y-%m-%d %H:%M:%S'),
                 'source_notebook': str(notebook_path)
@@ -392,7 +444,7 @@ class NotebookPublisher:
         """
         
         # Create header
-        title = notebook_path.stem.replace('_', ' ').title()
+        title = self.format_display_name(notebook_path.stem)
         category = notebook_path.parent.name.title()
         
         header = f"""
@@ -841,7 +893,7 @@ class NotebookPublisher:
             """
             
             for notebook_path in notebooks:
-                notebook_name = notebook_path.stem.replace('_', ' ').title()
+                notebook_name = self.format_display_name(notebook_path.stem)
                 notebook_id = f"{category}_{notebook_path.stem}"
                 
                 # Check if publication was successful
@@ -1012,6 +1064,8 @@ class NotebookPublisher:
                     
                 }} catch (error) {{
                     console.error('Error loading notebook:', error);
+                    console.error('Attempted to load path:', relativePath);
+                    console.error('Full error details:', error.message);
                     document.getElementById('loading-screen').style.display = 'none';
                     document.getElementById('content-title').textContent = 'Error Loading Notebook';
                     document.getElementById('content-subtitle').textContent = 'Failed to load: ' + notebookName;
@@ -1022,8 +1076,15 @@ class NotebookPublisher:
                         <div class="welcome-icon">⚠️</div>
                         <div class="welcome-title">Failed to Load Notebook</div>
                         <div class="welcome-text">
-                            Could not load the notebook "${{notebookName}}". 
-                            The file may be missing or corrupted.
+                            Could not load the notebook "${{notebookName}}".<br><br>
+                            <strong>Most likely cause:</strong> You're opening this file directly in your browser (file:// protocol), which blocks loading other HTML files for security reasons.<br><br>
+                            <strong>Solution:</strong><br>
+                            1. Open a terminal in the published_notebooks directory<br>
+                            2. Run: <code>python -m http.server 8000</code><br>
+                            3. Open: <a href="http://localhost:8000/master.html">http://localhost:8000/master.html</a><br><br>
+                            <strong>Technical details:</strong><br>
+                            Attempted path: ${{relativePath}}<br>
+                            Error: ${{error.message}}
                         </div>
                     `;
                     
@@ -1270,7 +1331,7 @@ class NotebookPublisher:
             """
             
             for notebook_path in notebooks:
-                notebook_name = notebook_path.stem.replace('_', ' ').title()
+                notebook_name = self.format_display_name(notebook_path.stem)
                 relative_path = f"{category}/{notebook_path.stem}.html"
                 
                 # Check if publication was successful
@@ -1396,6 +1457,10 @@ class NotebookPublisher:
         print("\n3. Creating index page...")
         self.create_index_page(categorized_notebooks, publication_results)
         
+        # Create master HTML page with embedded navigation
+        print("4. Creating master HTML page...")
+        self.create_master_html(categorized_notebooks, publication_results)
+        
         # Summary report
         print("\n" + "=" * 50)
         print("PUBLICATION SUMMARY")
@@ -1496,7 +1561,13 @@ def main():
         
         if successful_publications > 0:
             print(f"\n✅ Successfully published {successful_publications} notebooks!")
-            print(f"📖 Open {args.output_dir / 'index.html'} to view the published notebooks")
+            print(f"\n📖 Viewing Options:")
+            print(f"   • Quick start: cd {args.output_dir} && python start_server.py")
+            print(f"   • Manual server: cd {args.output_dir} && python -m http.server 8000")
+            print(f"   • Simple index: Open {args.output_dir / 'index.html'} directly")
+            print(f"\n🌐 Interactive master documentation available at:")
+            print(f"   http://localhost:8000/master.html")
+            print(f"\n💡 Note: The master.html requires a web server to load notebooks properly")
             return 0
         else:
             print("\n❌ No notebooks were successfully published")

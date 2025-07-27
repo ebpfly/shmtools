@@ -1,0 +1,260 @@
+
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>SHMTools Example Notebooks</title>
+            <style>
+            body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                line-height: 1.6;
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #f8f9fa;
+            }
+            .header {
+                background: linear-gradient(135deg, #007bff, #0056b3);
+                color: white;
+                padding: 40px;
+                border-radius: 8px;
+                margin-bottom: 30px;
+                text-align: center;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            }
+            .stats {
+                background: white;
+                padding: 20px;
+                border-radius: 8px;
+                margin-bottom: 30px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .category {
+                background: white;
+                margin: 20px 0;
+                border-radius: 8px;
+                overflow: hidden;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .category-header {
+                background: #f8f9fa;
+                padding: 20px;
+                border-bottom: 1px solid #dee2e6;
+            }
+            .category-title { 
+                margin: 0;
+                color: #495057;
+                font-size: 1.5em;
+            }
+            .category-description { 
+                margin: 5px 0 0 0;
+                color: #6c757d;
+            }
+            .notebook-list {
+                padding: 20px;
+            }
+            .notebook-item {
+                padding: 15px;
+                border-bottom: 1px solid #f8f9fa;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .notebook-item:last-child { border-bottom: none; }
+            .notebook-name { 
+                font-weight: 500;
+                color: #007bff;
+                text-decoration: none;
+                flex-grow: 1;
+            }
+            .notebook-name:hover { color: #0056b3; }
+            .notebook-status {
+                padding: 4px 12px;
+                border-radius: 20px;
+                font-size: 0.8em;
+                font-weight: 500;
+                margin-left: 15px;
+            }
+            .status-success {
+                background: #d4edda;
+                color: #155724;
+            }
+            .status-failed {
+                background: #f8d7da;
+                color: #721c24;
+            }
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 20px;
+            }
+            .stat-card {
+                text-align: center;
+                padding: 20px;
+                background: #f8f9fa;
+                border-radius: 8px;
+            }
+            .stat-number {
+                font-size: 2em;
+                font-weight: bold;
+                color: #007bff;
+            }
+            .stat-label {
+                color: #6c757d;
+                text-transform: uppercase;
+                font-size: 0.9em;
+                letter-spacing: 1px;
+            }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>SHMTools Example Notebooks</h1>
+                <p>Interactive examples demonstrating structural health monitoring techniques</p>
+            </div>
+            
+            <div class="stats">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">13</div>
+                        <div class="stat-label">Total Notebooks</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">13</div>
+                        <div class="stat-label">Successfully Published</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">5</div>
+                        <div class="stat-label">Categories</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">2025-07-27</div>
+                        <div class="stat-label">Generated</div>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="category">
+                <div class="category-header">
+                    <h2 class="category-title">Basic Level</h2>
+                    <p class="category-description">Fundamental outlier detection and time series analysis methods</p>
+                </div>
+                <div class="notebook-list">
+            
+                <div class="notebook-item">
+                    <a href="basic/ar_model_order_selection.html" class="notebook-name">AR Model Order Selection</a>
+                    <span class="notebook-status status-success">Published</span>
+                </div>
+                
+                <div class="notebook-item">
+                    <a href="basic/mahalanobis_outlier_detection.html" class="notebook-name">Mahalanobis Outlier Detection</a>
+                    <span class="notebook-status status-success">Published</span>
+                </div>
+                
+                <div class="notebook-item">
+                    <a href="basic/pca_outlier_detection.html" class="notebook-name">PCA Outlier Detection</a>
+                    <span class="notebook-status status-success">Published</span>
+                </div>
+                
+                <div class="notebook-item">
+                    <a href="basic/svd_outlier_detection.html" class="notebook-name">SVD Outlier Detection</a>
+                    <span class="notebook-status status-success">Published</span>
+                </div>
+                
+                <div class="notebook-item">
+                    <a href="basic/time_synchronous_averaging_demo.html" class="notebook-name">Time Synchronous Averaging Demo</a>
+                    <span class="notebook-status status-success">Published</span>
+                </div>
+                
+                </div>
+            </div>
+            
+            <div class="category">
+                <div class="category-header">
+                    <h2 class="category-title">Intermediate Level</h2>
+                    <p class="category-description">More complex analysis techniques and statistical methods</p>
+                </div>
+                <div class="notebook-list">
+            
+                <div class="notebook-item">
+                    <a href="intermediate/factor_analysis_outlier_detection.html" class="notebook-name">Factor Analysis Outlier Detection</a>
+                    <span class="notebook-status status-success">Published</span>
+                </div>
+                
+                </div>
+            </div>
+            
+            <div class="category">
+                <div class="category-header">
+                    <h2 class="category-title">Advanced Level</h2>
+                    <p class="category-description">Specialized algorithms and computationally intensive methods</p>
+                </div>
+                <div class="notebook-list">
+            
+                <div class="notebook-item">
+                    <a href="advanced/active_sensing_feature_extraction.html" class="notebook-name">Active Sensing Feature Extraction</a>
+                    <span class="notebook-status status-success">Published</span>
+                </div>
+                
+                <div class="notebook-item">
+                    <a href="advanced/modal_analysis_features.html" class="notebook-name">Modal Analysis Features</a>
+                    <span class="notebook-status status-success">Published</span>
+                </div>
+                
+                <div class="notebook-item">
+                    <a href="advanced/modal_analysis_features_simplified.html" class="notebook-name">Modal Analysis Features Simplified</a>
+                    <span class="notebook-status status-success">Published</span>
+                </div>
+                
+                <div class="notebook-item">
+                    <a href="advanced/nonparametric_outlier_detection.html" class="notebook-name">Nonparametric Outlier Detection</a>
+                    <span class="notebook-status status-success">Published</span>
+                </div>
+                
+                <div class="notebook-item">
+                    <a href="advanced/semiparametric_outlier_detection.html" class="notebook-name">Semiparametric Outlier Detection</a>
+                    <span class="notebook-status status-success">Published</span>
+                </div>
+                
+                </div>
+            </div>
+            
+            <div class="category">
+                <div class="category-header">
+                    <h2 class="category-title">Specialized Level</h2>
+                    <p class="category-description">Domain-specific applications and advanced techniques</p>
+                </div>
+                <div class="notebook-list">
+            
+                <div class="notebook-item">
+                    <a href="specialized/sensor_diagnostics.html" class="notebook-name">Sensor Diagnostics</a>
+                    <span class="notebook-status status-success">Published</span>
+                </div>
+                
+                </div>
+            </div>
+            
+            <div class="category">
+                <div class="category-header">
+                    <h2 class="category-title">Other Level</h2>
+                    <p class="category-description">Utility notebooks and demonstrations</p>
+                </div>
+                <div class="notebook-list">
+            
+                <div class="notebook-item">
+                    <a href="other/dataloader_demo.html" class="notebook-name">Dataloader Demo</a>
+                    <span class="notebook-status status-success">Published</span>
+                </div>
+                
+                </div>
+            </div>
+            
+            <div style="margin-top: 50px; padding: 20px; background: white; border-radius: 8px; text-align: center; color: #6c757d; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <p>Generated from Jupyter notebooks in the SHMTools Python package</p>
+                <p><a href="https://github.com/shmtools/shmtools-python">GitHub Repository</a> | 
+                   <a href="https://shmtools.readthedocs.io">Documentation</a></p>
+            </div>
+        </body>
+        </html>
+        

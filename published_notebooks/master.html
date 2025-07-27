@@ -1,0 +1,686 @@
+
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>SHMTools Example Notebooks - Interactive Documentation</title>
+            <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                height: 100vh;
+                overflow: hidden;
+                background: #f8f9fa;
+            }
+            
+            .container {
+                display: flex;
+                height: 100vh;
+            }
+            
+            .sidebar {
+                width: 300px;
+                background: #ffffff;
+                border-right: 2px solid #dee2e6;
+                overflow-y: auto;
+                box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+                z-index: 100;
+            }
+            
+            .sidebar-header {
+                background: linear-gradient(135deg, #007bff, #0056b3);
+                color: white;
+                padding: 20px;
+                text-align: center;
+                position: sticky;
+                top: 0;
+                z-index: 101;
+            }
+            
+            .sidebar-title {
+                font-size: 1.4em;
+                font-weight: 600;
+                margin-bottom: 5px;
+            }
+            
+            .sidebar-subtitle {
+                font-size: 0.9em;
+                opacity: 0.9;
+            }
+            
+            .stats {
+                background: #f8f9fa;
+                padding: 15px 20px;
+                border-bottom: 1px solid #dee2e6;
+                font-size: 0.85em;
+                color: #6c757d;
+            }
+            
+            .stats-item {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 5px;
+            }
+            
+            .stats-item:last-child {
+                margin-bottom: 0;
+            }
+            
+            .nav-section {
+                border-bottom: 1px solid #f1f3f4;
+            }
+            
+            .nav-header {
+                background: #f8f9fa;
+                padding: 15px 20px;
+                font-weight: 600;
+                color: #495057;
+                cursor: pointer;
+                border-bottom: 1px solid #dee2e6;
+                transition: background-color 0.2s;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .nav-header:hover {
+                background: #e9ecef;
+            }
+            
+            .nav-header.active {
+                background: #e3f2fd;
+                color: #1976d2;
+            }
+            
+            .nav-toggle {
+                font-size: 0.8em;
+                transition: transform 0.2s;
+            }
+            
+            .nav-toggle.expanded {
+                transform: rotate(90deg);
+            }
+            
+            .nav-description {
+                font-size: 0.8em;
+                color: #6c757d;
+                font-weight: normal;
+                margin-top: 3px;
+            }
+            
+            .nav-items {
+                display: none;
+                background: white;
+            }
+            
+            .nav-items.expanded {
+                display: block;
+            }
+            
+            .nav-item {
+                padding: 12px 20px 12px 40px;
+                cursor: pointer;
+                border-bottom: 1px solid #f8f9fa;
+                transition: all 0.2s;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .nav-item:hover {
+                background: #f8f9fa;
+                padding-left: 45px;
+            }
+            
+            .nav-item.active {
+                background: #e3f2fd;
+                color: #1976d2;
+                font-weight: 500;
+                border-left: 3px solid #2196f3;
+            }
+            
+            .nav-item.failed {
+                color: #dc3545;
+                opacity: 0.7;
+            }
+            
+            .nav-item.failed:hover {
+                background: #f8d7da;
+            }
+            
+            .nav-status {
+                font-size: 0.7em;
+                padding: 2px 6px;
+                border-radius: 10px;
+                font-weight: 500;
+            }
+            
+            .status-success {
+                background: #d4edda;
+                color: #155724;
+            }
+            
+            .status-failed {
+                background: #f8d7da;
+                color: #721c24;
+            }
+            
+            .main-content {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+            
+            .content-header {
+                background: white;
+                padding: 20px 30px;
+                border-bottom: 1px solid #dee2e6;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                z-index: 50;
+            }
+            
+            .content-title {
+                font-size: 1.8em;
+                font-weight: 300;
+                margin-bottom: 5px;
+                color: #495057;
+            }
+            
+            .content-subtitle {
+                color: #6c757d;
+                font-size: 1em;
+            }
+            
+            .content-body {
+                flex: 1;
+                overflow-y: auto;
+                padding: 0;
+                background: white;
+            }
+            
+            .notebook-content {
+                display: none;
+                height: 100%;
+            }
+            
+            .notebook-content.active {
+                display: block;
+            }
+            
+            .notebook-iframe {
+                width: 100%;
+                height: 100%;
+                border: none;
+                background: white;
+            }
+            
+            .welcome-screen {
+                padding: 40px;
+                text-align: center;
+                color: #6c757d;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+            
+            .welcome-icon {
+                font-size: 4em;
+                margin-bottom: 20px;
+                color: #007bff;
+            }
+            
+            .welcome-title {
+                font-size: 2em;
+                margin-bottom: 15px;
+                color: #495057;
+            }
+            
+            .welcome-text {
+                font-size: 1.1em;
+                line-height: 1.6;
+                max-width: 500px;
+            }
+            
+            .loading-screen {
+                display: none;
+                padding: 40px;
+                text-align: center;
+                color: #6c757d;
+                height: 100%;
+                justify-content: center;
+                align-items: center;
+                flex-direction: column;
+            }
+            
+            .loading-spinner {
+                width: 40px;
+                height: 40px;
+                border: 4px solid #f3f3f3;
+                border-top: 4px solid #007bff;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                margin-bottom: 20px;
+            }
+            
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            
+            /* Responsive design */
+            @media (max-width: 768px) {
+                .sidebar {
+                    width: 250px;
+                }
+                
+                .content-header {
+                    padding: 15px 20px;
+                }
+                
+                .content-title {
+                    font-size: 1.4em;
+                }
+            }
+            
+            /* Dark mode support */
+            @media (prefers-color-scheme: dark) {
+                body {
+                    background: #1a1a1a;
+                    color: #ffffff;
+                }
+                
+                .sidebar {
+                    background: #2d2d2d;
+                    border-right-color: #404040;
+                }
+                
+                .main-content {
+                    background: #1a1a1a;
+                }
+                
+                .content-header {
+                    background: #2d2d2d;
+                    border-bottom-color: #404040;
+                }
+            }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <!-- Sidebar Navigation -->
+                <div class="sidebar">
+                    <div class="sidebar-header">
+                        <div class="sidebar-title">SHMTools Examples</div>
+                        <div class="sidebar-subtitle">Interactive Documentation</div>
+                    </div>
+                    
+                    <div class="stats">
+                        <div class="stats-item">
+                            <span>Total Notebooks:</span>
+                            <span>13</span>
+                        </div>
+                        <div class="stats-item">
+                            <span>Successfully Published:</span>
+                            <span>13</span>
+                        </div>
+                        <div class="stats-item">
+                            <span>Categories:</span>
+                            <span>5</span>
+                        </div>
+                        <div class="stats-item">
+                            <span>Generated:</span>
+                            <span>2025-07-27</span>
+                        </div>
+                    </div>
+                    
+                    <div class="navigation">
+        
+                        <div class="nav-section">
+                            <div class="nav-header" onclick="toggleSection('basic')">
+                                <div>
+                                    <div>Basic Level</div>
+                                    <div class="nav-description">Fundamental outlier detection and time series analysis methods</div>
+                                </div>
+                                <span class="nav-toggle" id="toggle-basic">▶</span>
+                            </div>
+                            <div class="nav-items" id="items-basic">
+            
+                                <div class="nav-item" id="nav-basic_ar_model_order_selection" onclick="loadNotebook('basic_ar_model_order_selection', 'basic/ar_model_order_selection.html', 'AR Model Order Selection', 'Basic')">
+                                    <span>AR Model Order Selection</span>
+                                    <span class="nav-status status-success">✓</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-basic_mahalanobis_outlier_detection" onclick="loadNotebook('basic_mahalanobis_outlier_detection', 'basic/mahalanobis_outlier_detection.html', 'Mahalanobis Outlier Detection', 'Basic')">
+                                    <span>Mahalanobis Outlier Detection</span>
+                                    <span class="nav-status status-success">✓</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-basic_pca_outlier_detection" onclick="loadNotebook('basic_pca_outlier_detection', 'basic/pca_outlier_detection.html', 'PCA Outlier Detection', 'Basic')">
+                                    <span>PCA Outlier Detection</span>
+                                    <span class="nav-status status-success">✓</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-basic_svd_outlier_detection" onclick="loadNotebook('basic_svd_outlier_detection', 'basic/svd_outlier_detection.html', 'SVD Outlier Detection', 'Basic')">
+                                    <span>SVD Outlier Detection</span>
+                                    <span class="nav-status status-success">✓</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-basic_time_synchronous_averaging_demo" onclick="loadNotebook('basic_time_synchronous_averaging_demo', 'basic/time_synchronous_averaging_demo.html', 'Time Synchronous Averaging Demo', 'Basic')">
+                                    <span>Time Synchronous Averaging Demo</span>
+                                    <span class="nav-status status-success">✓</span>
+                                </div>
+                
+                            </div>
+                        </div>
+            
+                        <div class="nav-section">
+                            <div class="nav-header" onclick="toggleSection('intermediate')">
+                                <div>
+                                    <div>Intermediate Level</div>
+                                    <div class="nav-description">More complex analysis techniques and statistical methods</div>
+                                </div>
+                                <span class="nav-toggle" id="toggle-intermediate">▶</span>
+                            </div>
+                            <div class="nav-items" id="items-intermediate">
+            
+                                <div class="nav-item" id="nav-intermediate_factor_analysis_outlier_detection" onclick="loadNotebook('intermediate_factor_analysis_outlier_detection', 'intermediate/factor_analysis_outlier_detection.html', 'Factor Analysis Outlier Detection', 'Intermediate')">
+                                    <span>Factor Analysis Outlier Detection</span>
+                                    <span class="nav-status status-success">✓</span>
+                                </div>
+                
+                            </div>
+                        </div>
+            
+                        <div class="nav-section">
+                            <div class="nav-header" onclick="toggleSection('advanced')">
+                                <div>
+                                    <div>Advanced Level</div>
+                                    <div class="nav-description">Specialized algorithms and computationally intensive methods</div>
+                                </div>
+                                <span class="nav-toggle" id="toggle-advanced">▶</span>
+                            </div>
+                            <div class="nav-items" id="items-advanced">
+            
+                                <div class="nav-item" id="nav-advanced_active_sensing_feature_extraction" onclick="loadNotebook('advanced_active_sensing_feature_extraction', 'advanced/active_sensing_feature_extraction.html', 'Active Sensing Feature Extraction', 'Advanced')">
+                                    <span>Active Sensing Feature Extraction</span>
+                                    <span class="nav-status status-success">✓</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-advanced_modal_analysis_features" onclick="loadNotebook('advanced_modal_analysis_features', 'advanced/modal_analysis_features.html', 'Modal Analysis Features', 'Advanced')">
+                                    <span>Modal Analysis Features</span>
+                                    <span class="nav-status status-success">✓</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-advanced_modal_analysis_features_simplified" onclick="loadNotebook('advanced_modal_analysis_features_simplified', 'advanced/modal_analysis_features_simplified.html', 'Modal Analysis Features Simplified', 'Advanced')">
+                                    <span>Modal Analysis Features Simplified</span>
+                                    <span class="nav-status status-success">✓</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-advanced_nonparametric_outlier_detection" onclick="loadNotebook('advanced_nonparametric_outlier_detection', 'advanced/nonparametric_outlier_detection.html', 'Nonparametric Outlier Detection', 'Advanced')">
+                                    <span>Nonparametric Outlier Detection</span>
+                                    <span class="nav-status status-success">✓</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-advanced_semiparametric_outlier_detection" onclick="loadNotebook('advanced_semiparametric_outlier_detection', 'advanced/semiparametric_outlier_detection.html', 'Semiparametric Outlier Detection', 'Advanced')">
+                                    <span>Semiparametric Outlier Detection</span>
+                                    <span class="nav-status status-success">✓</span>
+                                </div>
+                
+                            </div>
+                        </div>
+            
+                        <div class="nav-section">
+                            <div class="nav-header" onclick="toggleSection('specialized')">
+                                <div>
+                                    <div>Specialized Level</div>
+                                    <div class="nav-description">Domain-specific applications and advanced techniques</div>
+                                </div>
+                                <span class="nav-toggle" id="toggle-specialized">▶</span>
+                            </div>
+                            <div class="nav-items" id="items-specialized">
+            
+                                <div class="nav-item" id="nav-specialized_sensor_diagnostics" onclick="loadNotebook('specialized_sensor_diagnostics', 'specialized/sensor_diagnostics.html', 'Sensor Diagnostics', 'Specialized')">
+                                    <span>Sensor Diagnostics</span>
+                                    <span class="nav-status status-success">✓</span>
+                                </div>
+                
+                            </div>
+                        </div>
+            
+                        <div class="nav-section">
+                            <div class="nav-header" onclick="toggleSection('other')">
+                                <div>
+                                    <div>Other Level</div>
+                                    <div class="nav-description">Utility notebooks and demonstrations</div>
+                                </div>
+                                <span class="nav-toggle" id="toggle-other">▶</span>
+                            </div>
+                            <div class="nav-items" id="items-other">
+            
+                                <div class="nav-item" id="nav-other_dataloader_demo" onclick="loadNotebook('other_dataloader_demo', 'other/dataloader_demo.html', 'Dataloader Demo', 'Other')">
+                                    <span>Dataloader Demo</span>
+                                    <span class="nav-status status-success">✓</span>
+                                </div>
+                
+                            </div>
+                        </div>
+            
+                    </div>
+                </div>
+                
+                <!-- Main Content Area -->
+                <div class="main-content">
+                    <div class="content-header">
+                        <div class="content-title" id="content-title">Welcome to SHMTools Examples</div>
+                        <div class="content-subtitle" id="content-subtitle">Select a notebook from the sidebar to begin exploring</div>
+                    </div>
+                    
+                    <div class="content-body">
+                        <!-- Welcome Screen -->
+                        <div class="welcome-screen" id="welcome-screen">
+                            <div class="welcome-icon">📊</div>
+                            <div class="welcome-title">SHMTools Example Notebooks</div>
+                            <div class="welcome-text">
+                                Explore comprehensive examples of structural health monitoring techniques. 
+                                Select any notebook from the sidebar to view interactive examples with 
+                                complete code, explanations, and visualizations.
+                            </div>
+                        </div>
+                        
+                        <!-- Loading Screen -->
+                        <div class="loading-screen" id="loading-screen">
+                            <div class="loading-spinner"></div>
+                            <div>Loading notebook...</div>
+                        </div>
+                        
+                        <!-- Notebook Content Container -->
+                        <div id="notebook-container">
+                            <!-- Individual notebook content will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <script>
+            // Global state
+            let currentNotebook = null;
+            let loadedNotebooks = new Map();
+            
+            // Initialize the interface
+            document.addEventListener('DOMContentLoaded', function() {
+                // Expand the first category by default
+                const firstCategory = document.querySelector('.nav-header');
+                if (firstCategory) {
+                    firstCategory.click();
+                }
+            });
+            
+            function toggleSection(category) {
+                const items = document.getElementById('items-' + category);
+                const toggle = document.getElementById('toggle-' + category);
+                const header = document.querySelector('.nav-header[onclick*="' + category + '"]');
+                
+                if (items.classList.contains('expanded')) {
+                    items.classList.remove('expanded');
+                    toggle.classList.remove('expanded');
+                    toggle.textContent = '▶';
+                    header.classList.remove('active');
+                } else {
+                    items.classList.add('expanded');
+                    toggle.classList.add('expanded');
+                    toggle.textContent = '▼';
+                    header.classList.add('active');
+                }
+            }
+            
+            async function loadNotebook(notebookId, relativePath, notebookName, category) {
+                if (!relativePath) {
+                    alert('This notebook failed to publish and cannot be displayed.');
+                    return;
+                }
+                
+                // Update active navigation item
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                document.getElementById('nav-' + notebookId).classList.add('active');
+                
+                // Update header
+                document.getElementById('content-title').textContent = notebookName;
+                document.getElementById('content-subtitle').textContent = category + ' Level Example';
+                
+                // Show loading screen
+                document.getElementById('welcome-screen').style.display = 'none';
+                document.getElementById('loading-screen').style.display = 'flex';
+                
+                try {
+                    // Check if already loaded
+                    if (loadedNotebooks.has(notebookId)) {
+                        showNotebook(notebookId);
+                        return;
+                    }
+                    
+                    // Fetch and process the notebook HTML
+                    const response = await fetch(relativePath);
+                    if (!response.ok) {
+                        throw new Error('Failed to load notebook');
+                    }
+                    
+                    let html = await response.text();
+                    
+                    // Extract the main content (remove navigation and headers we added)
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    
+                    // Remove our custom navigation and headers
+                    const elementsToRemove = [
+                        '.notebook-header',
+                        '.navigation', 
+                        '.footer'
+                    ];
+                    
+                    elementsToRemove.forEach(selector => {
+                        const elements = doc.querySelectorAll(selector);
+                        elements.forEach(el => el.remove());
+                    });
+                    
+                    // Get the cleaned content
+                    const content = doc.body.innerHTML;
+                    
+                    // Create notebook container
+                    const notebookDiv = document.createElement('div');
+                    notebookDiv.className = 'notebook-content';
+                    notebookDiv.id = 'notebook-' + notebookId;
+                    notebookDiv.innerHTML = content;
+                    
+                    // Add to container
+                    document.getElementById('notebook-container').appendChild(notebookDiv);
+                    
+                    // Cache the loaded notebook
+                    loadedNotebooks.set(notebookId, true);
+                    
+                    // Show the notebook
+                    showNotebook(notebookId);
+                    
+                } catch (error) {
+                    console.error('Error loading notebook:', error);
+                    console.error('Attempted to load path:', relativePath);
+                    console.error('Full error details:', error.message);
+                    document.getElementById('loading-screen').style.display = 'none';
+                    document.getElementById('content-title').textContent = 'Error Loading Notebook';
+                    document.getElementById('content-subtitle').textContent = 'Failed to load: ' + notebookName;
+                    
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'welcome-screen';
+                    errorDiv.innerHTML = `
+                        <div class="welcome-icon">⚠️</div>
+                        <div class="welcome-title">Failed to Load Notebook</div>
+                        <div class="welcome-text">
+                            Could not load the notebook "${notebookName}".<br><br>
+                            <strong>Most likely cause:</strong> You're opening this file directly in your browser (file:// protocol), which blocks loading other HTML files for security reasons.<br><br>
+                            <strong>Solution:</strong><br>
+                            1. Open a terminal in the published_notebooks directory<br>
+                            2. Run: <code>python -m http.server 8000</code><br>
+                            3. Open: <a href="http://localhost:8000/master.html">http://localhost:8000/master.html</a><br><br>
+                            <strong>Technical details:</strong><br>
+                            Attempted path: ${relativePath}<br>
+                            Error: ${error.message}
+                        </div>
+                    `;
+                    
+                    document.getElementById('notebook-container').appendChild(errorDiv);
+                }
+            }
+            
+            function showNotebook(notebookId) {
+                // Hide loading screen
+                document.getElementById('loading-screen').style.display = 'none';
+                
+                // Hide all notebook content
+                document.querySelectorAll('.notebook-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                
+                // Show selected notebook
+                const targetNotebook = document.getElementById('notebook-' + notebookId);
+                if (targetNotebook) {
+                    targetNotebook.classList.add('active');
+                    currentNotebook = notebookId;
+                    
+                    // Scroll to top
+                    document.querySelector('.content-body').scrollTop = 0;
+                }
+            }
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                if (e.ctrlKey || e.metaKey) {
+                    switch(e.key) {
+                        case 'k':
+                            e.preventDefault();
+                            // Focus on first navigation item
+                            const firstNav = document.querySelector('.nav-item:not(.failed)');
+                            if (firstNav) firstNav.focus();
+                            break;
+                    }
+                }
+            });
+            
+            // Add search functionality (future enhancement)
+            function searchNotebooks(query) {
+                // Implementation for searching through notebooks
+                console.log('Search functionality to be implemented:', query);
+            }
+            </script>
+        </body>
+        </html>
+        
