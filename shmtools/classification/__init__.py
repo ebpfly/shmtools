@@ -40,6 +40,12 @@ from .semiparametric import (
     score_gmm_semiparametric_model_shm,
 )
 
+# High-level detection interfaces
+from .high_level_detection import (
+    train_outlier_detector_shm,
+    detect_outlier_shm,
+)
+
 # Import NLPCA functions if TensorFlow is available
 try:
     from .nlpca import learn_nlpca_shm, score_nlpca_shm
@@ -49,6 +55,9 @@ except ImportError:
     NLPCA_AVAILABLE = False
 
 __all__ = [
+    # High-level detection interfaces
+    "train_outlier_detector_shm",
+    "detect_outlier_shm",
     # Outlier detection functions
     "learn_mahalanobis_shm",
     "score_mahalanobis_shm",

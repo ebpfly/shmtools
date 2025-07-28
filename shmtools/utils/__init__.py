@@ -31,6 +31,20 @@ from .data_loading import (
     check_data_availability,
 )
 
+# Data segmentation utilities
+from .data_segmentation import (
+    segment_time_series,
+    prepare_train_test_split,
+)
+
+# Spatial analysis utilities
+from .spatial_analysis import (
+    compute_channel_wise_damage_indicators,
+    plot_damage_indicators,
+    analyze_damage_localization,
+    compare_ar_arx_localization,
+)
+
 __all__ = [
     # MATLAB-compatible functions (primary)
     "import_3StoryStructure_shm",
@@ -46,4 +60,12 @@ __all__ = [
     "load_modal_osp_data",
     "get_available_datasets",
     "check_data_availability",
+    # Data segmentation utilities
+    "segment_time_series",
+    "prepare_train_test_split",
+    # Spatial analysis utilities
+    "compute_channel_wise_damage_indicators",
+    "plot_damage_indicators",
+    "analyze_damage_localization",
+    "compare_ar_arx_localization",
 ]
