@@ -4,46 +4,17 @@ This directory contains HTML versions of all SHMTools example notebooks for easy
 
 ## 📖 Viewing Options
 
-### Option 1: Interactive Master Documentation (Recommended)
-For the best experience with dynamic navigation and modern interface:
-
-```bash
-# Quick start - run the server script
-python start_server.py
-```
-
-This will:
-- Start a local web server
-- Automatically open `http://localhost:8000/master.html` in your browser
-- Allow proper loading of all notebook content
-
-### Option 2: Manual Server Setup
-If you prefer to manage the server yourself:
-
-```bash
-# Start Python's built-in web server
-python -m http.server 8000
-
-# Then open in your browser:
-# http://localhost:8000/master.html
-```
-
-### Option 3: Simple Index Page
-For a basic list view without dynamic loading:
+### Simple Index Page
+For easy viewing of all notebooks:
 - Open `index.html` directly in your browser
-- Each notebook link opens in a new tab/window
-
-## 🚫 Why Not Open master.html Directly?
-
-Modern browsers block JavaScript fetch requests from `file://` URLs for security reasons. The master HTML interface needs to dynamically load notebook content, which requires serving the files via HTTP.
+- Each notebook link opens the full HTML version
+- No server setup required
 
 ## 📁 Directory Structure
 
 ```
 published_notebooks/
-├── master.html              # Interactive master documentation
 ├── index.html               # Simple index page
-├── start_server.py          # Quick server startup script
 ├── basic/                   # Basic level examples
 │   ├── ar_model_order_selection.html
 │   ├── pca_outlier_detection.html
@@ -64,14 +35,11 @@ published_notebooks/
     └── dataloader_demo.html
 ```
 
-## 🎯 Features of Master Documentation
+## 🎯 Features
 
-- **Dynamic Navigation**: Click to load notebooks without page refreshes
 - **Category Organization**: Notebooks grouped by complexity level
-- **Statistics Dashboard**: Overview of available examples
+- **Direct Access**: Each notebook is a standalone HTML file
 - **Responsive Design**: Works on desktop and mobile
-- **Dark Mode Support**: Toggle between light and dark themes
-- **Search-Ready**: All content indexed for future search functionality
 
 ## 🔧 Regenerating Documentation
 
@@ -82,7 +50,7 @@ To update the published notebooks after making changes:
 python publish_notebooks.py --examples-dir examples/notebooks --output-dir published_notebooks --skip-errors
 ```
 
-This will re-execute all notebooks and regenerate both the index and master HTML files.
+This will re-execute all notebooks and regenerate the index HTML file.
 
 ## 📊 Current Content
 

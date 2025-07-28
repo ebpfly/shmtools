@@ -58,15 +58,6 @@ jupyter nbconvert --to pdf examples/notebooks/basic/spectral_analysis_example.ip
 jupyter nbconvert --to slides examples/notebooks/tutorials/getting_started.ipynb
 ```
 
-### Batch Publishing
-```bash
-# Convert all notebooks to HTML
-python scripts/publish_notebooks.py --format html
-
-# Generate PDF documentation suite
-python scripts/publish_notebooks.py --format pdf --output docs/published/
-```
-
 ## Notebook Standards
 
 To maintain consistency and publication quality:
