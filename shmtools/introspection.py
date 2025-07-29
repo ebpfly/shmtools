@@ -273,7 +273,7 @@ def discover_functions_locally():
                     and inspect.isfunction(obj)
                 ):
 
-                    func_info = _extract_function_info(obj, name, category)
+                    func_info = _extract_function_info(obj, name, category, module_name)
                     if func_info:
                         functions.append(func_info)
 
@@ -297,7 +297,7 @@ def _get_category_from_module_name(module_name):
     return category_map.get(module_name, "Other")
 
 
-def _extract_function_info(func, name, category):
+def _extract_function_info(func, name, category, module_name=None):
     """Extract function information from docstring and signature."""
     import inspect
 
@@ -313,6 +313,7 @@ def _extract_function_info(func, name, category):
             "name": name,
             "displayName": _extract_display_name(docstring, name),
             "category": category,
+            "module": module_name or "shmtools",
             "signature": str(sig),
             "description": _extract_description(docstring),
             "docstring": docstring,
