@@ -6,7 +6,7 @@ for extracting damage-sensitive features from sensor data.
 """
 
 # Time series modeling functions
-from .time_series import ar_model_shm, ar_model_order_shm, arx_model_shm, eval_arx_model_shm
+from .time_series import ar_model_shm, ar_model_order_shm, arx_model_shm, eval_arx_model_shm, split_features_shm
 
 # Condition-based monitoring functions
 from .condition_based_monitoring import time_sync_avg_shm
@@ -18,6 +18,7 @@ __all__ = [
     "ar_model_order_shm",
     "arx_model_shm",
     "eval_arx_model_shm",
+    "split_features_shm",
     # Condition-based monitoring
     "time_sync_avg_shm",
 ]

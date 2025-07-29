@@ -717,3 +717,139 @@ def eval_arx_model_shm(
             arx_residuals[:, i, j] = arx_prediction[:, i, j] - X_out[:, i, j]
             
     return arx_prediction, arx_residuals
+
+
+def split_features_shm(
+    features: np.ndarray, 
+    training_indices: Optional[np.ndarray] = None, 
+    scoring_indices: Optional[np.ndarray] = None, 
+    features_to_use: Optional[np.ndarray] = None
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Split feature vectors into training and scoring sets.
+    
+    Split feature vectors into two sets along first dimension to create
+    learning and scoring feature vectors. Optionally select only a subset
+    of features.
+    
+    .. meta::
+        :category: Features - Data Management
+        :matlab_equivalent: splitFeatures_shm
+        :complexity: Basic
+        :data_type: Features
+        :output_type: Features
+        :display_name: Split Features Into Training and Scoring
+        :verbose_call: [Training Features, Scoring Features, All Features] = Split Features Into Training and Scoring (Features, Training Indices, Scoring Indices, Feature Indices to Use)
+        
+    Parameters
+    ----------
+    features : array_like
+        Feature vectors to be split, shape (INSTANCES, FEATURES).
+        
+        .. gui::
+            :widget: file_upload
+            :formats: [".csv", ".mat", ".npy"]
+            
+    training_indices : array_like, optional
+        List of indices or logical indexing vector for training instances.
+        If None, uses all instances.
+        
+        .. gui::
+            :widget: array_input
+            :description: Training instance indices
+            
+    scoring_indices : array_like, optional
+        List of indices or logical indexing vector for scoring instances.
+        If None, uses all instances.
+        
+        .. gui::
+            :widget: array_input
+            :description: Scoring instance indices
+            
+    features_to_use : array_like, optional
+        List of indices for subset of features to use.
+        If None, uses all features.
+        
+        .. gui::
+            :widget: array_input
+            :description: Feature column indices to use
+        
+    Returns
+    -------
+    training_features : ndarray
+        Training instances of features, shape (TRAIN_INST, FEATURES_CHOSEN).
+        
+    scoring_features : ndarray
+        Scoring instances of features, shape (SCORE_INST, FEATURES_CHOSEN).
+        
+    all_features : ndarray
+        All instances of features, shape (INSTANCES, FEATURES_CHOSEN).
+        
+    Examples
+    --------
+    >>> # Example 1: Split by logical indices
+    >>> features = np.random.randn(100, 15)  # 100 instances, 15 features
+    >>> train_mask = np.arange(100) < 80  # First 80 for training
+    >>> test_mask = np.arange(100) >= 80   # Last 20 for testing
+    >>> train_feats, test_feats, all_feats = split_features_shm(
+    ...     features, train_mask, test_mask)
+    >>> train_feats.shape
+    (80, 15)
+    >>> test_feats.shape
+    (20, 15)
+    
+    >>> # Example 2: Use specific feature subset
+    >>> selected_features = [0, 2, 4, 6]  # Use only these feature columns
+    >>> train_feats, test_feats, all_feats = split_features_shm(
+    ...     features, train_mask, test_mask, selected_features)
+    >>> train_feats.shape
+    (80, 4)
+    
+    >>> # Example 3: Training only (common in outlier detection)
+    >>> baseline_mask = states < 10  # Undamaged conditions only
+    >>> train_feats, _, all_feats = split_features_shm(
+    ...     features, baseline_mask, None, None)
+    """
+    features = np.asarray(features)
+    
+    # Handle feature selection
+    if features_to_use is None:
+        all_features = features
+    else:
+        features_to_use = np.asarray(features_to_use)
+        all_features = features[:, features_to_use]
+    
+    # Handle training indices
+    if training_indices is None:
+        training_features = all_features
+    else:
+        training_indices = np.asarray(training_indices)
+        if training_indices.dtype == bool:
+            # Logical indexing
+            training_features = all_features[training_indices, :]
+        else:
+            # Index array
+            training_features = all_features[training_indices, :]
+    
+    # Handle scoring indices
+    if scoring_indices is None:
+        scoring_features = all_features
+    else:
+        scoring_indices = np.asarray(scoring_indices)
+        if scoring_indices.dtype == bool:
+            # Logical indexing
+            scoring_features = all_features[scoring_indices, :]
+        else:
+            # Index array
+            scoring_features = all_features[scoring_indices, :]
+    
+    return training_features, scoring_features, all_features
+
+
+__all__ = [
+    "ar_model_shm",
+    "ar_model_order_shm", 
+    "arx_model_shm",
+    "eval_arx_model_shm",
+    "split_features_shm",
+]
