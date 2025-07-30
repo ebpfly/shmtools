@@ -29,6 +29,8 @@ from .nonparametric import (
     cosine_kernel_shm,
     learn_kernel_density_shm,
     score_kernel_density_shm,
+    learn_fast_metric_kernel_density_shm,
+    score_fast_metric_kernel_density_shm,
 )
 
 # Semi-parametric detection functions
@@ -46,6 +48,16 @@ from .high_level_detection import (
     detect_outlier_shm,
 )
 
+# Custom detector assembly
+from .custom_detector_assembly import (
+    assemble_outlier_detector_shm,
+    save_detector_assembly,
+    load_detector_assembly,
+)
+
+# Detector registry
+from .detector_registry import detector_registry
+
 # Import NLPCA functions if TensorFlow is available
 try:
     from .nlpca import learn_nlpca_shm, score_nlpca_shm
@@ -58,6 +70,11 @@ __all__ = [
     # High-level detection interfaces
     "train_outlier_detector_shm",
     "detect_outlier_shm",
+    # Custom detector assembly
+    "assemble_outlier_detector_shm",
+    "save_detector_assembly", 
+    "load_detector_assembly",
+    "detector_registry",
     # Outlier detection functions
     "learn_mahalanobis_shm",
     "score_mahalanobis_shm",
@@ -78,6 +95,8 @@ __all__ = [
     "cosine_kernel_shm",
     "learn_kernel_density_shm",
     "score_kernel_density_shm",
+    "learn_fast_metric_kernel_density_shm",
+    "score_fast_metric_kernel_density_shm",
     # Semi-parametric detection functions
     "k_medians_shm",
     "learn_gmm_shm",

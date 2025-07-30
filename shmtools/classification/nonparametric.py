@@ -774,3 +774,183 @@ def _bandwidth_select_cross_val(
     H = h_val[h_i] * np.diag(H_vec)
 
     return H
+
+
+def learn_fast_metric_kernel_density_shm(
+    X: np.ndarray,
+    bw: float = 0.1,
+    kernel: str = "gaussian",
+    metric: str = "euclidean",
+) -> Dict[str, Any]:
+    """
+    Learn fast metric kernel density estimation model.
+
+    Uses tree-based fast algorithms for kernel density estimation with
+    custom distance metrics. This is significantly faster than standard
+    kernel density for large datasets.
+
+    .. meta::
+        :category: Classification - Nonparametric Detectors
+        :matlab_equivalent: learnFastMetricKernelDensity_shm
+        :complexity: Advanced
+        :data_type: Features
+        :output_type: Model
+        :display_name: Learn Fast Metric Kernel Density
+        :verbose_call: Model = Learn Fast Metric Kernel Density (Training Features, Bandwidth, Kernel Type, Distance Metric)
+
+    Parameters
+    ----------
+    X : array_like
+        Training features of shape (INSTANCES, FEATURES) where each row
+        is a feature vector.
+
+        .. gui::
+            :widget: file_upload
+            :formats: [".csv", ".mat", ".npy"]
+            :description: Training feature matrix
+
+    bw : float, optional
+        Bandwidth parameter for kernel density estimation (default: 0.1).
+
+        .. gui::
+            :widget: number_input
+            :min: 0.001
+            :max: 10.0
+            :default: 0.1
+            :step: 0.01
+            :description: Kernel bandwidth
+
+    kernel : str, optional
+        Kernel function type: 'gaussian', 'epanechnikov', 'tophat' (default: 'gaussian').
+
+        .. gui::
+            :widget: select
+            :options: ["gaussian", "epanechnikov", "tophat"]
+            :default: "gaussian"
+
+    metric : str, optional
+        Distance metric: 'euclidean', 'manhattan', 'chebyshev', 'minkowski' (default: 'euclidean').
+
+        .. gui::
+            :widget: select
+            :options: ["euclidean", "manhattan", "chebyshev", "minkowski"]
+            :default: "euclidean"
+
+    Returns
+    -------
+    model : dict
+        Dictionary containing:
+        - 'Xtrain': Training data
+        - 'bandwidth': Bandwidth parameter
+        - 'kernel': Kernel function type
+        - 'metric': Distance metric
+        - 'kde': Fitted KernelDensity object from scikit-learn
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from shmtools.classification import learn_fast_metric_kernel_density_shm
+    >>>
+    >>> # Generate sample training data
+    >>> np.random.seed(42)
+    >>> X_train = np.random.randn(100, 3)
+    >>>
+    >>> # Learn fast metric kernel density model
+    >>> model = learn_fast_metric_kernel_density_shm(X_train, bw=0.5)
+    >>> print("Fast metric KDE model trained successfully")
+    """
+    from sklearn.neighbors import KernelDensity
+
+    X = np.asarray(X, dtype=np.float64)
+
+    if X.ndim != 2:
+        raise ValueError("Input X must be 2-dimensional")
+
+    # Create KernelDensity estimator with specified parameters
+    kde = KernelDensity(bandwidth=bw, kernel=kernel, metric=metric)
+    kde.fit(X)
+
+    model = {
+        "Xtrain": X,
+        "bandwidth": bw,
+        "kernel": kernel,
+        "metric": metric,
+        "kde": kde,
+    }
+
+    return model
+
+
+def score_fast_metric_kernel_density_shm(
+    Y: np.ndarray, model: Dict[str, Any]
+) -> np.ndarray:
+    """
+    Score fast metric kernel density estimation.
+
+    .. meta::
+        :category: Classification - Nonparametric Detectors
+        :matlab_equivalent: scoreFastMetricKernelDensity_shm
+        :complexity: Advanced
+        :data_type: Features
+        :output_type: Scores
+        :display_name: Score Fast Metric Kernel Density
+        :verbose_call: Density Scores = Score Fast Metric Kernel Density (Test Features, Model)
+
+    Parameters
+    ----------
+    Y : array_like
+        Test features of shape (INSTANCES, FEATURES) where each row
+        is a feature vector.
+
+        .. gui::
+            :widget: file_upload
+            :formats: [".csv", ".mat", ".npy"]
+            :description: Test feature matrix
+
+    model : dict
+        Model dictionary from learn_fast_metric_kernel_density_shm containing:
+        - 'kde': Fitted KernelDensity object
+        - 'bandwidth': Bandwidth parameter
+        - 'kernel': Kernel function type
+        - 'metric': Distance metric
+
+        .. gui::
+            :widget: model_input
+            :description: Trained fast metric KDE model
+
+    Returns
+    -------
+    scores : ndarray
+        Log density scores of shape (INSTANCES,). Higher scores indicate
+        points more similar to training distribution.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from shmtools.classification import (learn_fast_metric_kernel_density_shm,
+    ...                                       score_fast_metric_kernel_density_shm)
+    >>>
+    >>> # Generate sample data
+    >>> np.random.seed(42)
+    >>> X_train = np.random.randn(100, 3)
+    >>> X_test = np.random.randn(20, 3)
+    >>>
+    >>> # Learn model and score test data
+    >>> model = learn_fast_metric_kernel_density_shm(X_train, bw=0.5)
+    >>> scores = score_fast_metric_kernel_density_shm(X_test, model)
+    >>> print(f"Test scores shape: {scores.shape}")
+    """
+    Y = np.asarray(Y, dtype=np.float64)
+
+    if Y.ndim != 2:
+        raise ValueError("Input Y must be 2-dimensional")
+
+    if "kde" not in model:
+        raise ValueError("Model must contain 'kde' field from learn_fast_metric_kernel_density_shm")
+
+    # Use scikit-learn's KernelDensity score_samples method
+    # Returns log-density for each sample
+    kde = model["kde"]
+    scores = kde.score_samples(Y)
+
+    return scores
