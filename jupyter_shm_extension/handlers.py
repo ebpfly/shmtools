@@ -34,6 +34,11 @@ class SHMFunctionDiscoveryHandler(IPythonHandler):
     
     def _discover_shm_functions(self):
         """Discover SHM functions from shmtools package."""
+        return self._discover_shm_functions_static()
+    
+    @staticmethod
+    def _discover_shm_functions_static():
+        """Static version of function discovery for testing."""
         functions = []
         
         try:
@@ -53,7 +58,7 @@ class SHMFunctionDiscoveryHandler(IPythonHandler):
             for module_name in modules_to_scan:
                 try:
                     module = importlib.import_module(module_name)
-                    category = self._get_category_from_module_name(module_name)
+                    category = SHMFunctionDiscoveryHandler._get_category_from_module_name_static(module_name)
                     
                     # Find functions in the module
                     for name in dir(module):
@@ -64,7 +69,7 @@ class SHMFunctionDiscoveryHandler(IPythonHandler):
                             not name.startswith('_') and
                             inspect.isfunction(obj)):
                             
-                            func_info = self._extract_function_info(obj, name, category)
+                            func_info = SHMFunctionDiscoveryHandler._extract_function_info_static(obj, name, category)
                             if func_info:
                                 functions.append(func_info)
                                 
@@ -80,6 +85,11 @@ class SHMFunctionDiscoveryHandler(IPythonHandler):
     
     def _get_category_from_module_name(self, module_name):
         """Map module names to human-readable categories."""
+        return self._get_category_from_module_name_static(module_name)
+    
+    @staticmethod
+    def _get_category_from_module_name_static(module_name):
+        """Static version of category mapping."""
         category_map = {
             'shmtools.core.spectral': 'Core - Spectral Analysis',
             'shmtools.core.statistics': 'Core - Statistics', 
@@ -91,6 +101,11 @@ class SHMFunctionDiscoveryHandler(IPythonHandler):
     
     def _extract_function_info(self, func, name, category):
         """Extract function information from docstring and signature."""
+        return self._extract_function_info_static(func, name, category)
+    
+    @staticmethod
+    def _extract_function_info_static(func, name, category):
+        """Static version of function info extraction."""
         try:
             # Get function signature
             sig = inspect.signature(func)
@@ -105,8 +120,8 @@ class SHMFunctionDiscoveryHandler(IPythonHandler):
                 'signature': str(sig),
                 'docstring': docstring,
                 'parameters': [],
-                'display_name': self._extract_display_name(docstring, name),
-                'description': self._extract_description(docstring)
+                'display_name': SHMFunctionDiscoveryHandler._extract_display_name_static(docstring, name),
+                'description': SHMFunctionDiscoveryHandler._extract_description_static(docstring)
             }
             
             # Extract parameter information
@@ -127,6 +142,11 @@ class SHMFunctionDiscoveryHandler(IPythonHandler):
     
     def _extract_display_name(self, docstring, fallback_name):
         """Extract human-readable display name from docstring."""
+        return self._extract_display_name_static(docstring, fallback_name)
+    
+    @staticmethod
+    def _extract_display_name_static(docstring, fallback_name):
+        """Static version of display name extraction."""
         # Look for display_name in meta section
         lines = docstring.split('\\n')
         for line in lines:
@@ -138,6 +158,11 @@ class SHMFunctionDiscoveryHandler(IPythonHandler):
     
     def _extract_description(self, docstring):
         """Extract first line of docstring as description."""
+        return self._extract_description_static(docstring)
+    
+    @staticmethod
+    def _extract_description_static(docstring):
+        """Static version of description extraction."""
         if not docstring:
             return ""
         

@@ -321,16 +321,37 @@ def detect_outlier_shm(
         sensor_codes = -np.ones(X_test.shape[0], dtype=int)
         
     # Score the test data
-    scores = score_fun(X_test, d_model)
+    score_result = score_fun(X_test, d_model)
+    
+    # Handle different return types from scoring functions
+    if isinstance(score_result, tuple):
+        # Some scoring functions return (scores, residuals) or similar
+        scores = score_result[0]
+    else:
+        scores = score_result
     
     # Flag outliers (scores below threshold are outliers)
     results = (scores < p_threshold).astype(int)
     
     # Calculate confidence values
-    if dist_for_scores is None:
+    if c_model is None:
+        # For custom detectors without confidence model, use simple normalization
+        # Map scores to [0, 1] range where lower scores = higher confidence
+        score_min = np.min(scores)
+        score_max = np.max(scores)
+        if score_max > score_min:
+            # Invert so lower scores = higher confidence
+            confidences = 1 - (scores - score_min) / (score_max - score_min)
+        else:
+            confidences = np.ones_like(scores) * 0.5
+    elif dist_for_scores is None:
         # Use empirical CDF from GMM confidence model
         # Score each test score against the confidence model
-        conf_scores = score_fun(scores.reshape(-1, 1), c_model)
+        conf_result = score_fun(scores.reshape(-1, 1), c_model)
+        if isinstance(conf_result, tuple):
+            conf_scores = conf_result[0]
+        else:
+            conf_scores = conf_result
         
         # Normalize to [0, 1] range
         conf_min = np.min(conf_scores)

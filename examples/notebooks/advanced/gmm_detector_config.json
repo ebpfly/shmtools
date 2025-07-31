@@ -1,0 +1,17 @@
+{
+  "type": "semiparametric",
+  "name": "gmm_semi",
+  "learn_function": "learn_gmm_semiparametric_model_shm",
+  "score_function": "score_gmm_semiparametric_model_shm",
+  "parameters": {
+    "partitioning_algorithm": "kmeans",
+    "n_components": 5
+  },
+  "training_function": "<function train_detector_GMM_KMeans>",
+  "suffix": "GMM_KMeans",
+  "assembly_info": {
+    "assembly_date": "2025-07-28T06:02:29.970567",
+    "interactive": false,
+    "registry_version": "1.0.0"
+  }
+}

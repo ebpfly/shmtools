@@ -1,0 +1,609 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Default Detector Usage: High-Level Outlier Detection\n",
+    "\n",
+    "This notebook demonstrates the standard usage patterns for SHMTools' high-level outlier detection interface. It provides the simplest way to get started with structural health monitoring without needing to understand the underlying algorithms.\n",
+    "\n",
+    "## Overview\n",
+    "\n",
+    "The high-level interface consists of two main functions:\n",
+    "- `train_outlier_detector_shm`: Learn a model from undamaged/normal data\n",
+    "- `detect_outlier_shm`: Apply the model to detect outliers in test data\n",
+    "\n",
+    "Key features demonstrated:\n",
+    "1. **Data Segmentation**: Breaking long time series into shorter segments to increase sample size\n",
+    "2. **Semi-parametric Modeling**: Using Gaussian mixture models with automatic threshold selection\n",
+    "3. **Flexible Thresholding**: Statistical distribution fitting for robust threshold selection\n",
+    "4. **Performance Evaluation**: ROC curves and classification metrics\n",
+    "\n",
+    "**References:**\n",
+    "- Figueiredo, E., Park, G., Figueiras, J., Farrar, C., & Worden, K. (2009). Structural Health Monitoring Algorithm Comparisons using Standard Data Sets. Los Alamos National Laboratory Report: LA-14393."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Setup and Imports"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import numpy as np\n",
+    "import matplotlib.pyplot as plt\n",
+    "from pathlib import Path\n",
+    "import sys\n",
+    "\n",
+    "# Add shmtools to path\n",
+    "notebook_dir = Path.cwd()\n",
+    "shmtools_root = notebook_dir.parent.parent.parent\n",
+    "if str(shmtools_root) not in sys.path:\n",
+    "    sys.path.insert(0, str(shmtools_root))\n",
+    "    print(f\"Added {shmtools_root} to Python path\")\n",
+    "\n",
+    "# Import SHMTools functions\n",
+    "from shmtools.utils import (\n",
+    "    load_3story_data, \n",
+    "    segment_time_series,\n",
+    "    prepare_train_test_split\n",
+    ")\n",
+    "from shmtools.features import ar_model_shm\n",
+    "from shmtools.classification import (\n",
+    "    train_outlier_detector_shm,\n",
+    "    detect_outlier_shm,\n",
+    "    roc_shm\n",
+    ")\n",
+    "\n",
+    "# Set random seed for reproducibility\n",
+    "np.random.seed(42)\n",
+    "\n",
+    "# Configure plotting\n",
+    "plt.style.use('seaborn-v0_8-darkgrid')\n",
+    "plt.rcParams['figure.figsize'] = (10, 6)\n",
+    "plt.rcParams['font.size'] = 12"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Load Raw Data\n",
+    "\n",
+    "The data consists of acceleration measurements from a base-excited 3-story structure with various damage conditions. We'll use channels 2-5 (excluding the force input channel)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Load the 3-story structure dataset\n",
+    "try:\n",
+    "    data_dict = load_3story_data()\n",
+    "    dataset = data_dict['dataset']\n",
+    "    states = data_dict['damage_states']\n",
+    "    print(f\"Loaded data shape: {dataset.shape}\")\n",
+    "    print(f\"(time points, channels, instances)\")\n",
+    "    print(f\"\\nDamage states: {np.unique(states)}\")\n",
+    "    print(f\"States 1-9: Undamaged baseline conditions\")\n",
+    "    print(f\"States 10-17: Various damage scenarios\")\n",
+    "except FileNotFoundError as e:\n",
+    "    print(f\"Error: {e}\")\n",
+    "    print(\"\\nPlease download the example datasets following the instructions in:\")\n",
+    "    print(\"examples/data/README.md\")\n",
+    "    raise"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Plot Sample Time Histories\n",
+    "\n",
+    "Let's visualize the acceleration time histories from the baseline condition."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Extract sensor data (channels 2-5)\n",
+    "time_data = dataset[:, 1:5, :]  # Exclude channel 1 (force)\n",
+    "print(f\"Sensor data shape: {time_data.shape}\")\n",
+    "\n",
+    "# Plot time histories from first baseline instance\n",
+    "fig, axes = plt.subplots(2, 2, figsize=(12, 8))\n",
+    "axes = axes.ravel()\n",
+    "\n",
+    "for i in range(4):\n",
+    "    axes[i].plot(time_data[:, i, 0], 'k', linewidth=0.5)\n",
+    "    axes[i].set_title(f'Channel {i+2}')\n",
+    "    axes[i].set_xlim(0, 8192)\n",
+    "    axes[i].set_ylim(-2.5, 2.5)\n",
+    "    axes[i].set_yticks([-2, -1, 0, 1, 2])\n",
+    "    \n",
+    "    if i >= 2:\n",
+    "        axes[i].set_xlabel('Observations')\n",
+    "    if i % 2 == 0:\n",
+    "        axes[i].set_ylabel('Acceleration (g)')\n",
+    "\n",
+    "plt.tight_layout()\n",
+    "plt.suptitle('Baseline Condition Time Histories', fontsize=14, y=1.02)\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Data Segmentation\n",
+    "\n",
+    "To increase the number of training/testing instances, we'll segment each 8192-point time series into four 2048-point segments. This gives us 4× more data for better statistical analysis."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Segment the time series data\n",
+    "segment_length = 2048\n",
+    "segmented_data, segmented_states = segment_time_series(\n",
+    "    time_data, \n",
+    "    segment_length=segment_length,\n",
+    "    preserve_states=states\n",
+    ")\n",
+    "\n",
+    "print(f\"Original data shape: {time_data.shape}\")\n",
+    "print(f\"Segmented data shape: {segmented_data.shape}\")\n",
+    "print(f\"Number of segments per instance: {segmented_data.shape[2] // time_data.shape[2]}\")\n",
+    "print(f\"Total instances: {time_data.shape[2]} → {segmented_data.shape[2]}\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Feature Extraction\n",
+    "\n",
+    "Extract AR model parameters as damage-sensitive features. The AR model captures the dynamic characteristics of the structure."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Extract AR model features from segmented data\n",
+    "print(\"Extracting AR model features...\")\n",
+    "ar_order = 15  # Following MATLAB example\n",
+    "\n",
+    "# Extract features (concatenated AR parameters from all channels)\n",
+    "features, _, _, _, _ = ar_model_shm(segmented_data, ar_order)\n",
+    "print(f\"\\nFeature matrix shape: {features.shape}\")\n",
+    "print(f\"(instances, features)\")\n",
+    "print(f\"Features per channel: {ar_order}\")\n",
+    "print(f\"Total features: {features.shape[1]} (4 channels × {ar_order} parameters)\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Prepare Train/Test Split\n",
+    "\n",
+    "We'll use 80% of the undamaged data for training and test on the remaining 20% plus all damaged instances."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Define undamaged states (1-9)\n",
+    "undamaged_states = list(range(1, 10))\n",
+    "\n",
+    "# Prepare train/test split\n",
+    "X_train, X_test, y_test = prepare_train_test_split(\n",
+    "    features, \n",
+    "    segmented_states,\n",
+    "    undamaged_states=undamaged_states,\n",
+    "    train_fraction=0.8,\n",
+    "    random_seed=42\n",
+    ")\n",
+    "\n",
+    "print(f\"Training set size: {X_train.shape[0]} instances (undamaged only)\")\n",
+    "print(f\"Test set size: {X_test.shape[0]} instances\")\n",
+    "print(f\"  - Undamaged: {np.sum(y_test == 0)}\")\n",
+    "print(f\"  - Damaged: {np.sum(y_test == 1)}\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Train Default Outlier Detector\n",
+    "\n",
+    "Now we'll train the high-level outlier detector with different configurations:\n",
+    "1. Default: Direct percentile threshold\n",
+    "2. Statistical: Normal distribution threshold"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Train with default settings (direct percentile)\n",
+    "print(\"Training detector with default settings...\")\n",
+    "models_default = train_outlier_detector_shm(\n",
+    "    X_train,\n",
+    "    k=5,  # 5 Gaussian components\n",
+    "    confidence=0.9,  # 90% confidence threshold\n",
+    "    model_filename=\"default_model.pkl\"\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Train with statistical threshold (normal distribution)\n",
+    "print(\"\\nTraining detector with normal distribution threshold...\")\n",
+    "models_normal = train_outlier_detector_shm(\n",
+    "    X_train,\n",
+    "    k=5,\n",
+    "    confidence=0.9,\n",
+    "    model_filename=\"normal_model.pkl\",\n",
+    "    dist_for_scores='norm'  # Use normal distribution\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Detect Outliers\n",
+    "\n",
+    "Apply the trained models to detect outliers in the test data."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Detect outliers with default model\n",
+    "print(\"Detecting outliers with default model...\")\n",
+    "results_default, confidences_default, scores_default, threshold_default = detect_outlier_shm(\n",
+    "    X_test, \n",
+    "    models=models_default\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Detect outliers with normal distribution model\n",
+    "print(\"\\nDetecting outliers with normal distribution model...\")\n",
+    "results_normal, confidences_normal, scores_normal, threshold_normal = detect_outlier_shm(\n",
+    "    X_test,\n",
+    "    models=models_normal\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Calculate Performance Metrics\n",
+    "\n",
+    "Evaluate the performance of both detectors using various metrics."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def calculate_performance_metrics(predictions, true_labels):\n",
+    "    \"\"\"Calculate classification performance metrics.\"\"\"\n",
+    "    n_test = len(true_labels)\n",
+    "    n_undamaged = np.sum(true_labels == 0)\n",
+    "    n_damaged = np.sum(true_labels == 1)\n",
+    "    \n",
+    "    # Overall metrics\n",
+    "    total_error = np.sum(predictions != true_labels) / n_test\n",
+    "    accuracy = 1 - total_error\n",
+    "    \n",
+    "    # Class-specific metrics\n",
+    "    false_positive_rate = np.sum(predictions[true_labels == 0] != 0) / n_undamaged\n",
+    "    false_negative_rate = np.sum(predictions[true_labels == 1] != 1) / n_damaged\n",
+    "    \n",
+    "    # True positive and negative rates\n",
+    "    true_positive_rate = 1 - false_negative_rate\n",
+    "    true_negative_rate = 1 - false_positive_rate\n",
+    "    \n",
+    "    return {\n",
+    "        'accuracy': accuracy,\n",
+    "        'total_error': total_error,\n",
+    "        'false_positive_rate': false_positive_rate,\n",
+    "        'false_negative_rate': false_negative_rate,\n",
+    "        'true_positive_rate': true_positive_rate,\n",
+    "        'true_negative_rate': true_negative_rate\n",
+    "    }\n",
+    "\n",
+    "# Calculate metrics for both models\n",
+    "metrics_default = calculate_performance_metrics(results_default, y_test)\n",
+    "metrics_normal = calculate_performance_metrics(results_normal, y_test)\n",
+    "\n",
+    "# Display results\n",
+    "print(\"\\n\" + \"=\"*50)\n",
+    "print(\"PERFORMANCE COMPARISON\")\n",
+    "print(\"=\"*50)\n",
+    "print(f\"\\n{'Metric':<25} {'Default':<15} {'Normal Dist':<15}\")\n",
+    "print(\"-\"*50)\n",
+    "for metric in ['accuracy', 'total_error', 'false_positive_rate', 'false_negative_rate']:\n",
+    "    print(f\"{metric.replace('_', ' ').title():<25} \"\n",
+    "          f\"{metrics_default[metric]:<15.3f} \"\n",
+    "          f\"{metrics_normal[metric]:<15.3f}\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## ROC Curve Analysis\n",
+    "\n",
+    "Generate and plot ROC curves to evaluate classifier performance across all possible thresholds."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Compute ROC curves\n",
+    "tpr_default, fpr_default = roc_shm(scores_default, y_test)\n",
+    "tpr_normal, fpr_normal = roc_shm(scores_normal, y_test)\n",
+    "\n",
+    "# Calculate AUC (Area Under Curve)\n",
+    "auc_default = np.trapz(tpr_default, fpr_default)\n",
+    "auc_normal = np.trapz(tpr_normal, fpr_normal)\n",
+    "\n",
+    "# Plot ROC curves\n",
+    "plt.figure(figsize=(8, 8))\n",
+    "\n",
+    "# Plot curves\n",
+    "plt.plot(fpr_default, tpr_default, 'b-', linewidth=2, \n",
+    "         label=f'Default (AUC = {auc_default:.3f})')\n",
+    "plt.plot(fpr_normal, tpr_normal, 'r-', linewidth=2,\n",
+    "         label=f'Normal Dist (AUC = {auc_normal:.3f})')\n",
+    "\n",
+    "# Plot random classifier line\n",
+    "plt.plot([0, 1], [0, 1], 'k--', linewidth=1, label='Random')\n",
+    "\n",
+    "# Mark operating points\n",
+    "op_default_idx = min(len(fpr_default)-1, int(len(fpr_default) * 0.1))\n",
+    "op_normal_idx = np.argmin(np.abs(scores_normal - threshold_normal))\n",
+    "\n",
+    "plt.plot(fpr_default[op_default_idx], tpr_default[op_default_idx], \n",
+    "         'bo', markersize=10, label='Default Operating Point')\n",
+    "plt.plot(fpr_normal[op_normal_idx], tpr_normal[op_normal_idx],\n",
+    "         'ro', markersize=10, label='Normal Operating Point')\n",
+    "\n",
+    "# Format plot\n",
+    "plt.xlabel('False Positive Rate', fontsize=12)\n",
+    "plt.ylabel('True Positive Rate', fontsize=12)\n",
+    "plt.title('ROC Curves - Default Detector Comparison', fontsize=14)\n",
+    "plt.legend(loc='lower right')\n",
+    "plt.grid(True, alpha=0.3)\n",
+    "plt.xlim(0, 1)\n",
+    "plt.ylim(0, 1)\n",
+    "plt.gca().set_aspect('equal')\n",
+    "plt.show()\n",
+    "\n",
+    "print(f\"\\nAUC Scores:\")\n",
+    "print(f\"  Default threshold: {auc_default:.3f}\")\n",
+    "print(f\"  Normal distribution: {auc_normal:.3f}\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Visualize Score Distributions\n",
+    "\n",
+    "Understanding the score distributions helps explain why different threshold methods perform differently."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Create score distribution plots\n",
+    "fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))\n",
+    "\n",
+    "# Plot 1: Default model scores\n",
+    "bins = np.linspace(min(scores_default.min(), scores_normal.min()),\n",
+    "                  max(scores_default.max(), scores_normal.max()), 50)\n",
+    "\n",
+    "ax1.hist(scores_default[y_test == 0], bins=bins, alpha=0.7, \n",
+    "         label='Undamaged', color='blue', density=True)\n",
+    "ax1.hist(scores_default[y_test == 1], bins=bins, alpha=0.7,\n",
+    "         label='Damaged', color='red', density=True)\n",
+    "ax1.axvline(threshold_default, color='black', linestyle='--', \n",
+    "            linewidth=2, label=f'Threshold = {threshold_default:.2f}')\n",
+    "ax1.set_xlabel('Score')\n",
+    "ax1.set_ylabel('Density')\n",
+    "ax1.set_title('Score Distribution - Default Model')\n",
+    "ax1.legend()\n",
+    "ax1.grid(True, alpha=0.3)\n",
+    "\n",
+    "# Plot 2: Normal distribution model scores\n",
+    "ax2.hist(scores_normal[y_test == 0], bins=bins, alpha=0.7,\n",
+    "         label='Undamaged', color='blue', density=True)\n",
+    "ax2.hist(scores_normal[y_test == 1], bins=bins, alpha=0.7,\n",
+    "         label='Damaged', color='red', density=True)\n",
+    "ax2.axvline(threshold_normal, color='black', linestyle='--',\n",
+    "            linewidth=2, label=f'Threshold = {threshold_normal:.2f}')\n",
+    "ax2.set_xlabel('Score')\n",
+    "ax2.set_ylabel('Density')\n",
+    "ax2.set_title('Score Distribution - Normal Distribution Model')\n",
+    "ax2.legend()\n",
+    "ax2.grid(True, alpha=0.3)\n",
+    "\n",
+    "plt.tight_layout()\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Confidence Analysis\n",
+    "\n",
+    "The detector also provides confidence values for each prediction. Let's analyze these."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Plot confidence distributions\n",
+    "fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))\n",
+    "\n",
+    "# Default model confidences\n",
+    "ax1.scatter(range(len(y_test)), confidences_default, \n",
+    "           c=y_test, cmap='RdBu', alpha=0.6, s=20)\n",
+    "ax1.set_xlabel('Test Instance')\n",
+    "ax1.set_ylabel('Confidence')\n",
+    "ax1.set_title('Confidence Values - Default Model')\n",
+    "ax1.set_ylim(0, 1)\n",
+    "ax1.grid(True, alpha=0.3)\n",
+    "\n",
+    "# Normal distribution model confidences\n",
+    "scatter = ax2.scatter(range(len(y_test)), confidences_normal,\n",
+    "                     c=y_test, cmap='RdBu', alpha=0.6, s=20)\n",
+    "ax2.set_xlabel('Test Instance')\n",
+    "ax2.set_ylabel('Confidence')\n",
+    "ax2.set_title('Confidence Values - Normal Distribution Model')\n",
+    "ax2.set_ylim(0, 1)\n",
+    "ax2.grid(True, alpha=0.3)\n",
+    "\n",
+    "# Add colorbar\n",
+    "cbar = plt.colorbar(scatter, ax=ax2)\n",
+    "cbar.set_label('True Label (0=Undamaged, 1=Damaged)')\n",
+    "\n",
+    "plt.tight_layout()\n",
+    "plt.show()\n",
+    "\n",
+    "# Analyze confidence by class\n",
+    "print(\"\\nAverage Confidence by True Class:\")\n",
+    "print(f\"\\n{'Model':<20} {'Undamaged':<15} {'Damaged':<15}\")\n",
+    "print(\"-\"*50)\n",
+    "print(f\"{'Default':<20} \"\n",
+    "      f\"{np.mean(confidences_default[y_test == 0]):<15.3f} \"\n",
+    "      f\"{np.mean(confidences_default[y_test == 1]):<15.3f}\")\n",
+    "print(f\"{'Normal Distribution':<20} \"\n",
+    "      f\"{np.mean(confidences_normal[y_test == 0]):<15.3f} \"\n",
+    "      f\"{np.mean(confidences_normal[y_test == 1]):<15.3f}\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Summary and Conclusions\n",
+    "\n",
+    "This example demonstrated the high-level outlier detection interface in SHMTools:\n",
+    "\n",
+    "### Key Findings\n",
+    "\n",
+    "1. **Data Segmentation**: Breaking the 8192-point time series into 2048-point segments increased our sample size from 170 to 680 instances, providing better statistical power.\n",
+    "\n",
+    "2. **Model Comparison**: \n",
+    "   - Both default (percentile) and statistical (normal distribution) threshold methods achieve good performance\n",
+    "   - The choice depends on the specific application requirements\n",
+    "   - Statistical thresholds provide more robust extrapolation beyond training data\n",
+    "\n",
+    "3. **Performance**: The high-level interface achieves excellent damage detection performance with minimal configuration required.\n",
+    "\n",
+    "### Usage Recommendations\n",
+    "\n",
+    "- **For beginners**: Start with default settings (`train_outlier_detector_shm` with no distribution)\n",
+    "- **For production**: Consider using statistical distributions for more robust thresholding\n",
+    "- **For research**: Experiment with different numbers of Gaussian components (k) and confidence levels\n",
+    "\n",
+    "### Next Steps\n",
+    "\n",
+    "- Try different feature extraction methods (not just AR models)\n",
+    "- Experiment with different statistical distributions ('lognorm', 'gamma', etc.)\n",
+    "- Use the assembled custom detectors from Phase 13 for more control\n",
+    "- Apply to your own structural health monitoring data"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Clean up saved model files\n",
+    "import os\n",
+    "for filename in ['default_model.pkl', 'normal_model.pkl']:\n",
+    "    if os.path.exists(filename):\n",
+    "        os.remove(filename)\n",
+    "        print(f\"Cleaned up: {filename}\")"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.0"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}

@@ -1,0 +1,17 @@
+{
+  "type": "parametric",
+  "name": "pca",
+  "learn_function": "learn_pca_shm",
+  "score_function": "score_pca_shm",
+  "parameters": {
+    "per_var": 0.95,
+    "stand": 0
+  },
+  "training_function": "<function train_detector_PCA_Custom>",
+  "suffix": "PCA_Custom",
+  "assembly_info": {
+    "assembly_date": "2025-07-28T06:02:29.942934",
+    "interactive": false,
+    "registry_version": "1.0.0"
+  }
+}

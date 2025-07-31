@@ -460,7 +460,7 @@ def _extract_full_description(docstring: str) -> str:
 
 def _extract_section(docstring: str, section_name: str) -> str:
     """Extract a named section from the docstring."""
-    pattern = f"{section_name}\\s*\\n\\s*-+\\s*\\n(.*?)(?=\\n\\s*(?:[A-Z][a-z]+\\s*\\n\\s*-+|\\.\\.|\Z))"
+    pattern = f"{section_name}\\s*\\n\\s*-+\\s*\\n(.*?)(?=\\n\\s*(?:[A-Z][a-z]+\\s*\\n\\s*-+|\\.\\.|\\Z))"
     match = re.search(pattern, docstring, re.DOTALL)
     return match.group(1).strip() if match else ""
 

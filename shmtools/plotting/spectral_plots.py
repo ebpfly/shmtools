@@ -21,6 +21,160 @@ except ImportError:
     HAS_BOKEH = False
 
 
+def plot_scores_shm(scores: np.ndarray,
+                   detected_states: np.ndarray,
+                   state_names: List[str],
+                   threshold: float,
+                   use_bar_chart: bool = True,
+                   show_legend: bool = True,
+                   ax: Optional[Axes] = None) -> Axes:
+    """
+    Plot damage detection scores with threshold and classification results.
+    
+    .. meta::
+        :category: Plotting - Detection Results
+        :matlab_equivalent: plotScores_shm
+        :complexity: Basic
+        :data_type: Scores
+        :output_type: Plot
+        :interactive_plot: True
+        :display_name: Plot Detection Scores
+        :verbose_call: [Axes Handle] = Plot Detection Scores (Scores, Detected States, State Names, Threshold, Use Bar Chart, Show Legend, Axes Handle)
+    
+    Parameters
+    ----------
+    scores : array_like, shape (n_tests,)
+        Detection scores for each test case.
+        
+        .. gui::
+            :widget: array_input
+            :description: Detection scores array
+            
+    detected_states : array_like, shape (n_tests,)
+        Binary detection results (0=healthy, 1=damaged).
+        
+        .. gui::
+            :widget: array_input
+            :description: Detection results (0/1)
+            
+    state_names : list of str
+        Names for the detection states ['Healthy', 'Damaged'].
+        
+        .. gui::
+            :widget: text_list
+            :default: ["Healthy", "Damaged"]
+            
+    threshold : float
+        Detection threshold value.
+        
+        .. gui::
+            :widget: number_input
+            :min: 0.0
+            :default: 1.0
+            
+    use_bar_chart : bool, optional
+        If True, use bar chart. If False, use line plot. Default is True.
+        
+        .. gui::
+            :widget: checkbox
+            :default: true
+            
+    show_legend : bool, optional
+        Whether to show legend. Default is True.
+        
+        .. gui::
+            :widget: checkbox
+            :default: true
+            
+    ax : matplotlib.axes.Axes, optional
+        Axes to plot on. If None, creates new figure.
+    
+    Returns
+    -------
+    ax : matplotlib.axes.Axes
+        Axes handle for the plot.
+    
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from shmtools.plotting import plot_scores_shm
+    >>> 
+    >>> # Generate example data
+    >>> scores = np.array([1.2, 1.5, 1.3, 2.8, 3.2, 4.1])
+    >>> detected = np.array([0, 0, 0, 1, 1, 1])
+    >>> threshold = 2.0
+    >>> 
+    >>> # Plot results
+    >>> ax = plot_scores_shm(scores, detected, ['Healthy', 'Damaged'], threshold)
+    >>> plt.show()
+    """
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(10, 6))
+    
+    n_tests = len(scores)
+    test_indices = np.arange(n_tests)
+    
+    # Color mapping
+    colors = ['green' if state == 0 else 'red' for state in detected_states]
+    
+    if use_bar_chart:
+        # Bar chart
+        bars = ax.bar(test_indices, scores, color=colors, alpha=0.7, edgecolor='black')
+        
+        # Add value labels on bars
+        for i, (bar, score) in enumerate(zip(bars, scores)):
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2., height + 0.05*max(scores),
+                   f'{score:.2f}', ha='center', va='bottom')
+    else:
+        # Line plot with markers
+        ax.plot(test_indices, scores, 'o-', markersize=8, linewidth=2)
+        for i, (score, state) in enumerate(zip(scores, detected_states)):
+            color = 'green' if state == 0 else 'red'
+            ax.plot(i, score, 'o', color=color, markersize=10, alpha=0.7)
+    
+    # Add threshold line
+    ax.axhline(y=threshold, color='red', linestyle='--', linewidth=2, 
+               label=f'Threshold = {threshold:.2f}')
+    
+    # Formatting
+    ax.set_xlabel('Test Case')
+    ax.set_ylabel('Detection Score')
+    ax.set_title('Damage Detection Results')
+    ax.grid(True, alpha=0.3)
+    
+    # Set x-axis ticks
+    ax.set_xticks(test_indices)
+    ax.set_xticklabels([f'Test {i+1}' for i in test_indices])
+    
+    # Add legend if requested
+    if show_legend:
+        # Create custom legend elements
+        from matplotlib.patches import Patch
+        legend_elements = [
+            Patch(facecolor='green', alpha=0.7, label=state_names[0]),
+            Patch(facecolor='red', alpha=0.7, label=state_names[1]),
+            plt.Line2D([0], [0], color='red', linestyle='--', 
+                      label=f'Threshold = {threshold:.2f}')
+        ]
+        ax.legend(handles=legend_elements, loc='upper left')
+    
+    # Add statistics text box
+    n_healthy = np.sum(detected_states == 0)
+    n_damaged = np.sum(detected_states == 1)
+    
+    stats_text = f"""Statistics:
+{state_names[0]}: {n_healthy}/{n_tests} ({n_healthy/n_tests*100:.0f}%)
+{state_names[1]}: {n_damaged}/{n_tests} ({n_damaged/n_tests*100:.0f}%)"""
+    
+    ax.text(0.98, 0.98, stats_text, transform=ax.transAxes,
+            verticalalignment='top', horizontalalignment='right',
+            bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+    
+    plt.tight_layout()
+    return ax
+
+
 def plot_psd_shm(
     psd_matrix: np.ndarray,
     channel: int = 1,

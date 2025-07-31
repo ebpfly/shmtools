@@ -1,0 +1,17 @@
+{
+  "type": "nonparametric",
+  "name": "kernel_density",
+  "learn_function": "learn_kernel_density_shm",
+  "score_function": "score_kernel_density_shm",
+  "parameters": {
+    "kernel_function": "epanechnikov",
+    "bandwidth_method": "scott"
+  },
+  "training_function": "<function train_detector_KDE_Epanechnikov>",
+  "suffix": "KDE_Epanechnikov",
+  "assembly_info": {
+    "assembly_date": "2025-07-28T06:02:29.950043",
+    "interactive": false,
+    "registry_version": "1.0.0"
+  }
+}
