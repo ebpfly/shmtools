@@ -1,50 +1,60 @@
 # Example-Driven Conversion Plan: MATLAB to Python
 
-## 🎯 Current Status: PROJECT COMPLETED
+## 🎯 Current Status: CORE CONVERSION 75% COMPLETE
 
-### ✅ COMPLETED PHASES (20 of 22 total phases)
+### ✅ COMPLETED PHASES (12 of 15 core phases)
 - **Phase 1**: PCA Outlier Detection ✅ 
 - **Phase 2**: Mahalanobis Distance Outlier Detection ✅
 - **Phase 3**: SVD Outlier Detection ✅
 - **Phase 4**: Factor Analysis Outlier Detection ✅
+- **Phase 5**: Nonlinear PCA (NLPCA) Outlier Detection ✅ **NEWLY COMPLETED**
 - **Phase 6**: AR Model Order Selection ✅
 - **Phase 7**: Nonparametric Outlier Detection ✅
 - **Phase 8**: Semi-Parametric Outlier Detection ✅
 - **Phase 9**: Active Sensing Feature Extraction ✅
-- **Phase 10**: Condition-Based Monitoring ✅ (Time Synchronous Averaging)
 - **Phase 11**: Sensor Diagnostics ✅
-- **Phase 12**: Modal Analysis ✅
 - **Phase 13**: Custom Detector Assembly ✅
-- **Phase 14**: Damage Localization using AR/ARX Models ✅
 - **Phase 15**: Default Detector Usage ✅
-- **Phase 16**: Parametric Distribution Outlier Detection ✅
-- **Phase 17**: CBM Gear Box Analysis ✅
-- **Phase 18**: Modal OSP (Optimal Sensor Placement) ✅
-- **Phase 19**: Fast Metric Kernel Density ✅
-- **Phase 20**: Dataset Utilities ✅
-- **Phase 21**: Hardware Integration ✅
 
-### ⏳ DEFERRED PHASES (2 of 22 total phases)
-- **Phase 5**: Nonlinear PCA (NLPCA) - Requires neural network implementation
-- **Phase 22**: mFUSE Examples Validation - Deferred (GUI validation not essential for core functionality)
+### 🔥 HIGH PRIORITY MISSING PHASES (3 of 15 core phases)
+- **Phase 12**: Fast Metric Kernel Density ❌ **CRITICAL**
+- **Phase 14**: Damage Localization using AR/ARX Models ❌ **CRITICAL**  
+- **Phase 16**: Parametric Distribution Outlier Detection ❌ **CRITICAL**
 
-### 📊 FINAL COMPLETION METRICS
-- **Project Status**: **90.9% COMPLETE** (20 of 22 phases)
-- **Core Functions**: 200+ implemented with MATLAB compatibility
-- **Jupyter Notebooks**: 20+ complete examples with educational content
-- **Published HTML**: All notebooks exported with executed outputs
-- **Test Coverage**: Comprehensive validation against MATLAB results
-- **Documentation**: Complete docstrings with GUI metadata
-- **Hardware Integration**: Simulated and real DAQ framework ready
-- **Web Interface**: Bokeh-based GUI framework established
+### 📊 CURRENT COMPLETION METRICS
+- **Core ExampleUsageScripts**: **80% COMPLETE** (12 of 15 phases)
+- **Missing Critical Functions**: 3 major algorithms need implementation
+- **Core Functions**: 110+ implemented with MATLAB compatibility
+- **Jupyter Notebooks**: 12+ complete examples with educational content
+- **Published HTML**: All completed notebooks exported with executed outputs
 
-### 🎉 PROJECT SUCCESS CRITERIA MET
-✅ **Functional Parity**: Python results match MATLAB exactly across all implemented phases  
-✅ **Reusability**: Functions work seamlessly across multiple examples  
-✅ **Documentation Quality**: Notebooks suitable for publication and education  
-✅ **GUI Integration**: Docstring metadata enables automatic web interface generation  
-✅ **Performance**: Conversion maintains or improves execution speed over MATLAB  
-✅ **Hardware Ready**: Framework prepared for production deployment
+### 🎯 REVISED PROJECT SCOPE
+**Focusing on Core ExampleUsageScripts Only** (excluding mFUSE GUI examples and hardware integration):
+- **Total Target**: 15 core MATLAB examples → 15 Python notebooks
+- **Current Progress**: 12 completed, 3 remaining
+- **Estimated Completion**: 4-6 weeks for remaining 3 phases
+
+### 🚀 NEXT PHASE PRIORITIES (In Order)
+
+#### ✅ Phase 5: NLPCA Outlier Detection (COMPLETED)
+- **MATLAB**: `exampleNLPCA.m` → **Python**: `examples/notebooks/advanced/nlpca_outlier_detection.ipynb` ✅
+- **Impact**: Completes nonlinear outlier detection suite
+- **Dependencies**: Neural network autoencoder for nonlinear PCA ✅
+
+#### Phase 12: Fast Metric Kernel Density (Week 1-2) 
+- **MATLAB**: `exampleFastMetricKernelDensity.m` → **Python**: `examples/notebooks/advanced/fast_metric_kernel_density.ipynb`  
+- **Impact**: High-performance kernel density estimation
+- **Dependencies**: Cover tree algorithms, fast distance metrics
+
+#### Phase 14: Damage Localization AR/ARX (Week 3-4)
+- **MATLAB**: `exampleDLAR.m` + `exampleDLARX.m` → **Python**: `examples/notebooks/intermediate/damage_localization_ar_arx.ipynb`
+- **Impact**: Spatial damage detection capabilities  
+- **Dependencies**: ARX modeling with exogenous inputs
+
+#### Phase 16: Parametric Distribution Detection (Week 5-6)
+- **MATLAB**: `exampleOutlierDetectionParametricDistribution.m` → **Python**: `examples/notebooks/intermediate/parametric_distribution_outlier_detection.ipynb`
+- **Impact**: Statistical hypothesis testing framework
+- **Dependencies**: Chi-squared distribution modeling
 
 ## Overview
 
@@ -427,20 +437,44 @@ This phase establishes foundation functions reused in later examples:
 
 ---
 
-## Phase 5: Nonlinear PCA (NLPCA) Outlier Detection ⏳ DEFERRED
+## Phase 5: Nonlinear PCA (NLPCA) Outlier Detection ✅ COMPLETED
 *Target: 3-4 weeks*
 
 ### Target Example
 - **MATLAB Source**: `../shmtool-matlab/SHMTools/Examples/ExampleUsageScripts/exampleNLPCA.m` (163 lines)
-- **Python Output**: `examples/notebooks/advanced/nlpca_outlier_detection.ipynb` ⏳
-
-### Status: DEFERRED
-This phase requires complex neural network implementation (TensorFlow/PyTorch) for nonlinear PCA algorithms. Recommended as a separate specialized project.
+- **Python Output**: `examples/notebooks/advanced/nlpca_outlier_detection.ipynb` ✅
+- **HTML Output**: `examples/published/html/nlpca_outlier_detection.html` ✅
 
 ### Additional Dependencies  
-- **`learnNLPCA_shm`** → `shmtools.classification.learn_nlpca_shm()` ⏳
-- **`scoreNLPCA_shm`** → `shmtools.classification.score_nlpca_shm()` ⏳
-- Neural network components for nonlinear PCA ⏳
+- **`stat_moments_shm`** → `shmtools.core.statistics.stat_moments_shm()` ✅
+- **`learn_nlpca_shm`** → `shmtools.classification.learn_nlpca_shm()` ✅
+- **`score_nlpca_shm`** → `shmtools.classification.score_nlpca_shm()` ✅
+- Neural network autoencoder using TensorFlow/Keras ✅
+
+### Example Analysis
+The `exampleNLPCA.m` script demonstrates:
+1. **Data Loading**: Channel 5 from 3-story structure (170 conditions)
+2. **Feature Extraction**: First four statistical moments (mean, std, skewness, kurtosis)
+3. **Train/Test Split**: 81 training samples (9 tests from 9 undamaged states), 17 test samples (1 test from each state)
+4. **NLPCA Training**: Autoencoder with bottleneck layer (2 nodes) and mapping layers (4 nodes each)
+5. **Damage Detection**: Score test data and apply 95% threshold for classification
+6. **Visualization**: Statistical moments plots and damage indicator bar charts
+
+### Success Criteria
+- [x] `stat_moments_shm` extracts statistical moments correctly ✅
+- [x] `learn_nlpca_shm` trains autoencoder neural network successfully ✅
+- [x] `score_nlpca_shm` produces damage indicators based on reconstruction error ✅
+- [x] Jupyter notebook runs without errors ✅
+- [x] All 17 test conditions processed and classified ✅
+- [x] HTML export renders properly with all plots ✅
+
+### Implementation Notes
+- **Neural Network**: TensorFlow/Keras autoencoder implementation
+- **Architecture**: Input(4) → Dense(4, tanh) → Dense(2, linear) → Dense(4, tanh) → Dense(4, linear)
+- **Training**: Adam optimizer with early stopping and MSE loss
+- **Normalization**: Input features normalized using training statistics
+- **Scoring**: Negative Euclidean distance of reconstruction errors
+- **Threshold**: 95th percentile of training reconstruction errors
 
 ---
 
