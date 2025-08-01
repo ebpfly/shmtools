@@ -28,16 +28,18 @@ def propagation_dist_2_points_shm(
     Parameters
     ----------
     pair_list : array_like
-        Sensor pair indices of shape (N_PAIRS, 2). Each row contains
-        [actuator_index, sensor_index] (1-based MATLAB indexing).
+        Sensor pair indices. Can be either:
+        - Shape (N_PAIRS, 2): Each row contains [actuator_index, sensor_index] (1-based MATLAB indexing)
+        - Shape (2, N_PAIRS): MATLAB format with [actuator_indices, sensor_indices] (1-based)
 
         .. gui::
             :widget: array_input
             :description: Sensor pair indices (1-based)
 
     sensor_layout : array_like
-        Sensor coordinates of shape (N_SENSORS, 2). Each row contains
-        [x_coordinate, y_coordinate] for each sensor.
+        Sensor coordinates. Can be either:
+        - Shape (N_SENSORS, 2): Each row contains [x_coordinate, y_coordinate]
+        - Shape (3, N_SENSORS): MATLAB format with [sensorID, xCoord, yCoord]
 
         .. gui::
             :widget: file_upload
@@ -45,8 +47,9 @@ def propagation_dist_2_points_shm(
             :description: Sensor layout coordinates
 
     point_list : array_like
-        Points of interest coordinates of shape (N_POINTS, 2). Each row
-        contains [x_coordinate, y_coordinate] for each POI.
+        Points of interest coordinates. Can be either:
+        - Shape (N_POINTS, 2): Each row contains [x_coordinate, y_coordinate]
+        - Shape (2, N_POINTS): MATLAB format with [xCoords, yCoords]
 
         .. gui::
             :widget: array_input
@@ -92,8 +95,27 @@ def propagation_dist_2_points_shm(
     sensor_layout = np.asarray(sensor_layout, dtype=np.float64)
     point_list = np.asarray(point_list, dtype=np.float64)
 
-    n_pairs = pair_list.shape[0]
-    n_points = point_list.shape[0]
+    # Handle different input formats
+    # Convert sensor_layout to standard format (N_SENSORS, 2)
+    if sensor_layout.shape[0] == 3:  # MATLAB format: [sensorID, xCoord, yCoord]
+        sensor_coords = sensor_layout[1:3, :].T  # Extract coordinates and transpose
+    else:  # Standard format: (N_SENSORS, 2)
+        sensor_coords = sensor_layout
+
+    # Convert pair_list to standard format (N_PAIRS, 2)
+    if pair_list.shape[0] == 2:  # MATLAB format: [actuator_ids, sensor_ids]
+        pair_indices = pair_list.T  # Transpose to (N_PAIRS, 2)
+    else:  # Standard format: (N_PAIRS, 2)
+        pair_indices = pair_list
+
+    # Convert point_list to standard format (N_POINTS, 2)
+    if point_list.shape[0] == 2 and point_list.shape[1] > 2:  # MATLAB format: [xCoords, yCoords]
+        points = point_list.T  # Transpose to (N_POINTS, 2)
+    else:  # Standard format: (N_POINTS, 2)
+        points = point_list
+
+    n_pairs = pair_indices.shape[0]
+    n_points = points.shape[0]
 
     # Initialize output matrix
     prop_distance = np.zeros((n_pairs, n_points))
@@ -101,16 +123,35 @@ def propagation_dist_2_points_shm(
     # Process each sensor pair
     for i in range(n_pairs):
         # Convert from MATLAB 1-based to Python 0-based indexing
-        actuator_idx = pair_list[i, 0] - 1
-        sensor_idx = pair_list[i, 1] - 1
+        actuator_id = pair_indices[i, 0]
+        sensor_id = pair_indices[i, 1]
+        
+        # Find coordinates for this actuator and sensor
+        # If sensor_layout had sensor IDs, match by ID; otherwise use direct indexing
+        if sensor_layout.shape[0] == 3:  # Had sensor IDs
+            # Find index where sensor_layout[0, :] == actuator_id/sensor_id
+            actuator_idx = np.where(sensor_layout[0, :] == actuator_id)[0]
+            sensor_idx = np.where(sensor_layout[0, :] == sensor_id)[0]
+            
+            if len(actuator_idx) == 0 or len(sensor_idx) == 0:
+                # Fallback: treat IDs as 1-based indices
+                actuator_idx = actuator_id - 1 if actuator_id > 0 else 0
+                sensor_idx = sensor_id - 1 if sensor_id > 0 else 0
+            else:
+                actuator_idx = actuator_idx[0]
+                sensor_idx = sensor_idx[0]
+        else:
+            # Direct indexing (convert from 1-based to 0-based)
+            actuator_idx = actuator_id - 1 if actuator_id > 0 else actuator_id
+            sensor_idx = sensor_id - 1 if sensor_id > 0 else sensor_id
 
         # Get actuator and sensor coordinates
-        actuator_coord = sensor_layout[actuator_idx, :]
-        sensor_coord = sensor_layout[sensor_idx, :]
+        actuator_coord = sensor_coords[actuator_idx, :]
+        sensor_coord = sensor_coords[sensor_idx, :]
 
         # Calculate distances to each point of interest
         for j in range(n_points):
-            poi_coord = point_list[j, :]
+            poi_coord = points[j, :]
 
             # Distance from actuator to POI
             dist_act_to_poi = np.sqrt(np.sum((actuator_coord - poi_coord) ** 2))
@@ -352,14 +393,18 @@ def sensor_pair_line_of_sight_shm(
     Parameters
     ----------
     pair_list : array_like
-        Sensor pair indices of shape (N_PAIRS, 2).
+        Sensor pair indices. Supports both formats:
+        - Shape (N_PAIRS, 2): Each row contains [actuator_index, sensor_index]
+        - Shape (2, N_PAIRS): MATLAB format with [actuator_indices, sensor_indices]
 
         .. gui::
             :widget: array_input
             :description: Sensor pair indices
 
     sensor_layout : array_like
-        Sensor coordinates of shape (N_SENSORS, 2).
+        Sensor coordinates. Supports both formats:
+        - Shape (N_SENSORS, 2): Each row contains [x_coordinate, y_coordinate]
+        - Shape (3, N_SENSORS): MATLAB format with [sensorID, xCoord, yCoord]
 
         .. gui::
             :widget: file_upload
@@ -367,7 +412,9 @@ def sensor_pair_line_of_sight_shm(
             :description: Sensor layout coordinates
 
     point_list : array_like
-        Points of interest coordinates of shape (N_POINTS, 2).
+        Points of interest coordinates. Supports both formats:
+        - Shape (N_POINTS, 2): Each row contains [x_coordinate, y_coordinate]
+        - Shape (2, N_POINTS): MATLAB format with [xCoords, yCoords]
 
         .. gui::
             :widget: array_input
@@ -416,8 +463,27 @@ def sensor_pair_line_of_sight_shm(
     sensor_layout = np.asarray(sensor_layout, dtype=np.float64)
     point_list = np.asarray(point_list, dtype=np.float64)
 
-    n_pairs = pair_list.shape[0]
-    n_points = point_list.shape[0]
+    # Handle different input formats
+    # Convert sensor_layout to standard format (N_SENSORS, 2)
+    if sensor_layout.shape[0] == 3:  # MATLAB format: [sensorID, xCoord, yCoord]
+        sensor_coords = sensor_layout[1:3, :].T  # Extract coordinates and transpose
+    else:  # Standard format: (N_SENSORS, 2)
+        sensor_coords = sensor_layout
+
+    # Convert pair_list to standard format (N_PAIRS, 2)
+    if pair_list.shape[0] == 2:  # MATLAB format: [actuator_ids, sensor_ids]
+        pair_indices = pair_list.T  # Transpose to (N_PAIRS, 2)
+    else:  # Standard format: (N_PAIRS, 2)
+        pair_indices = pair_list
+
+    # Convert point_list to standard format (N_POINTS, 2)
+    if point_list.shape[0] == 2 and point_list.shape[1] > 2:  # MATLAB format: [xCoords, yCoords]
+        points = point_list.T  # Transpose to (N_POINTS, 2)
+    else:  # Standard format: (N_POINTS, 2)
+        points = point_list
+
+    n_pairs = pair_indices.shape[0]
+    n_points = points.shape[0]
 
     # Initialize line-of-sight matrix
     line_of_sight = np.ones((n_pairs, n_points), dtype=bool)
@@ -425,15 +491,34 @@ def sensor_pair_line_of_sight_shm(
     # Process each sensor pair
     for i in range(n_pairs):
         # Convert from MATLAB 1-based to Python 0-based indexing
-        actuator_idx = pair_list[i, 0] - 1
-        sensor_idx = pair_list[i, 1] - 1
+        actuator_id = pair_indices[i, 0]
+        sensor_id = pair_indices[i, 1]
+        
+        # Find coordinates for this actuator and sensor
+        # If sensor_layout had sensor IDs, match by ID; otherwise use direct indexing
+        if sensor_layout.shape[0] == 3:  # Had sensor IDs
+            # Find index where sensor_layout[0, :] == actuator_id/sensor_id
+            actuator_idx = np.where(sensor_layout[0, :] == actuator_id)[0]
+            sensor_idx = np.where(sensor_layout[0, :] == sensor_id)[0]
+            
+            if len(actuator_idx) == 0 or len(sensor_idx) == 0:
+                # Fallback: treat IDs as 1-based indices
+                actuator_idx = actuator_id - 1 if actuator_id > 0 else 0
+                sensor_idx = sensor_id - 1 if sensor_id > 0 else 0
+            else:
+                actuator_idx = actuator_idx[0]
+                sensor_idx = sensor_idx[0]
+        else:
+            # Direct indexing (convert from 1-based to 0-based)
+            actuator_idx = actuator_id - 1 if actuator_id > 0 else actuator_id
+            sensor_idx = sensor_id - 1 if sensor_id > 0 else sensor_id
 
-        actuator_coord = sensor_layout[actuator_idx, :]
-        sensor_coord = sensor_layout[sensor_idx, :]
+        actuator_coord = sensor_coords[actuator_idx, :]
+        sensor_coord = sensor_coords[sensor_idx, :]
 
         # Check each point of interest
         for j in range(n_points):
-            poi_coord = point_list[j, :]
+            poi_coord = points[j, :]
 
             # Check if both paths are clear
             path1_clear = _check_line_segment_clear(actuator_coord, poi_coord, border)
@@ -592,3 +677,363 @@ def fill_2d_map_shm(data_1d: np.ndarray, mask: np.ndarray) -> np.ndarray:
     data_map_2d[mask] = data_1d
 
     return data_map_2d
+
+
+def get_prop_dist_2_boundary_shm(
+    pair_list: np.ndarray, sensor_layout: np.ndarray, border: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Calculate propagation distance from actuator to boundary to sensor.
+
+    .. meta::
+        :category: Active Sensing - Geometry
+        :matlab_equivalent: getPropDist2Boundary_shm
+        :complexity: Advanced
+        :data_type: Geometry
+        :output_type: Distances
+        :display_name: Get Propagation Distance to Boundary
+        :verbose_call: [Propagation Distance, Min Propagation Distance] = Get Propagation Dist to Boundary (Pair List, Sensor Layout, Border)
+
+    Parameters
+    ----------
+    pair_list : array_like
+        Matrix of actuator-sensor pairs with shape (2, N_PAIRS) containing [actuatorID, sensorID].
+
+        .. gui::
+            :widget: array_input
+            :description: Sensor pair indices
+
+    sensor_layout : array_like
+        Sensor layout with shape (3, N_SENSORS) containing [sensorID, xCoord, yCoord].
+
+        .. gui::
+            :widget: file_upload
+            :formats: [".csv", ".mat", ".npy"]
+            :description: Sensor layout coordinates
+
+    border : array_like
+        Matrix of line segments with shape (4, N_SEGMENTS) containing [x1, y1, x2, y2].
+
+        .. gui::
+            :widget: array_input
+            :description: Border line segments
+
+    Returns
+    -------
+    prop_dist : ndarray
+        Total propagation distance from each pair to each boundary segment.
+        Shape: (N_PAIRS, N_SEGMENTS).
+
+    min_prop_dist : ndarray
+        Total propagation distance from each pair to nearest boundary.
+        Shape: (N_PAIRS,).
+
+    Notes
+    -----
+    For each sensor pair, calculates the total propagation distance from
+    sensor 1, to the nearest point on each boundary, to sensor 2. Also
+    returns each pair's distance to the nearest boundary.
+
+    If size(pair_list, 0) == 1, then pair_list is replicated so that each
+    sensor is treated as its own pair.
+
+    The algorithm uses reflection across boundary segments when both sensors
+    are on the same side of a boundary.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from shmtools.active_sensing import get_prop_dist_2_boundary_shm
+    >>>
+    >>> # Create sensor layout (MATLAB format: 3 x N_SENSORS)
+    >>> sensor_layout = np.array([[0, 1, 2, 3], [0, 1, 2, 0], [0, 0, 1, 1]])
+    >>> 
+    >>> # Create pair list (MATLAB format: 2 x N_PAIRS)
+    >>> pair_list = np.array([[0, 1], [2, 3]])
+    >>> 
+    >>> # Create border (MATLAB format: 4 x N_SEGMENTS)
+    >>> border = np.array([[0, 2], [0, 0], [2, 0], [2, 2]])
+    >>>
+    >>> # Calculate distances
+    >>> prop_dist, min_dist = get_prop_dist_2_boundary_shm(
+    ...     pair_list, sensor_layout, border
+    ... )
+    >>> print(f"Propagation distances shape: {prop_dist.shape}")
+    """
+    pair_list = np.asarray(pair_list, dtype=int)
+    sensor_layout = np.asarray(sensor_layout, dtype=np.float64)
+    border = np.asarray(border, dtype=np.float64)
+
+    # Handle single pair case - replicate the pair
+    if pair_list.shape[0] == 1:
+        pair_list = np.vstack([pair_list, pair_list])
+
+    # Find indices of sensors in layout
+    # This assumes the sensor IDs in pair_list correspond to the sensor IDs in sensor_layout[0, :]
+    pair_indices = np.zeros_like(pair_list)
+    for i in range(pair_list.shape[0]):
+        for j in range(pair_list.shape[1]):
+            sensor_id = pair_list[i, j]
+            # Find index in sensor_layout where sensor_layout[0, idx] == sensor_id
+            sensor_idx = np.where(sensor_layout[0, :] == sensor_id)[0]
+            if len(sensor_idx) > 0:
+                pair_indices[i, j] = sensor_idx[0]
+
+    n_pairs = pair_list.shape[1]
+    n_boundaries = border.shape[1]
+
+    prop_dist = np.zeros((n_pairs, n_boundaries))
+
+    for i in range(n_pairs):
+        actuator_idx = pair_indices[0, i]
+        sensor_idx = pair_indices[1, i]
+
+        # Get sensor coordinates
+        actuator_coord = sensor_layout[1:3, actuator_idx]  # [x, y]
+        sensor_coord = sensor_layout[1:3, sensor_idx]      # [x, y]
+
+        distances = np.zeros(n_boundaries)
+
+        for j in range(n_boundaries):
+            # Boundary segment endpoints
+            x1, y1 = border[0, j], border[1, j]
+            x2, y2 = border[2, j], border[3, j]
+
+            # Vector from boundary start to sensor
+            vx = sensor_coord[0] - x1
+            vy = sensor_coord[1] - y1
+
+            # Boundary segment vector
+            lx = x2 - x1
+            ly = y2 - y1
+
+            # Check if both sensors are on same side of border (line of sight)
+            if _get_line_of_sight_simple(actuator_coord, sensor_coord, border[:, j]):
+                # Reflect the sensor across the boundary
+                # Reflection formula: r = 2 * (v · l) / (l · l)
+                dot_vl = vx * lx + vy * ly
+                dot_ll = lx * lx + ly * ly
+                
+                if dot_ll > 1e-12:  # Avoid division by zero
+                    rr = 2.0 * dot_vl / dot_ll
+                    srx = (rr * lx - vx) + x1
+                    sry = (rr * ly - vy) + y1
+                else:
+                    srx = vx
+                    sry = vy
+            else:
+                srx = vx
+                sry = vy
+
+            # Find intersection point using line intersection formula
+            denom = ((sry - actuator_coord[1]) * (x2 - x1) - 
+                     (srx - actuator_coord[0]) * (y2 - y1))
+
+            if abs(denom) > 1e-12:  # Lines are not parallel
+                ua = (((srx - actuator_coord[0]) * (y1 - actuator_coord[1]) - 
+                       (sry - actuator_coord[1]) * (x1 - actuator_coord[0])) / denom)
+                ub = (((x2 - x1) * (y1 - actuator_coord[1]) - 
+                       (y2 - y1) * (x1 - actuator_coord[0])) / denom)
+
+                # Check if intersection is within both line segments
+                if (abs(ua - 0.5) < 0.5 and abs(ub - 0.5) < 0.5):
+                    # Distance via intersection point
+                    distances[j] = np.sqrt((actuator_coord[0] - srx)**2 + 
+                                         (actuator_coord[1] - sry)**2)
+                else:
+                    # Use endpoint distances
+                    d1 = (np.sqrt((actuator_coord[0] - x1)**2 + (actuator_coord[1] - y1)**2) +
+                          np.sqrt((sensor_coord[0] - x1)**2 + (sensor_coord[1] - y1)**2))
+                    d2 = (np.sqrt((actuator_coord[0] - x2)**2 + (actuator_coord[1] - y2)**2) +
+                          np.sqrt((sensor_coord[0] - x2)**2 + (sensor_coord[1] - y2)**2))
+                    distances[j] = min(d1, d2)
+            else:
+                # Lines are parallel, use endpoint distances
+                d1 = (np.sqrt((actuator_coord[0] - x1)**2 + (actuator_coord[1] - y1)**2) +
+                      np.sqrt((sensor_coord[0] - x1)**2 + (sensor_coord[1] - y1)**2))
+                d2 = (np.sqrt((actuator_coord[0] - x2)**2 + (actuator_coord[1] - y2)**2) +
+                      np.sqrt((sensor_coord[0] - x2)**2 + (sensor_coord[1] - y2)**2))
+                distances[j] = min(d1, d2)
+
+        prop_dist[i, :] = distances
+
+    # Find minimum distance for each pair
+    min_prop_dist = np.min(prop_dist, axis=1)
+
+    return prop_dist, min_prop_dist
+
+
+def _get_line_of_sight_simple(point_a: np.ndarray, point_b: np.ndarray, border_segment: np.ndarray) -> bool:
+    """
+    Simple line-of-sight check for single border segment.
+    
+    Parameters
+    ----------
+    point_a : ndarray
+        Starting point [x, y].
+    point_b : ndarray  
+        Ending point [x, y].
+    border_segment : ndarray
+        Border segment [x1, y1, x2, y2].
+        
+    Returns
+    -------
+    has_line_of_sight : bool
+        True if no intersection with border segment.
+    """
+    x1, y1 = point_a[0], point_a[1]
+    x2, y2 = point_b[0], point_b[1]
+    x3, y3 = border_segment[0], border_segment[1]
+    x4, y4 = border_segment[2], border_segment[3]
+
+    # Line intersection algorithm
+    denom = (x4 - x3) * (y2 - y1) - (y4 - y3) * (x2 - x1)
+    
+    if abs(denom) < 1e-12:  # Lines are parallel
+        return True
+    
+    ua = ((y4 - y3) * (x2 - x3) - (x4 - x3) * (y2 - y3)) / denom
+    ub = ((y2 - y1) * (x2 - x3) - (x2 - x1) * (y2 - y3)) / denom
+    
+    # Check if intersection occurs within both line segments
+    if 0 <= ua <= 1 and 0 <= ub <= 1:
+        return False  # Intersection found, no line of sight
+    
+    return True  # No intersection, line of sight exists
+
+
+def struct_cell_2_mat_shm(struct_cell) -> np.ndarray:
+    """
+    Convert structure-cell mixture to matrix.
+
+    .. meta::
+        :category: Active Sensing - Utilities
+        :matlab_equivalent: structCell2Mat_shm
+        :complexity: Basic
+        :data_type: Mixed Data
+        :output_type: Matrix
+        :display_name: Combine Structure-Cell
+        :verbose_call: [Combined Matrix] = Combine Structure-Cell (Structure-Cell)
+
+    Parameters
+    ----------
+    struct_cell : various
+        A mixture of cells, structures, lists, or arrays containing matrices
+        with equal row lengths.
+
+        .. gui::
+            :widget: mixed_input
+            :description: Structure-cell mixture
+
+    Returns
+    -------
+    combined_matrix : ndarray
+        Combined matrix with all data concatenated column-wise.
+
+    Notes
+    -----
+    Takes a structure-cell mixture of matrices, each with M rows, and
+    column-wise combines them together into an M x N x ... matrix, where N is
+    the combined total number of matrix columns in the mixture.
+
+    This function handles various Python data structures:
+    - Lists of arrays
+    - Dictionaries with array values
+    - Nested combinations of the above
+    - Single arrays
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from shmtools.active_sensing import struct_cell_2_mat_shm
+    >>>
+    >>> # List of arrays
+    >>> data = [np.array([[1, 2], [3, 4]]), np.array([[5], [6]])]
+    >>> combined = struct_cell_2_mat_shm(data)
+    >>> print(f"Combined shape: {combined.shape}")
+    """
+    if struct_cell is None or (hasattr(struct_cell, '__len__') and len(struct_cell) == 0):
+        return np.array([])
+
+    # Handle different input types
+    if isinstance(struct_cell, (list, tuple)):
+        # List/tuple of arrays
+        arrays = []
+        for item in struct_cell:
+            if hasattr(item, 'shape'):  # numpy array
+                arrays.append(item)
+            elif isinstance(item, (list, tuple)):
+                arrays.append(np.array(item))
+            else:
+                # Recursively process nested structures
+                sub_result = struct_cell_2_mat_shm(item)
+                if sub_result.size > 0:
+                    arrays.append(sub_result)
+        
+        if arrays:
+            # Concatenate along columns (axis=1 for 2D, axis=-1 for higher dimensions)
+            try:
+                combined_matrix = np.concatenate(arrays, axis=-1)
+            except ValueError:
+                # If shapes don't match, try horizontal stack
+                try:
+                    combined_matrix = np.hstack(arrays)
+                except ValueError:
+                    # Fall back to converting each to 2D and stacking
+                    arrays_2d = []
+                    for arr in arrays:
+                        if arr.ndim == 1:
+                            arrays_2d.append(arr[:, np.newaxis])
+                        else:
+                            arrays_2d.append(arr)
+                    combined_matrix = np.hstack(arrays_2d)
+        else:
+            combined_matrix = np.array([])
+
+    elif isinstance(struct_cell, dict):
+        # Dictionary - concatenate all values
+        arrays = []
+        for key in sorted(struct_cell.keys()):  # Sort for consistent ordering
+            value = struct_cell[key]
+            sub_result = struct_cell_2_mat_shm(value)
+            if sub_result.size > 0:
+                arrays.append(sub_result)
+        
+        if arrays:
+            try:
+                combined_matrix = np.concatenate(arrays, axis=-1)
+            except ValueError:
+                try:
+                    combined_matrix = np.hstack(arrays)
+                except ValueError:
+                    # Fall back approach
+                    arrays_2d = []
+                    for arr in arrays:
+                        if arr.ndim == 1:
+                            arrays_2d.append(arr[:, np.newaxis])
+                        else:
+                            arrays_2d.append(arr)
+                    combined_matrix = np.hstack(arrays_2d)
+        else:
+            combined_matrix = np.array([])
+
+    elif hasattr(struct_cell, 'shape'):
+        # Single numpy array
+        combined_matrix = struct_cell
+
+    else:
+        # Try to convert to numpy array
+        try:
+            combined_matrix = np.array(struct_cell)
+        except:
+            combined_matrix = np.array([])
+
+    # Remove NaN columns (MATLAB behavior)
+    if combined_matrix.size > 0 and combined_matrix.ndim >= 2:
+        if combined_matrix.shape[0] > 0:
+            # Check first row for NaNs
+            nan_mask = ~np.isnan(combined_matrix[0, :])
+            if np.any(nan_mask):
+                combined_matrix = combined_matrix[:, nan_mask]
+
+    return combined_matrix

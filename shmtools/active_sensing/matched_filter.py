@@ -85,29 +85,29 @@ def coherent_matched_filter_shm(
     if matched_waveform.ndim == 1:
         matched_waveform = matched_waveform[:, np.newaxis]
 
-    # Check dimensions
-    if waveform.shape[1] != matched_waveform.shape[1]:
-        raise ValueError(
-            "Waveform and matched waveform must have same number of channels"
-        )
+    # Extract template (MATLAB: matched_waveform is single column template)
+    if matched_waveform.shape[1] > 1:
+        # Use first column as template  
+        template = matched_waveform[:, 0]
+    else:
+        template = matched_waveform.flatten()
 
     time_points, n_channels = waveform.shape
-    template_length = matched_waveform.shape[0]
+    template_length = len(template)
 
     # Initialize output
     filter_result = np.zeros_like(waveform)
 
-    # Process each channel
+    # Normalize template energy
+    template_energy = np.sum(template**2)
+    if template_energy > 0:
+        template_normalized = template / np.sqrt(template_energy)
+    else:
+        template_normalized = template
+
+    # Process each channel with the same template
     for ch in range(n_channels):
         signal = waveform[:, ch]
-        template = matched_waveform[:, ch]
-
-        # Normalize template energy
-        template_energy = np.sum(template**2)
-        if template_energy > 0:
-            template_normalized = template / np.sqrt(template_energy)
-        else:
-            template_normalized = template
 
         # Compute cross-correlation using scipy correlate
         # 'full' mode gives the full discrete linear cross-correlation
@@ -139,7 +139,7 @@ def incoherent_matched_filter_shm(
     Parameters
     ----------
     waveform : array_like
-        Input waveform to be filtered. Shape: (TIME_POINTS,) or (TIME_POINTS, CHANNELS).
+        Input waveform to be filtered. Shape: (TIME_POINTS, CHANNELS).
 
         .. gui::
             :widget: file_upload
@@ -147,7 +147,7 @@ def incoherent_matched_filter_shm(
             :description: Input waveform data
 
     matched_waveform : array_like
-        Template waveform for matching. Must have same number of channels as waveform.
+        Template waveform for matching. Shape: (TIME_TEMPLATE, 1) - single channel template.
 
         .. gui::
             :widget: file_upload
@@ -165,10 +165,10 @@ def incoherent_matched_filter_shm(
     matched filter output using the analytic signal (Hilbert transform). This
     removes phase sensitivity and is useful when phase relationships are unknown.
 
-    The filter output is computed as:
-    1. Compute coherent matched filter result
-    2. Generate analytic signal using Hilbert transform
-    3. Return magnitude: |result + j*hilbert(result)|
+    Replicates the exact MATLAB incoherentMatchedFilter_shm behavior:
+    1. Apply single template to each channel independently
+    2. Use sqrt((template'*waveform)^2 + (template90'*waveform)^2) for same lengths
+    3. Use convolution with truncation for different lengths
 
     This approach is particularly useful for detecting scattered waves where
     phase relationships may be disrupted by damage.
@@ -178,13 +178,12 @@ def incoherent_matched_filter_shm(
     >>> import numpy as np
     >>> from shmtools.active_sensing import incoherent_matched_filter_shm
     >>>
-    >>> # Generate test signals with phase shifts
-    >>> t = np.linspace(0, 1, 1000)
-    >>> signal = np.sin(2*np.pi*10*t + np.pi/4) + 0.1*np.random.randn(1000)
-    >>> template = np.sin(2*np.pi*10*t[:100])
+    >>> # Generate test signals
+    >>> waveform = np.random.randn(1000, 10)  # 10 channels
+    >>> template = np.sin(np.linspace(0, 2*np.pi, 100))[:, np.newaxis]  # Single template
     >>>
     >>> # Apply incoherent matched filter
-    >>> result = incoherent_matched_filter_shm(signal, template)
+    >>> result = incoherent_matched_filter_shm(waveform, template)
     >>> print(f"Filter output shape: {result.shape}")
 
     References
@@ -194,29 +193,90 @@ def incoherent_matched_filter_shm(
     waveform = np.asarray(waveform, dtype=np.float64)
     matched_waveform = np.asarray(matched_waveform, dtype=np.float64)
 
-    # First compute coherent matched filter
-    coherent_result = coherent_matched_filter_shm(waveform, matched_waveform)
+    # Handle empty inputs (MATLAB behavior)
+    if waveform.size == 0:
+        return np.array([])
+    if matched_waveform.size == 0:
+        return waveform
 
-    # Handle different input dimensions for Hilbert transform
-    if coherent_result.ndim == 1:
-        coherent_result = coherent_result[:, np.newaxis]
-        squeeze_output = True
+    # Ensure proper dimensions
+    if waveform.ndim == 1:
+        waveform = waveform[:, np.newaxis]
+    if matched_waveform.ndim == 1:
+        matched_waveform = matched_waveform[:, np.newaxis]
+    
+    # Extract the template (should be single column)
+    if matched_waveform.shape[1] > 1:
+        # Use first column as template
+        template = matched_waveform[:, 0]
     else:
-        squeeze_output = False
+        template = matched_waveform.flatten()
 
-    # Initialize output
-    incoherent_result = np.zeros_like(coherent_result)
+    time_points_wave, n_channels = waveform.shape
+    template_length = len(template)
 
-    # Process each channel
-    for ch in range(coherent_result.shape[1]):
-        # Compute analytic signal using Hilbert transform
-        analytic_signal = hilbert(coherent_result[:, ch])
+    # Generate 90-degree phase-shifted version (Hilbert transform approach)
+    template_90 = _shift_90_degrees(template)
 
-        # Take magnitude for incoherent result
-        incoherent_result[:, ch] = np.abs(analytic_signal)
+    # Check if waveform and template have same length
+    if time_points_wave == template_length:
+        # Apply filter once per channel (MATLAB: filterResult(:,i)=sqrt((matchedWaveform'*waveform).^2+(mWaveform90'*waveform).^2))
+        filter_result = np.zeros((1, n_channels))
+        for i in range(n_channels):
+            channel_signal = waveform[:, i]
+            # Dot products
+            dot1 = np.dot(template, channel_signal)
+            dot2 = np.dot(template_90, channel_signal)
+            filter_result[0, i] = np.sqrt(dot1**2 + dot2**2)
+    else:
+        # Apply filter through convolution (MATLAB behavior)
+        filter_result = np.zeros_like(waveform)
+        L = template_length
+        
+        for i in range(n_channels):
+            channel_signal = waveform[:, i]
+            
+            # Convolution with template and 90-degree version
+            conv1 = np.convolve(channel_signal, template, mode='full')
+            conv2 = np.convolve(channel_signal, template_90, mode='full')
+            
+            # Combined magnitude
+            conv_combined = np.sqrt(conv1**2 + conv2**2)
+            
+            # Truncate ends (MATLAB: filtTemp(round(L/2):round(end-L/2)))
+            start_idx = round(L/2)
+            end_idx = len(conv_combined) - round(L/2)
+            filter_result[:, i] = conv_combined[start_idx:end_idx]
 
-    # Return original shape if input was 1D
-    if squeeze_output:
-        incoherent_result = incoherent_result.flatten()
+    return filter_result
 
-    return incoherent_result
+
+def _shift_90_degrees(waveform: np.ndarray) -> np.ndarray:
+    """
+    Shift waveform by 90 degrees (quadrature phase).
+    
+    Replicates the MATLAB shift90 function behavior using FFT-based approach.
+    """
+    waveform = waveform.flatten()
+    L = len(waveform)
+    
+    # Zero-pad to next power of 2 (MATLAB behavior)
+    power2L = 2 ** int(np.ceil(np.log2(L)))
+    
+    # Create frequency domain multiplier for 90-degree shift
+    fh = np.zeros(power2L, dtype=complex)
+    fh[:power2L//2] = 1j  # +j for positive frequencies
+    fh[power2L//2+1:] = -1j  # -j for negative frequencies
+    
+    # Zero-pad waveform
+    waveform_padded = np.concatenate([waveform, np.zeros(power2L - L)])
+    
+    # Apply 90-degree phase shift in frequency domain
+    waveform_fft = np.fft.fft(waveform_padded)
+    shifted_fft = waveform_fft * fh
+    shifted_padded = np.fft.ifft(shifted_fft)
+    
+    # Extract original length and take real part
+    waveform_90 = np.real(shifted_padded[:L])
+    
+    return waveform_90

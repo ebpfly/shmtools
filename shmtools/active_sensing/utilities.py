@@ -119,24 +119,53 @@ def _extract_subsets_2d(
     data: np.ndarray, start_indices: np.ndarray, subset_length: int
 ) -> np.ndarray:
     """Extract subsets from 2D data (TIME, CHANNELS)."""
-    n_subsets = len(start_indices)
     data_length, n_channels = data.shape
+    
+    # Handle different start_indices formats
+    if start_indices.ndim == 1:
+        # 1D indices: extract same indices for all channels
+        n_subsets = len(start_indices)
+        subsets = np.zeros((n_subsets, subset_length, n_channels))
+        
+        for i, start_idx in enumerate(start_indices):
+            end_idx = start_idx + subset_length
 
-    # Initialize output
-    subsets = np.zeros((n_subsets, subset_length, n_channels))
+            if start_idx >= 0 and start_idx < data_length:
+                # Extract available data
+                actual_end = min(end_idx, data_length)
+                actual_length = actual_end - start_idx
 
-    for i, start_idx in enumerate(start_indices):
-        end_idx = start_idx + subset_length
-
-        if start_idx >= 0 and start_idx < data_length:
-            # Extract available data
-            actual_end = min(end_idx, data_length)
-            actual_length = actual_end - start_idx
-
-            if actual_length > 0:
-                subsets[i, :actual_length, :] = data[start_idx:actual_end, :]
-
-    return subsets
+                if actual_length > 0:
+                    subsets[i, :actual_length, :] = data[start_idx:actual_end, :]
+        
+        return subsets
+    
+    elif start_indices.ndim == 2:
+        # 2D indices: different indices for each pair-POI combination
+        # start_indices shape: (N_PAIRS, N_POIS)
+        # data shape: (TIME, N_PAIRS)
+        n_pairs, n_pois = start_indices.shape
+        
+        # Output shape: (N_PAIRS, N_POIS, subset_length)
+        subsets = np.zeros((n_pairs, n_pois, subset_length))
+        
+        for pair_idx in range(n_pairs):
+            for poi_idx in range(n_pois):
+                start_idx = start_indices[pair_idx, poi_idx]
+                end_idx = start_idx + subset_length
+                
+                if start_idx >= 0 and start_idx < data_length and pair_idx < n_channels:
+                    # Extract available data from the specific channel/pair
+                    actual_end = min(end_idx, data_length)
+                    actual_length = actual_end - start_idx
+                    
+                    if actual_length > 0:
+                        subsets[pair_idx, poi_idx, :actual_length] = data[start_idx:actual_end, pair_idx]
+        
+        return subsets
+    
+    else:
+        raise ValueError(f"Unsupported start_indices dimensions: {start_indices.ndim}")
 
 
 def _extract_subsets_3d(
@@ -239,8 +268,18 @@ def flex_logic_filter_shm(
                 return data[:, logic_filter]
             else:
                 raise ValueError("Filter length doesn't match any data dimension")
+        elif data.ndim == 3:
+            # For 3D data, try to match filter shape to first two dimensions
+            if logic_filter.shape == data.shape[:2]:
+                # Filter matches first two dimensions (pairs, POIs)
+                # Apply element-wise filtering
+                filtered_data = data.copy()
+                filtered_data[~logic_filter] = 0  # Zero out where filter is False
+                return filtered_data
+            else:
+                raise ValueError(f"Filter shape {logic_filter.shape} doesn't match data shape {data.shape[:2]}")
         else:
-            raise ValueError("Must specify dims for >2D data")
+            raise ValueError("Must specify dims for >3D data")
     else:
         # Apply filter along specified dimensions
         filtered_data = data.copy()
@@ -430,30 +469,64 @@ def estimate_group_velocity_shm(
         waveform = waveform[:, :, np.newaxis]
 
     time_points, n_channels, n_instances = waveform.shape
-    n_pairs = pair_list.shape[0]
+    
+    # Handle different pair_list formats
+    if pair_list.shape[0] == 2:  # MATLAB format: [actuator_ids, sensor_ids]
+        pair_indices = pair_list.T  # Transpose to (N_PAIRS, 2)
+    else:  # Standard format: (N_PAIRS, 2)
+        pair_indices = pair_list
+    
+    n_pairs = pair_indices.shape[0]
+
+    # Handle different sensor_layout formats
+    if sensor_layout.shape[0] == 3:  # MATLAB format: [sensorID, xCoord, yCoord]
+        sensor_coords = sensor_layout[1:3, :].T  # Extract coordinates and transpose to (N_SENSORS, 2)
+        sensor_ids = sensor_layout[0, :]  # Extract sensor IDs
+    else:  # Standard format: (N_SENSORS, 2)
+        sensor_coords = sensor_layout
+        sensor_ids = np.arange(sensor_layout.shape[0])  # Assume sequential IDs
 
     # Calculate distances between sensor pairs
     distances = []
     valid_pairs = []
 
-    for i, pair in enumerate(pair_list):
+    for i in range(n_pairs):
+        pair = pair_indices[i]
         # Convert from MATLAB 1-based to Python 0-based indexing
-        sensor1_idx = pair[0] - 1
-        sensor2_idx = pair[1] - 1
+        actuator_id = pair[0]
+        sensor_id = pair[1]
+        
+        # Find indices in the sensor layout
+        if sensor_layout.shape[0] == 3:  # Had sensor IDs
+            actuator_idx = np.where(sensor_ids == actuator_id)[0]
+            sensor_idx = np.where(sensor_ids == sensor_id)[0]
+            
+            if len(actuator_idx) > 0 and len(sensor_idx) > 0:
+                actuator_idx = actuator_idx[0]
+                sensor_idx = sensor_idx[0]
+            else:
+                # Fallback: treat as 1-based indices
+                actuator_idx = actuator_id - 1 if actuator_id > 0 else 0
+                sensor_idx = sensor_id - 1 if sensor_id > 0 else 0
+        else:
+            # Direct indexing
+            actuator_idx = actuator_id - 1 if actuator_id > 0 else actuator_id
+            sensor_idx = sensor_id - 1 if sensor_id > 0 else sensor_id
 
+        # Check bounds
         if (
-            sensor1_idx >= 0
-            and sensor1_idx < n_channels
-            and sensor2_idx >= 0
-            and sensor2_idx < n_channels
+            actuator_idx >= 0
+            and actuator_idx < sensor_coords.shape[0]
+            and sensor_idx >= 0
+            and sensor_idx < sensor_coords.shape[0]
         ):
-
-            coord1 = sensor_layout[sensor1_idx, :]
-            coord2 = sensor_layout[sensor2_idx, :]
+            coord1 = sensor_coords[actuator_idx, :]
+            coord2 = sensor_coords[sensor_idx, :]
             distance = np.sqrt(np.sum((coord1 - coord2) ** 2))
 
             distances.append(distance)
-            valid_pairs.append((sensor1_idx, sensor2_idx))
+            # Map to waveform channel indices (this assumes the waveform channels correspond to pair indices)
+            valid_pairs.append((i, i))  # For cross-correlation, use the same pair index for both signals
 
     distances = np.array(distances)
 
@@ -463,25 +536,28 @@ def estimate_group_velocity_shm(
     # Estimate time delays using cross-correlation
     time_delays = []
 
-    for i, (sensor1_idx, sensor2_idx) in enumerate(valid_pairs):
-        # Use first instance for velocity estimation
-        signal1 = waveform[:, sensor1_idx, 0]
-        signal2 = waveform[:, sensor2_idx, 0]
-
-        # Cross-correlation to find time delay
-        correlation = np.correlate(signal1, signal2, mode="full")
-        lag_max = np.argmax(np.abs(correlation))
-
-        # Convert lag to time delay
-        max_lag = len(signal1) - 1
-        actual_lag = lag_max - max_lag
-        time_delay = actual_lag / sample_rate
-
-        # Only use positive delays that make physical sense
-        if (
-            time_delay > 0 and time_delay < distances[i] / 100
-        ):  # Minimum reasonable velocity: 100 m/s
-            time_delays.append(time_delay)
+    for i, (pair_idx1, pair_idx2) in enumerate(valid_pairs):
+        # For group velocity estimation, we need to analyze the waveform for each pair
+        # The waveform channels correspond to different actuator-sensor pairs
+        if pair_idx1 < n_channels:
+            # Use the waveform from this pair (each column is a different actuator-sensor pair)
+            signal = waveform[:, pair_idx1, 0]
+            
+            # For group velocity, we typically look at the envelope or peak arrival time
+            # Here we'll use a simple approach: find the peak arrival time
+            signal_envelope = np.abs(signal)
+            peak_idx = np.argmax(signal_envelope)
+            
+            # Convert peak time to time delay
+            time_delay = peak_idx / sample_rate
+            
+            # Only use delays that make physical sense
+            if (
+                time_delay > 0 and distances[i] > 0 and time_delay < distances[i] / 100
+            ):  # Minimum reasonable velocity: 100 m/s
+                time_delays.append(time_delay)
+            else:
+                time_delays.append(np.nan)
         else:
             time_delays.append(np.nan)
 
@@ -510,3 +586,144 @@ def estimate_group_velocity_shm(
         estimated_speed = median_speed
 
     return estimated_speed, speed_list
+
+
+def reduce_2_pair_subset_shm(
+    sensor_subset: np.ndarray,
+    sensor_layout: np.ndarray,
+    pair_list: np.ndarray,
+    waveform_base: Optional[np.ndarray] = None,
+    waveform_test: Optional[np.ndarray] = None,
+) -> Tuple[np.ndarray, np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]:
+    """
+    Extract parameter and data subsets based on sensor subset.
+
+    .. meta::
+        :category: Active Sensing - Utilities
+        :matlab_equivalent: reduce2PairSubset_shm
+        :complexity: Intermediate
+        :data_type: Arrays
+        :output_type: Data Subsets
+        :display_name: Reduce to Pair Subset
+        :verbose_call: [Pair Subset, Layout Subset, Baseline Waveform, Test Waveform] = Reduce to Pair Subset (Sensor Subset, Sensor Layout, Pair List, Baseline Waveforms, Test Waveforms)
+
+    Parameters
+    ----------
+    sensor_subset : array_like
+        List of sensor subset IDs (0-based indexing).
+
+        .. gui::
+            :widget: array_input
+            :description: Sensor subset IDs
+
+    sensor_layout : array_like
+        Sensor layout with shape (N_SENSORS, 3) containing [sensorID, xCoord, yCoord].
+
+        .. gui::
+            :widget: file_upload
+            :formats: [".csv", ".mat", ".npy"]
+            :description: Sensor layout coordinates
+
+    pair_list : array_like
+        Matrix of actuator-sensor pairs with shape (2, N_PAIRS) containing [actuatorID, sensorID].
+
+        .. gui::
+            :widget: array_input
+            :description: Sensor pair indices
+
+    waveform_base : array_like, optional
+        Baseline waveform data with shape (TIME, N_PAIRS, ...).
+
+        .. gui::
+            :widget: file_upload
+            :formats: [".csv", ".mat", ".npy"]
+            :description: Baseline waveform data (optional)
+
+    waveform_test : array_like, optional
+        Test waveform data with shape (TIME, N_PAIRS, ...).
+
+        .. gui::
+            :widget: file_upload
+            :formats: [".csv", ".mat", ".npy"]
+            :description: Test waveform data (optional)
+
+    Returns
+    -------
+    pair_subset : ndarray
+        Subset of sensor pairs containing only pairs using sensors in subset.
+
+    layout_subset : ndarray
+        Subset of sensor layout containing only sensors in subset.
+
+    waveform_base_sub : ndarray or None
+        Subset of baseline waveform data corresponding to pair subset.
+
+    waveform_test_sub : ndarray or None
+        Subset of test waveform data corresponding to pair subset.
+
+    Notes
+    -----
+    Extracts parameter and data subsets according to sensor subset. Only
+    pairs where both actuator and sensor are in the subset are retained.
+
+    This function expects MATLAB-style data layout where sensor_layout has
+    shape (3, N_SENSORS) with rows [sensorID, xCoord, yCoord] and pair_list
+    has shape (2, N_PAIRS) with rows [actuatorID, sensorID].
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from shmtools.active_sensing import reduce_2_pair_subset_shm
+    >>>
+    >>> # Create sensor layout (MATLAB format: 3 x N_SENSORS)
+    >>> sensor_layout = np.array([[0, 1, 2, 3], [0, 1, 2, 0], [0, 0, 1, 1]])
+    >>> 
+    >>> # Create pair list (MATLAB format: 2 x N_PAIRS) 
+    >>> pair_list = np.array([[0, 1, 2], [1, 2, 3]])
+    >>>
+    >>> # Define subset
+    >>> subset = np.array([0, 1, 2])
+    >>>
+    >>> # Extract subset
+    >>> pairs_sub, layout_sub, _, _ = reduce_2_pair_subset_shm(
+    ...     subset, sensor_layout, pair_list
+    ... )
+    >>> print(f"Subset pairs shape: {pairs_sub.shape}")
+    """
+    sensor_subset = np.asarray(sensor_subset, dtype=int)
+    sensor_layout = np.asarray(sensor_layout)
+    pair_list = np.asarray(pair_list, dtype=int)
+
+    # Find pairs where both sensors are in the subset
+    # pair_list has shape (2, N_PAIRS) with [actuatorID, sensorID] rows
+    actuator_in_subset = np.isin(pair_list[0, :], sensor_subset)
+    sensor_in_subset = np.isin(pair_list[1, :], sensor_subset)
+    
+    # Keep pairs where both actuator and sensor are in subset
+    sub_pair_mask = actuator_in_subset & sensor_in_subset
+    
+    # Extract pair subset
+    pair_subset = pair_list[:, sub_pair_mask]
+    
+    # Find sensors that are in the subset
+    # sensor_layout has shape (3, N_SENSORS) with [sensorID, xCoord, yCoord] rows
+    sensor_ids = sensor_layout[0, :] if sensor_layout.shape[0] > 2 else np.arange(sensor_layout.shape[1])
+    sub_sensor_mask = np.isin(sensor_ids, sensor_subset)
+    
+    # Extract layout subset
+    layout_subset = sensor_layout[:, sub_sensor_mask]
+    
+    # Extract waveform subsets if provided
+    waveform_base_sub = None
+    if waveform_base is not None:
+        waveform_base = np.asarray(waveform_base)
+        if waveform_base.size > 0:
+            waveform_base_sub = waveform_base[:, sub_pair_mask]
+    
+    waveform_test_sub = None
+    if waveform_test is not None:
+        waveform_test = np.asarray(waveform_test)
+        if waveform_test.size > 0:
+            waveform_test_sub = waveform_test[:, sub_pair_mask]
+    
+    return pair_subset, layout_subset, waveform_base_sub, waveform_test_sub
