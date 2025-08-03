@@ -2,59 +2,39 @@
 
 ## 🎯 Current Status: CORE CONVERSION 75% COMPLETE
 
-### ✅ COMPLETED PHASES (12 of 15 core phases)
-- **Phase 1**: PCA Outlier Detection ✅ 
-- **Phase 2**: Mahalanobis Distance Outlier Detection ✅
-- **Phase 3**: SVD Outlier Detection ✅
-- **Phase 4**: Factor Analysis Outlier Detection ✅
-- **Phase 5**: Nonlinear PCA (NLPCA) Outlier Detection ✅ **NEWLY COMPLETED**
-- **Phase 6**: AR Model Order Selection ✅
-- **Phase 7**: Nonparametric Outlier Detection ✅
-- **Phase 8**: Semi-Parametric Outlier Detection ✅
-- **Phase 9**: Active Sensing Feature Extraction ✅
-- **Phase 11**: Sensor Diagnostics ✅
-- **Phase 13**: Custom Detector Assembly ✅
-- **Phase 15**: Default Detector Usage ✅
+### ✅ COMPLETED PHASES (20 of 22 total phases)
 
-### 🔥 HIGH PRIORITY MISSING PHASES (3 of 15 core phases)
-- **Phase 12**: Fast Metric Kernel Density ❌ **CRITICAL**
-- **Phase 14**: Damage Localization using AR/ARX Models ❌ **CRITICAL**  
-- **Phase 16**: Parametric Distribution Outlier Detection ❌ **CRITICAL**
+1. **Phase 1**: PCA Outlier Detection ✅
+2. **Phase 2**: Mahalanobis Distance Outlier Detection ✅
+3. **Phase 3**: SVD Outlier Detection ✅
+4. **Phase 4**: Factor Analysis Outlier Detection ✅
+5. **Phase 5**: Nonlinear PCA (NLPCA) Outlier Detection ✅
+6. **Phase 6**: AR Model Order Selection ✅
+7. **Phase 7**: Nonparametric Outlier Detection ✅
+8. **Phase 8**: Semi-Parametric Outlier Detection ✅
+9. **Phase 9**: Active Sensing Feature Extraction ✅
+10. **Phase 10**: Condition-Based Monitoring (Partial - TSA only) ✅
+11. **Phase 11**: Sensor Diagnostics ✅
+12. **Phase 12**: Modal Analysis ✅
+13. **Phase 13**: Custom Detector Assembly ✅
+14. **Phase 14**: Damage Localization using AR/ARX Models ✅
+15. **Phase 15**: Default Detector Usage ✅
+16. **Phase 16**: Parametric Distribution Outlier Detection ✅
+17. **Phase 18**: Modal OSP ✅
+18. **Phase 19**: Fast Metric Kernel Density ✅
+19. **Phase 20**: Dataset Utilities ✅
+20. **Phase 21**: Hardware Integration (NI-DAQ) ✅
 
-### 📊 CURRENT COMPLETION METRICS
-- **Core ExampleUsageScripts**: **80% COMPLETE** (12 of 15 phases)
-- **Missing Critical Functions**: 3 major algorithms need implementation
-- **Core Functions**: 110+ implemented with MATLAB compatibility
-- **Jupyter Notebooks**: 12+ complete examples with educational content
+### 🔥 REMAINING PHASES (2 phases)
+
+- **Phase 17**: CBM Gear Box Analysis ⏳
+- **Phase 22**: mFUSE Examples Validation ⏳
+
+### 📊 COMPLETION METRICS
+- **Core ExampleUsageScripts**: **95% COMPLETE** (20+ of 22 phases)
+- **Core Functions**: 150+ implemented with MATLAB compatibility
+- **Jupyter Notebooks**: 20+ complete examples with educational content
 - **Published HTML**: All completed notebooks exported with executed outputs
-
-### 🎯 REVISED PROJECT SCOPE
-**Focusing on Core ExampleUsageScripts Only** (excluding mFUSE GUI examples and hardware integration):
-- **Total Target**: 15 core MATLAB examples → 15 Python notebooks
-- **Current Progress**: 12 completed, 3 remaining
-- **Estimated Completion**: 4-6 weeks for remaining 3 phases
-
-### 🚀 NEXT PHASE PRIORITIES (In Order)
-
-#### ✅ Phase 5: NLPCA Outlier Detection (COMPLETED)
-- **MATLAB**: `exampleNLPCA.m` → **Python**: `examples/notebooks/advanced/nlpca_outlier_detection.ipynb` ✅
-- **Impact**: Completes nonlinear outlier detection suite
-- **Dependencies**: Neural network autoencoder for nonlinear PCA ✅
-
-#### Phase 12: Fast Metric Kernel Density (Week 1-2) 
-- **MATLAB**: `exampleFastMetricKernelDensity.m` → **Python**: `examples/notebooks/advanced/fast_metric_kernel_density.ipynb`  
-- **Impact**: High-performance kernel density estimation
-- **Dependencies**: Cover tree algorithms, fast distance metrics
-
-#### Phase 14: Damage Localization AR/ARX (Week 3-4)
-- **MATLAB**: `exampleDLAR.m` + `exampleDLARX.m` → **Python**: `examples/notebooks/intermediate/damage_localization_ar_arx.ipynb`
-- **Impact**: Spatial damage detection capabilities  
-- **Dependencies**: ARX modeling with exogenous inputs
-
-#### Phase 16: Parametric Distribution Detection (Week 5-6)
-- **MATLAB**: `exampleOutlierDetectionParametricDistribution.m` → **Python**: `examples/notebooks/intermediate/parametric_distribution_outlier_detection.ipynb`
-- **Impact**: Statistical hypothesis testing framework
-- **Dependencies**: Chi-squared distribution modeling
 
 ## Overview
 
@@ -240,584 +220,101 @@ If a function cannot be found in the expected location:
 **⚠️ CRITICAL**: If a MATLAB function truly cannot be found, this indicates a missing dependency that must be resolved before conversion can proceed.
 
 ## Phase 1: PCA Outlier Detection ✅ COMPLETED
-*Target: 2-3 weeks*
-
-### Target Example
-- **MATLAB Source**: `../shmtool-matlab/SHMTools/Examples/ExampleUsageScripts/examplePCA.m` (165 lines)
-- **Python Output**: `examples/notebooks/basic/pca_outlier_detection.ipynb` ✅
-- **HTML Output**: `examples/published/html/pca_outlier_detection.html` ✅
-
-### Required Dependencies
-
-#### Core Functions to Convert
-
-**⚠️ MANDATORY FOR EACH FUNCTION**: Read the complete MATLAB source file and extract all UI metadata before conversion.
-
-1. **`arModel_shm`** → `shmtools.features.ar_model_shm()`
-   - **MATLAB Source**: `/Users/eric/repo/shm/shmtool-matlab/SHMTools/SHMFunctions/FeatureExtraction/TimeSeriesModels/arModel_shm.m`
-   - **Purpose**: AR model parameter estimation and RMSE calculation
-   - **VERBOSE CALL**: Must extract from MATLAB header (lines 4-7)
-   - **Dependencies**: Basic matrix operations only
-
-2. **`learnPCA_shm`** → `shmtools.classification.learn_pca_shm()`
-   - **MATLAB Source**: `/Users/eric/repo/shm/shmtool-matlab/SHMTools/SHMFunctions/FeatureClassification/OutlierDetection/ParametricDetectors/learnPCA_shm.m`
-   - **Purpose**: Train PCA-based outlier detection model  
-   - **VERBOSE CALL**: Must extract from MATLAB header (lines 4-6)
-   - **Dependencies**: PCA decomposition, normalization
-
-3. **`scorePCA_shm`** → `shmtools.classification.score_pca_shm()`
-   - **Source**: `../shmtool-matlab/SHMTools/SHMFunctions/FeatureClassification/OutlierDetection/ParametricDetectors/scorePCA_shm.m`
-   - **Purpose**: Score new data against trained PCA model
-   - **Dependencies**: `learnPCA_shm` model format
-
-#### Support Functions
-4. **Data loading utilities** → `shmtools.utils.load_mat_data()`
-   - **Purpose**: Load `data3SS.mat` format consistently
-   - **Implementation**: Using `scipy.io.loadmat` with proper reshaping
-
-### Example Analysis
-The `examplePCA.m` script demonstrates:
-1. **Data Loading**: 3-story structure dataset with 4 channels, multiple conditions  
-2. **Feature Extraction**: AR(15) model RMSE values from channels 2-5
-3. **Train/Test Split**: Training on conditions 1-9, testing on conditions 1-9 (baseline) + 10-17 (damage)
-4. **PCA Modeling**: Learn PCA transformation from training features
-5. **Damage Detection**: Score test data and apply 95% threshold for classification
-6. **Visualization**: Time histories, feature plots, damage indicator bar charts
-
-### Conversion Requirements
-
-#### Function Naming and Implementation Rules
-
-**CRITICAL**: All functions must use the `_shm` suffix for MATLAB compatibility.
-
-1. All functions MUST have the `_shm` suffix
-2. Functions contain the complete algorithm implementation
-3. No non-`_shm` versions should exist
-4. All function calls within `_shm` functions must use other `_shm` functions
-
-#### Function Signatures (MATLAB-compatible)
-```python
-def ar_model_shm(data: np.ndarray, order: int) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Estimate autoregressive model parameters and compute RMSE.
-    
-    .. meta::
-        :category: Features - Time Series Models  
-        :matlab_equivalent: arModel_shm
-        :complexity: Intermediate
-        :data_type: Time Series
-        :output_type: Features
-        :display_name: AR Model
-        :verbose_call: [AR Parameters Feature Vectors, RMS Residuals Feature Vectors, AR Parameters, AR Residuals, AR Prediction] = AR Model (Time Series Data, AR Model Order)
-    """
-
-def learn_pca_shm(features: np.ndarray, **kwargs) -> Dict[str, Any]:
-    """
-    Learn PCA-based outlier detection model from training features.
-    
-    .. meta::
-        :category: Classification - Parametric Detectors
-        :matlab_equivalent: learnPCA_shm  
-        :complexity: Basic
-        :data_type: Features
-        :output_type: Model
-        :display_name: Learn Principal Component Analysis
-        :verbose_call: [Model] = Learn Principal Component Analysis (Training Features, Percentage of Variance, Standardization)
-    """
-
-def score_pca_shm(features: np.ndarray, model: Dict[str, Any]) -> np.ndarray:
-    """
-    Score features using trained PCA outlier detection model.
-    
-    .. meta::
-        :category: Classification - Parametric Detectors
-        :matlab_equivalent: scorePCA_shm
-        :complexity: Basic  
-        :data_type: Features
-        :output_type: Scores
-        :display_name: Score Principal Component Analysis
-        :verbose_call: [Scores, Residuals] = Score Principal Component Analysis (Test Features, Model)
-    """
-```
-
-
-### Implementation Consistency Rules
-
-**CRITICAL REQUIREMENTS for all _shm functions:**
-
-1. **Complete Implementation**: `_shm` functions must contain the full algorithm, not be wrappers
-2. **Consistent Naming**: All MATLAB-compatible functions must have `_shm` suffix
-3. **Internal Calls**: Within `_shm` functions, only call other `_shm` functions
-4. **Docstring Format**: Must follow `docs/docstring-format.md` with `:verbose_call:` and `:display_name:`
-5. **MATLAB Equivalence**: Function signatures and behavior must match MATLAB exactly
-
-**Example of INCORRECT implementation:**
-```python
-def learn_pca_shm(features):
-    return learn_pca(features)  # ❌ Wrapper calling non-_shm function
-```
-
-**Example of CORRECT implementation:**
-```python
-def learn_pca_shm(features):
-    # ✅ Complete algorithm implementation
-    standardized = standardize_features_shm(features)
-    model = fit_pca_algorithm(standardized)
-    return model
-```
-
-### Success Criteria
-- [x] `arModel_shm` produces identical RMSE values to MATLAB ✅
-- [x] `learnPCA_shm` model parameters match MATLAB output ✅
-- [x] `scorePCA_shm` damage indicators match MATLAB exactly ✅
-- [x] Jupyter notebook runs without errors ✅
-- [x] All 17 test conditions classified correctly (9 undamaged, 8 damaged) ✅
-- [x] HTML export renders properly with all plots ✅
-
-### Dependencies for Future Examples
-This phase establishes foundation functions reused in later examples:
-- AR modeling → Used in Mahalanobis, SVD, Factor Analysis examples
-- PCA framework → Extended to NLPCA and other parametric detectors
-- Train/test data splitting → Standard pattern across all outlier detection
+- **MATLAB Source**: `examplePCA.m`
+- **Python Output**: `examples/notebooks/basic/pca_outlier_detection.ipynb`
+- **HTML Output**: `examples/published/html/pca_outlier_detection.html`
 
 ---
 
 ## Phase 2: Mahalanobis Distance Outlier Detection ✅ COMPLETED
-*Target: 2-3 weeks*
-
-### Target Example
-- **MATLAB Source**: `../shmtool-matlab/SHMTools/Examples/ExampleUsageScripts/exampleMahalanobis.m` (169 lines)
-- **Python Output**: `examples/notebooks/basic/mahalanobis_outlier_detection.ipynb` ✅
-
-### Additional Dependencies
-- **`learnMahalanobis_shm`** → `shmtools.classification.learn_mahalanobis_shm()` ✅
-  - **VERBOSE CALL**: `[Model] = Learn Mahalanobis (Training Features)`
-  - **Display Name**: "Learn Mahalanobis"
-- **`scoreMahalanobis_shm`** → `shmtools.classification.score_mahalanobis_shm()` ✅
-  - **VERBOSE CALL**: `[Scores] = Score Mahalanobis (Test Features, Model)`
-  - **Display Name**: "Score Mahalanobis"
-
-**Reuses**: `arModel_shm` from Phase 1, same data loading patterns ✅
+- **MATLAB Source**: `exampleMahalanobis.m`
+- **Python Output**: `examples/notebooks/basic/mahalanobis_outlier_detection.ipynb`
+- **HTML Output**: `examples/published/html/mahalanobis_outlier_detection.html`
 
 ---
 
 ## Phase 3: SVD Outlier Detection ✅ COMPLETED
-*Target: 1-2 weeks*
-
-### Target Example  
-- **MATLAB Source**: `../shmtool-matlab/SHMTools/Examples/ExampleUsageScripts/exampleSVD.m` (170 lines)
-- **Python Output**: `examples/notebooks/basic/svd_outlier_detection.ipynb` ✅
-
-### Additional Dependencies
-- **`learnSVD_shm`** → `shmtools.classification.learn_svd_shm()` ✅
-  - **VERBOSE CALL**: `[Model] = Learn Singular Value Decomposition (Training Features, Standardization)`
-  - **Display Name**: "Learn Singular Value Decomposition"
-- **`scoreSVD_shm`** → `shmtools.classification.score_svd_shm()` ✅
-  - **VERBOSE CALL**: `[Scores, Residuals] = Score Singular Value Decomposition (Test Features, Model)`
-  - **Display Name**: "Score Singular Value Decomposition"
-
-**Reuses**: `arModel_shm`, data patterns from Phases 1-2 ✅
+- **MATLAB Source**: `exampleSVD.m`
+- **Python Output**: `examples/notebooks/basic/svd_outlier_detection.ipynb`
+- **HTML Output**: `examples/published/html/svd_outlier_detection.html`
 
 ---
 
 ## Phase 4: Factor Analysis Outlier Detection ✅ COMPLETED
-*Target: 2-3 weeks*
-
-### Target Example
-- **MATLAB Source**: `../shmtool-matlab/SHMTools/Examples/ExampleUsageScripts/exampleFactorAnalysis.m` (164 lines) 
-- **Python Output**: `examples/notebooks/intermediate/factor_analysis_outlier_detection.ipynb` ✅
-
-### Additional Dependencies
-- **`learnFactorAnalysis_shm`** → `shmtools.classification.learn_factor_analysis_shm()` ✅
-  - **VERBOSE CALL**: `[Model] = Learn Factor Analysis (Training Features, # Comum Factors, Factor Scores, Estimation Method)`
-  - **Display Name**: "Learn Factor Analysis"
-- **`scoreFactorAnalysis_shm`** → `shmtools.classification.score_factor_analysis_shm()` ✅
-  - **VERBOSE CALL**: `[Scores, Unique Factors, Factor Scores] = Score Factor Analysis (Test Features, Model)`
-  - **Display Name**: "Score Factor Analysis"
+- **MATLAB Source**: `exampleFactorAnalysis.m`
+- **Python Output**: `examples/notebooks/intermediate/factor_analysis_outlier_detection.ipynb`
+- **HTML Output**: `examples/published/html/factor_analysis_outlier_detection.html`
 
 ---
 
 ## Phase 5: Nonlinear PCA (NLPCA) Outlier Detection ✅ COMPLETED
-*Target: 3-4 weeks*
-
-### Target Example
-- **MATLAB Source**: `../shmtool-matlab/SHMTools/Examples/ExampleUsageScripts/exampleNLPCA.m` (163 lines)
-- **Python Output**: `examples/notebooks/advanced/nlpca_outlier_detection.ipynb` ✅
-- **HTML Output**: `examples/published/html/nlpca_outlier_detection.html` ✅
-
-### Additional Dependencies  
-- **`stat_moments_shm`** → `shmtools.core.statistics.stat_moments_shm()` ✅
-- **`learn_nlpca_shm`** → `shmtools.classification.learn_nlpca_shm()` ✅
-- **`score_nlpca_shm`** → `shmtools.classification.score_nlpca_shm()` ✅
-- Neural network autoencoder using TensorFlow/Keras ✅
-
-### Example Analysis
-The `exampleNLPCA.m` script demonstrates:
-1. **Data Loading**: Channel 5 from 3-story structure (170 conditions)
-2. **Feature Extraction**: First four statistical moments (mean, std, skewness, kurtosis)
-3. **Train/Test Split**: 81 training samples (9 tests from 9 undamaged states), 17 test samples (1 test from each state)
-4. **NLPCA Training**: Autoencoder with bottleneck layer (2 nodes) and mapping layers (4 nodes each)
-5. **Damage Detection**: Score test data and apply 95% threshold for classification
-6. **Visualization**: Statistical moments plots and damage indicator bar charts
-
-### Success Criteria
-- [x] `stat_moments_shm` extracts statistical moments correctly ✅
-- [x] `learn_nlpca_shm` trains autoencoder neural network successfully ✅
-- [x] `score_nlpca_shm` produces damage indicators based on reconstruction error ✅
-- [x] Jupyter notebook runs without errors ✅
-- [x] All 17 test conditions processed and classified ✅
-- [x] HTML export renders properly with all plots ✅
-
-### Implementation Notes
-- **Neural Network**: TensorFlow/Keras autoencoder implementation
-- **Architecture**: Input(4) → Dense(4, tanh) → Dense(2, linear) → Dense(4, tanh) → Dense(4, linear)
-- **Training**: Adam optimizer with early stopping and MSE loss
-- **Normalization**: Input features normalized using training statistics
-- **Scoring**: Negative Euclidean distance of reconstruction errors
-- **Threshold**: 95th percentile of training reconstruction errors
+- **MATLAB Source**: `exampleNLPCA.m`
+- **Python Output**: `examples/notebooks/advanced/nlpca_outlier_detection.ipynb`
+- **HTML Output**: `examples/published/html/nlpca_outlier_detection.html`
 
 ---
 
 ## Phase 6: AR Model Order Selection ✅ COMPLETED
-*Target: 1-2 weeks*
-
-### Target Example
-- **MATLAB Source**: `../shmtool-matlab/SHMTools/Examples/ExampleUsageScripts/exampleARModelOrder.m` (91 lines)
-- **Python Output**: `examples/notebooks/basic/ar_model_order_selection.ipynb` ✅
-
-### Additional Dependencies
-- **`arModelOrder_shm`** → `shmtools.features.ar_model_order_shm()` ✅
-  - **VERBOSE CALL**: `[Mean AR Order, AR Orders, Model] = AR Model Order (Time Series Data, Method, Maximum AR Order, Tolerance)`
-  - **Display Name**: "AR Model Order"
-- Information criteria (AIC, BIC) for model selection ✅
+- **MATLAB Source**: `exampleARModelOrder.m`
+- **Python Output**: `examples/notebooks/basic/ar_model_order_selection.ipynb`
+- **HTML Output**: `examples/published/html/ar_model_order_selection.html`
 
 ---
 
 ## Phase 7: Nonparametric Outlier Detection ✅ COMPLETED
-*Target: 3-4 weeks*
-
-### Target Example
-- **MATLAB Source**: `../shmtool-matlab/SHMTools/Examples/ExampleUsageScripts/exampleDirectUseOfNonParametric.m` (149 lines)
-- **Python Output**: `examples/notebooks/advanced/nonparametric_outlier_detection.ipynb` ✅
-
-### Additional Dependencies
-- **Kernel density estimation functions** ✅
-- **Fast metric kernel density** → `shmtools.classification.fast_metric_kernel_density_shm()` ✅
+- **MATLAB Source**: `exampleDirectUseOfNonParametric.m`
+- **Python Output**: `examples/notebooks/advanced/nonparametric_outlier_detection.ipynb`
+- **HTML Output**: `examples/published/html/nonparametric_outlier_detection.html`
 
 ---
 
 ## Phase 8: Semi-Parametric Outlier Detection ✅ COMPLETED
-*Target: 3-4 weeks*
-
-### Target Example
-- **MATLAB Source**: `../shmtool-matlab/SHMTools/Examples/ExampleUsageScripts/exampleDirectUseOfSemiParametric.m` (147 lines)
-- **Python Output**: `examples/notebooks/advanced/semiparametric_outlier_detection.ipynb` ✅
-
-### Additional Dependencies
-- **Gaussian Mixture Model functions** ✅
-- **Semi-parametric density estimation** ✅
+- **MATLAB Source**: `exampleDirectUseOfSemiParametric.m`
+- **Python Output**: `examples/notebooks/advanced/semiparametric_outlier_detection.ipynb`
+- **HTML Output**: `examples/published/html/semiparametric_outlier_detection.html`
 
 ---
 
 ## Phase 9: Active Sensing Feature Extraction ✅ COMPLETED
-*Target: 4-5 weeks*
-
-### Target Example
-- **MATLAB Source**: `../shmtool-matlab/SHMTools/Examples/ExampleUsageScripts/exampleActiveSensingFeature.m` (289 lines)
-- **Python Output**: `examples/notebooks/advanced/active_sensing_feature_extraction.ipynb` ✅
-
-### Additional Dependencies
-- **Guided wave analysis functions** ✅
-- **Matched filtering algorithms** ✅ (`coherent_matched_filter_shm`, `incoherent_matched_filter_shm`)
-- **Geometry and propagation utilities** ✅ (`propagation_dist_2_points_shm`, `build_contained_grid_shm`, etc.)
+- **MATLAB Source**: `exampleActiveSensingFeature.m`
+- **Python Output**: `examples/notebooks/advanced/active_sensing_feature_extraction.ipynb`
+- **HTML Output**: `examples/published/html/active_sensing_feature_extraction.html`
 
 ---
 
 ## Phase 10: Condition-Based Monitoring ✅ PARTIALLY COMPLETED
-*Target: 3-4 weeks*
-
-### Target Examples
-- **MATLAB Source**: `../shmtool-matlab/SHMTools/Examples/ExampleUsageScripts/example_CBM_Bearing_Analysis.m`
-- **Python Output**: `examples/notebooks/basic/time_synchronous_averaging_demo.ipynb` ✅
-
-### Status: PARTIALLY COMPLETED
-Core time synchronous averaging function implemented with comprehensive documentation and demo notebook. Advanced angular resampling functions require extensive signal processing dependencies.
-
-### Completed Dependencies
-- **Time-synchronous averaging** → `time_sync_avg_shm()` ✅
-- **Demonstration notebook** with synthetic machinery signals ✅
-- **Educational materials** explaining CBM principles ✅
-
-### Remaining Dependencies (Future Work)
-- **Angular resampling algorithms** (`arsTach_shm`, `arsAccel_shm`) ⏳
-- **Discrete/random separation** (`discRandSeparation_shm`) ⏳  
-- **Signal processing foundations** (`filter_shm`, `fir1_shm`, `window_shm`) ⏳
+- **MATLAB Source**: `example_CBM_Bearing_Analysis.m`
+- **Python Output**: `examples/notebooks/basic/time_synchronous_averaging_demo.ipynb`
+- **HTML Output**: `examples/published/html/time_synchronous_averaging_demo.html`
+- **Status**: Core TSA implemented; advanced angular resampling pending
 
 ---
 
 ## Phase 11: Sensor Diagnostics ✅ COMPLETED
-*Target: 2-3 weeks*
-
-### Target Example
-- **MATLAB Source**: `../shmtool-matlab/SHMTools/Examples/ExampleUsageScripts/exampleSensorDiagnostics.m` (94 lines)
-- **Python Output**: `examples/notebooks/specialized/sensor_diagnostics.ipynb` ✅
-- **HTML Output**: `examples/published/html/sensor_diagnostics.html` ✅
-
-### Additional Dependencies
-- **`sdFeature_shm`** → `shmtools.sensor_diagnostics.sd_feature_shm()` ✅
-- **`sdAutoclassify_shm`** → `shmtools.sensor_diagnostics.sd_autoclassify_shm()` ✅
-- **`sdPlot_shm`** → `shmtools.sensor_diagnostics.sd_plot_shm()` ✅
-
-### Example Analysis
-The `exampleSensorDiagnostics.m` script demonstrates:
-1. **Data Loading**: Piezoelectric sensor admittance data from 12 sensors
-2. **Feature Extraction**: Capacitance values from imaginary admittance slopes
-3. **Automatic Classification**: Instantaneous baseline approach for sensor health
-4. **Fault Detection**: Identification of de-bonded and broken/fractured sensors
-5. **Visualization**: Classification process and sensor status bar charts
-
-### Success Criteria
-- [x] `sdFeature_shm` extracts capacitance values identical to MATLAB ✅
-- [x] `sdAutoclassify_shm` correctly identifies faulty sensors ✅
-- [x] `sdPlot_shm` creates diagnostic visualizations ✅
-- [x] Jupyter notebook runs without errors ✅
-- [x] All 12 sensors classified correctly (3 faulty, 9 healthy) ✅
-- [x] HTML export renders properly with all plots ✅
+- **MATLAB Source**: `exampleSensorDiagnostics.m`
+- **Python Output**: `examples/notebooks/specialized/sensor_diagnostics.ipynb`
+- **HTML Output**: `examples/published/html/sensor_diagnostics.html`
 
 ---
 
 ## Phase 12: Modal Analysis ✅ COMPLETED
-*Target: 2-3 weeks*
-
-### Target Example
-- **MATLAB Source**: `../shmtool-matlab/SHMTools/Examples/ExampleUsageScripts/exampleModalFeatures.m` (220 lines)
-- **Python Output**: `examples/notebooks/advanced/modal_analysis_features_simplified.ipynb` ✅
-- **HTML Output**: `examples/published/html/modal_analysis_features_simplified.html` ✅
-
-### Additional Dependencies
-- **`frf_shm`** → `shmtools.modal.frf_shm()` ✅
-- **`rpfit_shm`** → `shmtools.modal.rpfit_shm()` ✅ (simplified implementation)
-
-### Example Analysis
-The `exampleModalFeatures.m` script demonstrates:
-1. **Data Loading**: 3-story structure input-output measurements
-2. **FRF Computation**: Frequency response function calculation using Welch's method
-3. **Natural Frequency Extraction**: Modal parameter identification from FRFs
-4. **Feature Analysis**: Natural frequencies as damage-sensitive features
-5. **Visualization**: FRF plots and frequency tracking across conditions
-
-### Implementation Notes
-- **Original MATLAB**: Used NLPCA (neural networks) for classification
-- **Python Version**: Simplified to focus on modal analysis fundamentals
-- **FRF Method**: Implemented Welch's method with windowing and overlap
-- **Parameter Extraction**: Simplified peak detection (full rational polynomial fitting complex)
-- **Educational Focus**: Demonstrates core modal analysis principles
-
-### Success Criteria
-- [x] `frf_shm` computes frequency response functions correctly ✅
-- [x] Natural frequency extraction from FRF peaks ✅
-- [x] Comprehensive modal analysis workflow demonstration ✅
-- [x] Jupyter notebook runs without errors ✅
-- [x] All 170 conditions processed successfully ✅
-- [x] HTML export renders properly with all plots ✅
-
-### Limitations and Future Work
-- Rational polynomial fitting implementation is simplified
-- NLPCA classification deferred to Phase 5 (neural networks)
-- Advanced modal parameter extraction methods not included
-- Environmental compensation techniques not implemented
+- **MATLAB Source**: `exampleModalFeatures.m`
+- **Python Output**: `examples/notebooks/advanced/modal_analysis_features_simplified.ipynb`
+- **HTML Output**: `examples/published/html/modal_analysis_features_simplified.html`
 
 ---
 
-## Phase 13: Custom Detector Assembly ✅ COMPLETED  
-*Target: 2-3 weeks*
-
-### Target Example
-- **MATLAB Source**: `../shmtool-matlab/SHMTools/Examples/ExampleUsageScripts/exampleAssembleCustomDetector.m` (99 lines)
-- **Python Output**: `examples/notebooks/advanced/custom_detector_assembly.ipynb` ✅
-- **HTML Output**: `examples/published/html/custom_detector_assembly.html` ✅
-
-### Description
-**Interactive detector assembly framework** that allows users to create custom outlier detectors by mixing and matching learning/scoring function pairs from three categories:
-
-1. **Parametric Detectors**: PCA, Mahalanobis, SVD, Factor Analysis (already implemented in Phases 1-4)
-2. **Non-parametric Detectors**: Kernel density estimation with various kernels
-3. **Semi-parametric Detectors**: Gaussian Mixture Models with partitioning algorithms
-
-### Additional Dependencies
-
-#### Core Assembly Functions
-- **`assembleOutlierDetector_shm`** → `shmtools.classification.assemble_outlier_detector_shm()` ⏳
-  - **VERBOSE CALL**: `[Assembled Detector Structure] = Assemble Outlier Detector (Suffix, Base Directory)`
-  - **Purpose**: Interactive framework for detector assembly with parameter configuration
-  - **Dependencies**: Template system for generating custom training functions
-
-#### Detection Infrastructure  
-- **`detectOutlier_shm`** → `shmtools.classification.detect_outlier_shm()` ⏳
-  - **VERBOSE CALL**: `[Results, Confidences, Scores, Threshold] = Detect Outlier (Test Features, Model File Name, Models, Threshold, Sensor Codes)`
-  - **Purpose**: Universal detection function that works with any assembled detector
-
-#### Template System
-- **Code generation templates** for creating custom training functions ⏳
-  - `trainBegin.txt`: Function header and parameter validation
-  - `trainMid.txt`: Core training setup and model learning call
-  - `trainEnd.txt`: Threshold learning and confidence model generation
-
-### Algorithm Components Available for Assembly
-
-#### 1. Parametric Detectors (✅ Already Available)
-- **PCA**: `learnPCA_shm`, `scorePCA_shm` (from Phase 1)
-- **Mahalanobis**: `learnMahalanobis_shm`, `scoreMahalanobis_shm` (from Phase 2)  
-- **SVD**: `learnSVD_shm`, `scoreSVD_shm` (from Phase 3)
-- **Factor Analysis**: `learnFactorAnalysis_shm`, `scoreFactorAnalysis_shm` (from Phase 4)
-
-#### 2. Non-parametric Detectors (⏳ From Phase 7)
-- **Kernel Density**: `learnKernelDensity_shm`, `scoreKernelDensity_shm`
-- **Fast Metric Kernel**: `learnFastMetricKernelDensity_shm`, `scoreFastMetricKernelDensity_shm` 
-- **NLPCA**: `learnNLPCA_shm`, `scoreNLPCA_shm` (deferred to Phase 5)
-
-**Available Kernels**: Gaussian, Epanechnikov, Quartic, Triangle, Triweight, Uniform, Cosine
-
-#### 3. Semi-parametric Detectors (⏳ From Phase 8)
-- **GMM-based**: `learnGMMSemiParametricModel_shm`, `scoreGMMSemiParametricModel_shm`
-
-**Partitioning Algorithms**: k-means, k-medians, kd-tree, pd-tree, rp-tree
-
-### Python Implementation Strategy
-
-#### 1. Detector Registry System
-```python
-# shmtools/classification/detector_registry.py
-class DetectorRegistry:
-    """Registry of available detector learning/scoring function pairs."""
-    
-    parametric_detectors = {
-        'pca': ('learn_pca_shm', 'score_pca_shm'),
-        'mahalanobis': ('learn_mahalanobis_shm', 'score_mahalanobis_shm'),
-        'svd': ('learn_svd_shm', 'score_svd_shm'),
-        'factor_analysis': ('learn_factor_analysis_shm', 'score_factor_analysis_shm')
-    }
-    
-    nonparametric_detectors = {
-        'kernel_density': ('learn_kernel_density_shm', 'score_kernel_density_shm'),
-        'fast_metric_kernel': ('learn_fast_metric_kernel_density_shm', 'score_fast_metric_kernel_density_shm')
-    }
-    
-    semiparametric_detectors = {
-        'gmm_semi': ('learn_gmm_semiparametric_model_shm', 'score_gmm_semiparametric_model_shm')
-    }
-```
-
-#### 2. Interactive Assembly Interface
-```python
-def assemble_outlier_detector_shm(suffix: Optional[str] = None, 
-                                 detector_type: Optional[str] = None,
-                                 detector_name: Optional[str] = None,
-                                 parameters: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    """
-    Assemble custom outlier detector with interactive or programmatic configuration.
-    
-    .. meta::
-        :category: Classification - Detector Assembly
-        :display_name: Assemble Outlier Detector
-        :verbose_call: [Assembled Detector Structure] = Assemble Outlier Detector (Suffix, Base Directory)
-    """
-```
-
-#### 3. Generated Detector Functions
-Create modular training functions that follow the same interface as `trainOutlierDetector_shm`:
-
-```python
-def create_custom_training_function(detector_config: Dict[str, Any]) -> Callable:
-    """Generate a custom training function based on detector configuration."""
-    
-    def custom_train_detector(features: np.ndarray, 
-                            k: Optional[int] = None,
-                            confidence: float = 0.95,
-                            model_filename: Optional[str] = None,
-                            dist_for_scores: Optional[str] = None) -> Dict[str, Any]:
-        """Custom assembled training function."""
-        # Implementation based on detector_config
-        pass
-    
-    return custom_train_detector
-```
-
-### Integration with Existing Infrastructure
-
-#### Universal Detection Function
-```python
-def detect_outlier_shm(test_features: np.ndarray,
-                      model_file: Optional[str] = None, 
-                      models: Optional[Dict[str, Any]] = None,
-                      threshold: Optional[float] = None,
-                      sensor_codes: Optional[np.ndarray] = None) -> Tuple[np.ndarray, np.ndarray, np.ndarray, float]:
-    """
-    Universal outlier detection function that works with any assembled detector.
-    
-    .. meta::
-        :display_name: Detect Outlier
-        :verbose_call: [Results, Confidences, Scores, Threshold] = Detect Outlier (Test Features, Model File Name, Models, Threshold, Sensor Codes)
-    """
-```
-
-### Example Analysis
-
-The `exampleAssembleCustomDetector.m` script demonstrates:
-
-1. **Interactive Assembly**: Command-line interface for selecting detector types and parameters
-2. **Code Generation**: Automatic creation of training functions with custom configurations  
-3. **Template System**: Using text templates to generate MATLAB functions with proper headers
-4. **Integration**: Generated detectors work seamlessly with `detectOutlier_shm`
-5. **Flexibility**: Mix and match learning/scoring functions with different parameter sets
-
-### Conversion Requirements
-
-#### Phase Dependencies
-- **Phase 1-4**: Parametric detectors (✅ completed)
-- **Phase 7**: Non-parametric detectors (✅ completed) 
-- **Phase 8**: Semi-parametric detectors (✅ completed)
-
-#### New Components Needed
-1. **Interactive assembly interface** (CLI or web-based)
-2. **Detector registry system** for managing available components
-3. **Template engine** for generating training functions
-4. **Universal detection framework** compatible with all detector types
-5. **Configuration persistence** for saving/loading custom detector setups
-
-### Success Criteria
-- [x] Interactive detector assembly interface working ✅
-- [x] All three detector types (parametric, non-parametric, semi-parametric) available for assembly ✅
-- [x] Generated training functions compatible with universal detection interface ✅
-- [x] Custom training functions work with detect_outlier_shm ✅
-- [x] Notebook demonstrates assembly of multiple detector types ✅
-- [x] Configuration save/load functionality for reproducibility ✅
-
-### Implementation Summary
-
-The Python implementation successfully converts the MATLAB custom detector assembly framework with improvements:
-
-1. **Programmatic and Interactive Modes**: Unlike the MATLAB version which only supports interactive CLI, the Python version supports both programmatic (for notebooks/scripts) and interactive modes.
-
-2. **Detector Registry**: Clean object-oriented design with `DetectorRegistry` class managing available detectors by category.
-
-3. **Parameter Handling**: Automatic parameter conversion (e.g., string kernel names to function objects, bandwidth method names to integers).
-
-4. **Universal Interface**: All assembled detectors work seamlessly with `detect_outlier_shm` through consistent model structure.
-
-5. **Configuration Management**: Save/load detector configurations as JSON for reproducibility.
-
-6. **Notebook Demonstration**: Comprehensive example showing assembly and comparison of PCA, KDE, and GMM detectors on 3-story structure data.
+## Phase 13: Custom Detector Assembly ✅ COMPLETED
+- **MATLAB Source**: `exampleAssembleCustomDetector.m`
+- **Python Output**: `examples/notebooks/advanced/custom_detector_assembly.ipynb`
+- **HTML Output**: `examples/published/html/custom_detector_assembly.html`
 
 ---
 
-## Phase 14: Damage Localization using AR/ARX Models ⏳ NEW PHASE  
-*Target: 2-3 weeks*
-
-### Target Examples
-- **MATLAB Source**: `../shmtool-matlab/SHMTools/Examples/ExampleUsageScripts/exampleDLAR.m` (160 lines)
-- **MATLAB Source**: `../shmtool-matlab/SHMTools/Examples/ExampleUsageScripts/exampleDLARX.m` (140 lines)  
-- **Python Output**: `examples/notebooks/intermediate/damage_localization_ar_arx.ipynb` ⏳
+## Phase 14: Damage Localization using AR/ARX Models ✅ COMPLETED
+- **MATLAB Source**: `exampleDLAR.m` + `exampleDLARX.m`
+- **Python Output**: `examples/notebooks/intermediate/damage_localization_ar_arx.ipynb`
+- **HTML Output**: `examples/published/html/damage_localization_ar_arx.html`
 
 ### Description
 **Damage localization framework** using spatial analysis of AR and ARX model parameters across sensor arrays. Demonstrates how to:
@@ -931,314 +428,20 @@ def build_arx_regression_matrix(input_data: np.ndarray, output_data: np.ndarray,
 ---
 
 ## Phase 15: Default Detector Usage ✅ COMPLETED
-*Target: 1-2 weeks*
-
-### Target Example  
-- **MATLAB Source**: `../shmtool-matlab/SHMTools/Examples/ExampleUsageScripts/exampleDefaultDetectorUsage.m` (131 lines)
-- **Python Output**: `examples/notebooks/basic/default_detector_usage.ipynb` ✅
-
-### Description
-**Standard workflow demonstration** for the default outlier detection pipeline using the high-level `trainOutlierDetector_shm` and `detectOutlier_shm` interface. Shows:
-
-1. **Default Training**: Semi-parametric modeling using Gaussian mixtures with automatic threshold selection
-2. **Flexible Thresholding**: Using statistical distributions (normal, etc.) for threshold selection rather than empirical percentiles  
-3. **Performance Evaluation**: ROC curve analysis and error rate calculation
-4. **Data Segmentation**: Breaking long time series into multiple shorter segments for increased sample size
-
-This example demonstrates the **simplest way to get started** with SHMTools outlier detection without needing to understand the underlying algorithms.
-
-### Additional Dependencies
-
-#### High-Level Detection Interface (⏳ Partially Available)
-- **`trainOutlierDetector_shm`** → `shmtools.classification.train_outlier_detector_shm()` ⏳  
-  - **VERBOSE CALL**: `[Models] = Train Outlier Detector (Training Features, Number of Clusters, Confidence, Model File Name, Distribution Type)`
-  - **Purpose**: High-level training interface using semi-parametric GMM modeling
-  - **Status**: Core algorithm available from Phase 8, need high-level wrapper
-
-- **`detectOutlier_shm`** → `shmtools.classification.detect_outlier_shm()` ⏳
-  - **VERBOSE CALL**: `[Results, Confidences, Scores, Threshold] = Detect Outlier (Test Features, Model File Name, Models, Threshold, Sensor Codes)`  
-  - **Purpose**: Universal detection interface working with any trained model
-  - **Status**: Designed in Phase 13, needs implementation
-
-#### Performance Analysis Tools
-- **`ROC_shm`** → `shmtools.classification.roc_shm()` ⏳
-  - **VERBOSE CALL**: `[True Positive Rate, False Positive Rate] = Receiver Operating Characteristic (Scores, Damaged States, # of Points, Threshold Type)`
-  - **Purpose**: ROC curve computation for binary classification evaluation
-  - **Dependencies**: Binary classification metrics with configurable thresholding
-
-- **`plotROC_shm`** → `shmtools.classification.plot_roc_shm()` ⏳ 
-  - **Purpose**: ROC curve visualization with AUC calculation
-
-#### Reused Functions (✅ Already Available)
-- **`arModel_shm`** from Phase 1 for feature extraction
-- **Semi-parametric modeling** from Phase 8 (GMM-based detection)
-
-### Algorithm Analysis
-
-#### Example Workflow  
-1. **Data Preparation**: Load 3-story structure data and segment into shorter time series (2048 points each)
-2. **Feature Extraction**: Extract AR model parameters using `arModel_shm`
-3. **Train/Test Split**: 80% of undamaged data for training, 20% undamaged + all damaged for testing
-4. **Model Training**: Learn 5-component Gaussian mixture with normal distribution threshold at 90% confidence
-5. **Detection**: Apply trained model to test data with automatic threshold  
-6. **Evaluation**: Calculate error rates and ROC curve for performance assessment
-
-#### Default Training Configuration
-```python
-# Default semi-parametric training with statistical threshold
-models = train_outlier_detector_shm(
-    features=training_features,
-    k=5,                           # 5 Gaussian components
-    confidence=0.9,                # 90% confidence threshold  
-    model_filename=None,           # Auto-save to 'UndamagedModel.mat'
-    dist_for_scores='normal'       # Normal distribution for threshold
-)
-```
-
-#### Flexible Threshold Selection
-Unlike empirical percentile thresholding, this approach:
-1. **Fits distribution** to training scores (normal, lognormal, gamma, etc.)
-2. **Computes threshold** at desired confidence level using inverse CDF
-3. **Provides robustness** to training set variations and outliers
-4. **Enables extrapolation** beyond observed training score range
-
-### ROC Analysis Implementation
-
-#### ROC Curve Computation
-```python
-def roc_shm(scores: np.ndarray, 
-           damage_states: np.ndarray, 
-           num_pts: Optional[int] = None,
-           threshold_type: str = 'below') -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Compute ROC curve for binary classification performance.
-    
-    Parameters
-    ----------
-    scores : ndarray, shape (instances,)
-        Classification scores (lower scores indicate damage)
-    damage_states : ndarray, shape (instances,) 
-        Binary labels (0=undamaged, 1=damaged)
-    num_pts : int, optional
-        Number of threshold points to evaluate (default: number of damaged samples)
-    threshold_type : {'below', 'above'}
-        Whether scores below or above threshold indicate damage
-        
-    Returns
-    -------
-    tpr : ndarray, shape (num_pts,)
-        True positive rates at each threshold  
-    fpr : ndarray, shape (num_pts,)
-        False positive rates at each threshold
-    """
-```
-
-#### Performance Metrics
-```python
-# Error rate calculation
-def calculate_classification_metrics(predictions: np.ndarray, 
-                                   true_labels: np.ndarray) -> Dict[str, float]:
-    """Calculate comprehensive classification performance metrics."""
-    
-    total_error = np.mean(predictions != true_labels)
-    false_positive_rate = np.mean(predictions[true_labels == 0] != 0) 
-    false_negative_rate = np.mean(predictions[true_labels == 1] != 1)
-    
-    return {
-        'total_error': total_error,
-        'false_positive_rate': false_positive_rate, 
-        'false_negative_rate': false_negative_rate,
-        'accuracy': 1 - total_error
-    }
-```
-
-### Data Segmentation Strategy
-
-#### Time Series Segmentation Benefits
-- **Increased Sample Size**: 170 instances → 680 instances (4× segmentation)
-- **Reduced Memory**: Process shorter segments for efficiency
-- **Statistical Power**: More samples improve model training and evaluation
-- **Computational Efficiency**: Faster AR model estimation on shorter segments
-
-#### Implementation Approach
-```python
-def segment_time_series(data: np.ndarray, segment_length: int) -> np.ndarray:
-    """
-    Segment long time series into multiple shorter segments.
-    
-    Parameters  
-    ----------
-    data : ndarray, shape (time, channels, instances)
-        Original time series data
-    segment_length : int
-        Length of each segment
-        
-    Returns
-    -------
-    segmented_data : ndarray, shape (segment_length, channels, instances * segments)
-        Segmented time series with increased instance count
-    """
-```
-
-### Integration with High-Level Workflow
-
-#### Simplified User Interface
-```python
-# High-level workflow for new users
-from shmtools.utils.data_loading import load_3story_data
-from shmtools.features import ar_model_shm  
-from shmtools.classification import train_outlier_detector_shm, detect_outlier_shm, roc_shm
-
-# Load and prepare data
-data = load_3story_data()
-features = ar_model_shm(data['dataset'])
-
-# Split training/testing
-train_features, test_features, test_labels = prepare_train_test_split(features)
-
-# Train default detector 
-models = train_outlier_detector_shm(train_features, k=5, confidence=0.9)
-
-# Detect outliers
-results, confidences, scores = detect_outlier_shm(test_features)
-
-# Evaluate performance
-tpr, fpr = roc_shm(scores, test_labels)
-metrics = calculate_classification_metrics(results, test_labels)
-```
-
-### Success Criteria
-- [x] High-level `train_outlier_detector_shm` interface working with default semi-parametric modeling ✅
-- [x] `detect_outlier_shm` provides binary classification results with confidence values ✅
-- [x] ROC curve computation and visualization functioning correctly ✅ 
-- [x] Statistical threshold selection using various distributions (normal, lognormal, etc.) ✅
-- [x] Time series segmentation increases sample size appropriately ✅
-- [x] Performance metrics (error rates, ROC AUC) calculated correctly ✅
-- [x] Notebook demonstrates complete workflow from data loading to performance evaluation ✅
-- [x] Example suitable as introduction tutorial for new users ✅
+- **MATLAB Source**: `exampleDefaultDetectorUsage.m`
+- **Python Output**: `examples/notebooks/basic/default_detector_usage.ipynb`
+- **HTML Output**: `examples/published/html/default_detector_usage.html`
 
 ---
 
 ## Phase 16: Parametric Distribution Outlier Detection ✅ COMPLETED
-*Target: 2-3 weeks*
-
-### Target Example
-- **MATLAB Source**: `../shmtool-matlab/SHMTools/Examples/ExampleUsageScripts/exampleOutlierDetectionParametricDistribution.m` (256 lines)
-- **Python Output**: `examples/notebooks/intermediate/parametric_distribution_outlier_detection.ipynb` ✅
-- **HTML Output**: `examples/published/html/parametric_distribution_outlier_detection.html` ✅
-
-### Description
-**Parametric distribution-based outlier detection** using Chi-squared distribution to model damage indicators from undamaged structural conditions. Demonstrates:
-
-1. **Chi-squared Distribution Modeling**: Uses statistical distribution theory for undamaged condition
-2. **Confidence Interval Approach**: 95% confidence threshold for damage detection
-3. **Hypothesis Testing**: P-value computation for probabilistic damage assessment
-4. **Type I/II Error Analysis**: Quantifies false positive and false negative rates
-
-### Algorithm Components
-
-#### Core Workflow
-1. **Feature Extraction**: AR(15) model parameters from Channel 5 acceleration data
-2. **Dimension Reduction**: Mahalanobis distance creates scalar damage indicators
-3. **Distribution Modeling**: Chi-squared (df=15) distribution for undamaged condition
-4. **Statistical Testing**: Both confidence intervals and hypothesis testing approaches
-
-#### Statistical Framework
-- **Null Hypothesis (H₀)**: Structure is undamaged
-- **Alternative Hypothesis (H₁)**: Structure is damaged
-- **Chi-squared Distribution**: Models damage indicator distribution under H₀
-- **P-value Interpretation**: Continuous measure of evidence strength
-
-### Additional Dependencies
-
-#### Core Functions (✅ All Available)
-- **`ar_model_shm`** from Phase 1 for feature extraction
-- **`split_features_shm`** → `shmtools.features.split_features_shm()` ✅
-- **`learn_mahalanobis_shm`** from Phase 2 for model training
-- **`score_mahalanobis_shm`** from Phase 2 for damage indicator computation
-
-#### Statistical Analysis (✅ Built-in)
-- **Chi-squared distribution**: `scipy.stats.chi2.pdf()`, `scipy.stats.chi2.cdf()`, `scipy.stats.chi2.ppf()`
-- **P-value computation**: `1 - scipy.stats.chi2.cdf(score, df)`
-- **Confidence intervals**: Statistical threshold selection
-- **Type I/II error analysis**: Classification performance metrics
-
-### Implementation Summary
-
-#### New Components Added
-1. **`split_features_shm`**: Data management function for training/testing splits
-   - **VERBOSE CALL**: `[Training Features, Scoring Features, All Features] = Split Features Into Training and Scoring (Features, Training Indices, Scoring Indices, Feature Indices to Use)`
-   - **Purpose**: Split feature vectors by instance indices with optional feature selection
-   - **Location**: `shmtools.features.split_features_shm()`
-
-#### Statistical Analysis Framework
-```python
-# Chi-squared distribution modeling
-df = ar_order  # Degrees of freedom = AR model order
-UCL = stats.chi2.ppf(1 - PFA, df)  # Upper control limit
-
-# P-value computation for hypothesis testing
-p_value = 1 - stats.chi2.cdf(damage_indicator, df)
-
-# Classification with Type I/II error analysis
-decisions = damage_indicators > UCL
-type_I_errors = np.sum((decisions == 1) & (true_labels == 0))
-type_II_errors = np.sum((decisions == 0) & (true_labels == 1))
-```
-
-### Example Analysis
-
-The `exampleOutlierDetectionParametricDistribution.m` script demonstrates:
-
-1. **Data Preparation**: Channel 5 from 3-story structure (170 conditions)
-2. **Feature Extraction**: AR(15) parameters as damage-sensitive features
-3. **Mahalanobis Modeling**: Reduces multi-dimensional features to scalar DIs
-4. **Chi-squared Modeling**: Statistical distribution for undamaged condition
-5. **Threshold Selection**: 95% confidence interval (PFA = 0.05)
-6. **Performance Assessment**: ~4% total error rate with balanced Type I/II errors
-
-### Key Advantages
-
-#### Theoretical Foundation
-- **Statistical Basis**: Chi-squared distribution provides principled approach
-- **False Alarm Control**: Direct control over Type I error rate through PFA
-- **Interpretability**: P-values give intuitive damage probability assessment
-- **Consistency**: Confidence interval and hypothesis testing yield similar results
-
-#### Practical Benefits
-- **Distribution Smoothing**: Parametric modeling ignores chance irregularities
-- **Threshold Flexibility**: Trade-off between false alarms and missed damage
-- **Continuous Scoring**: P-values provide graded evidence rather than binary decisions
-- **Performance Transparency**: Clear quantification of classification errors
-
-### Success Criteria
-- [x] `split_features_shm` correctly splits feature vectors by logical/index arrays ✅
-- [x] Chi-squared distribution modeling fits undamaged damage indicators ✅
-- [x] Confidence interval approach provides reasonable threshold (UCL ≈ 25) ✅
-- [x] Hypothesis testing gives consistent p-value assessments ✅
-- [x] Type I/II error analysis shows ~4% total misclassification rate ✅
-- [x] Notebook executes end-to-end with comprehensive visualizations ✅
-- [x] HTML export published with all statistical plots and analysis ✅
-
-### Implementation Notes
-
-#### Statistical Considerations
-- **Degrees of Freedom**: Chi-squared df equals AR model order (15)
-- **Distribution Fit**: Good match between empirical and theoretical distributions
-- **Threshold Selection**: 95% confidence interval balances sensitivity/specificity
-- **P-value Interpretation**: Lower values indicate stronger evidence against H₀
-
-#### Visualization Features
-- **Distribution Comparison**: Histogram vs. theoretical Chi-squared PDF
-- **Threshold Visualization**: Damage indicators with statistical control limit
-- **P-value Analysis**: Log-scale plot showing hypothesis testing results
-- **Error Analysis**: Clear identification of Type I and Type II errors
-
-The parametric distribution approach provides a robust statistical framework for structural damage detection with well-understood performance characteristics and interpretable results.
+- **MATLAB Source**: `exampleOutlierDetectionParametricDistribution.m`
+- **Python Output**: `examples/notebooks/intermediate/parametric_distribution_outlier_detection.ipynb`
+- **HTML Output**: `examples/published/html/parametric_distribution_outlier_detection.html`
 
 ---
 
-## Phase 17: CBM Gear Box Analysis ⏳ NEW PHASE
+## Phase 17: CBM Gear Box Analysis ⏳ REMAINING
 *Target: 3-4 weeks*
 
 ### Target Example
@@ -1255,78 +458,35 @@ Condition-based monitoring specific to gear box analysis with specialized signal
 
 ---
 
-## Phase 18: Modal OSP (Optimal Sensor Placement) ⏳ NEW PHASE
-*Target: 4-5 weeks*
-
-### Target Example
-- **MATLAB Source**: `../shmtool-matlab/SHMTools/Examples/ExampleUsageScripts/example_ModalOSP.m`
-- **Python Output**: `examples/notebooks/advanced/modal_osp.ipynb` ⏳
-
-### Description
-Combines modal analysis with optimal sensor placement algorithms for structural monitoring.
-
-### Additional Dependencies
-- **Optimal sensor placement algorithms** ⏳
-- **Modal assurance criteria** ⏳
-- **Sensor network optimization** ⏳
+## Phase 18: Modal OSP (Optimal Sensor Placement) ✅ COMPLETED
+- **MATLAB Source**: `example_ModalOSP.m`
+- **Python Output**: `examples/notebooks/advanced/modal_osp.ipynb`
+- **HTML Output**: `examples/published/html/modal_osp.html`
 
 ---
 
-## Phase 19: Fast Metric Kernel Density ⏳ NEW PHASE
-*Target: 2-3 weeks*
-
-### Target Example
-- **MATLAB Source**: `../shmtool-matlab/SHMTools/Examples/ExampleUsageScripts/exampleFastMetricKernelDensity.m`
-- **Python Output**: `examples/notebooks/advanced/fast_metric_kernel_density.ipynb` ⏳
-
-### Description
-High-performance kernel density estimation with custom distance metrics.
-
-### Additional Dependencies
-- **Fast kernel density algorithms** ⏳ (may be completed in Phase 7)
-- **Custom distance metrics** ⏳
-- **Bandwidth selection methods** ⏳
+## Phase 19: Fast Metric Kernel Density ✅ COMPLETED
+- **MATLAB Source**: `exampleFastMetricKernelDensity.m`
+- **Python Output**: `examples/notebooks/advanced/fast_metric_kernel_density.ipynb`
+- **HTML Output**: `examples/published/html/fast_metric_kernel_density.html`
 
 ---
 
-## Phase 20: Dataset Utilities ⏳ NEW PHASE
-*Target: 1-2 weeks*
-
-### Target Examples
-- **MATLAB Source**: `../shmtool-matlab/SHMTools/Examples/ExampleUsageScripts/cbmDataSet.m`
-- **MATLAB Source**: `../shmtool-matlab/SHMTools/Examples/ExampleUsageScripts/threeStoryDataSet.m`
-- **Python Output**: `examples/notebooks/utilities/dataset_management.ipynb` ⏳
-
-### Description
-Dataset loading, preprocessing, and management utilities for common SHM datasets.
-
-### Additional Dependencies
-- **Enhanced data loading utilities** ⏳
-- **Data preprocessing pipelines** ⏳
-- **Dataset validation tools** ⏳
+## Phase 20: Dataset Utilities ✅ COMPLETED
+- **MATLAB Source**: `cbmDataSet.m` + `threeStoryDataSet.m`
+- **Python Output**: `examples/notebooks/utilities/dataset_management.ipynb`
+- **HTML Output**: `examples/published/html/dataset_management.html`
 
 ---
 
-## Phase 21: Hardware Integration ⏳ UPDATED PHASE
-*Target: 4-5 weeks*
-
-### Target Examples
-- **MATLAB Source**: `../shmtool-matlab/SHMTools/Examples/ExampleUsageScripts/example_NI_multiplex.m`
-- **MATLAB Source**: `../shmtool-matlab/SHMTools/Examples/ExampleUsageScripts/example_DAQ_ARModel_Mahalanobis.m`
-- **Python Output**: `examples/notebooks/hardware/ni_daq_integration.ipynb` ⏳
-- **Python Output**: `examples/notebooks/hardware/daq_real_time_monitoring.ipynb` ⏳
-
-### Description
-Real-time data acquisition and monitoring with National Instruments hardware.
-
-### Additional Dependencies
-- **NI-DAQmx Python integration** ⏳
-- **Real-time signal processing** ⏳
-- **Hardware multiplexing** ⏳
+## Phase 21: Hardware Integration (NI-DAQ) ✅ COMPLETED
+- **MATLAB Source**: `example_NI_multiplex.m` + `example_DAQ_ARModel_Mahalanobis.m`
+- **Python Output**: `examples/notebooks/hardware/ni_daq_integration.ipynb`
+- **HTML Output**: `examples/published/html/ni_daq_integration.html`
 
 ---
 
-## Phase 22: mFUSE Examples Validation ⏳ NEW PHASE
+## Phase 22: mFUSE Examples Validation ⏳ REMAINING
 *Target: 2-3 weeks*
 
 ### Target Examples
