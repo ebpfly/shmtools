@@ -73,9 +73,20 @@ def ar_model_shm(
     >>> print(f"RMS residuals FV shape: {rms_fv.shape}")        # (3, 2)
     """
     X = np.asarray(X)
+    
+    # Input validation
+    if X.size == 0:
+        raise ValueError("Input array X cannot be empty")
+    
+    if X.ndim != 3:
+        raise ValueError(f"Input X must be 3-dimensional (TIME, CHANNELS, INSTANCES), got {X.ndim}D")
 
     # Set parameters following MATLAB exactly
     t, m, n = X.shape
+    
+    # Additional validation
+    if t <= ar_order:
+        raise ValueError(f"Time series length ({t}) must be greater than AR order ({ar_order})")
 
     ar_param = np.zeros((ar_order, m))
     ar_prediction = X.copy()
