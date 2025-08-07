@@ -2,21 +2,26 @@
 
 ## Quick Start (Recommended)
 
-Replace the complex import block in existing notebooks with this simple pattern:
+**IMPORTANT: First install shmtools in your environment:**
+```bash
+pip install -e .
+```
+
+Then replace the complex import block in existing notebooks with this simple pattern:
 
 ```python
-# One-line setup for notebooks
-from shmtools.utils.data_loading import setup_notebook_environment, load_example_data
+import numpy as np
+import matplotlib.pyplot as plt
 
-# Get common imports and functions
-nb = setup_notebook_environment()
-np, plt = nb['np'], nb['plt']
+# Import shmtools (installed package)
+from shmtools.utils.data_loading import load_3story_data
+from shmtools.features.time_series import ar_model_shm
+from shmtools.classification.outlier_detection import learn_pca_shm, score_pca_shm
 
-# Load preprocessed data for your example type
-data = load_example_data('pca')  # or 'mahalanobis', 'svd', etc.
-signals = data['signals']  # Shape: (8192, 4, 170) - channels 2-5 ready
-fs = data['fs']
-t, m, n = data['t'], data['m'], data['n']
+# Set up plotting
+plt.style.use('default')
+plt.rcParams['figure.figsize'] = (12, 8)
+plt.rcParams['font.size'] = 10
 ```
 
 ## Old vs New Pattern
@@ -70,55 +75,84 @@ data = dataset[:, 1:5, :]  # Extract channels 2-5
 t, m, n = data.shape
 ```
 
-### New Pattern (6 lines)
+### New Pattern (10 lines)
 ```python
-from shmtools.utils.data_loading import setup_notebook_environment, load_example_data
-nb = setup_notebook_environment()
-np, plt = nb['np'], nb['plt']
+import numpy as np
+import matplotlib.pyplot as plt
 
-data = load_example_data('pca')
-signals = data['signals']
-fs = data['fs']
-t, m, n = data['t'], data['m'], data['n']
+# Import shmtools (installed package)
+from shmtools.utils.data_loading import load_3story_data
+from shmtools.features.time_series import ar_model_shm
+from shmtools.classification.outlier_detection import learn_pca_shm, score_pca_shm
+
+# Set up plotting
+plt.style.use('default')
+plt.rcParams['figure.figsize'] = (12, 8)
+plt.rcParams['font.size'] = 10
 ```
 
-## Example Type Mapping
+## Data Loading
 
-Use these example types with `load_example_data()`:
-
-- **Phase 1**: `'pca'` - PCA Outlier Detection
-- **Phase 2**: `'mahalanobis'` - Mahalanobis Distance Outlier Detection  
-- **Phase 3**: `'svd'` - SVD Outlier Detection
-- **Phase 4**: `'factor_analysis'` - Factor Analysis Outlier Detection
-- **Phase 5**: `'nlpca'` - Nonlinear PCA Outlier Detection
-- **Phase 6**: `'ar_model_order'` - AR Model Order Selection
-
-All these return the same preprocessed 3-story structure data with:
-- `signals`: Shape (8192, 4, 170) - channels 2-5 extracted
-- `fs`: 2000.0 Hz sampling frequency
-- `channels`: ['Ch2', 'Ch3', 'Ch4', 'Ch5']
-- `damage_states`: Damage state mapping
-- `t`, `m`, `n`: Time points, channels, conditions
-
-## Additional Functions Available
-
-From `setup_notebook_environment()`:
-- `nb['load_3story_data']()` - Direct access to 3-story data
-- `nb['check_data_availability']()` - Check what datasets are available
-- `nb['get_data_dir']()` - Get data directory path
-
-## Function Imports Still Needed
-
-You still need to import the specific SHMTools functions for your example:
+Load the standard 3-story structure data:
 
 ```python
-# For PCA example
-from shmtools.features.time_series import ar_model
-from shmtools.classification.outlier_detection import learn_pca, score_pca
+# Load raw data
+data_dict = load_3story_data()
+dataset = data_dict['dataset']
+fs = data_dict['fs']
+channels = data_dict['channels']
+damage_states = data_dict['damage_states']
 
-# For Mahalanobis example  
-from shmtools.features.time_series import ar_model
-from shmtools.classification.outlier_detection import learn_mahalanobis, score_mahalanobis
+# Extract channels 2-5 for most examples
+data = dataset[:, 1:5, :]  # Shape: (8192, 4, 170)
+t, m, n = data.shape
 ```
 
-This makes notebooks much more concise while maintaining compatibility with the conversion-plan.md approach.
+## Common Import Patterns by Example Type
+
+### Outlier Detection Examples
+```python
+# PCA example
+from shmtools.features.time_series import ar_model_shm
+from shmtools.classification.outlier_detection import learn_pca_shm, score_pca_shm
+
+# Mahalanobis example  
+from shmtools.features.time_series import ar_model_shm
+from shmtools.classification.outlier_detection import learn_mahalanobis_shm, score_mahalanobis_shm
+
+# SVD example
+from shmtools.features.time_series import ar_model_shm
+from shmtools.classification.outlier_detection import learn_svd_shm, score_svd_shm, roc_shm
+from shmtools.core.preprocessing import scale_min_max_shm
+```
+
+### Active Sensing Examples
+```python
+from shmtools.utils.data_loading import load_sensor_diagnostic_data, load_active_sensing_data
+from shmtools.sensor_diagnostics import sd_feature_shm, sd_autoclassify_shm, sd_plot_shm
+from shmtools.active_sensing import coherent_matched_filter_shm, estimate_group_velocity_shm
+```
+
+### Time Series Analysis Examples
+```python
+from shmtools.features.time_series import ar_model_order_shm, ar_model_shm
+from shmtools.core.spectral import time_sync_avg_shm, stft_shm
+```
+
+## Benefits of This Approach
+
+- **No path searching**: Works from any directory
+- **Clean imports**: Only what you need
+- **Version controlled**: Uses the installed package version
+- **IDE support**: Full autocomplete and type hints
+- **Portable**: Works in any Python environment where shmtools is installed
+
+## Batch Update Script
+
+To update all notebooks at once, run from the `shmtools-python/` directory:
+
+```bash
+python update_notebook_imports.py
+```
+
+This script will automatically find and update the complex import blocks in all example notebooks.
