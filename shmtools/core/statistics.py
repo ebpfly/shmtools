@@ -132,7 +132,7 @@ def fm0_shm(
     --------
     psd_welch : Power spectral density estimation
     """
-    from .spectral import psd_welch
+    from .spectral import psd_welch_shm
 
     # Handle defaults
     if track_orders is None:
@@ -150,11 +150,14 @@ def fm0_shm(
             peak_to_peak_amp = abs(np.max(signal) - np.min(signal))
 
             # Compute power spectral density using defaults
-            f_psd, psd = psd_welch(signal, fs=1.0, nfft=nfft)
+            psd, f_psd, _ = psd_welch_shm(signal.reshape(-1, 1, 1), None, None, nfft, 1.0, None)
+            
+            # Extract 1D arrays from 3D output
+            psd_1d = psd[:, 0, 0]  # Extract (freq, channel=0, instance=0)
 
             # Sum amplitudes at tracked orders
             sum_amp = _sum_amplitudes(
-                psd, f_psd, fund_mesh_freq, track_orders, n_bin_search
+                psd_1d, f_psd, fund_mesh_freq, track_orders, n_bin_search
             )
 
             # Calculate FM0 feature

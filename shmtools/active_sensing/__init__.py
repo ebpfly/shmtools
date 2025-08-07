@@ -19,9 +19,12 @@ __all__ = [
     "build_contained_grid_shm",
     "sensor_pair_line_of_sight_shm",
     "fill_2d_map_shm",
+    "get_prop_dist_2_boundary_shm",
+    "struct_cell_2_mat_shm",
     # Utility functions
     "extract_subsets_shm",
     "flex_logic_filter_shm",
     "sum_mult_dims_shm",
     "estimate_group_velocity_shm",
+    "reduce_2_pair_subset_shm",
 ]

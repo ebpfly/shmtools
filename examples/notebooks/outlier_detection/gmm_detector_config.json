@@ -10,7 +10,7 @@
   "training_function": "<function train_detector_GMM_KMeans>",
   "suffix": "GMM_KMeans",
   "assembly_info": {
-    "assembly_date": "2025-07-28T06:02:29.970567",
+    "assembly_date": "2025-08-06T05:51:56.041304",
     "interactive": false,
     "registry_version": "1.0.0"
   }

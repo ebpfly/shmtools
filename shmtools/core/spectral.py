@@ -120,12 +120,11 @@ def psd_welch_shm(
 
 
 def stft_shm(
-    x: np.ndarray,
-    fs: float = 1.0,
-    window: str = "hann",
-    nperseg: int = 256,
-    noverlap: Optional[int] = None,
-    nfft: Optional[int] = None,
+    X: np.ndarray,
+    nWin: Optional[int] = None,
+    nOvlap: Optional[int] = None,
+    nFFT: Optional[int] = None,
+    Fs: Optional[float] = None,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Compute Short-Time Fourier Transform (STFT).
@@ -141,72 +140,95 @@ def stft_shm(
 
     Parameters
     ----------
-    x : array_like
-        Input signal array.
-
-        .. gui::
-            :widget: file_upload
-            :formats: [".csv", ".mat", ".npy"]
-
-    fs : float, optional
-        Sampling frequency in Hz. Default is 1.0.
-
-        .. gui::
-            :widget: numeric_input
-            :min: 0.1
-            :max: 1000000.0
-            :step: 0.1
-            :units: "Hz"
-
-    window : str, optional
-        Window function type. Default is "hann".
-
-        .. gui::
-            :widget: select
-            :options: ["hann", "hamming", "blackman", "bartlett"]
-
-    nperseg : int, optional
-        Length of each segment. Default is 256.
-
-        .. gui::
-            :widget: numeric_input
-            :min: 8
-            :max: 8192
-            :step: 1
-
-    noverlap : int, optional
-        Number of points to overlap between segments.
-
-        .. gui::
-            :widget: numeric_input
-            :min: 0
-            :max: 4096
-            :step: 1
-            :allow_none: True
-
-    nfft : int, optional
-        Length of FFT used.
-
-        .. gui::
-            :widget: numeric_input
-            :min: 8
-            :max: 8192
-            :step: 1
-            :allow_none: True
+    X : array_like
+        Input signal matrix (TIME, CHANNELS, INSTANCES).
+    nWin : int, optional
+        Short-time window length.
+    nOvlap : int, optional
+        Number of overlapping window samples.
+    nFFT : int, optional
+        Number of FFT frequency bins.
+    Fs : float, optional
+        Sampling frequency in Hz.
 
     Returns
     -------
+    stftMatrix : ndarray
+        STFT matrix (NFREQ, TIME, CHANNELS, INSTANCES).
     f : ndarray
-        Frequency array.
+        Frequency vector.
     t : ndarray
-        Time array.
-    Zxx : ndarray
-        STFT of x.
+        Time vector.
     """
-    f, t, Zxx = signal.stft(
-        x, fs=fs, window=window, nperseg=nperseg, noverlap=noverlap, nfft=nfft
-    )
-    return f, t, Zxx
+    from ..core.preprocessing import window_shm
+    
+    # Get matrix dimensions
+    nSignal, nChannel, nInstance = X.shape
+    
+    # Set defaults based on MATLAB implementation
+    if nWin is None:
+        nWin = nSignal // 10
+    if nOvlap is None:
+        nOvlap = int(0.5 * nWin)
+    if nFFT is None:
+        nFFT = 2 ** int(np.ceil(np.log2(nWin)))
+    if Fs is None:
+        Fs = 1.0
+    
+    # Initialize output matrix
+    stftMatrix = None
+    
+    # Compute STFT for each channel and instance
+    for iChannel in range(nChannel):
+        for iInstance in range(nInstance):
+            # Extract single signal
+            x = X[:, iChannel, iInstance]
+            
+            # Generate window
+            win = window_shm('hamming', nWin, None)
+            
+            # Compute number of segments
+            nSegments = int(np.floor((len(x) - nOvlap) / (nWin - nOvlap)))
+            
+            # Build windowed signal matrix
+            xWinMTX = np.zeros((nWin, nSegments))
+            for i in range(nSegments):
+                start_idx = i * (nWin - nOvlap)
+                end_idx = start_idx + nWin
+                if end_idx <= len(x):
+                    xWinMTX[:, i] = x[start_idx:end_idx] * win
+            
+            # Compute FFT
+            kMtx = np.fft.fftshift(np.fft.fft(xWinMTX, nFFT, axis=0), axes=0)
+            
+            # Take positive frequencies only (one-sided)
+            if nFFT % 2 == 1:  # nFFT is ODD
+                mid_idx = (nFFT + 1) // 2
+                kMtx = kMtx[mid_idx:, :]
+            else:  # nFFT is EVEN
+                mid_idx = (nFFT + 2) // 2 - 1
+                kMtx = kMtx[mid_idx:, :]
+            
+            # Initialize output matrix on first iteration
+            if stftMatrix is None:
+                nF, nT = kMtx.shape
+                stftMatrix = np.zeros((nF, nT, nChannel, nInstance), dtype=complex)
+            
+            # Store result
+            stftMatrix[:, :, iChannel, iInstance] = kMtx
+    
+    # Generate frequency and time vectors
+    f_full = np.linspace(-0.5, 0.5 - 1/nFFT, nFFT) * Fs
+    if nFFT % 2 == 1:  # nFFT is ODD
+        mid_idx = (nFFT + 1) // 2
+        f = f_full[mid_idx:]
+    else:  # nFFT is EVEN
+        mid_idx = (nFFT + 2) // 2 - 1
+        f = f_full[mid_idx:]
+    
+    t = (nWin / 2 / Fs) + np.arange(nSegments) * (nWin - nOvlap) / Fs
+    
+    return stftMatrix, f, t
 
 
 def cwt_analysis_shm(

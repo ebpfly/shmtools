@@ -18,7 +18,10 @@ from .signal_filtering import (
 )
 
 # Signal processing functions
-from .signal_processing import ars_tach_shm, fir1_shm
+from .signal_processing import fir1_shm
+
+# Condition-based monitoring functions
+from .cbm_processing import ars_tach_shm
 
 # Statistical analysis functions
 from .statistics import (
@@ -32,7 +35,7 @@ from .statistics import (
 )
 
 # Preprocessing functions
-from .preprocessing import scale_min_max_shm
+from .preprocessing import scale_min_max_shm, demean_shm, filter_shm, window_shm
 
 
 __all__ = [
@@ -59,4 +62,7 @@ __all__ = [
     "compute_damage_features_shm",
     # Preprocessing
     "scale_min_max_shm",
+    "demean_shm",
+    "filter_shm", 
+    "window_shm",
 ]

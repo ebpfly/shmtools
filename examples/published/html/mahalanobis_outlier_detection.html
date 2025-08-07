@@ -7604,7 +7604,7 @@ a.anchor-link {
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>/Users/eric/repo/shm/shmtools-python/venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+<pre>/Users/eric/repo/shm/shmtools-python/shmtools/classification/nlpca.py:27: UserWarning: TensorFlow not available. NLPCA functions will not work. Install TensorFlow: pip install tensorflow
   warnings.warn(
 </pre>
 </div>
@@ -8047,11 +8047,18 @@ Damage indicators (first 10): [  -273.72689658    -83.2601428    -402.24515471  
 <span class="nb">print</span><span class="p">(</span><span class="s2">"Computing threshold from training data..."</span><span class="p">)</span>
 <span class="n">threshold_scores</span> <span class="o">=</span> <span class="n">score_mahalanobis_shm</span><span class="p">(</span><span class="n">learn_data</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
 <span class="n">threshold_sorted</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="o">-</span><span class="n">threshold_scores</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>  <span class="c1"># Sort negative scores (following MATLAB)</span>
-<span class="n">UCL</span> <span class="o">=</span> <span class="n">threshold_sorted</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">threshold_sorted</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.95</span><span class="p">))</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># 95th percentile</span>
+
+<span class="c1"># MATLAB: UCL=threshold(round(length(threshold)*0.95));</span>
+<span class="c1"># In MATLAB (1-indexed): round(81*0.95) = round(76.95) = 77, so threshold(77)</span>
+<span class="c1"># In Python (0-indexed): we want index 76, so threshold_sorted[76]</span>
+<span class="n">matlab_index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">threshold_sorted</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.95</span><span class="p">))</span>  <span class="c1"># This gives 77 (MATLAB 1-based)</span>
+<span class="n">python_index</span> <span class="o">=</span> <span class="n">matlab_index</span> <span class="o">-</span> <span class="mi">1</span>  <span class="c1"># Convert to 0-based: 77-1=76</span>
+<span class="n">UCL</span> <span class="o">=</span> <span class="n">threshold_sorted</span><span class="p">[</span><span class="n">python_index</span><span class="p">]</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Upper Control Limit (UCL): </span><span class="si">{</span><span class="n">UCL</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Number of training samples: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">threshold_scores</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"95th percentile index: </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">threshold_sorted</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">0.95</span><span class="p">))</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"MATLAB index (1-based): </span><span class="si">{</span><span class="n">matlab_index</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Python index (0-based): </span><span class="si">{</span><span class="n">python_index</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -8067,7 +8074,8 @@ Damage indicators (first 10): [  -273.72689658    -83.2601428    -402.24515471  
 <pre>Computing threshold from training data...
 Upper Control Limit (UCL): 71.931353
 Number of training samples: 81
-95th percentile index: 77
+MATLAB index (1-based): 77
+Python index (0-based): 76
 </pre>
 </div>
 </div>

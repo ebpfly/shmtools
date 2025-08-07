@@ -473,38 +473,94 @@ def plot_spectrogram_shm(
 
 def plotPSD_shm(
     psd_matrix: np.ndarray,
-    f: np.ndarray,
-    is_one_sided: bool = True,
-    channel: int = 1,
-    **kwargs,
+    channel_index: int,
+    is1sided: bool,
+    freq_vector: np.ndarray,
+    use_db_scale: bool = True,
+    plot_average: bool = True,
+    axes_handle: Optional[Axes] = None,
 ) -> Axes:
     """
     MATLAB-compatible PSD plotting function.
 
     Plot power spectral density matrix using MATLAB-style interface.
+    
+    .. meta::
+        :category: Plotting - Spectral Analysis
+        :matlab_equivalent: plotPSD_shm
+        :complexity: Basic
+        :data_type: PSD Matrix
+        :output_type: Plot
 
     Parameters
     ----------
     psd_matrix : ndarray, shape (n_freqs, n_channels, n_instances)
         Power spectral density matrix from psd_welch_shm.
-    f : ndarray
+    channel_index : int
+        Channel to plot (1-based indexing like MATLAB).
+    is1sided : bool
+        Whether PSD is one-sided.
+    freq_vector : ndarray
         Frequency vector in Hz.
-    is_one_sided : bool, optional
-        Whether PSD is one-sided. Default is True.
-    channel : int, optional
-        Channel to plot (1-based indexing). Default is 1.
-    **kwargs
-        Additional plotting arguments.
+    use_db_scale : bool, optional
+        Whether to use dB scale. Default is True.
+    plot_average : bool, optional
+        Whether to plot average over instances. Default is True.
+    axes_handle : Axes, optional
+        Existing axes handle.
 
     Returns
     -------
     ax : matplotlib.axes.Axes
         Axes object containing the plot.
     """
-    # Use the existing plot_psd function with MATLAB-style interface
-    return plot_psd_shm(
-        psd_matrix=psd_matrix, f=f, is_one_sided=is_one_sided, channel=channel, **kwargs
-    )
+    if axes_handle is None:
+        fig, ax = plt.subplots(figsize=(10, 6))
+    else:
+        ax = axes_handle
+    
+    # Convert to 0-based indexing
+    channel_idx = channel_index - 1
+    
+    if channel_idx >= psd_matrix.shape[1]:
+        raise ValueError(f"Channel index {channel_index} exceeds available channels ({psd_matrix.shape[1]})")
+    
+    # Get channel data
+    if psd_matrix.ndim == 3:
+        channel_data = psd_matrix[:, channel_idx, :]
+    else:
+        channel_data = psd_matrix[:, channel_idx:channel_idx+1]
+    
+    if plot_average and channel_data.ndim == 2:
+        # Average over instances
+        psd_plot = np.mean(channel_data, axis=1)
+    else:
+        # Plot individual instances or single instance
+        if channel_data.ndim == 2:
+            psd_plot = channel_data
+        else:
+            psd_plot = channel_data
+    
+    # Convert to dB if requested
+    if use_db_scale:
+        psd_plot = 10 * np.log10(np.maximum(psd_plot, 1e-12))
+        ylabel = "Power (dB)"
+    else:
+        ylabel = "Power"
+    
+    # Plot
+    if psd_plot.ndim == 1:
+        ax.plot(freq_vector, psd_plot)
+    else:
+        # Plot multiple instances
+        for i in range(psd_plot.shape[1]):
+            ax.plot(freq_vector, psd_plot[:, i], alpha=0.7)
+    
+    ax.set_xlabel("Frequency (Hz)")
+    ax.set_ylabel(ylabel)
+    ax.grid(True)
+    
+    return ax
 
 
 def plot_time_freq(
@@ -1029,3 +1085,180 @@ def plot_scalogram_shm(
     plt.colorbar(im, ax=ax, label='Power (dB)')
     
     return ax
+
+
+def plot_features_shm(
+    feature_vectors: np.ndarray,
+    instance_indices: Optional[np.ndarray] = None,
+    feature_indices: Optional[np.ndarray] = None,
+    subplot_titles: Optional[List[str]] = None,
+    subplot_ylabels: Optional[List[str]] = None,
+    axes_handle=None
+):
+    """
+    Plot feature vectors as subplots for each feature.
+    
+    .. meta::
+        :category: Plotting - Feature Visualization
+        :matlab_equivalent: plotFeatures_shm
+        :complexity: Basic
+        :data_type: Features
+        :output_type: Figure
+        :display_name: Plot Features
+        :verbose_call: [Axes Handle] = Plot Features (Feature Vectors, Instances to Plot, Features to Plot, Titles for Subplots, Y-Axis Labels for Subplots, Axes Handle)
+        
+    Plot feature vectors or a set of samples from feature vectors. Each
+    feature uses its own subplot. This is useful for visualizing the
+    distribution and characteristics of damage-sensitive features across
+    different structural states or conditions.
+    
+    Parameters
+    ----------
+    feature_vectors : ndarray, shape (instances, features)
+        Feature matrix where each row is a feature vector from one instance.
+        
+        .. gui::
+            :widget: file_upload
+            :formats: [".csv", ".mat", ".npy"]
+            :description: Feature vectors to visualize
+            
+    instance_indices : ndarray, optional
+        List of indices of instances to be plotted. If None, all instances
+        are plotted.
+        
+        .. gui::
+            :widget: array_input
+            :description: Subset of instances to plot
+            
+    feature_indices : ndarray, optional  
+        List of indices of features to be plotted. If None, all features
+        are plotted. Maximum of 20 features recommended for readability.
+        
+        .. gui::
+            :widget: array_input
+            :description: Subset of features to plot
+            
+    subplot_titles : list of str, optional
+        Titles for each subplot. Should match the order of feature_indices.
+        If None, defaults to "Feature #".
+        
+        .. gui::
+            :widget: text_array
+            :description: Custom titles for each feature subplot
+            
+    subplot_ylabels : list of str, optional
+        Y-axis labels for each subplot. Should match the order of feature_indices.
+        
+        .. gui::
+            :widget: text_array
+            :description: Custom y-axis labels for each feature subplot
+            
+    axes_handle : matplotlib axes, optional
+        Existing axes to plot on. If None, creates new figure.
+    
+    Returns
+    -------
+    axes_handle : matplotlib axes
+        Handle to the created or modified axes.
+        
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from shmtools.plotting.spectral_plots import plot_features_shm
+    >>> 
+    >>> # Generate sample feature vectors
+    >>> np.random.seed(42)
+    >>> baseline_features = np.random.normal(0, 1, (50, 4))  # 50 baseline instances, 4 features
+    >>> damage_features = np.random.normal(1, 1.2, (20, 4))  # 20 damage instances, 4 features
+    >>> features = np.vstack([baseline_features, damage_features])
+    >>> 
+    >>> # Plot all features
+    >>> feature_names = ['RMS', 'Kurtosis', 'Crest Factor', 'Peak Factor']
+    >>> plot_features_shm(features, subplot_titles=feature_names)
+    >>> 
+    >>> # Plot subset of features for specific instances
+    >>> plot_features_shm(features, 
+    >>>                   instance_indices=np.arange(0, 70, 5),  # Every 5th instance
+    >>>                   feature_indices=[0, 2],  # Only RMS and Crest Factor
+    >>>                   subplot_titles=['RMS', 'Crest Factor'])
+    
+    References
+    ----------
+    This function replicates the plotting behavior of plotFeatures_shm.m
+    from the MATLAB SHMTools library for visualizing feature distributions.
+    """
+    import matplotlib.pyplot as plt
+    
+    # Handle default parameters
+    n_instances, n_features = feature_vectors.shape
+    
+    if instance_indices is None:
+        instance_indices = np.arange(n_instances)
+    
+    if feature_indices is None:  
+        feature_indices = np.arange(min(n_features, 20))  # Limit to 20 features max
+    
+    n_selected_features = len(feature_indices)
+    
+    if subplot_titles is None:
+        subplot_titles = [f'Feature {i+1}' for i in feature_indices]
+    
+    if subplot_ylabels is None:
+        subplot_ylabels = [None] * n_selected_features
+    
+    # Create figure if no axes provided
+    if axes_handle is None:
+        # Determine subplot layout
+        n_cols = min(4, n_selected_features)  # Max 4 columns
+        n_rows = int(np.ceil(n_selected_features / n_cols))
+        
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(4*n_cols, 3*n_rows))
+        
+        # Handle single subplot case
+        if n_selected_features == 1:
+            axes = [axes]
+        elif n_rows == 1:
+            axes = list(axes)
+        else:
+            axes = axes.flatten()
+    else:
+        axes = [axes_handle]
+    
+    # Plot each selected feature
+    for i, feat_idx in enumerate(feature_indices):
+        if i >= len(axes):
+            break
+            
+        ax = axes[i] if len(axes) > 1 else axes[0]
+        
+        # Extract feature values for selected instances
+        feature_values = feature_vectors[instance_indices, feat_idx]
+        
+        # Create simple line plot
+        ax.plot(instance_indices, feature_values, 'b.-', markersize=4, linewidth=1)
+        ax.grid(True, alpha=0.3)
+        
+        # Set labels and title
+        ax.set_xlabel('Instance Index')
+        if subplot_ylabels[i] is not None:
+            ax.set_ylabel(subplot_ylabels[i])
+        else:
+            ax.set_ylabel('Feature Value')
+        
+        ax.set_title(subplot_titles[i])
+        
+        # Auto-scale with some padding
+        y_range = np.ptp(feature_values)
+        if y_range > 0:
+            y_margin = y_range * 0.1
+            ax.set_ylim(np.min(feature_values) - y_margin, 
+                       np.max(feature_values) + y_margin)
+    
+    # Hide unused subplots
+    if axes_handle is None and n_selected_features < len(axes):
+        for j in range(n_selected_features, len(axes)):
+            axes[j].set_visible(False)
+    
+    plt.tight_layout()
+    
+    return axes if len(axes) > 1 else axes[0]
