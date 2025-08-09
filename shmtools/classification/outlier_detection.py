@@ -451,7 +451,7 @@ def learn_pca_shm(
 
 def score_pca_shm(
     Y: np.ndarray, model: Dict[str, Any]
-) -> tuple[np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Score principal component analysis (PCA) for outlier detection.
 

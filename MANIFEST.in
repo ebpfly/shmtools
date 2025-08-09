@@ -1,0 +1,32 @@
+include README.md
+include LICENSE
+include requirements*.txt
+include pyproject.toml
+include pytest.ini
+include .pre-commit-config.yaml
+
+# Include all Python files
+recursive-include shmtools *.py
+# recursive-include bokeh_shmtools *.py  # Archived - bokeh GUI on pause
+
+# Include example notebooks
+recursive-include examples *.ipynb
+recursive-include examples *.py
+include examples/data/README.md
+
+# Include documentation
+recursive-include docs *.md
+recursive-include docs *.rst
+
+# Include test files
+recursive-include tests *.py
+
+# Exclude unnecessary files
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude __pycache__
+global-exclude .DS_Store
+global-exclude *.swp
+global-exclude *~
+global-exclude .git*
+global-exclude *.mat  # Exclude large data files

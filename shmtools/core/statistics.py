@@ -6,7 +6,7 @@ commonly used in structural health monitoring.
 """
 
 import numpy as np
-from typing import Union, Dict, Any, Optional, List
+from typing import Union, Dict, Any, Optional, List, Tuple
 
 
 def statistical_moments(x: np.ndarray, axis: int = 0) -> Dict[str, float]:
@@ -937,7 +937,7 @@ def compute_damage_features_shm(
     return results
 
 
-def na4m_shm(R: np.ndarray, m2: Optional[np.ndarray] = None) -> tuple[np.ndarray, np.ndarray]:
+def na4m_shm(R: np.ndarray, m2: Optional[np.ndarray] = None) -> Tuple[np.ndarray, np.ndarray]:
     """
     Calculate NA4M damage feature from residual signal matrix.
     
@@ -1046,7 +1046,7 @@ def na4m_shm(R: np.ndarray, m2: Optional[np.ndarray] = None) -> tuple[np.ndarray
     return na4m, m2
 
 
-def nb4m_shm(X: np.ndarray, m2: Optional[np.ndarray] = None) -> tuple[np.ndarray, np.ndarray]:
+def nb4m_shm(X: np.ndarray, m2: Optional[np.ndarray] = None) -> Tuple[np.ndarray, np.ndarray]:
     """
     Calculate NB4M feature from band passed mesh signal matrix.
     

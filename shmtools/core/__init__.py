@@ -25,6 +25,8 @@ from .cbm_processing import ars_tach_shm
 
 # Statistical analysis functions
 from .statistics import (
+    statistical_moments,
+    rms_shm,
     fm0_shm,
     fm4_shm,
     peak_factor_shm,
@@ -53,6 +55,8 @@ __all__ = [
     "ars_tach_shm",
     "fir1_shm",
     # Statistics
+    "statistical_moments",
+    "rms_shm",
     "fm0_shm",
     "fm4_shm",
     "peak_factor_shm",
