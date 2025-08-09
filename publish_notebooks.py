@@ -268,7 +268,7 @@ class NotebookPublisher:
             metadata['execution_time'] = metadata['end_time'] - metadata['start_time']
             
             success = metadata['error_cells'] == 0
-            print(f"      ✓ Executed in {metadata['execution_time']:.1f}s ({metadata['executed_cells']} cells)")
+            print(f"      OK Executed in {metadata['execution_time']:.1f}s ({metadata['executed_cells']} cells)")
             
             return success, executed_notebook, metadata
             
@@ -281,7 +281,7 @@ class NotebookPublisher:
                 'error_value': str(e),
                 'traceback': getattr(e, 'traceback', [])
             })
-            print(f"      ✗ Execution failed: {e}")
+            print(f"      X Execution failed: {e}")
             return False, notebook, metadata
             
         except Exception as e:
@@ -293,7 +293,7 @@ class NotebookPublisher:
                 'error_value': str(e),
                 'traceback': []
             })
-            print(f"      ✗ Execution failed: {e}")
+            print(f"      X Execution failed: {e}")
             return False, notebook, metadata
     
     def convert_to_html(
@@ -341,11 +341,11 @@ class NotebookPublisher:
             with open(output_path, 'w', encoding='utf-8') as f:
                 f.write(enhanced_html)
                 
-            print(f"      ✓ HTML saved to: {output_path}")
+            print(f"      OK HTML saved to: {output_path}")
             return True
             
         except Exception as e:
-            print(f"      ✗ HTML conversion failed: {e}")
+            print(f"      X HTML conversion failed: {e}")
             return False
     
     def enhance_html(self, html_body: str, notebook_path: Path) -> str:
@@ -900,12 +900,12 @@ class NotebookPublisher:
                 result = publication_results.get(str(notebook_path), {})
                 if result.get('html_success', False):
                     status_class = "status-success"
-                    status_text = "✓"
+                    status_text = "OK"
                     item_class = "nav-item"
                     relative_path = f"{category}/{notebook_path.stem}.html"
                 else:
                     status_class = "status-failed"
-                    status_text = "✗"
+                    status_text = "X"
                     item_class = "nav-item failed"
                     relative_path = None
                 
@@ -1140,7 +1140,7 @@ class NotebookPublisher:
         with open(master_path, 'w', encoding='utf-8') as f:
             f.write(html_content)
             
-        print(f"\n✓ Master HTML file created: {master_path}")
+        print(f"\nOK Master HTML file created: {master_path}")
 
     def create_index_page(
         self, 
@@ -1371,7 +1371,7 @@ class NotebookPublisher:
         with open(index_path, 'w', encoding='utf-8') as f:
             f.write(html_content)
             
-        print(f"\n✓ Index page created: {index_path}")
+        print(f"\nOK Index page created: {index_path}")
     
     def publish_notebooks(
         self, 
@@ -1444,7 +1444,7 @@ class NotebookPublisher:
                             result['output_path'] = str(output_path)
                     
                 except Exception as e:
-                    print(f"      ✗ Failed to process {notebook_path.name}: {e}")
+                    print(f"      X Failed to process {notebook_path.name}: {e}")
                     result['errors'].append({
                         'type': 'ProcessingError',
                         'error_name': e.__class__.__name__,
@@ -1488,9 +1488,9 @@ class NotebookPublisher:
                 result = publication_results[path]
                 if result['errors']:
                     error_msg = result['errors'][0].get('error_value', 'Unknown error')
-                    print(f"  ✗ {notebook_name}: {error_msg}")
+                    print(f"  X {notebook_name}: {error_msg}")
                 else:
-                    print(f"  ✗ {notebook_name}: Unknown error")
+                    print(f"  X {notebook_name}: Unknown error")
         
         return publication_results
 
@@ -1560,21 +1560,21 @@ def main():
         successful_publications = sum(1 for r in results.values() if r['html_success'])
         
         if successful_publications > 0:
-            print(f"\n✅ Successfully published {successful_publications} notebooks!")
-            print(f"\n📖 Viewing Options:")
-            print(f"   • Quick start: cd {args.output_dir} && python start_server.py")
-            print(f"   • Manual server: cd {args.output_dir} && python -m http.server 8000")
-            print(f"   • Simple index: Open {args.output_dir / 'index.html'} directly")
-            print(f"\n🌐 Interactive master documentation available at:")
+            print(f"\nSUCCESS: Published {successful_publications} notebooks!")
+            print(f"\nViewing Options:")
+            print(f"   - Quick start: cd {args.output_dir} && python start_server.py")
+            print(f"   - Manual server: cd {args.output_dir} && python -m http.server 8000")
+            print(f"   - Simple index: Open {args.output_dir / 'index.html'} directly")
+            print(f"\nInteractive master documentation available at:")
             print(f"   http://localhost:8000/master.html")
-            print(f"\n💡 Note: The master.html requires a web server to load notebooks properly")
+            print(f"\nNote: The master.html requires a web server to load notebooks properly")
             return 0
         else:
-            print("\n❌ No notebooks were successfully published")
+            print("\nERROR: No notebooks were successfully published")
             return 1
             
     except Exception as e:
-        print(f"\n❌ Publication failed: {e}")
+        print(f"\nERROR: Publication failed: {e}")
         return 1
 
 
