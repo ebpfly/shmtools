@@ -129,6 +129,8 @@ try:
 except ImportError:
     pass  # Introspection not available
 
+# JupyterLab extension is installed as a direct dependency
+
 
 def gui():
     """Load SHM Function Selector GUI for Jupyter notebooks."""

@@ -21,6 +21,15 @@ recursive-include docs *.rst
 # Include test files
 recursive-include tests *.py
 
+# Include JupyterLab extension files
+recursive-include shm_function_selector *.py
+recursive-include shm_function_selector *.json
+recursive-include shm_function_selector *.js
+recursive-include shm_function_selector *.css
+recursive-include shm_function_selector *.md
+include shm_function_selector/LICENSE
+include shm_function_selector/README.md
+
 # Exclude unnecessary files
 global-exclude *.pyc
 global-exclude *.pyo

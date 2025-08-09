@@ -2,7 +2,10 @@
 """Setup script for SHMTools Python package."""
 
 from setuptools import setup, find_packages
+from setuptools.command.install import install
 import os
+import subprocess
+import sys
 
 # Read the README file for long description
 this_directory = os.path.abspath(os.path.dirname(__file__))
@@ -29,6 +32,89 @@ with open(os.path.join(this_directory, 'requirements-hardware.txt'), encoding='u
     hardware_requirements = [line.strip() for line in f 
                             if line.strip() and not line.startswith('#')]
 
+
+class PostInstallCommand(install):
+    """Custom post-installation to install JupyterLab extension."""
+    
+    def run(self):
+        # First run the normal install
+        install.run(self)
+        
+        # Then install the extension
+        if not self.dry_run:
+            self.execute(self.install_jupyter_extension, [], msg="Installing JupyterLab extension")
+    
+    def install_jupyter_extension(self):
+        """Install the SHM JupyterLab extension after package installation."""
+        print("\n" + "="*60)
+        print("🔧 Installing SHM JupyterLab Extension...")
+        print("="*60)
+        
+        try:
+            # Get the extension directory path
+            extension_dir = os.path.join(this_directory, 'shm_function_selector')
+            
+            if not os.path.exists(extension_dir):
+                print(f"⚠️  Extension directory not found: {extension_dir}")
+                return
+                
+            # Change to extension directory and install
+            old_cwd = os.getcwd()
+            try:
+                os.chdir(extension_dir)
+                
+                # Install the extension package
+                print("📦 Installing extension Python package...")
+                result = subprocess.run([sys.executable, '-m', 'pip', 'install', '-e', '.'], 
+                                      capture_output=True, text=True)
+                if result.returncode == 0:
+                    print("✅ Extension Python package installed")
+                else:
+                    print(f"⚠️  Extension package install failed: {result.stderr}")
+                    return
+                
+                # Register with JupyterLab
+                print("🔗 Registering extension with JupyterLab...")
+                result = subprocess.run(['jupyter', 'labextension', 'develop', '.', '--overwrite'], 
+                                      capture_output=True, text=True)
+                if result.returncode == 0:
+                    print("✅ Extension registered with JupyterLab")
+                else:
+                    print(f"⚠️  Extension registration failed: {result.stderr}")
+                    return
+                
+                # Build JupyterLab
+                print("🔨 Building JupyterLab (this may take a moment)...")
+                result = subprocess.run(['jupyter', 'lab', 'build'], 
+                                      capture_output=True, text=True, timeout=300)
+                if result.returncode == 0:
+                    print("✅ JupyterLab built successfully")
+                else:
+                    print(f"⚠️  JupyterLab build failed: {result.stderr}")
+                
+            finally:
+                os.chdir(old_cwd)
+            
+            print("\n" + "="*60)
+            print("🎉 SHM JupyterLab Extension installed successfully!")
+            print("="*60)
+            print("To start using SHMTools:")
+            print("  jupyter lab")
+            print("\nLook for the 'SHM Functions' panel in the left sidebar!")
+            print("="*60)
+                
+        except subprocess.TimeoutExpired:
+            print("⚠️  JupyterLab build timed out, but extension may still work")
+            print("Try running: jupyter lab build")
+        except FileNotFoundError as e:
+            print(f"⚠️  Could not find required command: {e}")
+            print("Make sure JupyterLab is installed and in your PATH")
+            print("You can install the extension manually with: shmtools-install-jupyter")
+        except Exception as e:
+            print(f"⚠️  Extension installation failed: {e}")
+            print("You can install the extension manually with: shmtools-install-jupyter")
+
+
 setup(
     name='shmtools',
     version='0.1.0',
@@ -43,15 +129,15 @@ setup(
     install_requires=requirements,
     extras_require={
         'dev': dev_requirements,
-        'advanced': advanced_requirements,
         'hardware': hardware_requirements,
-        'all': dev_requirements + advanced_requirements + hardware_requirements,
     },
-    # entry_points={
-    #     'console_scripts': [
-    #         'shmtools-gui=bokeh_shmtools.app:main',  # Archived - bokeh GUI on pause
-    #     ],
-    # },
+    entry_points={
+        'console_scripts': [
+            'install-jfuse=shmtools.jupyter_extension_installer:install_extension',
+            'uninstall-jfuse=shmtools.jupyter_extension_installer:uninstall_extension',
+            # 'shmtools-gui=bokeh_shmtools.app:main',  # Archived - bokeh GUI on pause
+        ],
+    },
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Science/Research',
