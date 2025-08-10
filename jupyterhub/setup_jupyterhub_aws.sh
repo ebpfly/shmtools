@@ -18,6 +18,10 @@ VOLUME_SIZE_GB=20
 KEY_PAIR_NAME="class-key-ssh-rsa"      # EC2 key pair name to create/use
 SSH_PUBLIC_KEY_PATH="~/.ssh/class-key-ssh-rsa.pub"  # or ~/.ssh/id_rsa.pub
 
+# Debug mode - set to "true" to skip instance creation and just monitor existing
+DEBUG_MODE="${DEBUG_MODE:-false}"
+EXISTING_INSTANCE_IP="${EXISTING_INSTANCE_IP:-}"
+
 JUPYTER_ADMIN_USER="ubuntu"    # TLJH admin (also your SSH user)
 
 GITHUB_OWNER="ebpfly"
@@ -302,10 +306,15 @@ echo "shmtools package installed!"
 echo "========================================="
 echo "Building JupyterLab extension..."
 echo "========================================="
+# Install Node.js 20.x (required for JupyterLab 4.4+)
+echo "Installing Node.js 20.x..."
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+# Remove conflicting packages before installing nodejs 20.x
+sudo apt-get remove -y libnode-dev || true
+sudo apt-get install -y nodejs
+echo "Node.js version: \$(node --version)"
+
 cd /srv/classrepo/shm_function_selector
-# Install Node.js dependencies and build
-echo "Installing Node.js and npm..."
-sudo apt-get install -y nodejs npm
 echo "Installing npm dependencies..."
 npm install
 echo "Building TypeScript library..."
@@ -332,7 +341,10 @@ echo "========================================="
 echo "Installing Claude Code CLI..."
 echo "========================================="
 su - ${JUPYTER_ADMIN_USER} -c "curl -fsSL https://claude.ai/install.sh | bash || true"
-echo "Claude Code installed!"
+# Add Claude to PATH for all users
+echo 'export PATH="\$HOME/.local/bin:\$PATH"' >> /home/${JUPYTER_ADMIN_USER}/.bashrc
+echo 'export PATH="\$HOME/.local/bin:\$PATH"' >> /etc/skel/.bashrc
+echo "Claude Code installed and PATH configured!"
 
 # Keep port 80 open if ufw is present
 ufw disable || true
@@ -347,30 +359,43 @@ USERDATA
 
 echo "📝 User data written to $USERDATA_FILE"
 
-# --- Launch instance ---
-echo "🚀 Launching EC2 instance…"
-RUN_JSON=$(aws ec2 run-instances \
-  --image-id "$AMI_ID" \
-  --instance-type "$INSTANCE_TYPE" \
-  --key-name "$KEY_PAIR_NAME" \
-  --security-group-ids "$SG_ID" \
-  --subnet-id "$SUBNET_ID" \
-  --iam-instance-profile Name="$PROFILE_NAME" \
-  --block-device-mappings "DeviceName=/dev/sda1,Ebs={VolumeSize=${VOLUME_SIZE_GB},VolumeType=gp3,DeleteOnTermination=true}" \
-  --user-data "$(cat "$USERDATA_FILE")" \
-  --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=${INSTANCE_NAME_TAG}},{Key=Project,Value=TLJH}]" \
-  --region "$AWS_REGION" --profile "$AWS_PROFILE" \
-  --count 1)
+# --- Launch instance (or use existing in debug mode) ---
+if [ "$DEBUG_MODE" = "true" ]; then
+  echo "🐛 DEBUG MODE: Skipping instance creation"
+  if [ -z "$EXISTING_INSTANCE_IP" ]; then
+    echo "❌ DEBUG_MODE=true but EXISTING_INSTANCE_IP not set"
+    echo "Usage for debug mode:"
+    echo "  DEBUG_MODE=true EXISTING_INSTANCE_IP=1.2.3.4 ./setup_jupyterhub_aws.sh"
+    exit 1
+  fi
+  PUBLIC_IP="$EXISTING_INSTANCE_IP"
+  INSTANCE_ID="debug-mode-unknown"
+  echo "🐛 Using existing instance: $PUBLIC_IP"
+else
+  echo "🚀 Launching EC2 instance…"
+  RUN_JSON=$(aws ec2 run-instances \
+    --image-id "$AMI_ID" \
+    --instance-type "$INSTANCE_TYPE" \
+    --key-name "$KEY_PAIR_NAME" \
+    --security-group-ids "$SG_ID" \
+    --subnet-id "$SUBNET_ID" \
+    --iam-instance-profile Name="$PROFILE_NAME" \
+    --block-device-mappings "DeviceName=/dev/sda1,Ebs={VolumeSize=${VOLUME_SIZE_GB},VolumeType=gp3,DeleteOnTermination=true}" \
+    --user-data "$(cat "$USERDATA_FILE")" \
+    --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=${INSTANCE_NAME_TAG}},{Key=Project,Value=TLJH}]" \
+    --region "$AWS_REGION" --profile "$AWS_PROFILE" \
+    --count 1)
 
-INSTANCE_ID=$(echo "$RUN_JSON" | jq -r '.Instances[0].InstanceId')
-echo "✔ Instance: $INSTANCE_ID"
-echo "⏳ Waiting for 'running'…"
-aws ec2 wait instance-running --instance-ids "$INSTANCE_ID" --region "$AWS_REGION" --profile "$AWS_PROFILE"
+  INSTANCE_ID=$(echo "$RUN_JSON" | jq -r '.Instances[0].InstanceId')
+  echo "✔ Instance: $INSTANCE_ID"
+  echo "⏳ Waiting for 'running'…"
+  aws ec2 wait instance-running --instance-ids "$INSTANCE_ID" --region "$AWS_REGION" --profile "$AWS_PROFILE"
 
-PUBLIC_IP=$(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" \
-  --query 'Reservations[0].Instances[0].PublicIpAddress' --output text \
-  --region "$AWS_REGION" --profile "$AWS_PROFILE")
-echo "🌐 Public IP: $PUBLIC_IP"
+  PUBLIC_IP=$(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" \
+    --query 'Reservations[0].Instances[0].PublicIpAddress' --output text \
+    --region "$AWS_REGION" --profile "$AWS_PROFILE")
+  echo "🌐 Public IP: $PUBLIC_IP"
+fi
 
 cat <<NEXT
 ====================================================================

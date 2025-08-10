@@ -30,8 +30,10 @@ The setup script automates the deployment of a JupyterHub server on AWS EC2 with
 - Automatically clones the specified GitHub repository (`ebpfly/shm`)
 - Sets up Git configuration with user credentials
 - Installs shmtools-python package with all dependencies
+- Installs Node.js 20.x (required for JupyterLab 4.4+ compatibility)
 - Builds and installs the JupyterLab SHM Function Selector extension
-- Configures complete development environment ready for use
+- Configures Claude Code with proper PATH setup
+- Complete development environment ready for use
 
 ### Instance Configuration
 - Instance type: t3.medium (configurable)
@@ -76,6 +78,8 @@ The setup script automates the deployment of a JupyterHub server on AWS EC2 with
    - Display connection information
 
 4. Wait 5-10 minutes for installation to complete
+   - The script automatically installs Node.js 20.x for JupyterLab compatibility
+   - All components install without manual intervention
 
 5. Access JupyterHub at: `http://<PUBLIC_IP>`
 
@@ -123,6 +127,68 @@ The installation logs will show detailed progress including:
 - Claude Code setup
 
 Look for "SETUP COMPLETE" message to confirm everything is ready.
+
+## Debugging and Development
+
+For iterative development without recreating instances:
+
+### 1. Debug Mode for Main Script
+Skip instance creation and use existing instance:
+```bash
+DEBUG_MODE=true EXISTING_INSTANCE_IP=18.188.13.54 ./setup_jupyterhub_aws.sh
+```
+
+### 2. Individual Step Installation
+Run specific installation steps on existing instance:
+```bash
+# Run all steps (with cleanup)
+./debug_install.sh 18.188.13.54 all
+
+# Run individual steps
+./debug_install.sh 18.188.13.54 cleanup    # Clean previous attempts
+./debug_install.sh 18.188.13.54 repo       # Repository setup
+./debug_install.sh 18.188.13.54 shmtools   # Install shmtools package
+./debug_install.sh 18.188.13.54 extension  # Build JupyterLab extension  
+./debug_install.sh 18.188.13.54 claude     # Install Claude Code
+```
+
+### 3. Status Checking
+Check installation status and component health:
+```bash
+./check_status.sh 18.188.13.54
+```
+
+This shows:
+- SSH connectivity
+- Cloud-init completion status
+- JupyterHub service status
+- Web interface accessibility  
+- Repository presence
+- shmtools package installation
+- JupyterLab extension status
+- Claude Code installation
+
+### 4. Manual Debugging Commands
+```bash
+# SSH to instance
+ssh -i ~/.ssh/class-key-ssh-rsa ubuntu@18.188.13.54
+
+# View installation logs
+sudo tail -f /var/log/cloud-init-output.log
+
+# Check JupyterHub service
+sudo systemctl status jupyterhub
+sudo journalctl -u jupyterhub -f
+
+# Test shmtools import
+python3 -c "import shmtools; print('OK')"
+
+# Check JupyterLab extensions
+jupyter labextension list
+
+# Test repository access
+cd /srv/classrepo && git status
+```
 
 ## Post-Installation
 
