@@ -300,6 +300,8 @@ fi
 # Install shmtools in development mode
 echo "Installing shmtools package in development mode..."
 sudo -E pip3 install -e .
+# Also install in TLJH user environment for server extension access
+sudo -E /opt/tljh/user/bin/pip install -e .
 echo "shmtools package installed!"
 
 # Install JupyterLab extension
