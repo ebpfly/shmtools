@@ -280,11 +280,11 @@ su - ${JUPYTER_ADMIN_USER} -c "cd /srv && git clone https://github.com/${GITHUB_
 su - ${JUPYTER_ADMIN_USER} -c "cd /srv/classrepo && git fetch && git checkout ${GITHUB_BRANCH} || true"
 echo "Repository cloned successfully!"
 
-# Install shmtools-python package and dependencies
+# Install shmtools package and dependencies
 echo "========================================="
-echo "Installing shmtools-python package..."
+echo "Installing shmtools package..."
 echo "========================================="
-cd /srv/classrepo/shmtools-python
+cd /srv/classrepo
 if [ -f requirements.txt ]; then
   echo "Installing requirements.txt..."
   sudo -E pip3 install -r requirements.txt
@@ -302,7 +302,7 @@ echo "shmtools package installed!"
 echo "========================================="
 echo "Building JupyterLab extension..."
 echo "========================================="
-cd /srv/classrepo/shmtools-python/shm_function_selector
+cd /srv/classrepo/shm_function_selector
 # Install Node.js dependencies and build
 echo "Installing Node.js and npm..."
 sudo apt-get install -y nodejs npm
@@ -315,7 +315,7 @@ npm run build:labextension:dev
 
 # Install the extension into JupyterLab
 echo "Installing extension into JupyterLab..."
-cd /srv/classrepo/shmtools-python
+cd /srv/classrepo
 sudo -E pip3 install -e shm_function_selector/
 sudo -E jupyter labextension develop --overwrite shm_function_selector/
 
