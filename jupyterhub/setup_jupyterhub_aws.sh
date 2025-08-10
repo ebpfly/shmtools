@@ -325,8 +325,20 @@ npm run build:labextension:dev
 # Install the extension into JupyterLab
 echo "Installing extension into JupyterLab..."
 cd /srv/classrepo
+
+# Install server extension in both hub and user environments
+echo "Installing server extension in TLJH environments..."
+sudo -E /opt/tljh/hub/bin/pip install -e shm_function_selector/
+sudo -E /opt/tljh/user/bin/pip install -e shm_function_selector/
+
+# Install and develop JupyterLab extension
 sudo -E pip3 install -e shm_function_selector/
 sudo -E jupyter labextension develop --overwrite shm_function_selector/
+
+# Configure server extension in user environment
+echo "Configuring server extension..."
+sudo mkdir -p /opt/tljh/user/etc/jupyter
+echo 'c.ServerApp.jpserver_extensions = {"shm_function_selector": True}' | sudo tee /opt/tljh/user/etc/jupyter/jupyter_server_config.py
 
 # Rebuild JupyterLab to include the extension
 echo "Rebuilding JupyterLab..."
