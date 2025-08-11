@@ -11,6 +11,8 @@ This repository contains a **unified structural health monitoring (SHM) toolkit*
 
 The Python version is being developed using **example-driven development**, converting MATLAB functionality phase by phase while maintaining API compatibility.
 
+This software is life-safety critical. You cannot skip requirements just to get the code to run. You also cannot claim success unless requirements are met. You don't get to move the goal posts just because it's hard.
+
 ## Working Directory Structure
 
 ```

@@ -213,7 +213,7 @@ def distance_2_index_shm(
             :description: Wave velocity (m/s)
 
     offset : float, optional
-        Time offset in seconds (default: 0.0).
+        Time offset in seconds or samples (default: 0.0).
 
         .. gui::
             :widget: number_input
@@ -249,6 +249,10 @@ def distance_2_index_shm(
     >>> indices = distance_2_index_shm(distances, 1e6, 3000)
     >>> print(f"Sample indices: {indices}")
     """
+
+    if offset > 1:
+        offset = offset / 2 / sample_rate  # Convert samples to seconds
+    
     prop_distance = np.asarray(prop_distance, dtype=np.float64)
 
     # Calculate time-of-flight
@@ -671,7 +675,7 @@ def fill_2d_map_shm(data_1d: np.ndarray, mask: np.ndarray) -> np.ndarray:
     mask = np.asarray(mask, dtype=bool)
 
     # Initialize output with zeros
-    data_map_2d = np.zeros(mask.shape, dtype=np.float64)
+    data_map_2d = np.zeros(mask.shape, dtype=np.float64) + np.nan
 
     # Fill data at mask locations
     data_map_2d[mask] = data_1d
