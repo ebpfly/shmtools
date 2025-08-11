@@ -7374,7 +7374,7 @@ shell-quote@^1.6.1:
   resolved "https://registry.npmjs.org/shell-quote/-/shell-quote-1.8.3.tgz"
   integrity sha512-ObmnIF4hXNg1BqhnHmgbDETF8dLPCggZWBjkQfhZpbszZnYur5DUljTcCHii5LC3J5E0yeO/1LIMyH+UvHQgyw==
 
-"shm-function-selector-ui-tests@file:/Users/eric/repo/shm/shmtools-python/shm_function_selector/ui-tests":
+"shm-function-selector-ui-tests@file:/Users/eric/repo/shm/shm_function_selector/ui-tests":
   version "1.0.0"
   resolved "file:ui-tests"
 

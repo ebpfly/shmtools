@@ -17,12 +17,14 @@ The Python version is being developed using **example-driven development**, conv
 /Users/eric/repo/shm/
 ├── shmtools-python/     # Main Python development (use this for most work) - GIT REPOSITORY
 ├── shmtools-matlab/     # Original MATLAB reference (read-only reference)
+├── jupyterhub/          # AWS deployment infrastructure
 └── CLAUDE.md           # This file
 ```
 
 **IMPORTANT**: 
 - Always work in `shmtools-python/` unless specifically directed to examine MATLAB reference code
 - **The git repository is located in `shmtools-python/`** - use this directory for all git operations
+- **AWS deployment is the primary deployment method** - use `jupyterhub/` for cloud infrastructure
 
 ## Python Development Commands
 
@@ -124,6 +126,227 @@ npm run build:lib
 npm run build:labextension:dev
 cd .. && source venv/bin/activate && jupyter lab build
 ```
+
+## AWS Cloud Deployment (Primary Deployment Method)
+
+### Overview
+
+**SHMTools is designed for cloud deployment on AWS EC2 using JupyterHub.** This provides a complete, scalable research environment accessible through any web browser with no local installation required.
+
+The cloud deployment includes:
+- **JupyterHub server** for multi-user access
+- **Complete SHMTools environment** with all dependencies
+- **JupyterLab extension** with 108+ SHM functions
+- **Claude Code integration** for AI-assisted development
+- **Automatic security and access control**
+
+### Quick Start
+
+#### Prerequisites
+- AWS CLI configured with appropriate credentials
+- GitHub Personal Access Token (PAT) with repository access
+- Command-line tools: `aws`, `jq`, `curl`, `ssh-keygen`
+
+#### One-Command Deployment
+```bash
+cd jupyterhub/
+./setup_jupyterhub_aws.sh
+```
+
+The script automatically:
+1. Creates secure AWS infrastructure (IAM roles, security groups)
+2. Launches Ubuntu 22.04 EC2 instance with JupyterHub
+3. Installs complete SHMTools environment 
+4. Builds and configures JupyterLab extension
+5. Sets up Claude Code integration
+6. Provides web access at `http://<PUBLIC_IP>`
+
+**Total setup time**: ~5-10 minutes for a complete research environment.
+
+### Architecture Components
+
+#### Infrastructure Layer
+- **EC2 Instance**: t3.medium Ubuntu 22.04 (configurable)
+- **Storage**: 20GB GP3 volume with automatic scaling
+- **Security**: Restricted SSH + open HTTP access
+- **IAM**: Minimal-permission role for secure GitHub access
+- **Region**: us-east-2 (configurable)
+
+#### Software Stack
+- **TLJH (The Littlest JupyterHub)**: Multi-user Jupyter environment
+- **Node.js 20.x**: Required for JupyterLab 4.4+ compatibility
+- **Python 3.10/3.12**: Dual environment (hub + user spaces)
+- **SHMTools Package**: Complete library with all 108+ functions
+- **JupyterLab Extension**: Interactive function selector and parameter linking
+- **Claude Code**: AI-assisted development environment
+
+#### User Experience
+- **Web-based access**: No local installation required
+- **Multi-user support**: Individual user sessions and data
+- **Interactive development**: JupyterLab with SHM function integration
+- **AI assistance**: Built-in Claude Code for code generation and debugging
+- **Data persistence**: User data survives across sessions
+
+### Configuration
+
+#### Basic Configuration (`jupyterhub/setup_jupyterhub_aws.sh`)
+```bash
+# Edit these variables before deployment
+AWS_PROFILE="default"
+AWS_REGION="us-east-2"
+INSTANCE_TYPE="t3.medium"
+GITHUB_OWNER="your-github-username"
+GITHUB_REPO="your-repo-name"
+GIT_USER_NAME="Your Name"
+GIT_USER_EMAIL="your.email@example.com"
+```
+
+#### Advanced Configuration
+- **Instance scaling**: Modify `INSTANCE_TYPE` for more compute/memory
+- **Storage expansion**: Adjust `VOLUME_SIZE_GB` for larger datasets
+- **Multi-region**: Change `AWS_REGION` for global accessibility
+- **Custom domains**: Configure Route 53 and SSL certificates
+
+### Development Workflow
+
+#### Standard Development Cycle
+```bash
+# 1. Deploy instance
+cd jupyterhub/
+./setup_jupyterhub_aws.sh
+
+# 2. Access environment
+# Navigate to http://<PUBLIC_IP>
+# Login with username: ubuntu (set password on first login)
+
+# 3. Develop in JupyterLab
+# - Use SHM Function Selector for interactive development
+# - Access Claude Code for AI assistance
+# - All dependencies pre-installed and configured
+
+# 4. Iterate and test
+# - Changes persist across sessions
+# - Real-time collaboration possible
+# - Full Git integration available
+```
+
+#### Development Debugging
+For development and testing without recreating instances:
+
+```bash
+# Use existing instance
+DEBUG_MODE=true EXISTING_INSTANCE_IP=1.2.3.4 ./setup_jupyterhub_aws.sh
+
+# Individual component installation
+./debug_install.sh <IP> all        # Full reinstall
+./debug_install.sh <IP> shmtools   # Just shmtools package
+./debug_install.sh <IP> extension  # Just JupyterLab extension
+./debug_install.sh <IP> claude     # Just Claude Code
+
+# Status monitoring
+./check_status.sh <IP>
+```
+
+### Security and Access Control
+
+#### Built-in Security Features
+- **Encrypted secrets**: GitHub PAT stored in AWS SSM Parameter Store
+- **Network security**: SSH restricted to deployment IP, HTTP open for web access  
+- **IAM permissions**: Minimal-privilege role with read-only SSM access
+- **User isolation**: Individual user sessions with data separation
+- **Automatic updates**: Security patches applied during deployment
+
+#### User Management
+```bash
+# SSH to instance for user administration
+ssh -i ~/.ssh/class-key-ssh-rsa ubuntu@<PUBLIC_IP>
+
+# Add users (admin required)
+sudo tljh-config set users.allowed username
+sudo tljh-config reload
+
+# Grant admin access
+sudo tljh-config set users.admin username
+sudo tljh-config reload
+```
+
+### Cost Management
+
+#### Instance Costs (us-east-2)
+- **t3.medium**: ~$0.04/hour (~$30/month continuous)
+- **t3.large**: ~$0.08/hour (~$60/month continuous) 
+- **Storage**: ~$2/month for 20GB GP3
+
+#### Cost Optimization
+```bash
+# Stop instance when not in use
+aws ec2 stop-instances --instance-ids <INSTANCE_ID>
+
+# Start when needed
+aws ec2 start-instances --instance-ids <INSTANCE_ID>
+
+# Terminate when project complete
+aws ec2 terminate-instances --instance-ids <INSTANCE_ID>
+```
+
+### Production Considerations
+
+#### Scaling for Classes/Workshops
+- **Multi-user**: TLJH supports 50+ concurrent users on larger instances
+- **Resource allocation**: Configure memory/CPU limits per user
+- **Storage scaling**: EBS volumes can be expanded without downtime
+- **Load balancing**: Deploy multiple instances behind ALB for 100+ users
+
+#### Enterprise Features
+- **Custom domains**: Route 53 + CloudFront for branded access
+- **SSL/TLS**: Let's Encrypt integration available
+- **Authentication**: LDAP/AD integration through TLJH
+- **Monitoring**: CloudWatch integration for usage metrics
+- **Backup**: EBS snapshots for data protection
+
+### Troubleshooting
+
+#### Common Issues
+```bash
+# Installation monitoring
+ssh -i ~/.ssh/class-key-ssh-rsa ubuntu@<IP> "sudo tail -f /var/log/cloud-init-output.log"
+
+# Service status
+ssh -i ~/.ssh/class-key-ssh-rsa ubuntu@<IP> "sudo systemctl status jupyterhub"
+
+# Extension debugging  
+ssh -i ~/.ssh/class-key-ssh-rsa ubuntu@<IP> "jupyter labextension list | grep shm"
+
+# Function discovery test
+ssh -i ~/.ssh/class-key-ssh-rsa ubuntu@<IP> "python3 -c 'from shmtools.introspection import discover_functions_locally; print(len(discover_functions_locally()))'"
+```
+
+#### Recovery Procedures
+- **Soft reset**: Restart JupyterHub service
+- **Hard reset**: Reboot EC2 instance  
+- **Full recovery**: Terminate and redeploy (5-10 minutes)
+- **Data recovery**: EBS snapshots (configure separately)
+
+### Why Cloud Deployment?
+
+#### Advantages Over Local Installation
+1. **Zero setup friction**: Complete environment in 5-10 minutes
+2. **Consistent environment**: Same setup for all researchers
+3. **Collaborative**: Multiple users can work simultaneously
+4. **Scalable**: Easy to provision more compute/memory
+5. **Accessible**: Works from any device with web browser
+6. **Cost-effective**: Pay only when used, stop when idle
+7. **Maintainable**: Infrastructure as code, reproducible deployments
+
+#### Research Environment Benefits
+1. **Complete SHMTools library**: All 108+ functions available immediately  
+2. **Interactive development**: JupyterLab extension for function discovery
+3. **AI assistance**: Claude Code integration for faster development
+4. **Data handling**: Pre-configured for .mat files and large datasets
+5. **Reproducibility**: Exact environment specifications in code
+6. **Sharing**: Easy to spin up identical environments for collaborators
+
+**The cloud deployment is the recommended approach for all SHMTools research and development work.**
 
 ## Development Architecture
 
