@@ -17,7 +17,7 @@ def learn_mahalanobis_shm(X: np.ndarray) -> Dict[str, Any]:
     Learn Mahalanobis distance model from training data.
 
     .. meta::
-        :category: Classification - Parametric Detectors
+        :category: Feature Classification - Parametric Detectors
         :matlab_equivalent: learnMahalanobis_shm
         :complexity: Basic
         :data_type: Features
@@ -79,7 +79,7 @@ def score_mahalanobis_shm(Y: np.ndarray, model: Dict[str, Any]) -> np.ndarray:
     Score Mahalanobis distance for outlier detection.
 
     .. meta::
-        :category: Classification - Parametric Detectors
+        :category: Feature Classification - Parametric Detectors
         :matlab_equivalent: scoreMahalanobis_shm
         :complexity: Basic
         :data_type: Features
@@ -160,7 +160,7 @@ def learn_svd_shm(X: np.ndarray, param_stand: bool = True) -> Dict[str, Any]:
     singular values.
 
     .. meta::
-        :category: Classification - Parametric Detectors
+        :category: Feature Classification - Parametric Detectors
         :matlab_equivalent: learnSVD_shm
         :complexity: Basic
         :data_type: Features
@@ -246,7 +246,7 @@ def score_svd_shm(
     Y comes from a damaged condition, the rank of Mc will be equal to r+1.
 
     .. meta::
-        :category: Classification - Parametric Detectors
+        :category: Feature Classification - Parametric Detectors
         :matlab_equivalent: scoreSVD_shm
         :complexity: Basic
         :data_type: Features
@@ -338,7 +338,7 @@ def learn_pca_shm(
     Learn principal component analysis (PCA) for outlier detection.
 
     .. meta::
-        :category: Classification - Parametric Detectors
+        :category: Feature Classification - Parametric Detectors
         :matlab_equivalent: learnPCA_shm
         :complexity: Basic
         :data_type: Features
@@ -456,7 +456,7 @@ def score_pca_shm(
     Score principal component analysis (PCA) for outlier detection.
 
     .. meta::
-        :category: Classification - Parametric Detectors
+        :category: Feature Classification - Parametric Detectors
         :matlab_equivalent: scorePCA_shm
         :complexity: Basic
         :data_type: Features
@@ -539,7 +539,7 @@ def roc_shm(
     Note that the scores should decrease for the damaged instances.
 
     .. meta::
-        :category: Classification - Performance Evaluation
+        :category: Feature Classification - Performance Evaluation
         :matlab_equivalent: ROC_shm
         :complexity: Basic
         :data_type: Scores
@@ -666,7 +666,7 @@ def learn_factor_analysis_shm(
     variations, while the unique factors capture damage-related changes.
 
     .. meta::
-        :category: Classification - Parametric Detectors
+        :category: Feature Classification - Parametric Detectors
         :matlab_equivalent: learnFactorAnalysis_shm
         :complexity: Intermediate
         :data_type: Features
@@ -798,7 +798,7 @@ def score_factor_analysis_shm(
     by the common factors (operational/environmental variations).
 
     .. meta::
-        :category: Classification - Parametric Detectors
+        :category: Feature Classification - Parametric Detectors
         :matlab_equivalent: scoreFactorAnalysis_shm
         :complexity: Intermediate
         :data_type: Features

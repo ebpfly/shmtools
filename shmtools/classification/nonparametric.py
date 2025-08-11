@@ -16,7 +16,7 @@ def gaussian_kernel_shm(delta: np.ndarray) -> np.ndarray:
     Kernel weights for the Gaussian kernel.
 
     .. meta::
-        :category: Classification - Nonparametric Detectors
+        :category: Feature Classification - Non-Parametric Detectors
         :matlab_equivalent: gaussianKernel_shm
         :complexity: Basic
         :data_type: Features
@@ -64,7 +64,7 @@ def epanechnikov_kernel_shm(delta: np.ndarray) -> np.ndarray:
     Kernel weights for the Epanechnikov kernel.
 
     .. meta::
-        :category: Classification - Nonparametric Detectors
+        :category: Feature Classification - Non-Parametric Detectors
         :matlab_equivalent: epanechnikovKernel_shm
         :complexity: Basic
         :data_type: Features
@@ -121,7 +121,7 @@ def uniform_kernel_shm(delta: np.ndarray) -> np.ndarray:
     Kernel weights for the Uniform kernel.
 
     .. meta::
-        :category: Classification - Nonparametric Detectors
+        :category: Feature Classification - Non-Parametric Detectors
         :matlab_equivalent: uniformKernel_shm
         :complexity: Basic
         :data_type: Features
@@ -173,7 +173,7 @@ def quartic_kernel_shm(delta: np.ndarray) -> np.ndarray:
     Kernel weights for the Quartic (Biweight) kernel.
 
     .. meta::
-        :category: Classification - Nonparametric Detectors
+        :category: Feature Classification - Non-Parametric Detectors
         :matlab_equivalent: quarticKernel_shm
         :complexity: Basic
         :data_type: Features
@@ -229,7 +229,7 @@ def triangle_kernel_shm(delta: np.ndarray) -> np.ndarray:
     Kernel weights for the Triangle kernel.
 
     .. meta::
-        :category: Classification - Nonparametric Detectors
+        :category: Feature Classification - Non-Parametric Detectors
         :matlab_equivalent: triangleKernel_shm
         :complexity: Basic
         :data_type: Features
@@ -283,7 +283,7 @@ def triweight_kernel_shm(delta: np.ndarray) -> np.ndarray:
     Kernel weights for the Triweight kernel.
 
     .. meta::
-        :category: Classification - Nonparametric Detectors
+        :category: Feature Classification - Non-Parametric Detectors
         :matlab_equivalent: triweightKernel_shm
         :complexity: Basic
         :data_type: Features
@@ -339,7 +339,7 @@ def cosine_kernel_shm(delta: np.ndarray) -> np.ndarray:
     Kernel weights for the Cosine kernel.
 
     .. meta::
-        :category: Classification - Nonparametric Detectors
+        :category: Feature Classification - Non-Parametric Detectors
         :matlab_equivalent: cosineKernel_shm
         :complexity: Basic
         :data_type: Features
@@ -400,7 +400,7 @@ def learn_kernel_density_shm(
     Learn nonparametric kernel density estimation model.
 
     .. meta::
-        :category: Classification - Nonparametric Detectors
+        :category: Feature Classification - Non-Parametric Detectors
         :matlab_equivalent: learnKernelDensity_shm
         :complexity: Advanced
         :data_type: Features
@@ -497,7 +497,7 @@ def score_kernel_density_shm(
     Score nonparametric kernel density estimation.
 
     .. meta::
-        :category: Classification - Nonparametric Detectors
+        :category: Feature Classification - Non-Parametric Detectors
         :matlab_equivalent: scoreKernelDensity_shm
         :complexity: Advanced
         :data_type: Features
@@ -595,7 +595,7 @@ def roc_shm(
     Receiver operating characteristic (ROC) curve.
 
     .. meta::
-        :category: Classification - Performance Evaluation
+        :category: Feature Classification - Performance Evaluation
         :matlab_equivalent: ROC_shm
         :complexity: Intermediate
         :data_type: Scores
@@ -790,7 +790,7 @@ def learn_fast_metric_kernel_density_shm(
     kernel density for large datasets.
 
     .. meta::
-        :category: Classification - Nonparametric Detectors
+        :category: Feature Classification - Non-Parametric Detectors
         :matlab_equivalent: learnFastMetricKernelDensity_shm
         :complexity: Advanced
         :data_type: Features
@@ -888,7 +888,7 @@ def score_fast_metric_kernel_density_shm(
     Score fast metric kernel density estimation.
 
     .. meta::
-        :category: Classification - Nonparametric Detectors
+        :category: Feature Classification - Non-Parametric Detectors
         :matlab_equivalent: scoreFastMetricKernelDensity_shm
         :complexity: Advanced
         :data_type: Features

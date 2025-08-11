@@ -17,7 +17,7 @@ def coherent_matched_filter_shm(
     Coherent matched filter for guided wave analysis.
 
     .. meta::
-        :category: Active Sensing - Signal Processing
+        :category: Feature Extraction - Active Sensing
         :matlab_equivalent: coherentMatchedFilter_shm
         :complexity: Intermediate
         :data_type: Waveforms
@@ -128,7 +128,7 @@ def incoherent_matched_filter_shm(
     Incoherent matched filter for guided wave analysis.
 
     .. meta::
-        :category: Active Sensing - Signal Processing
+        :category: Feature Extraction - Active Sensing
         :matlab_equivalent: incoherentMatchedFilter_shm
         :complexity: Intermediate
         :data_type: Waveforms

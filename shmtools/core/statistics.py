@@ -285,7 +285,7 @@ def peak_factor_shm(x: np.ndarray, axis: int = 0) -> np.ndarray:
     crest factor but uses maximum value instead of absolute maximum.
 
     .. meta::
-        :category: Statistics - Basic Indicators
+        :category: Feature Extraction - Statistics
         :matlab_equivalent: peakFactor_shm
         :complexity: Basic
         :sensitivity: Peak, Outlier
@@ -324,7 +324,7 @@ def impulse_factor_shm(x: np.ndarray, axis: int = 0) -> np.ndarray:
     to impulsive content and outliers.
 
     .. meta::
-        :category: Statistics - Basic Indicators
+        :category: Feature Extraction - Statistics
         :matlab_equivalent: impulseFactor_shm
         :complexity: Basic
         :sensitivity: Impulse, Outlier
@@ -363,7 +363,7 @@ def clearance_factor_shm(x: np.ndarray, axis: int = 0) -> np.ndarray:
     sensitive to impulses and outliers.
 
     .. meta::
-        :category: Statistics - Basic Indicators
+        :category: Feature Extraction - Statistics
         :matlab_equivalent: clearanceFactor_shm
         :complexity: Basic
         :sensitivity: Impulse, Outlier
@@ -402,7 +402,7 @@ def shape_factor_shm(x: np.ndarray, axis: int = 0) -> np.ndarray:
     the "shape" of the amplitude distribution.
 
     .. meta::
-        :category: Statistics - Basic Indicators
+        :category: Feature Extraction - Statistics
         :matlab_equivalent: shapeFactor_shm
         :complexity: Basic
         :sensitivity: Distribution Shape
@@ -438,7 +438,7 @@ def crest_factor_shm(X: np.ndarray) -> np.ndarray:
     Calculate crest factor feature matrix from raw signal matrix.
     
     .. meta::
-        :category: Features - Statistics
+        :category: Feature Extraction - Statistics
         :matlab_equivalent: crestFactor_shm
         :complexity: Basic
         :data_type: Time Series
@@ -517,7 +517,7 @@ def stat_moments_shm(X: np.ndarray) -> np.ndarray:
     Calculate first four statistical moments as damage sensitive features.
     
     .. meta::
-        :category: Features - Statistics
+        :category: Feature Extraction - Statistics
         :matlab_equivalent: statMoments_shm
         :complexity: Basic
         :data_type: Time Series
@@ -609,7 +609,7 @@ def rms_shm(X: np.ndarray) -> np.ndarray:
     Calculate root mean square (RMS) feature matrix from signal matrix.
     
     .. meta::
-        :category: Features - Statistics
+        :category: Feature Extraction - Statistics
         :matlab_equivalent: rms_shm
         :complexity: Basic
         :data_type: Time Series
@@ -666,7 +666,7 @@ def m6a_shm(D: np.ndarray) -> np.ndarray:
     Calculate M6A feature from difference signal matrix.
     
     .. meta::
-        :category: Features - Statistics
+        :category: Feature Extraction - Statistics
         :matlab_equivalent: m6a_shm
         :complexity: Intermediate
         :data_type: Time Series
@@ -753,7 +753,7 @@ def m8a_shm(D: np.ndarray) -> np.ndarray:
     Calculate M8A feature from difference signal matrix.
     
     .. meta::
-        :category: Features - Statistics
+        :category: Feature Extraction - Statistics
         :matlab_equivalent: m8a_shm
         :complexity: Intermediate
         :data_type: Time Series
@@ -844,7 +844,7 @@ def compute_damage_features_shm(
     Compute multiple damage-sensitive features from vibration signals.
     
     .. meta::
-        :category: Core - Statistics
+        :category: Feature Extraction - Statistics
         :matlab_equivalent: Multiple feature functions
         :complexity: Intermediate
         :data_type: Time Series
@@ -942,7 +942,7 @@ def na4m_shm(R: np.ndarray, m2: Optional[np.ndarray] = None) -> Tuple[np.ndarray
     Calculate NA4M damage feature from residual signal matrix.
     
     .. meta::
-        :category: Features - Statistics
+        :category: Feature Extraction - Statistics
         :matlab_equivalent: na4m_shm
         :complexity: Intermediate
         :data_type: Time Series
@@ -1051,7 +1051,7 @@ def nb4m_shm(X: np.ndarray, m2: Optional[np.ndarray] = None) -> Tuple[np.ndarray
     Calculate NB4M feature from band passed mesh signal matrix.
     
     .. meta::
-        :category: Features - Statistics
+        :category: Feature Extraction - Statistics
         :matlab_equivalent: nb4m_shm
         :complexity: Intermediate
         :data_type: Time Series

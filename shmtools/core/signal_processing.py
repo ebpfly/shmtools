@@ -27,7 +27,7 @@ def ars_tach_shm(
     Critical for analyzing rotating machinery under varying speed conditions.
 
     .. meta::
-        :category: Core - Signal Processing
+        :category: Feature Extraction - Preprocessing
         :matlab_equivalent: ars_tach
         :complexity: Intermediate
         :data_type: Time Series
@@ -286,7 +286,7 @@ def fir1_shm(
     response filters using windowing method.
 
     .. meta::
-        :category: Core - Filtering
+        :category: Feature Extraction - Preprocessing
         :matlab_equivalent: fir1
         :complexity: Basic
         :data_type: Filter Coefficients

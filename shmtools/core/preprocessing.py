@@ -161,7 +161,7 @@ def scale_min_max_shm(
     along the specified dimension. MATLAB-compatible version of scaleMinMax_shm.
 
     .. meta::
-        :category: Core - Preprocessing
+        :category: Feature Extraction - Preprocessing
         :matlab_equivalent: scaleMinMax_shm
         :complexity: Basic
         :data_type: Time Series
@@ -245,7 +245,7 @@ def analytic_signal_shm(X: np.ndarray) -> np.ndarray:
     Convert signals to their analytic form using Hilbert transform via FFT.
     
     .. meta::
-        :category: Core - Preprocessing
+        :category: Feature Extraction - Preprocessing
         :matlab_equivalent: analyticSignal_shm
         :complexity: Basic
         :data_type: Time Series
@@ -362,7 +362,7 @@ def envelope_shm(X: np.ndarray) -> np.ndarray:
     Calculate envelope signals from signal matrix.
     
     .. meta::
-        :category: Core - Preprocessing
+        :category: Feature Extraction - Preprocessing
         :matlab_equivalent: envelope_shm
         :complexity: Basic
         :data_type: Time Series
@@ -448,7 +448,7 @@ def demean_shm(X: np.ndarray) -> np.ndarray:
     Remove signal mean from signal matrix.
     
     .. meta::
-        :category: Core - Preprocessing  
+        :category: Feature Extraction - Preprocessing  
         :matlab_equivalent: demean_shm
         :complexity: Basic
         :data_type: Time Series
@@ -509,7 +509,7 @@ def filter_shm(X: np.ndarray, filter_coef: np.ndarray) -> np.ndarray:
     Filter signals with FIR filter using FFT convolution.
     
     .. meta::
-        :category: Core - Preprocessing
+        :category: Feature Extraction - Preprocessing
         :matlab_equivalent: filter_shm  
         :complexity: Intermediate
         :data_type: Time Series
@@ -607,7 +607,7 @@ def window_shm(win_type: str, win_param: Union[int, list], win_form: Optional[st
     Generate window vector of specified type.
     
     .. meta::
-        :category: Core - Preprocessing
+        :category: Feature Extraction - Preprocessing
         :matlab_equivalent: window_shm
         :complexity: Intermediate  
         :data_type: Parameters

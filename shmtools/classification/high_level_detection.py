@@ -28,7 +28,7 @@ def train_outlier_detector_shm(
     automatic threshold selection based on statistical distributions.
     
     .. meta::
-        :category: Classification - High Level Interface
+        :category: Feature Classification - High Level Interface
         :matlab_equivalent: trainOutlierDetector_shm
         :complexity: Basic
         :data_type: Features
@@ -208,7 +208,7 @@ def detect_outlier_shm(
     detection model from SHMTools.
     
     .. meta::
-        :category: Classification - High Level Interface  
+        :category: Feature Classification - High Level Interface  
         :matlab_equivalent: detectOutlier_shm
         :complexity: Basic
         :data_type: Features

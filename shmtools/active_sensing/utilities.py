@@ -16,7 +16,7 @@ def extract_subsets_shm(
     Extract data subsets from array using start indices and fixed length.
 
     .. meta::
-        :category: Active Sensing - Utilities
+        :category: Feature Extraction - Active Sensing
         :matlab_equivalent: extractSubsets_shm
         :complexity: Basic
         :data_type: Arrays
@@ -199,7 +199,7 @@ def flex_logic_filter_shm(
     Apply flexible logical filtering to multi-dimensional data.
 
     .. meta::
-        :category: Active Sensing - Utilities
+        :category: Feature Extraction - Active Sensing
         :matlab_equivalent: flexLogicFilter_shm
         :complexity: Intermediate
         :data_type: Arrays
@@ -293,7 +293,7 @@ def sum_mult_dims_shm(data: np.ndarray, dimensions: List[int]) -> np.ndarray:
     Sum array along multiple dimensions.
 
     .. meta::
-        :category: Active Sensing - Utilities
+        :category: Feature Extraction - Active Sensing
         :matlab_equivalent: sumMultDims_shm
         :complexity: Basic
         :data_type: Arrays
@@ -364,7 +364,7 @@ def estimate_group_velocity_shm(
     Estimate group velocity from guided wave measurements.
 
     .. meta::
-        :category: Active Sensing - Signal Processing
+        :category: Feature Extraction - Active Sensing
         :matlab_equivalent: estimateGroupVelocity_shm
         :complexity: Advanced
         :data_type: Waveforms
@@ -599,7 +599,7 @@ def reduce_2_pair_subset_shm(
     Extract parameter and data subsets based on sensor subset.
 
     .. meta::
-        :category: Active Sensing - Utilities
+        :category: Feature Extraction - Active Sensing
         :matlab_equivalent: reduce2PairSubset_shm
         :complexity: Intermediate
         :data_type: Arrays

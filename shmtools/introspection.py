@@ -316,47 +316,41 @@ def discover_functions_locally():
 
 
 def _get_category_from_module_name(module_name):
-    """Map module names to human-readable categories."""
-    category_map = {
-        # Core modules
-        "shmtools.core.spectral": "Core - Spectral Analysis",
-        "shmtools.core.statistics": "Core - Statistics",
-        "shmtools.core.filtering": "Core - Filtering", 
-        "shmtools.core.preprocessing": "Core - Preprocessing",
-        
-        # Feature extraction
-        "shmtools.features.time_series": "Features - Time Series Models",
-        
-        # Classification and detection
-        "shmtools.classification.outlier_detection": "Classification - Outlier Detection",
-        "shmtools.classification.nonparametric": "Classification - Nonparametric Methods",
-        "shmtools.classification.high_level_detection": "Classification - High-Level Detection",
-        
-        # Active sensing
-        "shmtools.active_sensing.matched_filter": "Active Sensing - Signal Processing",
-        "shmtools.active_sensing.utilities": "Active Sensing - Utilities",
-        "shmtools.active_sensing.geometry": "Active Sensing - Geometry",
-        
-        # Modal analysis
-        "shmtools.modal.modal_analysis": "Modal - Modal Analysis",
-        "shmtools.modal.oma": "Modal - Operational Modal Analysis",
-        
-        # Hardware and data acquisition  
-        "shmtools.hardware.data_acquisition": "Hardware - Data Acquisition",
-        "shmtools.hardware.serial_interface": "Hardware - Serial Interface",
-        
-        # Utilities and data I/O
-        "shmtools.utils.data_io": "Data - Import Functions",
-        "shmtools.utils.data_loading": "Data - Loading Functions",
-        "shmtools.utils.matlab_compatibility": "Data - MATLAB Compatibility",
-        
-        # Sensor diagnostics
-        "shmtools.sensor_diagnostics.diagnostic_functions": "Diagnostics - Sensor Health",
-        
-        # Plotting utilities
-        "shmtools.plotting.bokeh_plotting": "Visualization - Interactive Plots",
-    }
-    return category_map.get(module_name, "Other")
+    """Generate fallback category from module name if docstring category not found."""
+    # Simple fallback based on module structure
+    if "core" in module_name:
+        return "Feature Extraction - Core"
+    elif "features" in module_name:
+        return "Feature Extraction"
+    elif "classification" in module_name:
+        return "Feature Classification"
+    elif "active_sensing" in module_name:
+        return "Feature Extraction - Active Sensing"
+    elif "modal" in module_name:
+        return "Feature Extraction - Modal Analysis"
+    elif "hardware" in module_name:
+        return "Data Acquisition"
+    elif "plotting" in module_name:
+        return "Auxiliary - Plotting"
+    elif "utils" in module_name:
+        return "Auxiliary - Utilities"
+    elif "sensor_diagnostics" in module_name:
+        return "Auxiliary - Sensor Support - Sensor Diagnostics"
+    else:
+        return "Other"
+
+
+def _extract_category_from_docstring(docstring, fallback_category):
+    """Extract category from docstring metadata, fallback if not found."""
+    import re
+    
+    # Look for :category: in the docstring
+    category_match = re.search(r':category:\s*(.+)', docstring)
+    if category_match:
+        return category_match.group(1).strip()
+    
+    # Return fallback if not found in docstring
+    return fallback_category
 
 
 def _extract_function_info(func, name, category, module_name=None):
@@ -370,11 +364,14 @@ def _extract_function_info(func, name, category, module_name=None):
         # Parse docstring for metadata
         docstring = inspect.getdoc(func) or ""
 
+        # Extract category from docstring first, use fallback if not found
+        actual_category = _extract_category_from_docstring(docstring, category)
+
         # Extract basic info
         func_info = {
             "name": name,
             "displayName": _extract_display_name(docstring, name),
-            "category": category,
+            "category": actual_category,
             "module": module_name or "shmtools",
             "signature": str(sig),
             "description": _extract_description(docstring),

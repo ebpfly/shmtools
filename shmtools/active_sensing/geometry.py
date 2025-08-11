@@ -17,7 +17,7 @@ def propagation_dist_2_points_shm(
     Calculate propagation distances from sensor pairs to points of interest.
 
     .. meta::
-        :category: Active Sensing - Geometry
+        :category: Feature Extraction - Active Sensing
         :matlab_equivalent: propagationDist2Points_shm
         :complexity: Intermediate
         :data_type: Coordinates
@@ -175,7 +175,7 @@ def distance_2_index_shm(
     Convert propagation distances to waveform sample indices.
 
     .. meta::
-        :category: Active Sensing - Signal Processing
+        :category: Feature Extraction - Active Sensing
         :matlab_equivalent: distance2Index_shm
         :complexity: Basic
         :data_type: Distances
@@ -267,7 +267,7 @@ def build_contained_grid_shm(
     Build grid of points contained within structure borders.
 
     .. meta::
-        :category: Active Sensing - Geometry
+        :category: Feature Extraction - Active Sensing
         :matlab_equivalent: buildContainedGrid_shm
         :complexity: Advanced
         :data_type: Geometry
@@ -382,7 +382,7 @@ def sensor_pair_line_of_sight_shm(
     Determine line-of-sight visibility for sensor pairs to points of interest.
 
     .. meta::
-        :category: Active Sensing - Geometry
+        :category: Feature Extraction - Active Sensing
         :matlab_equivalent: sensorPairLineOfSight_shm
         :complexity: Advanced
         :data_type: Geometry
@@ -619,7 +619,7 @@ def fill_2d_map_shm(data_1d: np.ndarray, mask: np.ndarray) -> np.ndarray:
     Fill 2D map from 1D data using boolean mask.
 
     .. meta::
-        :category: Active Sensing - Utilities
+        :category: Feature Extraction - Active Sensing
         :matlab_equivalent: fill2DMap_shm
         :complexity: Basic
         :data_type: Arrays
@@ -686,7 +686,7 @@ def get_prop_dist_2_boundary_shm(
     Calculate propagation distance from actuator to boundary to sensor.
 
     .. meta::
-        :category: Active Sensing - Geometry
+        :category: Feature Extraction - Active Sensing
         :matlab_equivalent: getPropDist2Boundary_shm
         :complexity: Advanced
         :data_type: Geometry
@@ -907,7 +907,7 @@ def struct_cell_2_mat_shm(struct_cell) -> np.ndarray:
     Convert structure-cell mixture to matrix.
 
     .. meta::
-        :category: Active Sensing - Utilities
+        :category: Feature Extraction - Active Sensing
         :matlab_equivalent: structCell2Mat_shm
         :complexity: Basic
         :data_type: Mixed Data

@@ -45,7 +45,7 @@ def learn_nlpca_shm(
     changes in the data. The bottleneck layer represents these correlations.
 
     .. meta::
-        :category: Classification - Non-Parametric Detectors
+        :category: Feature Classification - Non-Parametric Detectors
         :matlab_equivalent: learnNLPCA_shm
         :display_name: Learn NLPCA
         :verbose_call: [Model] = Learn NLPCA (Training Features, # Nodes Bottleneck Layer, # Nodes Mapping Layer, # Nodes de-Mapping Layer, # Iterations, Performance)
@@ -237,7 +237,7 @@ def score_nlpca_shm(
     of the residual errors between target features and network output.
 
     .. meta::
-        :category: Classification - Non-Parametric Detectors
+        :category: Feature Classification - Non-Parametric Detectors
         :matlab_equivalent: scoreNLPCA_shm
         :display_name: Score NLPCA
         :verbose_call: [Scores, Residuals] = Score NLPCA (Test Features, Model)

@@ -18,7 +18,7 @@ def band_lim_white_noise_shm(array_size: Tuple[int, int],
     Generate band-limited white noise for structural excitation.
     
     .. meta::
-        :category: Hardware - Signal Generation
+        :category: Data Acquisition - Signal Generation
         :matlab_equivalent: bandLimWhiteNoise_shm
         :complexity: Basic
         :data_type: Time Series

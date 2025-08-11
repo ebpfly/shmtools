@@ -24,7 +24,7 @@ def response_interp_shm(
     3D response array indexed by node coordinates.
     
     .. meta::
-        :category: Modal - Visualization
+        :category: Auxiliary - Plotting
         :matlab_equivalent: responseInterp_shm
         :complexity: Basic
         :data_type: Modal Data
@@ -106,7 +106,7 @@ def add_resp_2_geom_shm(
     Add response vector to geometry for deformed shape visualization.
     
     .. meta::
-        :category: Modal - Visualization
+        :category: Auxiliary - Plotting
         :matlab_equivalent: addResp2Geom_shm
         :complexity: Basic
         :data_type: Modal Data
@@ -196,7 +196,7 @@ def osp_fisher_info_eiv_shm(
     Fisher Information Matrix using the Effective Independence (EI) algorithm.
     
     .. meta::
-        :category: Modal - Optimal Sensor Placement
+        :category: Auxiliary - Sensor Support - Optimal Sensor Placement
         :matlab_equivalent: OSP_FisherInfoEIV_shm
         :complexity: Advanced
         :data_type: Modal Data
@@ -311,7 +311,7 @@ def get_sensor_layout_shm(
     Convert optimal DOF indices to sensor XYZ coordinates.
     
     .. meta::
-        :category: Modal - Optimal Sensor Placement
+        :category: Auxiliary - Sensor Support - Optimal Sensor Placement
         :matlab_equivalent: getSensorLayout_shm
         :complexity: Basic
         :data_type: Sensor Indices
@@ -391,7 +391,7 @@ def osp_max_norm_shm(
     of mode shapes with minimum separation constraints.
     
     .. meta::
-        :category: Modal - Optimal Sensor Placement
+        :category: Auxiliary - Sensor Support - Optimal Sensor Placement
         :matlab_equivalent: OSP_MaxNorm_shm
         :complexity: Advanced
         :data_type: Modal Data
@@ -537,7 +537,7 @@ def node_element_plot_shm(
     Plot structural geometry with optional deformed shape.
     
     .. meta::
-        :category: Modal - Visualization
+        :category: Auxiliary - Plotting
         :matlab_equivalent: nodeElementPlot_shm
         :complexity: Basic
         :data_type: Geometry Data
@@ -558,7 +558,7 @@ def plot_sensors_shm(
     Plot sensor locations on structure.
     
     .. meta::
-        :category: Modal - Visualization
+        :category: Auxiliary - Plotting
         :matlab_equivalent: plotSensors_shm
         :complexity: Basic
         :data_type: Sensor Locations

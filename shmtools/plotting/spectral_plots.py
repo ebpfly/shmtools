@@ -32,7 +32,7 @@ def plot_scores_shm(scores: np.ndarray,
     Plot damage detection scores with threshold and classification results.
     
     .. meta::
-        :category: Plotting - Detection Results
+        :category: Auxiliary - Plotting
         :matlab_equivalent: plotScores_shm
         :complexity: Basic
         :data_type: Scores

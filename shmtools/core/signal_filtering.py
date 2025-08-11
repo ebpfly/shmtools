@@ -26,7 +26,7 @@ def residual_signal_shm(
     shaft harmonics and their sidebands to highlight fault-related content.
 
     .. meta::
-        :category: Core - Signal Filtering
+        :category: Feature Extraction - Preprocessing
         :matlab_equivalent: residualSignal_shm
         :complexity: Intermediate
         :sensitivity: Fault Detection
@@ -146,7 +146,7 @@ def difference_signal_shm(
     changes between baseline and current conditions.
 
     .. meta::
-        :category: Core - Signal Filtering
+        :category: Feature Extraction - Preprocessing
         :matlab_equivalent: differenceSignal_shm
         :complexity: Basic
         :sensitivity: Condition Change
@@ -225,7 +225,7 @@ def bandpass_condition_signal_shm(
     specific frequency bands related to fault conditions.
 
     .. meta::
-        :category: Core - Signal Filtering
+        :category: Feature Extraction - Preprocessing
         :matlab_equivalent: bandpassCondition_shm
         :complexity: Basic
         :sensitivity: Frequency-specific Faults
@@ -328,7 +328,7 @@ def gear_mesh_filter_shm(
     gear mesh frequencies and their modulation sidebands for fault detection.
 
     .. meta::
-        :category: Core - Signal Filtering
+        :category: Feature Extraction - Preprocessing
         :matlab_equivalent: gearMeshFilter_shm
         :complexity: Intermediate
         :sensitivity: Gear Faults
@@ -444,7 +444,7 @@ def envelope_signal_shm(
     amplitude envelope for detecting amplitude modulation patterns.
 
     .. meta::
-        :category: Core - Signal Filtering
+        :category: Feature Extraction - Preprocessing
         :matlab_equivalent: envelopeSignal_shm
         :complexity: Basic
         :sensitivity: Amplitude Modulation

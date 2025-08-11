@@ -17,7 +17,7 @@ def ar_model_shm(
     Estimate autoregressive model parameters and compute RMSE.
 
     .. meta::
-        :category: Features - Time Series Models
+        :category: Feature Extraction - Time Series Models
         :matlab_equivalent: arModel_shm
         :complexity: Intermediate
         :data_type: Time Series
@@ -207,7 +207,7 @@ def ar_model_order_shm(
     using one of five available methods for time series analysis.
 
     .. meta::
-        :category: Features - Time Series Models
+        :category: Feature Extraction - Time Series Models
         :matlab_equivalent: arModelOrder_shm
         :complexity: Intermediate
         :data_type: Time Series
@@ -459,7 +459,7 @@ def arx_model_shm(
     the input (exogenous) signal, and remaining channels as outputs.
     
     .. meta::
-        :category: Features - Time Series Models
+        :category: Feature Extraction - Time Series Models
         :matlab_equivalent: arxModel_shm
         :complexity: Intermediate
         :data_type: Time Series
@@ -642,7 +642,7 @@ def eval_arx_model_shm(
     and residual calculation.
     
     .. meta::
-        :category: Features - Time Series Models
+        :category: Feature Extraction - Time Series Models
         :matlab_equivalent: evalARXmodel_shm
         :complexity: Basic
         :data_type: Time Series
@@ -744,7 +744,7 @@ def split_features_shm(
     of features.
     
     .. meta::
-        :category: Features - Data Management
+        :category: Auxiliary - Utilities
         :matlab_equivalent: splitFeatures_shm
         :complexity: Basic
         :data_type: Features

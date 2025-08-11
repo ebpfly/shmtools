@@ -36,7 +36,7 @@ def frf_shm(
     to be the first channel.
 
     .. meta::
-        :category: Features - Modal Analysis
+        :category: Feature Extraction - Modal Analysis
         :matlab_equivalent: frf_shm
         :display_name: Frequency Response Function
         :verbose_call: FRF Data = Frequency Response Function (Time Data, Block Size in Points, Percent Overlap, Window Function Handle, Single Sided)
@@ -218,7 +218,7 @@ def rpfit_shm(
     ratios, complex residues) from frequency response function data.
 
     .. meta::
-        :category: Features - Modal Analysis
+        :category: Feature Extraction - Modal Analysis
         :matlab_equivalent: rpfit_shm
         :display_name: Rational Poly Fit
         :verbose_call: [Residues, Frequencies, Damping] = Rational Poly Fit (FRF, Frequency Resolution, Frequency Range, # of Modes, # of Extra Terms)

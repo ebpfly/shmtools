@@ -130,7 +130,7 @@ def stft_shm(
     Compute Short-Time Fourier Transform (STFT).
 
     .. meta::
-        :category: Core - Spectral Analysis
+        :category: Feature Extraction - Spectral Analysis
         :matlab_equivalent: stft_shm
         :complexity: Intermediate
         :data_type: Time Series
@@ -238,7 +238,7 @@ def cwt_analysis_shm(
     Continuous Wavelet Transform analysis.
 
     .. meta::
-        :category: Core - Spectral Analysis
+        :category: Feature Extraction - Spectral Analysis
         :matlab_equivalent: cwt_shm
         :complexity: Advanced
         :data_type: Time Series
@@ -331,7 +331,7 @@ def wavelet_shm(wave_type: str, wave_param: np.ndarray) -> np.ndarray:
     Generate wavelet of specified type.
     
     .. meta::
-        :category: Spectral Analysis - Wavelets
+        :category: Feature Extraction - Spectral Analysis
         :matlab_equivalent: wavelet_shm
         :complexity: Intermediate
         :data_type: Parameters
@@ -462,7 +462,7 @@ def cwt_scalogram_shm(
     Compute continuous wavelet scalograms using mirrored Morlet wavelets.
     
     .. meta::
-        :category: Spectral Analysis - Time-Frequency
+        :category: Feature Extraction - Spectral Analysis
         :matlab_equivalent: cwtScalogram_shm
         :complexity: Advanced
         :data_type: Time Series
@@ -754,7 +754,7 @@ def hoelder_exp_shm(scalo_matrix: np.ndarray, f: np.ndarray) -> np.ndarray:
     Calculate Hoelder exponent series from time-frequency scalogram matrix.
     
     .. meta::
-        :category: Spectral Analysis - Time-Frequency
+        :category: Feature Extraction - Spectral Analysis
         :matlab_equivalent: hoelderExp_shm
         :complexity: Advanced
         :data_type: Time-Frequency
@@ -913,7 +913,7 @@ def dwvd_shm(
     Compute discrete Wigner-Ville distributions from signal matrix.
     
     .. meta::
-        :category: Spectral Analysis - Time-Frequency
+        :category: Feature Extraction - Spectral Analysis
         :matlab_equivalent: dwvd_shm
         :complexity: Advanced
         :data_type: Time Series
@@ -1168,7 +1168,7 @@ def lpc_spectrogram_shm(
     Compute spectrogram using Linear Predictive Coding (LPC) coefficients.
     
     .. meta::
-        :category: Spectral Analysis - Time-Frequency
+        :category: Feature Extraction - Spectral Analysis
         :matlab_equivalent: lpcSpectrogram_shm
         :complexity: Advanced
         :data_type: Time Series

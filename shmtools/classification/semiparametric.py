@@ -15,7 +15,7 @@ def k_medians_shm(X: np.ndarray, k: int) -> Tuple[np.ndarray, np.ndarray]:
     Partition the data using k-medians clustering.
 
     .. meta::
-        :category: Classification - Semi-Parametric Detectors
+        :category: Feature Classification - Semi-Parametric Detectors
         :matlab_equivalent: kMedians_shm
         :complexity: Advanced
         :data_type: Features
@@ -125,7 +125,7 @@ def learn_gmm_shm(X: np.ndarray, idx: Optional[np.ndarray] = None) -> Dict[str, 
     Learn gaussian mixture model.
 
     .. meta::
-        :category: Classification - Semi-Parametric Detectors
+        :category: Feature Classification - Semi-Parametric Detectors
         :matlab_equivalent: learnGMM_shm
         :complexity: Advanced
         :data_type: Features
@@ -236,7 +236,7 @@ def score_gmm_shm(
     Score gaussian mixture model.
 
     .. meta::
-        :category: Classification - Semi-Parametric Detectors
+        :category: Feature Classification - Semi-Parametric Detectors
         :matlab_equivalent: scoreGMM_shm
         :complexity: Advanced
         :data_type: Features
@@ -359,7 +359,7 @@ def learn_gmm_semiparametric_model_shm(
     Learn GMM semi-parametric density model.
 
     .. meta::
-        :category: Classification - Semi-Parametric Detectors
+        :category: Feature Classification - Semi-Parametric Detectors
         :matlab_equivalent: learnGMMSemiParametricModel_shm
         :complexity: Advanced
         :data_type: Features
@@ -442,7 +442,7 @@ def score_gmm_semiparametric_model_shm(
     Score GMM semi-parametric density model.
 
     .. meta::
-        :category: Classification - Semi-Parametric Detectors
+        :category: Feature Classification - Semi-Parametric Detectors
         :matlab_equivalent: scoreGMMSemiParametricModel_shm
         :complexity: Advanced
         :data_type: Features

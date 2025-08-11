@@ -14,7 +14,7 @@ def time_sync_avg_shm(x_ars_matrix: np.ndarray, samples_per_rev: int) -> np.ndar
     Time-synchronous average of angularly sampled signals.
 
     .. meta::
-        :category: Features - Condition Based Monitoring
+        :category: Feature Extraction - Condition Based Monitoring
         :matlab_equivalent: timeSyncAvg_shm
         :complexity: Basic
         :data_type: Angular Signals
