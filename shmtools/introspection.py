@@ -249,12 +249,43 @@ def discover_functions_locally():
 
     # Modules to scan
     modules_to_scan = [
+        # Core modules
         "shmtools.core.spectral",
         "shmtools.core.statistics",
         "shmtools.core.filtering",
+        "shmtools.core.preprocessing",
+        
+        # Feature extraction
         "shmtools.features.time_series",
+        
+        # Classification and detection
         "shmtools.classification.outlier_detection",
+        "shmtools.classification.nonparametric",
+        "shmtools.classification.high_level_detection",
+        
+        # Active sensing
+        "shmtools.active_sensing.matched_filter",
+        "shmtools.active_sensing.utilities",
+        "shmtools.active_sensing.geometry",
+        
+        # Modal analysis
+        "shmtools.modal.modal_analysis",
+        "shmtools.modal.oma",
+        
+        # Hardware and data acquisition
+        "shmtools.hardware.data_acquisition",
+        "shmtools.hardware.serial_interface",
+        
+        # Utilities and data I/O
         "shmtools.utils.data_io",
+        "shmtools.utils.data_loading",
+        "shmtools.utils.matlab_compatibility",
+        
+        # Sensor diagnostics
+        "shmtools.sensor_diagnostics.diagnostic_functions",
+        
+        # Plotting utilities
+        "shmtools.plotting.bokeh_plotting",
     ]
 
     for module_name in modules_to_scan:
@@ -287,12 +318,43 @@ def discover_functions_locally():
 def _get_category_from_module_name(module_name):
     """Map module names to human-readable categories."""
     category_map = {
+        # Core modules
         "shmtools.core.spectral": "Core - Spectral Analysis",
         "shmtools.core.statistics": "Core - Statistics",
-        "shmtools.core.filtering": "Core - Filtering",
+        "shmtools.core.filtering": "Core - Filtering", 
+        "shmtools.core.preprocessing": "Core - Preprocessing",
+        
+        # Feature extraction
         "shmtools.features.time_series": "Features - Time Series Models",
+        
+        # Classification and detection
         "shmtools.classification.outlier_detection": "Classification - Outlier Detection",
+        "shmtools.classification.nonparametric": "Classification - Nonparametric Methods",
+        "shmtools.classification.high_level_detection": "Classification - High-Level Detection",
+        
+        # Active sensing
+        "shmtools.active_sensing.matched_filter": "Active Sensing - Signal Processing",
+        "shmtools.active_sensing.utilities": "Active Sensing - Utilities",
+        "shmtools.active_sensing.geometry": "Active Sensing - Geometry",
+        
+        # Modal analysis
+        "shmtools.modal.modal_analysis": "Modal - Modal Analysis",
+        "shmtools.modal.oma": "Modal - Operational Modal Analysis",
+        
+        # Hardware and data acquisition  
+        "shmtools.hardware.data_acquisition": "Hardware - Data Acquisition",
+        "shmtools.hardware.serial_interface": "Hardware - Serial Interface",
+        
+        # Utilities and data I/O
         "shmtools.utils.data_io": "Data - Import Functions",
+        "shmtools.utils.data_loading": "Data - Loading Functions",
+        "shmtools.utils.matlab_compatibility": "Data - MATLAB Compatibility",
+        
+        # Sensor diagnostics
+        "shmtools.sensor_diagnostics.diagnostic_functions": "Diagnostics - Sensor Health",
+        
+        # Plotting utilities
+        "shmtools.plotting.bokeh_plotting": "Visualization - Interactive Plots",
     }
     return category_map.get(module_name, "Other")
 
