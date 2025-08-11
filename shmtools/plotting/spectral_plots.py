@@ -201,8 +201,9 @@ def plot_psd_shm(
 
     Parameters
     ----------
-    psd_matrix : array_like, shape (n_freqs, n_channels, n_instances)
-        Power spectral density matrix from psd_welch.
+    psd_matrix : array_like, shape (n_freqs, n_channels, n_instances) or (n_freqs, n_instances)
+        Power spectral density matrix from psd_welch. For 2D data with multiple instances,
+        creates an imshow plot showing frequency vs instance.
 
         .. gui::
             :widget: data_input
@@ -210,6 +211,7 @@ def plot_psd_shm(
 
     channel : int, optional, default=1
         Channel index to plot (1-based indexing to match MATLAB).
+        Only used for 3D data.
 
         .. gui::
             :widget: numeric_input
@@ -233,6 +235,7 @@ def plot_psd_shm(
 
     use_colormap : bool, optional, default=False
         If True, creates colormap plot for multi-instance visualization.
+        For 2D data, this is automatically enabled.
 
         .. gui::
             :widget: checkbox
@@ -270,7 +273,7 @@ def plot_psd_shm(
 
     >>> import numpy as np
     >>> from shmtools.core import psd_welch
-    >>> from shmtools.plotting import plot_psd
+    >>> from shmtools.plotting import plot_psd_shm
     >>>
     >>> # Generate test signal
     >>> fs = 1000
@@ -279,18 +282,22 @@ def plot_psd_shm(
     >>>
     >>> # Compute and plot PSD
     >>> f, psd = psd_welch(x, fs=fs)
-    >>> ax = plot_psd(psd[:, :, np.newaxis], f=f, channel=1)
+    >>> ax = plot_psd_shm(psd[:, :, np.newaxis], f=f, channel=1)
+
+    2D PSD imshow plot:
+
+    >>> # 2D PSD matrix (frequency x instances)
+    >>> psd_2d = np.random.randn(129, 50)  # 129 frequencies, 50 instances
+    >>> f = np.linspace(0, 500, 129)
+    >>> ax = plot_psd_shm(psd_2d, f=f)  # Creates automatic imshow plot
 
     Multi-instance colormap visualization:
 
     >>> # Multiple signal instances
     >>> x_multi = np.random.randn(1000, 1, 20)  # 20 instances
     >>> f, psd = psd_welch(x_multi, fs=fs)
-    >>> ax = plot_psd(psd, f=f, use_colormap=True, use_subplots=True)
+    >>> ax = plot_psd_shm(psd, f=f, use_colormap=True, use_subplots=True)
     """
-    # Convert to 0-based indexing
-    channel_idx = channel - 1
-
     # Handle frequency vector
     if f is None:
         n_freqs = psd_matrix.shape[0]
@@ -299,17 +306,24 @@ def plot_psd_shm(
         else:
             f = np.linspace(-0.5, 0.5, n_freqs)
 
-    # Extract channel data
+    # Handle different input dimensions
     if psd_matrix.ndim == 3:
+        # 3D: (n_freqs, n_channels, n_instances) - extract channel
+        channel_idx = channel - 1
         psd_data = psd_matrix[:, channel_idx, :]
     elif psd_matrix.ndim == 2:
-        psd_data = psd_matrix[:, channel_idx : channel_idx + 1]
+        # 2D: (n_freqs, n_instances) - use directly, force colormap for multiple instances
+        psd_data = psd_matrix
+        if psd_data.shape[1] > 1:
+            use_colormap = True
     else:
+        # 1D: (n_freqs,) - reshape for consistency
         psd_data = psd_matrix[:, np.newaxis]
 
     # Convert to dB
     psd_db = 10 * np.log10(np.maximum(psd_data, 1e-12))
 
+    # Choose visualization based on data structure and user preference
     if use_colormap and psd_data.shape[1] > 1:
         return _plot_psd_colormap(f, psd_db, use_subplots, ax, **kwargs)
     else:
