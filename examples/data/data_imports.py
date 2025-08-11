@@ -12,9 +12,9 @@ from typing import Tuple, Dict
 
 
 def _get_data_path(filename: str) -> Path:
-    """Get path to data file in the same directory as this module."""
+    """Get path to data file in the data_files subdirectory."""
     current_dir = Path(__file__).parent
-    return current_dir / filename
+    return current_dir / "data_files" / filename
 
 
 def import_3story_structure_shm() -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
