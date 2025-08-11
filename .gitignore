@@ -147,11 +147,15 @@ cython_debug/
 # Example data files (too large for git)
 examples/data/*.mat
 
+# MATLAB reference code and data files
+matlab/
+
 # Temporary files
 *.tmp
 *.bak
 *.swp
 *~
+Untitled*.ipynb
 
 # Debug apps
 debug_*.py
