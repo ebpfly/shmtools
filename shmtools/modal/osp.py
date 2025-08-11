@@ -268,21 +268,34 @@ def osp_fisher_info_eiv_shm(
         # Current mode shape matrix
         phi_c = phi[candidate_set, :]
         
-        # Fisher Information Matrix
+        # Fisher Information Matrix with improved numerical stability
         q_matrix = phi_c.T @ phi_c
         
-        # Store determinant (regularized for numerical stability)
-        det_q = np.linalg.det(q_matrix + 1e-10 * np.eye(n_modes))
+        # Add stronger regularization for numerical stability
+        reg_term = 1e-8 * np.eye(n_modes)
+        q_regularized = q_matrix + reg_term
+        
+        # Store determinant
+        det_q = np.linalg.det(q_regularized)
         det_history.append(det_q)
         
-        # Effective independence distribution
+        # Effective independence distribution with better error handling
         try:
-            q_inv = np.linalg.inv(q_matrix + 1e-10 * np.eye(n_modes))
+            q_inv = np.linalg.inv(q_regularized)
             eid = np.diag(phi_c @ q_inv @ phi_c.T)
+            
+            # Check for numerical issues
+            if np.any(~np.isfinite(eid)):
+                raise np.linalg.LinAlgError("Non-finite values in EID calculation")
+                
         except np.linalg.LinAlgError:
-            warnings.warn("Singular matrix encountered, using pseudo-inverse")
-            q_inv = np.linalg.pinv(q_matrix)
+            warnings.warn("Singular matrix encountered, using pseudo-inverse with regularization")
+            # Use pseudo-inverse with stronger regularization
+            q_inv = np.linalg.pinv(q_matrix + 1e-6 * np.eye(n_modes))
             eid = np.diag(phi_c @ q_inv @ phi_c.T)
+            
+            # Replace any non-finite values with small positive values
+            eid = np.where(np.isfinite(eid), eid, 1e-12)
         
         # Find DOF with minimum contribution
         min_idx = np.argmin(eid)
@@ -293,13 +306,13 @@ def osp_fisher_info_eiv_shm(
     # Final Fisher Information Matrix
     phi_final = phi[candidate_set, :]
     q_final = phi_final.T @ phi_final
-    det_final = np.linalg.det(q_final + 1e-10 * np.eye(n_modes))
+    det_final = np.linalg.det(q_final + 1e-8 * np.eye(n_modes))
     det_history.append(det_final)
     
     # Convert to 1-based indexing for MATLAB compatibility
     op_list = candidate_set + 1
     
-    return op_list, np.array(det_history)
+    return op_list, det_final
 
 
 def get_sensor_layout_shm(

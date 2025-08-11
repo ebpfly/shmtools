@@ -21,6 +21,61 @@ sys.path.insert(0, str(project_root))
 from shmtools.modal.osp import response_interp_shm
 
 
+def _plot_element_edges(ax, elements, x_coords, y_coords, z_coords, displacement_scale):
+    """
+    Plot finite element edges following MATLAB nodeElementPlot_shm logic.
+    
+    Based on MATLAB analysis:
+    - elements[0,:] = element IDs
+    - elements[1:,:] = 8 node indices per element (8-node hexahedra)
+    - MATLAB draws 6 faces per hexahedron using specific connectivity
+    
+    8-node hexahedron face connectivity (MATLAB ilist for elType=8):
+    Face 1: [1 2 3 4] (nodes 1-4, bottom face)
+    Face 2: [5 6 7 8] (nodes 5-8, top face)  
+    Face 3: [1 2 6 5] (nodes 1,2,6,5, front face)
+    Face 4: [3 7 8 4] (nodes 3,7,8,4, back face)
+    Face 5: [1 5 8 4] (nodes 1,5,8,4, left face)
+    Face 6: [2 6 7 3] (nodes 2,6,7,3, right face)
+    """
+    if elements.size == 0:
+        return
+        
+    n_nodes_total = len(x_coords)
+    
+    # MATLAB 8-node hexahedron face definitions (0-based indexing)
+    hex_faces = [
+        [0, 1, 2, 3],  # Bottom face: nodes 1-2-3-4
+        [4, 5, 6, 7],  # Top face: nodes 5-6-7-8
+        [0, 1, 5, 4],  # Front face: nodes 1-2-6-5  
+        [2, 6, 7, 3],  # Back face: nodes 3-7-8-4
+        [0, 4, 7, 3],  # Left face: nodes 1-5-8-4
+        [1, 5, 6, 2],  # Right face: nodes 2-6-7-3
+    ]
+    
+    for elem_idx in range(elements.shape[1]):
+        # Extract element nodes (skip first row which is element ID)
+        elem_nodes = elements[1:, elem_idx].astype(int) - 1  # Convert to 0-based
+        
+        # Check if all nodes are valid
+        if len(elem_nodes) == 8 and np.all(elem_nodes >= 0) and np.all(elem_nodes < n_nodes_total):
+            # Draw each face of the hexahedron
+            for face in hex_faces:
+                # Get the 4 nodes that define this face
+                face_nodes = [elem_nodes[i] for i in face]
+                
+                # Draw the face edges: 0->1->2->3->0
+                for i in range(4):
+                    n1 = face_nodes[i]
+                    n2 = face_nodes[(i + 1) % 4]  # Next node (wrap around)
+                    
+                    # Plot edge
+                    ax.plot([x_coords[n1], x_coords[n2]], 
+                           [y_coords[n1], y_coords[n2]], 
+                           [z_coords[n1], z_coords[n2]], 
+                           'k-', alpha=0.4, linewidth=0.5)
+
+
 def plot_nodal_response(
     geometry_layout: np.ndarray,
     mode_shapes: np.ndarray, 
@@ -114,51 +169,62 @@ def plot_nodal_response(
     fig = plt.figure(figsize=(12, 9))
     ax = fig.add_subplot(111, projection='3d')
     
-    # Get node positions
-    x_nodes = geometry_layout[0, :]
-    y_nodes = geometry_layout[1, :]
-    z_nodes = geometry_layout[2, :]
+    # Get node positions - note: row 0 is node IDs, actual coords are rows 1,2,3
+    if geometry_layout.shape[0] == 4:
+        # Format: [node_ids, x, y, z]
+        x_nodes = geometry_layout[1, :]  # X coordinates
+        y_nodes = geometry_layout[2, :]  # Y coordinates  
+        z_nodes = geometry_layout[3, :]  # Z coordinates
+    else:
+        # Format: [x, y, z] - standard case
+        x_nodes = geometry_layout[0, :]
+        y_nodes = geometry_layout[1, :]
+        z_nodes = geometry_layout[2, :]
     
-    # Interpolate response to node locations
+    # Interpolate response to node locations and apply displacement
     try:
         response_nodes = response_interp_shm(geometry_layout, mode_vector, resp_dof)
-    except:
+        
+        # Calculate displacement magnitude for color mapping
+        displacement_magnitude = np.sqrt(np.sum(response_nodes**2, axis=1))
+        
+        # Apply displacement to node positions (scaled for visibility)
+        displacement_scale = 10.0  # Scale factor for visual effect
+        x_displaced = x_nodes + displacement_scale * response_nodes[:, 0]
+        y_displaced = y_nodes + displacement_scale * response_nodes[:, 1] 
+        z_displaced = z_nodes + displacement_scale * response_nodes[:, 2]
+        
+    except Exception as e:
+        print(f"Warning: Response interpolation failed ({e}), using undeformed geometry")
         # Fallback: simple mapping for basic visualization
-        response_nodes = np.zeros(geometry_layout.shape[1])
+        response_nodes = np.zeros((geometry_layout.shape[1], 3))
+        displacement_magnitude = np.zeros(geometry_layout.shape[1])
         for i, (node_id, direction) in enumerate(resp_dof):
             node_idx = int(node_id) - 1  # Convert to 0-based
-            if 0 <= node_idx < len(response_nodes):
-                response_nodes[node_idx] = mode_vector[i]
+            if 0 <= node_idx < len(displacement_magnitude):
+                displacement_magnitude[node_idx] += abs(mode_vector[i])
+                
+        x_displaced = x_nodes
+        y_displaced = y_nodes  
+        z_displaced = z_nodes
+        displacement_scale = 0.0
     
-    # Use simple color scheme to avoid RGBA issues
-    # Create scatter plot with default colors
-    scatter = ax.scatter(x_nodes, y_nodes, z_nodes, 
-                        c='lightblue', 
-                        s=50, 
+    # Create scatter plot with color mapping based on displacement magnitude
+    scatter = ax.scatter(x_displaced, y_displaced, z_displaced, 
+                        c=displacement_magnitude, 
+                        cmap='RdYlBu_r',  # Red-Yellow-Blue colormap
+                        s=60, 
                         alpha=0.8,
-                        edgecolors='navy',
-                        linewidth=0.5)
+                        edgecolors='black',
+                        linewidth=0.3)
     
-    # Note: Colorbar removed for simplified visualization
-    # In a full implementation, mode response values would be color-mapped
+    # Add colorbar
+    plt.colorbar(scatter, ax=ax, shrink=0.5, aspect=20, 
+                label=f'Mode {mode_number} Response Magnitude')
     
     # Plot mesh edges if elements are available
     if elements.size > 0:
-        for elem_idx in range(elements.shape[1]):
-            # Get node indices for this element (convert to 0-based)
-            node_indices = elements[:, elem_idx].astype(int) - 1
-            valid_nodes = node_indices[node_indices >= 0]  # Filter invalid nodes
-            
-            if len(valid_nodes) >= 2:
-                # Plot edges for this element
-                for i in range(len(valid_nodes)):
-                    for j in range(i + 1, len(valid_nodes)):
-                        n1, n2 = valid_nodes[i], valid_nodes[j]
-                        if n1 < len(x_nodes) and n2 < len(x_nodes):
-                            ax.plot([x_nodes[n1], x_nodes[n2]], 
-                                   [y_nodes[n1], y_nodes[n2]], 
-                                   [z_nodes[n1], z_nodes[n2]], 
-                                   'k-', alpha=0.3, linewidth=0.5)
+        _plot_element_edges(ax, elements, x_displaced, y_displaced, z_displaced, displacement_scale)
     
     # Set labels and title
     ax.set_xlabel('X Position')
@@ -261,28 +327,21 @@ def plot_sensors_with_mesh(
     fig = plt.figure(figsize=(12, 9))
     ax = fig.add_subplot(111, projection='3d')
     
-    # Get node positions
-    x_nodes = nodes[0, :]
-    y_nodes = nodes[1, :]
-    z_nodes = nodes[2, :]
+    # Get node positions - note: row 0 is node IDs, actual coords are rows 1,2,3
+    if nodes.shape[0] == 4:
+        # Format: [node_ids, x, y, z]
+        x_nodes = nodes[1, :]  # X coordinates
+        y_nodes = nodes[2, :]  # Y coordinates
+        z_nodes = nodes[3, :]  # Z coordinates
+    else:
+        # Format: [x, y, z] - standard case
+        x_nodes = nodes[0, :]
+        y_nodes = nodes[1, :]
+        z_nodes = nodes[2, :]
     
-    # Plot mesh structure
+    # Plot mesh structure with proper element connectivity
     if elements.size > 0:
-        for elem_idx in range(elements.shape[1]):
-            # Get node indices for this element (convert to 0-based)
-            node_indices = elements[:, elem_idx].astype(int) - 1
-            valid_nodes = node_indices[node_indices >= 0]  # Filter invalid nodes
-            
-            if len(valid_nodes) >= 2:
-                # Plot all edges for this element  
-                for i in range(len(valid_nodes)):
-                    for j in range(i + 1, len(valid_nodes)):
-                        n1, n2 = valid_nodes[i], valid_nodes[j]
-                        if n1 < len(x_nodes) and n2 < len(x_nodes):
-                            ax.plot([x_nodes[n1], x_nodes[n2]], 
-                                   [y_nodes[n1], y_nodes[n2]], 
-                                   [z_nodes[n1], z_nodes[n2]], 
-                                   'b-', alpha=0.4, linewidth=0.5)
+        _plot_element_edges(ax, elements, x_nodes, y_nodes, z_nodes, 0.0)
     
     # Plot all nodes as small dots
     ax.scatter(x_nodes, y_nodes, z_nodes, 
