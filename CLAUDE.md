@@ -4,10 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This repository contains **two parallel structural health monitoring (SHM) toolkits**:
+This repository contains a **unified structural health monitoring (SHM) toolkit** that combines:
 
-1. **`shmtools-python/`** - Modern Python conversion with Bokeh web interface (in development)
-2. **`shmtools-matlab/`** - Original MATLAB SHMTools library with Java mFUSE GUI
+1. **Modern Python conversion** with JupyterLab extension interface (primary development)
+2. **Original MATLAB reference code** for algorithm verification and compatibility
 
 The Python version is being developed using **example-driven development**, converting MATLAB functionality phase by phase while maintaining API compatibility.
 
@@ -15,22 +15,34 @@ The Python version is being developed using **example-driven development**, conv
 
 ```
 /Users/eric/repo/shm/
-├── shmtools-python/     # Main Python development (use this for most work) - GIT REPOSITORY
-├── shmtools-matlab/     # Original MATLAB reference (read-only reference)
-├── jupyterhub/          # AWS deployment infrastructure
-└── CLAUDE.md           # This file
+├── shmtools/             # Core Python library (signal processing, ML, modal analysis)
+├── shm_function_selector/ # JupyterLab extension for interactive function selection
+├── examples/             # Example notebooks and data
+│   ├── notebooks/        # Jupyter notebooks organized by category
+│   └── data/             # Example datasets (.mat files)
+├── matlab/               # Original MATLAB reference code (read-only reference)
+│   ├── SHMTools/         # Core MATLAB SHMTools library
+│   ├── LADPackage/       # Legacy Academic Development package
+│   └── mFUSE/            # Java GUI for MATLAB toolkit
+├── jupyterhub/           # AWS cloud deployment infrastructure
+├── tests/                # Test suites for validation
+├── validation/           # MATLAB-Python comparison validation
+└── published_notebooks/  # Published HTML versions of notebooks
 ```
 
 **IMPORTANT**: 
-- Always work in `shmtools-python/` unless specifically directed to examine MATLAB reference code
-- **The git repository is located in `shmtools-python/`** - use this directory for all git operations
+- **The git repository root is `/Users/eric/repo/shm/`** - use this directory for all git operations
+- **Primary development** happens in the root directory with the Python `shmtools/` package
+- **MATLAB reference code** is in `matlab/` for algorithm verification only
+- **JupyterLab extension** in `shm_function_selector/` provides interactive GUI functionality
 - **AWS deployment is the primary deployment method** - use `jupyterhub/` for cloud infrastructure
 
 ## Python Development Commands
 
 ### Setup and Installation
 ```bash
-cd shmtools-python/
+# Work from repository root
+cd /Users/eric/repo/shm/
 
 # Install dependencies
 pip install -r requirements.txt
@@ -60,27 +72,25 @@ pytest -m "requires_data"     # Run tests requiring example datasets
 ### Code Quality
 ```bash
 # Format code
-black shmtools/ bokeh_shmtools/
+black shmtools/
 
 # Lint code
-flake8 shmtools/ bokeh_shmtools/
+flake8 shmtools/
 
 # Type checking
-mypy shmtools/ bokeh_shmtools/
+mypy shmtools/
 ```
 
-### Running the Web Interface
+### Running JupyterLab with Extension
 ```bash
 # Activate virtual environment first
 source venv/bin/activate
 
-# Start Bokeh server (preferred method)
-bokeh serve bokeh_shmtools/app.py --show
+# Start JupyterLab (preferred method)
+jupyter lab
 
-# Alternative entry point
-shmtools-gui serve
-
-# Access at http://localhost:5006
+# Extension provides interactive function selection
+# Access at http://localhost:8888
 ```
 
 ### JupyterLab Extension Development
@@ -350,7 +360,7 @@ ssh -i ~/.ssh/class-key-ssh-rsa ubuntu@<IP> "python3 -c 'from shmtools.introspec
 
 ## Development Architecture
 
-### Core Python Library (`shmtools-python/shmtools/`)
+### Core Python Library (`shmtools/`)
 
 **Two-tier function architecture**: 
 
@@ -363,21 +373,25 @@ ssh -i ~/.ssh/class-key-ssh-rsa ubuntu@<IP> "python3 -c 'from shmtools.introspec
 - **`plotting/`** - Bokeh-specific visualization utilities  
 - **`utils/`** - Data I/O, MATLAB compatibility, general utilities
 
-### JupyterLab Extension ('')
+### JupyterLab Extension (`shm_function_selector/`)
 
-### Web Interface (`shmtools-python/bokeh_shmtools/`)
+**Interactive function selection and parameter linking**:
 
-**4-panel Bokeh application** replicating original mFUSE workflow (Replaced by Jupyter Extension):
+- **Frontend (`src/`)** - TypeScript components for JupyterLab integration
+- **Backend (`shm_function_selector/handlers.py`)** - Python API handlers for function discovery
+- **Build System** - npm/webpack for TypeScript compilation and extension packaging
 
-- **`app.py`** - Main Bokeh server with panel layout management
-- **`panels/`** - UI components:
-  - `function_library.py` - Function browser with category tree
-  - `workflow_builder.py` - Drag-and-drop workflow creation
-  - `parameter_controls.py` - Dynamic parameter forms with validation  
-  - `results_viewer.py` - Interactive plotting and data visualization
-- **`workflows/`** - Workflow execution engine and step management
-- **`sessions/`** - Session file management (.ses format compatibility)
-- **`utils/docstring_parser.py`** - Extracts GUI metadata from function docstrings
+### Example Notebooks (`examples/notebooks/`)
+
+**Organized educational notebooks** demonstrating SHMTools functionality:
+
+- **`basic/`** - Introductory examples (AR models, PCA, Mahalanobis)
+- **`intermediate/`** - Advanced outlier detection and feature extraction
+- **`advanced/`** - Modal analysis and active sensing
+- **`condition_based_monitoring/`** - CBM applications and rotating machinery
+- **`modal_analysis/`** - Structural dynamics and optimal sensor placement
+- **`active_sensing/`** - Guided wave analysis and sensor diagnostics
+- **`outlier_detection/`** - Various detection algorithms and custom assemblies
 
 ## Critical Development Principles
 
@@ -416,7 +430,7 @@ Users manually download all example datasets once and place them in the reposito
 
 ### Repository Structure
 ```bash
-shmtools-python/
+/Users/eric/repo/shm/
 ├── examples/
 │   ├── data/                          # User puts downloaded .mat files here
 │   │   ├── README.md                  # Download instructions
@@ -429,7 +443,11 @@ shmtools-python/
 │   └── notebooks/
 │       ├── basic/
 │       ├── intermediate/
-│       └── advanced/
+│       ├── advanced/
+│       ├── condition_based_monitoring/
+│       ├── modal_analysis/
+│       ├── active_sensing/
+│       └── outlier_detection/
 └── shmtools/
     └── utils/
         └── data_loading.py           # Simple .mat file loading
@@ -455,7 +473,7 @@ shmtools-python/
 
 **CRITICAL**: Before implementing ANY function:
 
-1. **Read Original MATLAB File**: Must examine the complete `.m` file in `shmtools-matlab/SHMFunctions/`
+1. **Read Original MATLAB File**: Must examine the complete `.m` file in `matlab/SHMTools/SHMFunctions/`
 2. **Extract Exact Algorithm**: Document mathematical steps precisely  
 3. **Preserve All Information**: Only convert what exists in original MATLAB
 4. **Verify Function Signature**: Match input/output parameters exactly
@@ -519,9 +537,9 @@ def ar_model_shm(data: np.ndarray, order: int) -> Tuple[np.ndarray, np.ndarray]:
 - Parameter naming preserves MATLAB conventions
 
 ### Reference Documentation
-- **Conversion Plan**: `shmtools-python/docs/conversion-plan.md` - detailed phase planning
-- **Docstring Format**: `shmtools-python/docs/docstring-format.md` - GUI integration specs
-- **MATLAB Reference**: Use `shmtools-matlab/` for algorithm verification
+- **Conversion Plan**: `docs/conversion-plan.md` - detailed phase planning
+- **Docstring Format**: `docs/docstring-format.md` - GUI integration specs
+- **MATLAB Reference**: Use `matlab/` for algorithm verification
 
 ## Common Development Workflows
 
@@ -570,11 +588,11 @@ jupyter nbconvert --to html notebook.ipynb
 ```
 
 ### Adding New Functions
-1. Identify target MATLAB function in `shmtools-matlab/SHMFunctions/`
+1. Identify target MATLAB function in `matlab/SHMTools/SHMFunctions/`
 2. Read complete `.m` file to understand algorithm
-4. Add machine-readable docstring with GUI specifications
-5. Write tests in `shmtools-python/tests/test_shmtools/`
-6. Update function exports in module `__init__.py`
+3. Add machine-readable docstring with GUI specifications
+4. Write tests in `tests/test_shmtools/`
+5. Update function exports in module `__init__.py`
 
 ### Testing Hardware Functions
 ```bash
@@ -585,13 +603,18 @@ pytest -m "not hardware"
 pytest -m hardware
 ```
 
-### Working with Bokeh Interface
+### Working with JupyterLab Extension
 ```bash
-# Start development server with live reload
-bokeh serve --dev bokeh_shmtools/app.py --show
+# Build and install extension for development
+cd shm_function_selector/
+npm run build:lib
+npm run build:labextension:dev
+cd ..
+source venv/bin/activate
+jupyter lab build
 
-# Test individual panels
-python -m bokeh_shmtools.panels.function_library
+# Start JupyterLab with extension
+jupyter lab
 ```
 
 ## Success Criteria
@@ -667,7 +690,7 @@ git checkout -b docs/issue-125-update-readme
 5. **Add test cases** to prevent regression
 
 #### For New Features:
-1. **Check MATLAB reference** in `shmtools-matlab/SHMFunctions/` if applicable
+1. **Check MATLAB reference** in `matlab/SHMTools/SHMFunctions/` if applicable
 2. **Follow existing patterns** in the codebase
 3. **Add comprehensive docstrings** with GUI metadata
 4. **Include examples** in docstring
@@ -686,10 +709,10 @@ git checkout -b docs/issue-125-update-readme
 
 ```bash
 # Format code (required)
-black shmtools/ bokeh_shmtools/
+black shmtools/
 
 # Lint code (required)
-flake8 shmtools/ bokeh_shmtools/
+flake8 shmtools/
 
 # Type checking (recommended)
 mypy shmtools/
@@ -902,7 +925,7 @@ git checkout -b docs/issue-125-update-readme
 5. **Add test cases** to prevent regression
 
 #### For New Features:
-1. **Check MATLAB reference** in `shmtools-matlab/SHMFunctions/` if applicable
+1. **Check MATLAB reference** in `matlab/SHMTools/SHMFunctions/` if applicable
 2. **Follow existing patterns** in the codebase
 3. **Add comprehensive docstrings** with GUI metadata
 4. **Include examples** in docstring
@@ -921,10 +944,10 @@ git checkout -b docs/issue-125-update-readme
 
 ```bash
 # Format code (required)
-black shmtools/ bokeh_shmtools/
+black shmtools/
 
 # Lint code (required)
-flake8 shmtools/ bokeh_shmtools/
+flake8 shmtools/
 
 # Type checking (recommended)
 mypy shmtools/
