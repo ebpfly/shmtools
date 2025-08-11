@@ -276,10 +276,9 @@ def discover_functions_locally():
         "shmtools.hardware.data_acquisition",
         "shmtools.hardware.serial_interface",
         
-        # Utilities and data I/O
-        "shmtools.utils.data_io",
-        "shmtools.utils.data_loading",
-        "shmtools.utils.matlab_compatibility",
+        # Utilities and data I/O (data import functions moved to examples.data)
+        "shmtools.utils.data_segmentation",
+        "shmtools.utils.spatial_analysis",
         
         # Sensor diagnostics
         "shmtools.sensor_diagnostics.diagnostic_functions",

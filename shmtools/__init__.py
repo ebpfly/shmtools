@@ -114,14 +114,8 @@ from .sensor_diagnostics.sensor_diagnostics import (
     sd_plot_shm,
 )
 
-# Data import functions
-from .utils.data_io import (
-    import_3StoryStructure_shm,
-    import_CBMData_shm,
-    import_ActiveSense1_shm,
-    import_SensorDiagnostic_shm,
-    import_ModalOSP_shm,
-)
+# Data import functions have been moved to examples.data
+# Use: from examples.data import load_3story_data, import_3story_structure_shm
 
 # Load introspection capabilities for Jupyter notebooks
 try:

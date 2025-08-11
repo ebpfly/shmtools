@@ -116,10 +116,10 @@ def ars_tach_shm(
 
     >>> import numpy as np
     >>> from shmtools.core import ars_tach
-    >>> from shmtools.utils import import_cbm_data
+    >>> from examples.data import import_cbm_data_shm
     >>>
     >>> # Load CBM data
-    >>> dataset, _, _, fs = import_cbm_data()
+    >>> dataset, _, _, fs = import_cbm_data_shm()
     >>> vibration = dataset[:, 1, 0]  # Accelerometer channel
     >>> tachometer = dataset[:, 0, 0]  # Tachometer channel
     >>>
