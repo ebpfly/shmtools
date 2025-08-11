@@ -58,6 +58,7 @@ from .custom_detector_assembly import (
 # Detector registry
 from .detector_registry import detector_registry
 
+
 # Import NLPCA functions if TensorFlow is available
 try:
     from .nlpca import learn_nlpca_shm, score_nlpca_shm

@@ -25,10 +25,13 @@
 19. **Phase 20**: Dataset Utilities ✅
 20. **Phase 21**: Hardware Integration (NI-DAQ) ✅
 
-### 🔥 REMAINING PHASES (2 phases)
+### 🔥 REMAINING PHASES (5 phases)
 
 - **Phase 17**: CBM Gear Box Analysis ⏳
 - **Phase 22**: mFUSE Examples Validation ⏳
+- **Phase 23**: LADPackage Condition Based Monitoring ⏳
+- **Phase 24**: LADPackage Full Active Sensing ⏳
+- **Phase 25**: LADPackage Optimal Sensor Placement ⏳
 
 ### 📋 mFUSE TO JUPYTER CONVERSION
 
@@ -53,9 +56,10 @@
 - Converted: `examples/notebooks/*/jupyter_extension_*_instructions.md`
 
 ### 📊 COMPLETION METRICS
-- **Core ExampleUsageScripts**: **95% COMPLETE** (20+ of 22 phases)
+- **Core ExampleUsageScripts**: **85% COMPLETE** (20+ of 25 phases)
+- **LADPackage Demos**: **25% COMPLETE** (1 of 4 phases)
 - **Core Functions**: 150+ implemented with MATLAB compatibility
-- **Jupyter Notebooks**: 20+ complete examples with educational content
+- **Jupyter Notebooks**: 21+ complete examples with educational content
 - **Published HTML**: All completed notebooks exported with executed outputs
 
 ## Overview
@@ -889,6 +893,405 @@ For each converted example:
 - **Performance**: Conversion maintains or improves execution speed
 
 This approach ensures each example provides immediate value while building a robust foundation for the complete SHMTools conversion.
+
+---
+
+## Phase 23: LADPackage Condition Based Monitoring ⏳ REMAINING
+*Target: 2-3 weeks*
+
+### Target Example
+- **MATLAB Source**: `matlab/LADPackage/Demos/ConditionBasedMonitoring.m`
+- **Python Output**: `LADPackage/condition_based_monitoring/condition_based_monitoring.ipynb` ⏳
+- **HTML Output**: `LADPackage/condition_based_monitoring/condition_based_monitoring.html` ⏳
+
+### Description
+Complete LADPackage condition-based monitoring workflow demonstrating industrial CBM applications with rotating machinery diagnostics.
+
+### Dependencies Analysis Required
+- Review LADPackage-specific functions not in core SHMTools
+- Identify any CBM-specific signal processing algorithms
+- Map visualization and reporting functionality
+
+### Root Directory Structure
+```
+/Users/eric/repo/shm/
+├── LADPackage/
+│   ├── condition_based_monitoring/
+│   │   ├── condition_based_monitoring.ipynb
+│   │   ├── condition_based_monitoring.html  
+│   │   └── data/                             # Local data files
+│   ├── active_sensing/
+│   ├── optimal_sensor_placement/
+│   └── outlier_detection/
+```
+
+---
+
+## Phase 24: LADPackage Full Active Sensing ⏳ REMAINING  
+*Target: 2-3 weeks*
+
+### Target Example
+- **MATLAB Source**: `matlab/LADPackage/Demos/FullActiveSensing.m`
+- **Python Output**: `LADPackage/active_sensing/full_active_sensing.ipynb` ⏳
+- **HTML Output**: `LADPackage/active_sensing/full_active_sensing.html` ⏳
+
+### Description
+Complete active sensing workflow including geometry mapping, waveform processing, and guided wave analysis using ultrasonic transducers.
+
+### Dependencies Analysis Required
+- LADPackage Active Sensing functions in `matlab/LADPackage/Active Sensing/`
+- Geometry mapping and visualization capabilities
+- Waveform processing and feature extraction algorithms
+
+---
+
+## Phase 25: LADPackage Optimal Sensor Placement ⏳ REMAINING
+*Target: 2-3 weeks*
+
+### Target Example
+- **MATLAB Source**: `matlab/LADPackage/Demos/OptimalSensorPlacement.m`
+- **Python Output**: `LADPackage/optimal_sensor_placement/optimal_sensor_placement.ipynb` ⏳
+- **HTML Output**: `LADPackage/optimal_sensor_placement/optimal_sensor_placement.html` ⏳
+
+### Description
+Optimal sensor placement algorithms for structural health monitoring networks, including nodal response visualization and mesh plotting.
+
+### Dependencies Analysis Required
+- LADPackage OSP functions in `matlab/LADPackage/OptimalSensorPlacement/`
+- Modal analysis integration
+- Sensor visualization and mesh plotting capabilities
+
+---
+
+## Phase 26: LADPackage Outlier Detection ✅ COMPLETED
+
+### Target Example  
+- **MATLAB Source**: `matlab/LADPackage/Demos/OutlierDetection.m`
+- **Python Output**: `LADPackage/outlier_detection/outlier_detection.ipynb` ✅
+- **HTML Output**: `LADPackage/outlier_detection/outlier_detection.html` ✅
+
+### Description
+LADPackage-specific outlier detection workflow demonstrating direct conversion of mFUSE-generated script. This serves as the **reference implementation** for all LADPackage conversions.
+
+### Implementation Completed
+- **LADPackage utilities created**: `LADPackage/utils/` with MATLAB-compatible functions
+- **Direct MATLAB conversion**: Step-by-step translation of original workflow  
+- **Full execution verified**: Notebook runs end-to-end with published HTML output
+- **Educational content**: Complete explanations matching core example quality standards
+
+### Key Functions Implemented
+- **`import_3story_structure_sub_floors()`**: LADPackage-compatible data loading
+- **`learn_score_mahalanobis()`**: Wrapper combining splitting, training, and scoring
+- **`plot_score_distributions_shm()`**: KDE visualization for score distributions
+
+### Success Metrics Achieved
+- **582,470 character HTML**: Substantial executed content with embedded plots
+- **Complete workflow**: AR modeling → Mahalanobis scoring → ROC analysis
+- **AUC performance**: Quantified detection capability  
+- **MATLAB compatibility**: Exact interface matching for seamless conversion
+
+---
+
+## LADPackage Conversion Strategy
+
+### Root-Level Directory Placement
+Following the request, all LADPackage conversions will be placed at the repository root level, mirroring the structure of `matlab/LADPackage/Demos/`:
+
+```bash
+/Users/eric/repo/shm/                          # Repository root
+├── LADPackage/                                # New root-level directory
+│   ├── condition_based_monitoring/
+│   │   ├── condition_based_monitoring.ipynb
+│   │   ├── condition_based_monitoring.html
+│   │   └── data/                              # CBM-specific datasets
+│   ├── active_sensing/  
+│   │   ├── full_active_sensing.ipynb
+│   │   ├── full_active_sensing.html
+│   │   └── data/                              # Active sensing datasets
+│   ├── optimal_sensor_placement/
+│   │   ├── optimal_sensor_placement.ipynb
+│   │   ├── optimal_sensor_placement.html
+│   │   └── data/                              # OSP datasets
+│   └── outlier_detection/
+│       ├── outlier_detection.ipynb
+│       ├── outlier_detection.html
+│       └── data/                              # Outlier detection datasets
+├── shmtools/                                  # Core Python library (unchanged)
+├── examples/                                  # Core examples (unchanged)
+└── matlab/                                    # MATLAB reference (unchanged)
+```
+
+### LADPackage-Specific Considerations
+
+#### Function Dependencies
+- **LADPackage functions**: Located in subdirectories like `Active Sensing/`, `OptimalSensorPlacement/`, `FeatureModels/`
+- **Integration**: May require core shmtools functions plus LADPackage-specific extensions
+- **Placement**: New LADPackage functions will be added to appropriate shmtools modules
+
+#### Data Management  
+- **LADPackage datasets**: `data_example_ActiveSense.mat`, `data_OSPExampleModal.mat` already identified
+- **Local data**: Each LADPackage notebook directory will have its own `data/` subdirectory
+- **Shared access**: LADPackage notebooks can also access `examples/data/` for core datasets
+
+#### Notebook Structure
+- **Self-contained**: Each LADPackage notebook will be executable from its own directory
+- **Educational**: Maintain the same quality standards as core examples
+- **HTML publication**: Required HTML exports with executed outputs
+
+### Development Workflow for LADPackage
+
+#### Step-by-Step Conversion Process (Based on Phase 26 Success)
+
+**Phase 26 serves as the reference template. Follow this exact methodology:**
+
+##### Step 1: MATLAB Analysis
+```bash
+# Read the original MATLAB file completely
+cat matlab/LADPackage/Demos/{ExampleName}.m
+
+# Identify all function calls and dependencies
+grep -E "^\s*\[.*\]\s*=" matlab/LADPackage/Demos/{ExampleName}.m
+grep -E "\w+_shm\(" matlab/LADPackage/Demos/{ExampleName}.m
+```
+
+##### Step 2: Create Directory Structure
+```bash
+# Create LADPackage subdirectory
+mkdir -p LADPackage/{category_name}/
+mkdir -p LADPackage/{category_name}/data/
+
+# Example for ConditionBasedMonitoring:
+mkdir -p LADPackage/condition_based_monitoring/
+mkdir -p LADPackage/condition_based_monitoring/data/
+```
+
+##### Step 3: Identify and Implement Missing Functions
+
+**Check existing functions first:**
+```python
+# Test imports to see what's missing
+from shmtools.features import ar_model_shm  # Should work
+from shmtools.classification import roc_shm  # Should work
+from shmtools.plotting import plot_features_shm  # Check signature
+```
+
+**For LADPackage-specific functions:**
+1. **Search in LADPackage subdirectories**: `matlab/LADPackage/FeatureModels/`, `matlab/LADPackage/Active Sensing/`, etc.
+2. **Create in `LADPackage/utils/`**: Follow the pattern from Phase 26
+3. **Add complete docstrings**: Include GUI metadata and MATLAB compatibility notes
+
+##### Step 4: Implement Missing Functions
+
+**Template for LADPackage utility functions:**
+```python
+# File: LADPackage/utils/{function_name}.py
+"""
+LADPackage-specific {description} functions.
+"""
+
+import numpy as np
+import sys
+from pathlib import Path
+from typing import Union, List, Tuple
+
+# Add project root to path to access shmtools
+project_root = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(project_root))
+
+from shmtools.{module} import existing_function
+
+
+def ladpackage_function(param1, param2):
+    """
+    LADPackage wrapper: {Brief description}
+    
+    .. meta::
+        :category: {Category} - LADPackage Utils
+        :matlab_equivalent: {MATLABFunctionName}
+        :complexity: Intermediate
+        :data_type: {DataType}
+        :output_type: {OutputType}
+        :display_name: {Display Name}
+        :verbose_call: {Exact MATLAB verbose call from original}
+    
+    Parameters
+    ----------
+    param1 : type
+        Description with GUI metadata
+        
+        .. gui::
+            :widget: appropriate_widget
+            :description: User-friendly description
+            
+    Returns
+    -------
+    result : type
+        Description of return value
+    
+    Notes
+    -----
+    MATLAB Compatibility notes and algorithm details.
+    
+    Examples
+    --------
+    Basic usage examples matching LADPackage patterns.
+    """
+    # Implementation that calls core shmtools functions
+    pass
+```
+
+##### Step 5: Handle Missing Plotting Functions
+
+**If plotting functions have wrong signatures:**
+1. **Check existing signature**: Use `grep -A 10 "def plot_function_shm" shmtools/plotting/spectral_plots.py`
+2. **Option 1**: Implement missing function following Phase 26 `plot_score_distributions_shm` pattern
+3. **Option 2**: Use simple matplotlib replacements in notebook cells
+
+**Pattern for missing plotting functions:**
+```python
+# Add to shmtools/plotting/spectral_plots.py
+def plot_{name}_shm(required_params, optional_params=None):
+    """
+    Plot {description} with LADPackage compatibility.
+    
+    .. meta::
+        :category: Plotting - {Category}
+        :matlab_equivalent: plot{Name}_shm  
+        :verbose_call: {Exact MATLAB call}
+    """
+    # Implementation using matplotlib
+    # Return axes handle for consistency
+    return axes
+
+# Update shmtools/plotting/__init__.py:
+from .spectral_plots import plot_{name}_shm
+__all__.append("plot_{name}_shm")
+```
+
+##### Step 6: Create Notebook Following Phase 26 Template
+
+**Notebook structure (copy from `LADPackage/outlier_detection/outlier_detection.ipynb`):**
+
+1. **Import cell**:
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+import sys
+from pathlib import Path
+
+# Add project root to path for imports
+notebook_dir = Path().resolve()
+project_root = notebook_dir.parent.parent
+sys.path.insert(0, str(project_root))
+
+# Import SHMTools modules
+from shmtools.features import {needed_functions}
+from shmtools.classification import {needed_functions}  
+from shmtools.plotting import {needed_functions}
+
+# Import LADPackage-specific functions
+from LADPackage.utils import {needed_functions}
+```
+
+2. **Direct MATLAB translation**: Convert each `%% Step N:` section to markdown + code cells
+3. **Preserve all educational content**: Convert MATLAB comments to markdown explanations
+4. **Maintain same variable names**: Keep MATLAB variable naming for clarity
+5. **Add execution verification**: Print statements showing successful completion
+
+##### Step 7: Test and Debug
+
+**Test imports first:**
+```bash
+python -c "from LADPackage.utils import {your_functions}; print('Import successful')"
+```
+
+**Test notebook execution:**
+```bash
+# Execute individual cells for debugging
+jupyter console --kernel=python3
+```
+
+**Fix function signature errors:**
+- Check actual function signatures: `grep -A 5 "def function_name" shmtools/**/*.py`
+- Use correct parameter names and order
+- Remove parameters that don't exist in the actual implementation
+
+##### Step 8: Execute and Publish HTML
+
+**Execute notebook and generate HTML:**
+```python
+python -c "
+import nbformat
+from nbconvert import HTMLExporter
+from nbconvert.preprocessors import ExecutePreprocessor
+import os
+import sys
+
+sys.path.insert(0, os.getcwd())
+
+# Execute notebook
+notebook_path = 'LADPackage/{category}/{notebook_name}.ipynb'
+with open(notebook_path, 'r') as f:
+    nb = nbformat.read(f, as_version=4)
+
+ep = ExecutePreprocessor(timeout=600, kernel_name='python3')
+ep.preprocess(nb, {'metadata': {'path': os.getcwd()}})
+
+# Export to HTML
+html_exporter = HTMLExporter()
+(body, resources) = html_exporter.from_notebook_node(nb)
+
+html_path = 'LADPackage/{category}/{notebook_name}.html'
+with open(html_path, 'w') as f:
+    f.write(body)
+
+print(f'Published {html_path} ({len(body):,} characters)')
+"
+```
+
+**Success criteria:**
+- HTML file > 100,000 characters (substantial content)
+- Contains `data:image/png;base64` (embedded plots)
+- All cells executed without errors
+
+##### Step 9: Validate Against MATLAB
+
+**Run equivalent MATLAB script and compare key outputs:**
+- Data shapes and statistics
+- Algorithm results (features, scores, performance metrics)
+- Visualization content and structure
+
+#### Quality Standards (Non-Negotiable)
+- **Exact MATLAB workflow translation**: Preserve all steps and educational content
+- **Function signature compatibility**: Match original MATLAB interfaces  
+- **Complete execution**: Notebook runs end-to-end without errors
+- **HTML publication**: Executed output with embedded plots and results
+- **Educational value**: Comprehensive explanations matching core example quality
+- **Root-level placement**: All files in `LADPackage/{category}/` structure
+
+#### Debugging Common Issues
+
+**Import errors:**
+- Check function exists: `find shmtools -name "*.py" -exec grep -l "def function_name" {} \;`
+- Check function signature: `grep -A 10 "def function_name" {file}`
+- Verify module imports in `__init__.py` files
+
+**Function signature mismatches:**
+- Use actual parameter names from function definition
+- Check default values and required vs optional parameters
+- Use `help(function_name)` in Python console
+
+**Execution failures:**
+- Test each cell individually in Jupyter
+- Check data file availability and paths
+- Verify numerical results match expected ranges
+
+**Missing plotting functions:**
+- Implement following `plot_score_distributions_shm` pattern
+- Use matplotlib alternatives if needed
+- Update plotting module exports
+
+This methodology ensures consistent, high-quality LADPackage conversions that maintain the same standards as core SHMTools examples.
 
 ---
 

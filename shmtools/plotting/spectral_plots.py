@@ -1087,6 +1087,254 @@ def plot_scalogram_shm(
     return ax
 
 
+def plot_score_distributions_shm(scores: np.ndarray,
+                                 states: np.ndarray,
+                                 state_names: Optional[List[str]] = None,
+                                 thresholds: Optional[np.ndarray] = None,
+                                 flip_signs: bool = False,
+                                 use_log_scores: bool = False,
+                                 smoothing: Optional[float] = None,
+                                 axes: Optional[plt.Axes] = None) -> plt.Axes:
+    """
+    Plot distribution of scores using kernel density estimation (KDE).
+    
+    .. meta::
+        :category: Plotting - Score Analysis
+        :matlab_equivalent: plotScoreDistributions_shm
+        :complexity: Intermediate
+        :data_type: Scores
+        :output_type: Plot
+        :display_name: Plot Score Distributions
+        :verbose_call: Axes Handle = Plot Score Distributions (Scores, Damage States, State Names, Thresholds, Flip Signs, Use Log Scores, Kernel Smoothing Parameter, Axes Handle)
+        
+    Parameters
+    ----------
+    scores : array_like, shape (instances, 1) or (instances,)
+        Vector of scores from scoring process corresponding to each measured instance.
+        
+        .. gui::
+            :widget: array_input
+            :description: Anomaly scores for each test instance
+            
+    states : array_like, shape (instances, 1) or (instances,)
+        Integers ranging from zero to N specifying the known state damage level 
+        corresponding to each measured instance.
+        
+        .. gui::
+            :widget: array_input
+            :description: State labels (0=undamaged, 1=damaged, etc.)
+            
+    state_names : list of str, optional
+        Cell array of strings corresponding to each possible state.
+        
+        .. gui::
+            :widget: text_input
+            :description: Names for each state (e.g., ['Undamaged', 'Damaged'])
+            :default: ['State 0', 'State 1', ...]
+            
+    thresholds : array_like, optional
+        Vector of thresholds corresponding to each possible state.
+        
+        .. gui::
+            :widget: array_input
+            :description: Detection thresholds (will be shown as vertical lines)
+            
+    flip_signs : bool, default False
+        Whether signs of scores and thresholds should be flipped.
+        
+        .. gui::
+            :widget: checkbox
+            :description: Flip score signs (higher becomes more anomalous)
+            :default: false
+            
+    use_log_scores : bool, default False
+        Whether log scores should be used for visualization.
+        
+        .. gui::
+            :widget: checkbox  
+            :description: Use logarithmic scale for scores
+            :default: false
+            
+    smoothing : float, optional
+        Kernel density function smoothing parameter (bandwidth).
+        
+        .. gui::
+            :widget: number_input
+            :description: KDE bandwidth parameter
+            :min: 0.01
+            :max: 2.0
+            :default: auto (std of first state)
+            
+    axes : matplotlib.axes.Axes, optional
+        Matplotlib axes handle for plotting.
+        
+    Returns
+    -------
+    axes : matplotlib.axes.Axes
+        Matplotlib axes handle containing the plot.
+        
+    Notes
+    -----
+    This function plots probability density distributions of scores for different 
+    damage states using Gaussian kernel density estimation. Each unique state is 
+    plotted with a different color. Optional thresholds are shown as vertical 
+    dashed lines.
+    
+    The kernel density estimation uses a Gaussian kernel:
+    
+    .. math::
+        \\hat{f}(x) = \\frac{1}{nh} \\sum_{i=1}^{n} K\\left(\\frac{x - x_i}{h}\\right)
+    
+    where K is the Gaussian kernel and h is the bandwidth (smoothing parameter).
+    
+    Examples
+    --------
+    Basic usage with Mahalanobis scores:
+    
+    >>> import numpy as np
+    >>> from shmtools.plotting import plot_score_distributions_shm
+    >>> 
+    >>> # Simulated scores and states
+    >>> scores = np.concatenate([
+    ...     np.random.normal(2, 0.5, 50),    # Undamaged
+    ...     np.random.normal(5, 1.0, 30)     # Damaged
+    ... ])
+    >>> states = np.concatenate([
+    ...     np.zeros(50),                     # Undamaged
+    ...     np.ones(30)                       # Damaged  
+    ... ])
+    >>> 
+    >>> # Plot score distributions
+    >>> ax = plot_score_distributions_shm(
+    ...     scores, states,
+    ...     state_names=['Undamaged', 'Damaged'],
+    ...     use_log_scores=False,
+    ...     smoothing=0.3
+    ... )
+    >>> ax.set_title('Score Distributions by Damage State')
+    
+    With logarithmic scores and thresholds:
+    
+    >>> # Plot with log scores and detection threshold
+    >>> threshold = np.array([3.5])
+    >>> ax = plot_score_distributions_shm(
+    ...     scores, states,
+    ...     state_names=['Undamaged', 'Damaged'],
+    ...     thresholds=threshold,
+    ...     use_log_scores=True,
+    ...     flip_signs=False
+    ... )
+    
+    References
+    ----------
+    .. [1] Silverman, B.W. (1986). "Density Estimation for Statistics and Data Analysis"
+    .. [2] Scott, D.W. (1992). "Multivariate Density Estimation: Theory, Practice, and Visualization"
+    """
+    # Handle input arrays
+    scores = np.asarray(scores).flatten()
+    states = np.asarray(states).flatten()
+    
+    if len(scores) != len(states):
+        raise ValueError("scores and states must have the same length")
+    
+    # Set default state names
+    if states is None:
+        states = np.ones(len(scores), dtype=int)
+    
+    # Apply sign flip if requested
+    if flip_signs:
+        scores = -scores
+        if thresholds is not None:
+            thresholds = -np.asarray(thresholds)
+    
+    # Create axes if not provided
+    if axes is None:
+        fig, axes = plt.subplots(figsize=(10, 6))
+    
+    # Handle state indexing (MATLAB uses 1-based, convert 0-based to 1-based for consistency)
+    if np.min(states) == 0:
+        states = states + 1
+    
+    # Apply log transformation if requested
+    if use_log_scores:
+        if np.min(scores) > 0 and (thresholds is None or np.min(thresholds) > 0):
+            scores = np.log10(scores)
+            if thresholds is not None:
+                thresholds = np.log10(thresholds)
+        elif np.max(scores) < 0 and (thresholds is None or np.max(thresholds) < 0):
+            scores = -np.log10(-scores)
+            if thresholds is not None:
+                thresholds = -np.log10(-thresholds)
+        else:
+            raise ValueError('Log axis cannot be used with scores and thresholds containing positive and negative values.')
+    
+    # Get unique states
+    unique_states = np.unique(states)
+    
+    # Set default state names
+    if state_names is None:
+        state_names = [f'State {int(state)}' for state in unique_states]
+    
+    # Define colors for different states
+    colors = ['b', 'r', 'k', 'm', 'c', 'y', 'g']
+    
+    # Set up x-axis range for KDE
+    points = 2000
+    
+    # Calculate KDE for each state
+    for i, state in enumerate(unique_states):
+        state_mask = states == state
+        plot_scores = scores[state_mask]
+        
+        if len(plot_scores) == 0:
+            continue
+        
+        # Set smoothing parameter if not provided (use std of first state)
+        if i == 0 and smoothing is None:
+            smoothing = np.std(plot_scores)
+            if smoothing == 0:  # Handle constant values
+                smoothing = 0.1
+        
+        # Create x-axis for KDE
+        x_min = np.min(scores) - smoothing
+        x_max = np.max(scores) + 4 * smoothing
+        x = np.linspace(x_min, x_max, points)
+        
+        # Calculate Gaussian KDE
+        n = len(plot_scores)
+        kde = np.zeros(points)
+        
+        # Gaussian kernel function
+        for score in plot_scores:
+            kernel = (1 / np.sqrt(2 * np.pi)) * np.exp(-(x - score)**2 / (2 * smoothing**2))
+            kde += kernel / (n * smoothing)
+        
+        # Plot the KDE
+        color = colors[i % len(colors)]
+        axes.plot(x, kde, color, linewidth=2, label=state_names[int(state)-1] if int(state)-1 < len(state_names) else f'State {int(state)}')
+    
+    # Add legend
+    axes.legend(loc='upper right')
+    
+    # Plot thresholds if provided
+    if thresholds is not None:
+        y_limits = axes.get_ylim()
+        for threshold in np.asarray(thresholds).flatten():
+            axes.plot([threshold, threshold], y_limits, 'g--', linewidth=2, label='Threshold')
+    
+    # Set labels
+    axes.set_ylabel('Frequency')
+    if use_log_scores:
+        axes.set_xlabel('Log Score')
+    else:
+        axes.set_xlabel('Score')
+    
+    # Add grid for better readability
+    axes.grid(True, alpha=0.3)
+    
+    return axes
+
+
 def plot_features_shm(
     feature_vectors: np.ndarray,
     instance_indices: Optional[np.ndarray] = None,

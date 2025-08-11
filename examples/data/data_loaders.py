@@ -185,3 +185,52 @@ def load_active_sense_data() -> Dict[str, Any]:
         "damageLocation": damage_location,
         "description": "Active sensing guided wave data from plate structure",
     }
+
+
+def import_3story_structure_sub_floors(floor_numbers=None):
+    """
+    LADPackage-compatible version of 3-story structure data import.
+    
+    This function mimics the LADPackage import_3StoryStructure_subFloors.m
+    function for compatibility with LADPackage demo scripts.
+    
+    Parameters
+    ----------
+    floor_numbers : list or int, optional
+        Which floors/channels to include. Default is [1, 2, 3, 4, 5] (all channels).
+        
+    Returns
+    -------
+    dataset : ndarray
+        Time series data array
+    damage_states : ndarray
+        Binary damage labels (0=undamaged, 1=damaged)
+    state_list : ndarray  
+        State identifiers for each instance
+    """
+    # Load full 3-story data
+    data = load_3story_data()
+    dataset = data['dataset']
+    
+    # Handle floor_numbers parameter
+    if floor_numbers is None or (isinstance(floor_numbers, list) and len(floor_numbers) == 0):
+        floor_numbers = [1, 2, 3, 4, 5]  # All channels (MATLAB 1-based indexing)
+    elif isinstance(floor_numbers, int):
+        floor_numbers = [floor_numbers]
+    
+    # Convert MATLAB 1-based indexing to Python 0-based
+    channel_indices = [f - 1 for f in floor_numbers]
+    
+    # Select specified channels
+    dataset = dataset[:, channel_indices, :]
+    
+    # Create state list (transpose to match MATLAB output)
+    state_list = data['damage_states_array'].reshape(1, -1)  
+    
+    # Create binary damage states (first 90 undamaged, rest damaged)
+    damage_states = np.concatenate([
+        np.zeros(90, dtype=bool),
+        np.ones(80, dtype=bool)
+    ]).reshape(-1, 1)
+    
+    return dataset, damage_states, state_list

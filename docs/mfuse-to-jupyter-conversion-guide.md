@@ -38,6 +38,8 @@ For each mFUSE function, find the corresponding Python function:
 
 ### Step 3: Create Jupyter Extension Instructions
 
+Place instructions in the folder LADPackage/Demos/Instructions
+
 Follow this template structure:
 
 ```markdown
