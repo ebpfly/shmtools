@@ -240,57 +240,78 @@ def _infer_type_from_expression(expression):
     return "unknown"
 
 
-def discover_functions_locally():
+def discover_functions_locally(config=None):
     """Discover SHM functions using local backend logic."""
     import importlib
     import inspect
 
     functions = []
 
-    # Modules to scan
-    modules_to_scan = [
-        # Core modules
-        "shmtools.core.spectral",
-        "shmtools.core.statistics",
-        "shmtools.core.filtering",
-        "shmtools.core.preprocessing",
-        
-        # Feature extraction
-        "shmtools.features.time_series",
-        
-        # Classification and detection
-        "shmtools.classification.outlier_detection",
-        "shmtools.classification.nonparametric",
-        "shmtools.classification.high_level_detection",
-        
-        # Active sensing
-        "shmtools.active_sensing.matched_filter",
-        "shmtools.active_sensing.utilities",
-        "shmtools.active_sensing.geometry",
-        
-        # Modal analysis
-        "shmtools.modal.modal_analysis",
-        "shmtools.modal.oma",
-        
-        # Hardware and data acquisition
-        "shmtools.hardware.data_acquisition",
-        "shmtools.hardware.serial_interface",
-        
-        # Utilities and data I/O (data import functions moved to examples.data)
-        "shmtools.utils.data_segmentation",
-        "shmtools.utils.spatial_analysis",
-        
-        # Sensor diagnostics
-        "shmtools.sensor_diagnostics.diagnostic_functions",
-        
-        # Plotting utilities
-        "shmtools.plotting.bokeh_plotting",
-    ]
+    # Use config if provided, otherwise use default modules
+    if config and "function_discovery" in config:
+        modules_to_scan = config["function_discovery"].get("modules_to_scan", [])
+    else:
+        # Default modules to scan
+        modules_to_scan = [
+            # Core modules
+            "shmtools.core.spectral",
+            "shmtools.core.statistics",
+            "shmtools.core.filtering",
+            "shmtools.core.preprocessing",
+            
+            # Feature extraction
+            "shmtools.features.time_series",
+            
+            # Classification and detection
+            "shmtools.classification.outlier_detection",
+            "shmtools.classification.nonparametric",
+            "shmtools.classification.high_level_detection",
+            
+            # Active sensing
+            "shmtools.active_sensing.matched_filter",
+            "shmtools.active_sensing.utilities",
+            "shmtools.active_sensing.geometry",
+            
+            # Modal analysis
+            "shmtools.modal.modal_analysis",
+            "shmtools.modal.oma",
+            
+            # Hardware and data acquisition
+            "shmtools.hardware.data_acquisition",
+            "shmtools.hardware.serial_interface",
+            
+            # Utilities and data I/O (data import functions moved to examples.data)
+            "shmtools.utils.data_segmentation",
+            "shmtools.utils.spatial_analysis",
+            
+            # Sensor diagnostics
+            "shmtools.sensor_diagnostics.diagnostic_functions",
+            
+            # Plotting utilities
+            "shmtools.plotting.bokeh_plotting",
+        ]
 
+    # Debug: log modules being scanned to file  
+    with open('/tmp/debug_introspection.log', 'a') as f:
+        f.write(f"DEBUG: Scanning {len(modules_to_scan)} modules\n")
+        if any("examples" in m for m in modules_to_scan):
+            f.write(f"DEBUG: Examples modules found in config: {[m for m in modules_to_scan if 'examples' in m]}\n")
+    
     for module_name in modules_to_scan:
         try:
+            # Special handling for examples modules - ensure repo root is in path
+            if module_name.startswith('examples'):
+                # Get the repository root directory (where examples folder is located)
+                current_file = os.path.abspath(__file__)
+                repo_root = os.path.dirname(os.path.dirname(current_file))  # Go up 2 levels from shmtools/introspection.py
+                if repo_root not in sys.path:
+                    sys.path.insert(0, repo_root)
+                    
             module = importlib.import_module(module_name)
-            category = _get_category_from_module_name(module_name)
+            category = _get_category_from_module_name(module_name, config)
+            if "examples" in module_name:
+                with open('/tmp/debug_introspection.log', 'a') as f:
+                    f.write(f"DEBUG: Successfully imported {module_name}\n")
 
             # Find functions in the module
             for name in dir(module):
@@ -305,38 +326,43 @@ def discover_functions_locally():
 
                     func_info = _extract_function_info(obj, name, category, module_name)
                     if func_info:
+                        # Debug output for every function discovered
+                        file_path = getattr(obj, '__code__', {}).co_filename if hasattr(obj, '__code__') else 'unknown'
+                        with open('/tmp/function_discovery_debug.log', 'a') as f:
+                            f.write(f"DISCOVERED: category='{func_info.get('category', 'None')}', name='{func_info.get('name', 'None')}', function='{name}', file='{file_path}'\n")
                         functions.append(func_info)
 
-        except ImportError:
+        except ImportError as e:
             # Skip modules that aren't available yet
+            if "examples" in module_name:
+                # Log to a file since prints might not show up in JupyterLab logs
+                with open('/tmp/debug_introspection.log', 'a') as f:
+                    f.write(f"DEBUG: Failed to import {module_name}: {e}\n")
             continue
 
     return functions
 
 
-def _get_category_from_module_name(module_name):
-    """Generate fallback category from module name if docstring category not found."""
-    # Simple fallback based on module structure
-    if "core" in module_name:
-        return "Feature Extraction - Core"
-    elif "features" in module_name:
-        return "Feature Extraction"
-    elif "classification" in module_name:
-        return "Feature Classification"
-    elif "active_sensing" in module_name:
-        return "Feature Extraction - Active Sensing"
-    elif "modal" in module_name:
-        return "Feature Extraction - Modal Analysis"
-    elif "hardware" in module_name:
-        return "Data Acquisition"
-    elif "plotting" in module_name:
-        return "Auxiliary - Plotting"
-    elif "utils" in module_name:
-        return "Auxiliary - Utilities"
-    elif "sensor_diagnostics" in module_name:
-        return "Auxiliary - Sensor Support - Sensor Diagnostics"
+def _get_category_from_module_name(module_name, config=None):
+    """Generate category from configuration or default fallback."""
+    if config and "function_discovery" in config:
+        custom_categories = config["function_discovery"].get("custom_categories", {})
+        
+        # Check custom categories first - try exact match first, then prefix match
+        if module_name in custom_categories:
+            return custom_categories[module_name]
+            
+        # Try prefix matching for broader categorization
+        for module_pattern, category in custom_categories.items():
+            if module_name.startswith(module_pattern):
+                return category
+    
+    # If no config or no match found, return generic category based on module name
+    parts = module_name.split('.')
+    if len(parts) >= 2:
+        return f"{parts[0].title()} - {parts[-1].replace('_', ' ').title()}"
     else:
-        return "Other"
+        return parts[0].title() if parts else "Other"
 
 
 def _extract_category_from_docstring(docstring, fallback_category):
@@ -377,6 +403,7 @@ def _extract_function_info(func, name, category, module_name=None):
             "docstring": docstring,
             "parameters": [],
             "returns": _extract_return_info(docstring),
+            "guiMetadata": _extract_gui_metadata(docstring),
         }
 
         # Extract parameter information
@@ -408,6 +435,46 @@ def _extract_display_name(docstring, fallback_name):
 
     # Fallback: convert function name to readable format
     return fallback_name.replace("_shm", "").replace("_", " ").title()
+
+
+def _extract_gui_metadata(docstring):
+    """Extract GUI metadata from function docstring."""
+    metadata = {}
+    
+    if not docstring:
+        return metadata
+    
+    lines = docstring.split('\n')
+    in_meta = False
+    
+    for line in lines:
+        stripped = line.strip()
+        
+        # Look for meta section
+        if stripped.startswith('.. meta::'):
+            in_meta = True
+            continue
+        
+        # Stop at next major section
+        if in_meta and stripped and not stripped.startswith(':') and not stripped.startswith(' '):
+            break
+        
+        # Extract meta properties
+        if in_meta and ':' in stripped:
+            if stripped.startswith(':category:'):
+                metadata['category'] = stripped.split(':', 2)[2].strip()
+            elif stripped.startswith(':complexity:'):
+                metadata['complexity'] = stripped.split(':', 2)[2].strip()
+            elif stripped.startswith(':data_type:'):
+                metadata['data_type'] = stripped.split(':', 2)[2].strip()
+            elif stripped.startswith(':output_type:'):
+                metadata['output_type'] = stripped.split(':', 2)[2].strip()
+            elif stripped.startswith(':matlab_equivalent:'):
+                metadata['matlab_equivalent'] = stripped.split(':', 2)[2].strip()
+            elif stripped.startswith(':verbose_call:'):
+                metadata['verbose_call'] = stripped.split(':', 2)[2].strip()
+    
+    return metadata
 
 
 def _extract_description(docstring):

@@ -784,6 +784,7 @@ interface SHMFunction {
     data_type?: string;
     output_type?: string;
     matlab_equivalent?: string;
+    verbose_call?: string;
   };
   returns?: Array<{
     name: string;
@@ -1483,7 +1484,7 @@ class SHMFunctionSelector {
 
     // Parameters section
     if (func.parameters && func.parameters.length > 0) {
-      const parametersSection = this.createParametersSection(func.parameters);
+      const parametersSection = this.createParametersSection(func.parameters, func);
       content.appendChild(parametersSection);
     }
 
@@ -1511,7 +1512,7 @@ class SHMFunctionSelector {
     return content;
   }
 
-  private createParametersSection(parameters: any[]): HTMLElement {
+  private createParametersSection(parameters: any[], func?: SHMFunction): HTMLElement {
     const section = document.createElement('div');
     section.style.cssText = `
       margin-bottom: 16px;
@@ -1545,11 +1546,27 @@ class SHMFunctionSelector {
         color: #333;
       `;
 
+      // Get friendly name from verbose_call if available
+      const friendlyName = this.getParameterFriendlyName(param.name, func);
+      const displayName = friendlyName !== param.name ? friendlyName : param.name;
+
       const paramName = document.createElement('span');
-      paramName.textContent = param.name;
+      paramName.textContent = displayName;
       paramName.style.cssText = `
         color: #0d47a1;
       `;
+
+      // Show original parameter name if different from friendly name
+      if (friendlyName !== param.name) {
+        const originalName = document.createElement('span');
+        originalName.textContent = ` (${param.name})`;
+        originalName.style.cssText = `
+          color: #999;
+          font-size: 11px;
+          font-weight: normal;
+        `;
+        paramName.appendChild(originalName);
+      }
 
       const paramType = document.createElement('span');
       paramType.textContent = ` : ${param.type}`;
@@ -1981,7 +1998,7 @@ class SHMFunctionSelector {
       paramStr += paramValue;
       
       // Add comprehensive comment with validation info
-      let comment = this.generateParameterComment(param);
+      let comment = this.generateParameterComment(param, func);
       paramStr += `,  # ${comment}`;
       
       paramStrings.push(paramStr);
@@ -2023,7 +2040,7 @@ class SHMFunctionSelector {
     
     // Data parameters
     if (['data', 'x', 'y', 'input_data', 'features', 'signals'].includes(paramName)) {
-      return 'None  # TODO: Provide input data';
+      return 'None';
     }
     
     // Sampling frequency parameters
@@ -2048,12 +2065,12 @@ class SHMFunctionSelector {
     
     // File parameters
     if (['filename', 'filepath', 'path'].includes(paramName)) {
-      return "'data.csv'  # TODO: Specify file path";
+      return "'data.csv'";
     }
     
     // Type-based defaults
     if (param.type.includes('array') || param.type.includes('ndarray')) {
-      return 'None  # TODO: Provide array data';
+      return 'None';
     } else if (param.type.includes('int')) {
       return '1';
     } else if (param.type.includes('float')) {
@@ -2067,11 +2084,15 @@ class SHMFunctionSelector {
     }
   }
 
-  private generateParameterComment(param: any): string {
+  private generateParameterComment(param: any, func?: SHMFunction): string {
     let comment = '';
     
-    // Add description if available
-    if (param.description) {
+    // Try to get human-friendly name from verbose_call first
+    const friendlyName = this.getParameterFriendlyName(param.name, func);
+    if (friendlyName && friendlyName !== param.name) {
+      comment += friendlyName;
+    } else if (param.description) {
+      // Add description if available
       comment += param.description;
     } else {
       comment += param.type;
@@ -2105,6 +2126,34 @@ class SHMFunctionSelector {
     return comment;
   }
 
+  private getParameterFriendlyName(paramName: string, func?: SHMFunction): string {
+    if (!func || !func.guiMetadata || !func.guiMetadata.verbose_call) {
+      return paramName;
+    }
+
+    const verboseCall = func.guiMetadata.verbose_call;
+    
+    // Parse verbose_call format: [outputs] = FunctionName (Input1, Input2, ...)
+    // Extract the part after the equals and function name, within parentheses
+    const match = verboseCall.match(/=\s*[^(]+\s*\(([^)]+)\)/);
+    if (!match) {
+      return paramName;
+    }
+
+    const parametersPart = match[1];
+    const friendlyNames = parametersPart.split(',').map(name => name.trim());
+    
+    // Map parameter names to their positions in the function signature
+    const paramNames = func.parameters.map(p => p.name);
+    const paramIndex = paramNames.indexOf(paramName);
+    
+    if (paramIndex >= 0 && paramIndex < friendlyNames.length) {
+      return friendlyNames[paramIndex];
+    }
+    
+    return paramName;
+  }
+
   private ensureProperQuoting(value: string, paramType: string): string {
     // If the value is already properly quoted, return as is
     if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
@@ -2135,19 +2184,6 @@ class SHMFunctionSelector {
 
   private generateFunctionHeader(func: SHMFunction): string {
     let header = `# ${func.description}\n`;
-    
-    // Add complexity and data type info if available
-    if (func.guiMetadata) {
-      if (func.guiMetadata.complexity) {
-        header += `# Complexity: ${func.guiMetadata.complexity}\n`;
-      }
-      if (func.guiMetadata.data_type) {
-        header += `# Data Type: ${func.guiMetadata.data_type}\n`;
-      }
-      if (func.guiMetadata.matlab_equivalent) {
-        header += `# MATLAB Equivalent: ${func.guiMetadata.matlab_equivalent}\n`;
-      }
-    }
     
     return header;
   }

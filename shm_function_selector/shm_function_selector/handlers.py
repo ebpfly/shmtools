@@ -7,6 +7,9 @@ import json
 import inspect
 import importlib
 import math
+import os
+import fnmatch
+from pathlib import Path
 from typing import List, Dict, Any
 
 from jupyter_server.base.handlers import APIHandler
@@ -43,6 +46,58 @@ class InfinityJSONEncoder(json.JSONEncoder):
 class SHMFunctionHandler(APIHandler):
     """Handler for SHM function discovery and metadata."""
     
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._config = None
+    
+    def _load_config(self) -> Dict[str, Any]:
+        """Load configuration from config.json file."""
+        if self._config is not None:
+            return self._config
+            
+        # Find config file relative to this handler file
+        handler_dir = Path(__file__).parent.parent
+        config_path = handler_dir / "config.json"
+        
+        try:
+            if config_path.exists():
+                with open(config_path, 'r') as f:
+                    self._config = json.load(f)
+                self.log.info(f"Loaded configuration from {config_path}")
+            else:
+                # Return default configuration
+                self._config = self._get_default_config()
+                self.log.info("Using default configuration (config.json not found)")
+        except Exception as e:
+            self.log.warning(f"Error loading config: {e}, using defaults")
+            self._config = self._get_default_config()
+            
+        return self._config
+    
+    def _get_default_config(self) -> Dict[str, Any]:
+        """Return default configuration."""
+        return {
+            "function_discovery": {
+                "enabled": True,
+                "discovery_mode": "modules",
+                "modules_to_scan": [],
+                "include_patterns": ["*_shm", "learn_*", "apply_*", "compute_*"],
+                "exclude_patterns": ["_*", "__*", "*_internal", "*_helper"],
+                "custom_categories": {}
+            },
+            "variable_discovery": {
+                "enabled": True,
+                "include_notebook_variables": True,
+                "include_kernel_variables": False
+            },
+            "gui_integration": {
+                "show_parameter_hints": True,
+                "show_function_descriptions": True,
+                "group_by_category": True,
+                "max_functions_per_category": 50
+            }
+        }
+    
     @authenticated
     def get(self):
         """Get list of available SHM functions with metadata."""
@@ -57,7 +112,13 @@ class SHMFunctionHandler(APIHandler):
     
     def _discover_shm_functions(self) -> List[Dict[str, Any]]:
         """Discover SHM functions from shmtools package."""
+        config = self._load_config()
         functions = []
+        
+        # Check if function discovery is enabled
+        if not config.get("function_discovery", {}).get("enabled", True):
+            self.log.info("Function discovery disabled in configuration")
+            return []
         
         try:
             # Import main shmtools package and use its introspection system
@@ -66,17 +127,28 @@ class SHMFunctionHandler(APIHandler):
             # Try to use the built-in introspection system first
             try:
                 from shmtools.introspection import discover_functions_locally
-                discovered_functions = discover_functions_locally()
                 
-                self.log.info(f"Found {len(discovered_functions)} functions using introspection system")
+                # Debug: log config details
+                modules_to_scan = config.get('function_discovery', {}).get('modules_to_scan', [])
+                examples_modules = [m for m in modules_to_scan if 'examples' in m]
+                self.log.info(f"Config has {len(modules_to_scan)} modules, examples: {examples_modules}")
+                
+                discovered_functions = discover_functions_locally(config)
+                
+                # Filter functions based on configuration
+                filtered_functions = self._filter_functions_by_config(discovered_functions, config)
+                
+                self.log.info(f"Found {len(filtered_functions)} functions using introspection system")
                 
                 # The introspection system returns functions in our format already
-                return discovered_functions
+                return filtered_functions
                         
             except ImportError:
                 self.log.info("Introspection system not available, using manual discovery")
                 # Fallback to manual scanning
                 functions = self._manual_function_discovery()
+                # Filter functions based on configuration
+                functions = self._filter_functions_by_config(functions, config)
                         
         except ImportError as e:
             self.log.warning(f"SHMTools not available: {e}")
@@ -87,18 +159,11 @@ class SHMFunctionHandler(APIHandler):
     
     def _manual_function_discovery(self) -> List[Dict[str, Any]]:
         """Manual function discovery as fallback."""
+        config = self._load_config()
         functions = []
         
-        # Define modules to scan
-        modules_to_scan = [
-            'shmtools.core.spectral',
-            'shmtools.core.statistics', 
-            'shmtools.core.filtering',
-            'shmtools.core.preprocessing',
-            'shmtools.features.time_series',
-            'shmtools.classification.outlier_detection',
-            'shmtools.utils.data_loading',
-        ]
+        # Get modules to scan from configuration
+        modules_to_scan = config.get("function_discovery", {}).get("modules_to_scan", [])
         
         for module_name in modules_to_scan:
             try:
@@ -117,9 +182,10 @@ class SHMFunctionHandler(APIHandler):
                     try:
                         obj = getattr(module, name)
                         
-                        # Check if it's a callable function
+                        # Check if it's a callable function and passes filtering
                         if (callable(obj) and 
-                            inspect.isfunction(obj)):
+                            inspect.isfunction(obj) and
+                            self._should_include_function(name, config)):
                             
                             func_info = self._extract_function_info(obj, name, category, module_name)
                             if func_info:
@@ -180,17 +246,72 @@ class SHMFunctionHandler(APIHandler):
         ]
     
     def _get_category_from_module_name(self, module_name: str) -> str:
-        """Map module names to human-readable categories."""
-        category_map = {
-            'shmtools.core.spectral': 'Core - Spectral Analysis',
-            'shmtools.core.statistics': 'Core - Statistics', 
-            'shmtools.core.filtering': 'Core - Filtering',
-            'shmtools.core.preprocessing': 'Core - Preprocessing',
-            'shmtools.features.time_series': 'Features - Time Series Models',
-            'shmtools.classification.outlier_detection': 'Classification - Outlier Detection',
-            'shmtools.utils.data_loading': 'Data - Loading & Setup',
-        }
-        return category_map.get(module_name, 'Other')
+        """Map module names to human-readable categories using config only."""
+        config = self._load_config()
+        custom_categories = config.get("function_discovery", {}).get("custom_categories", {})
+        
+        # Check custom categories first - exact match
+        if module_name in custom_categories:
+            return custom_categories[module_name]
+            
+        # Check for prefix matches
+        for module_pattern, category in custom_categories.items():
+            if module_name.startswith(module_pattern):
+                return category
+        
+        # No hardcoded defaults - generate generic category from module name
+        parts = module_name.split('.')
+        if len(parts) >= 2:
+            return f"{parts[0].title()} - {parts[-1].replace('_', ' ').title()}"
+        else:
+            return parts[0].title() if parts else "Other"
+    
+    def _should_include_function(self, function_name: str, config: Dict[str, Any]) -> bool:
+        """Check if a function should be included based on configuration filters."""
+        function_config = config.get("function_discovery", {})
+        
+        # Check include patterns
+        include_patterns = function_config.get("include_patterns", [])
+        if include_patterns:
+            included = any(fnmatch.fnmatch(function_name, pattern) for pattern in include_patterns)
+            if not included:
+                return False
+        
+        # Check exclude patterns
+        exclude_patterns = function_config.get("exclude_patterns", [])
+        if exclude_patterns:
+            excluded = any(fnmatch.fnmatch(function_name, pattern) for pattern in exclude_patterns)
+            if excluded:
+                return False
+        
+        return True
+    
+    def _filter_functions_by_config(self, functions: List[Dict[str, Any]], config: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Filter discovered functions based on configuration."""
+        gui_config = config.get("gui_integration", {})
+        max_per_category = gui_config.get("max_functions_per_category", 50)
+        
+        if max_per_category <= 0:
+            return functions
+        
+        # Group functions by category
+        by_category = {}
+        for func in functions:
+            category = func.get("category", "Other")
+            if category not in by_category:
+                by_category[category] = []
+            by_category[category].append(func)
+        
+        # Limit functions per category
+        filtered_functions = []
+        for category, funcs in by_category.items():
+            if len(funcs) > max_per_category:
+                # Sort by name and take first N
+                funcs = sorted(funcs, key=lambda f: f.get("name", ""))[:max_per_category]
+                self.log.info(f"Limited {category} to {max_per_category} functions")
+            filtered_functions.extend(funcs)
+        
+        return filtered_functions
     
     def _extract_function_info(self, func, name: str, category: str, module_name: str) -> Dict[str, Any]:
         """Extract function information from docstring and signature."""
@@ -349,6 +470,8 @@ class SHMFunctionHandler(APIHandler):
                     metadata['output_type'] = stripped.split(':', 2)[2].strip()
                 elif stripped.startswith(':matlab_equivalent:'):
                     metadata['matlab_equivalent'] = stripped.split(':', 2)[2].strip()
+                elif stripped.startswith(':verbose_call:'):
+                    metadata['verbose_call'] = stripped.split(':', 2)[2].strip()
         
         return metadata
     
