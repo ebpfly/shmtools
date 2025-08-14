@@ -14,7 +14,7 @@ from typing import Tuple, List, Union, Optional
 project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from examples.data.data_loaders import load_3story_data
+from examples.data.data_imports import import_3story_structure_shm
 
 
 def import_3story_structure_sub_floors(floor_numbers: Optional[Union[List[int], int]] = None) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -109,8 +109,10 @@ def import_3story_structure_sub_floors(floor_numbers: Optional[Union[List[int], 
            Comparisons using Standard Data Sets." LA-14393.
     """
     # Load full 3-story data
-    data = load_3story_data()
-    dataset = data['dataset']
+    dataset, damage_states_binary, state_list_matlab = import_3story_structure_shm()
+    
+    # Create damage_states_array for compatibility (1-17 state IDs)
+    damage_states_array = np.repeat(np.arange(1, 18), 10)  # 17 states, 10 tests each
     
     # Handle floor_numbers parameter (MATLAB compatibility)
     if floor_numbers is None or (isinstance(floor_numbers, list) and len(floor_numbers) == 0):
@@ -132,15 +134,10 @@ def import_3story_structure_sub_floors(floor_numbers: Optional[Union[List[int], 
     # Select specified channels
     dataset = dataset[:, channel_indices, :]
     
-    # Create state list (transpose to match MATLAB output format)
-    # LADPackage uses damage state IDs 1-17 for the 17 different states
-    state_list = data['damage_states_array'].reshape(1, -1)  
+    # Use the state list from import function (already in correct format)
+    state_list = state_list_matlab  
     
-    # Create binary damage states (first 90 undamaged, rest damaged)
-    # This matches the LADPackage MATLAB function exactly
-    damage_states = np.concatenate([
-        np.zeros(90, dtype=bool),    # States 1-9: Undamaged (9 states × 10 tests = 90)
-        np.ones(80, dtype=bool)      # States 10-17: Damaged (8 states × 10 tests = 80)
-    ]).reshape(-1, 1)
+    # Use the damage states from import function (already in correct format)
+    damage_states = damage_states_binary
     
     return dataset, damage_states, state_list

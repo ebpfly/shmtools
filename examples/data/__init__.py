@@ -13,13 +13,7 @@ from .data_imports import (
     import_modal_osp_shm,
 )
 
-from .data_loaders import (
-    load_3story_data,
-    load_cbm_data,
-    load_sensor_diagnostic_data,
-    load_modal_osp_data,
-    load_active_sense_data,
-)
+# data_loaders removed - use MATLAB-compatible data_imports instead
 
 __all__ = [
     # Import functions (MATLAB-compatible)
@@ -28,10 +22,4 @@ __all__ = [
     "import_active_sense1_shm",
     "import_sensor_diagnostic_shm",
     "import_modal_osp_shm",
-    # Load functions (dictionary format)
-    "load_3story_data",
-    "load_cbm_data",
-    "load_sensor_diagnostic_data",
-    "load_modal_osp_data",
-    "load_active_sense_data",
 ]
