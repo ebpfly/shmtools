@@ -1874,6 +1874,28 @@ class SHMFunctionSelector {
       console.log('✅ Successfully created new cell with function');
     }
 
+    // Always create a new empty cell after function insertion for chaining
+    console.log('📄 Creating new empty cell for next function');
+    const currentCellIndex = notebook.activeCellIndex;
+    const nextCellIndex = currentCellIndex + 1;
+    
+    notebook.model.sharedModel.insertCell(nextCellIndex, {
+      cell_type: 'code',
+      source: ''
+    });
+    
+    // Move to the new empty cell
+    notebook.activeCellIndex = nextCellIndex;
+    
+    // Set focus to the new cell's editor
+    setTimeout(() => {
+      const newActiveCell = notebook.activeCell;
+      if (newActiveCell && newActiveCell.editor) {
+        newActiveCell.editor.focus();
+        console.log('✅ Moved cursor to new empty cell');
+      }
+    }, 100);
+
     // Show success notification
     this.showNotification(`✅ Inserted ${func.displayName}`, '#4caf50');
     
