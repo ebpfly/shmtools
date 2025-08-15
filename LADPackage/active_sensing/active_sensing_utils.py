@@ -42,7 +42,7 @@ def import_active_sense_data(filename: Optional[str] = None) -> Tuple[
     LADPackage wrapper for importing active sensing data from .mat files.
     
     .. meta::
-        :category: Data Import - Active Sensing
+        :category: LAD
         :matlab_equivalent: importActiveSenseData
         :complexity: Basic
         :data_type: Active Sensing
@@ -170,7 +170,7 @@ def process_active_sensing_waveforms(
     LADPackage wrapper for active sensing waveform processing pipeline.
     
     .. meta::
-        :category: Features - Active Sensing
+        :category: LAD
         :matlab_equivalent: ProcessActiveSensingWaveforms
         :complexity: Intermediate
         :data_type: Active Sensing
@@ -263,7 +263,7 @@ def arrival_filter(
     LADPackage implementation of arrival time filtering for guided waves.
     
     .. meta::
-        :category: Features - Active Sensing
+        :category: LAD
         :matlab_equivalent: arrivalFilter
         :complexity: Advanced
         :data_type: Active Sensing
@@ -371,7 +371,7 @@ def map_active_sensing_geometry(
     LADPackage wrapper for active sensing geometry mapping.
     
     .. meta::
-        :category: Features - Active Sensing
+        :category: LAD
         :matlab_equivalent: MapActiveSensingGeometry
         :complexity: Advanced
         :data_type: Active Sensing
@@ -544,7 +544,7 @@ def plot_as_result(
     LADPackage visualization for active sensing results.
     
     .. meta::
-        :category: Plotting - Active Sensing
+        :category: LAD
         :matlab_equivalent: plotASResult
         :complexity: Basic
         :data_type: Image

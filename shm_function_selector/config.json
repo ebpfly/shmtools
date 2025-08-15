@@ -1,0 +1,76 @@
+{
+  "function_discovery": {
+    "enabled": true,
+    "discovery_mode": "modules",
+    "modules_to_scan": [
+      "shmtools.core.spectral",
+      "shmtools.core.statistics", 
+      "shmtools.core.filtering",
+      "shmtools.core.preprocessing",
+      "shmtools.features.time_series",
+      "shmtools.classification.outlier_detection",
+      "shmtools.classification.nonparametric",
+      "shmtools.classification.high_level_detection",
+      "shmtools.active_sensing.matched_filter",
+      "shmtools.active_sensing.utilities",
+      "shmtools.active_sensing.geometry",
+      "shmtools.modal.modal_analysis",
+      "shmtools.modal.oma",
+      "shmtools.hardware.data_acquisition",
+      "shmtools.hardware.serial_interface",
+      "shmtools.utils.data_segmentation",
+      "shmtools.utils.spatial_analysis",
+      "shmtools.sensor_diagnostics.diagnostic_functions",
+      "shmtools.plotting.bokeh_plotting",
+      "examples.data",
+      "LADPackage"
+    ],
+    "include_patterns": [
+      "*_shm",
+      "learn_*",
+      "apply_*",
+      "compute_*",
+      "import_*",
+      "load_*"
+    ],
+    "exclude_patterns": [
+      "_*",
+      "__*",
+      "*_internal",
+      "*_helper"
+    ],
+    "custom_categories": {
+      "shmtools.core": "Core - Signal Processing",
+      "shmtools.features": "Feature Extraction",
+      "shmtools.classification": "Classification & Detection",
+      "shmtools.active_sensing": "Active Sensing",
+      "shmtools.modal": "Modal Analysis",
+      "shmtools.hardware": "Data Acquisition",
+      "shmtools.utils": "Utilities",
+      "shmtools.sensor_diagnostics": "Sensor Diagnostics",
+      "shmtools.plotting": "Visualization",
+      "examples.data": "Data Import & Loading",
+      "LADPackage.utils": "LADPackage - Utilities",
+      "LADPackage.active_sensing": "LADPackage - Active Sensing",
+      "LADPackage.condition_based_monitoring": "LADPackage - CBM",
+      "LADPackage.optimal_sensor_placement": "LADPackage - OSP",
+      "LADPackage.outlier_detection": "LADPackage - Outlier Detection"
+    }
+  },
+  "variable_discovery": {
+    "enabled": true,
+    "include_notebook_variables": true,
+    "include_kernel_variables": false,
+    "type_inference": {
+      "enabled": true,
+      "use_annotations": true,
+      "infer_from_values": true
+    }
+  },
+  "gui_integration": {
+    "show_parameter_hints": true,
+    "show_function_descriptions": true,
+    "group_by_category": true,
+    "max_functions_per_category": 50
+  }
+}

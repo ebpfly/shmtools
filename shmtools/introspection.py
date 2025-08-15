@@ -329,6 +329,60 @@ def discover_functions_locally(config=None):
     
     for module_name in modules_to_scan:
         try:
+            # Special handling for LADPackage - scan its submodules
+            if module_name == 'LADPackage':
+                # Get the repository root directory
+                current_file = os.path.abspath(__file__)
+                repo_root = os.path.dirname(os.path.dirname(current_file))
+                ladpackage_path = os.path.join(repo_root, 'LADPackage')
+                
+                if repo_root not in sys.path:
+                    sys.path.insert(0, repo_root)
+                
+                # Find all Python modules in LADPackage
+                ladpackage_modules = []
+                if os.path.exists(ladpackage_path):
+                    # Scan for Python files in subdirectories
+                    for subdir in os.listdir(ladpackage_path):
+                        subdir_path = os.path.join(ladpackage_path, subdir)
+                        if os.path.isdir(subdir_path):
+                            # Check for Python files in this subdirectory
+                            for file in os.listdir(subdir_path):
+                                if file.endswith('.py') and not file.startswith('__'):
+                                    # Construct module name (e.g., LADPackage.utils.data_import)
+                                    module_name_full = f"LADPackage.{subdir}.{file[:-3]}"
+                                    ladpackage_modules.append(module_name_full)
+                
+                # Process each LADPackage submodule
+                for lad_module in ladpackage_modules:
+                    try:
+                        module = importlib.import_module(lad_module)
+                        category = _get_category_from_module_name(lad_module, config)
+                        
+                        # Find functions in the module
+                        for name in dir(module):
+                            obj = getattr(module, name)
+                            
+                            if (
+                                callable(obj)
+                                and not name.startswith("_")
+                                and inspect.isfunction(obj)
+                                and hasattr(obj, '__module__')
+                                and (obj.__module__ == lad_module or 
+                                     (obj.__module__ and obj.__module__.startswith('LADPackage')))
+                                and not _is_external_library_function(obj)
+                            ):
+                                func_info = _extract_function_info(obj, name, category, lad_module)
+                                if func_info:
+                                    functions.append(func_info)
+                    except ImportError as e:
+                        with open('/tmp/debug_introspection.log', 'a') as f:
+                            f.write(f"DEBUG: Failed to import LADPackage module {lad_module}: {e}\n")
+                        continue
+                
+                # Skip to next module in the list
+                continue
+                
             # Special handling for examples modules - ensure repo root is in path
             if module_name.startswith('examples'):
                 # Get the repository root directory (where examples folder is located)
