@@ -240,6 +240,36 @@ def _infer_type_from_expression(expression):
     return "unknown"
 
 
+def _is_external_library_function(func):
+    """Check if function comes from an external library like scipy, numpy, etc."""
+    if not hasattr(func, '__module__'):
+        return False
+    
+    module_name = func.__module__
+    if not module_name:
+        return False
+    
+    # List of external library modules to exclude
+    external_libraries = [
+        'scipy',
+        'numpy', 
+        'sklearn',
+        'pandas',
+        'matplotlib',
+        'seaborn',
+        'tensorflow',
+        'torch',
+        'keras'
+    ]
+    
+    # Check if function comes from any external library
+    for lib in external_libraries:
+        if module_name.startswith(lib + '.'):
+            return True
+    
+    return False
+
+
 def discover_functions_locally(config=None):
     """Discover SHM functions using local backend logic."""
     import importlib
@@ -318,10 +348,15 @@ def discover_functions_locally(config=None):
                 obj = getattr(module, name)
 
                 # Check if it's a callable function (not class or builtin)
+                # AND make sure it's either defined in this module or a submodule (not from external libraries)
                 if (
                     callable(obj)
                     and not name.startswith("_")
                     and inspect.isfunction(obj)
+                    and hasattr(obj, '__module__')
+                    and (obj.__module__ == module_name or 
+                         (obj.__module__ and obj.__module__.startswith(module_name.split('.')[0])))
+                    and not _is_external_library_function(obj)
                 ):
 
                     func_info = _extract_function_info(obj, name, category, module_name)
