@@ -11,10 +11,10 @@ This guide shows how to recreate the mFUSE guided wave active sensing demo using
 1. Use the **SHM Function** dropdown in the notebook toolbar
 2. Find and select **Import Active Sense Data** from the dropdown (category: Data Loading - Example Datasets)
 3. Right-click on function parameters:
-   - `dataset_number=None` → leave as None (default dataset #1)
+   - `filename=None` → leave as None (defaults to 'data_example_ActiveSense.mat')
 
 **Inputs:**
-- Dataset Number = None (default dataset #1)
+- Filename = None (defaults to 'data_example_ActiveSense.mat')
 
 **Output variables:**
 - Waveform Base = waveform_base (baseline measurements)
@@ -35,7 +35,7 @@ This guide shows how to recreate the mFUSE guided wave active sensing demo using
    - `pair_list=None` → select `pair_list` (Step 1)
    - `waveform_base=None` → select `waveform_base` (Step 1)
    - `waveform_test=None` → select `waveform_test` (Step 1)
-   - `actuation_waveform=None` → select `actuation_waveform` (Step 1)
+   - `matched_waveform=None` → select `actuation_waveform` (Step 1)
 
 **Inputs:**
 - Sensor Subset = list(range(1, 32, 5)) (every 5th sensor from 1 to 31)
@@ -43,7 +43,7 @@ This guide shows how to recreate the mFUSE guided wave active sensing demo using
 - Pair List = pair_list (Step 1)
 - Waveform Base = waveform_base (Step 1)
 - Waveform Test = waveform_test (Step 1)
-- Actuation Waveform = actuation_waveform (Step 1)
+- Matched Waveform = actuation_waveform (Step 1)
 
 **Output variables:**
 - Filter Result = filter_result (processed waveforms)
@@ -69,29 +69,29 @@ This guide shows how to recreate the mFUSE guided wave active sensing demo using
 1. Find **Map Active Sensing Geometry** in dropdown (category: Feature Extraction - Active Sensing)
 2. Right-click on function parameters to link:
    - `velocity=66000` → keep default value 66000
-   - `grid_density=None` → leave as None (default)
+   - `subset_window=1` → keep default value 1
    - `distance_allowance=inf` → set to `float('inf')`
-   - `border_struct=None` → select `border_struct` (Step 1)
-   - `x_limits=None` → leave as None (default)
-   - `y_limits=None` → leave as None (default)
+   - `struct_cell=None` → select `border_struct` (Step 1)
+   - `x_spacing=0.5` → keep default value 0.5
+   - `y_spacing=0.5` → keep default value 0.5
    - `sample_rate=None` → select `sample_rate` (Step 1)
-   - `actuation_waveform=None` → select `actuation_waveform` (Step 1)
-   - `filtered_waveforms=None` → select `filtered_waveforms` (Step 3)
-   - `pair_subset=None` → select `pair_subset` (Step 2)
-   - `layout_subset=None` → select `layout_subset` (Step 2)
+   - `offset=None` → select `actuation_waveform` (Step 1)
+   - `data=None` → select `filtered_waveforms` (Step 3)
+   - `sensor_pair_list=None` → select `pair_subset` (Step 2)
+   - `sensor_layout=None` → select `layout_subset` (Step 2)
 
 **Inputs:**
 - Velocity = 66000 (guided wave velocity in structure)
-- Grid Density = None (default grid resolution)
+- Subset Window = 1 (window size for data extraction)
 - Distance Allowance = inf (maximum propagation distance)
-- Border Struct = border_struct (Step 1)
-- X Limits = None (default x-axis bounds)
-- Y Limits = None (default y-axis bounds)
+- Struct Cell = border_struct (Step 1)
+- X Spacing = 0.5 (grid spacing in x direction)
+- Y Spacing = 0.5 (grid spacing in y direction)
 - Sample Rate = sample_rate (Step 1)
-- Actuation Waveform = actuation_waveform (Step 1)
-- Filtered Waveforms = filtered_waveforms (Step 3)
-- Pair Subset = pair_subset (Step 2)
-- Layout Subset = layout_subset (Step 2)
+- Offset = actuation_waveform (Step 1)
+- Data = filtered_waveforms (Step 3)
+- Sensor Pair List = pair_subset (Step 2)
+- Sensor Layout = layout_subset (Step 2)
 
 **Output variables:**
 - X Matrix = x_matrix (x-coordinates of mapping grid)
