@@ -2063,8 +2063,13 @@ class SHMFunctionSelector {
       return '256';
     }
     
-    // File parameters
+    // File parameters - only provide default if no actual default exists
     if (['filename', 'filepath', 'path'].includes(paramName)) {
+      // If the function already has None as default, respect that
+      if (param.default === 'None' || param.default === null || param.default === undefined) {
+        return 'None';
+      }
+      // Otherwise provide a reasonable example
       return "'data.csv'";
     }
     

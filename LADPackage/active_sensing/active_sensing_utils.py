@@ -410,7 +410,7 @@ def map_active_sensing_geometry(
         Matrix of X coordinates
     y_matrix : ndarray
         Matrix of Y coordinates
-    combined_matrix : ndarray
+    combined_geometry : ndarray
         Combined geometry
     data_map_2d : ndarray
         2D data map with NaNs for empty space
@@ -440,30 +440,30 @@ def map_active_sensing_geometry(
         if 'outside' in border_struct:
             border_data = border_struct['outside']
             if isinstance(border_data, list) and len(border_data) > 0:
-                combined_matrix = border_data[0] if isinstance(border_data[0], np.ndarray) else np.array(border_data[0])
+                combined_geometry = border_data[0] if isinstance(border_data[0], np.ndarray) else np.array(border_data[0])
             elif isinstance(border_data, np.ndarray):
-                combined_matrix = border_data
+                combined_geometry = border_data
             else:
-                combined_matrix = struct_cell_2_mat_shm(border_struct)
+                combined_geometry = struct_cell_2_mat_shm(border_struct)
         else:
-            combined_matrix = struct_cell_2_mat_shm(border_struct)
+            combined_geometry = struct_cell_2_mat_shm(border_struct)
     else:
-        combined_matrix = struct_cell_2_mat_shm(border_struct)
+        combined_geometry = struct_cell_2_mat_shm(border_struct)
     
     # Step 3: Build contained grid
     # Convert line segments to polygon vertices for grid building
-    if combined_matrix.shape[0] == 4:
+    if combined_geometry.shape[0] == 4:
         # Format is [x1; y1; x2; y2] per column - convert to polygon
-        n_segments = combined_matrix.shape[1]
+        n_segments = combined_geometry.shape[1]
         polygon_points = []
         for i in range(n_segments):
-            x1, y1, x2, y2 = combined_matrix[:, i]
+            x1, y1, x2, y2 = combined_geometry[:, i]
             if i == 0:
                 polygon_points.append([x1, y1])
             polygon_points.append([x2, y2])
         polygon_border = np.array(polygon_points)
     else:
-        polygon_border = combined_matrix
+        polygon_border = combined_geometry
 
     poly_path = mpath(polygon_border)
     
@@ -511,7 +511,7 @@ def map_active_sensing_geometry(
     
     # Step 9: Get propagation distance to boundary
     prop_dist_boundary, min_prop_dist = get_prop_dist_2_boundary_shm(
-        pair_list_out, sensor_layout_out, combined_matrix
+        pair_list_out, sensor_layout_out, combined_geometry
     )
     
     # Step 10: Build logical array for distance filtering
@@ -528,7 +528,7 @@ def map_active_sensing_geometry(
     # Step 13: Fill 2D map
     data_map_2d = fill_2d_map_shm(data_sum, point_mask)
     
-    return x_matrix, y_matrix, combined_matrix, data_map_2d
+    return x_matrix, y_matrix, combined_geometry, data_map_2d
 
 
 def plot_as_result(

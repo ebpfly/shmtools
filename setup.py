@@ -124,7 +124,7 @@ setup(
     author='SHMTools Development Team',
     url='https://github.com/ebpfly/shm',
     license='BSD-3-Clause',
-    packages=find_packages(include=['shmtools', 'shmtools.*']),
+    packages=find_packages(include=['shmtools', 'shmtools.*', 'examples', 'examples.*']),
     python_requires='>=3.10',
     install_requires=requirements,
     extras_require={
