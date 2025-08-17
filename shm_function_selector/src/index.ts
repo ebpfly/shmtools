@@ -871,6 +871,11 @@ class SHMFunctionSelector {
   private functions: SHMFunction[] = [];
   private dropdown: HTMLSelectElement | null = null;
   private recentlyUsed: string[] = [];
+  
+  // Keyboard navigation state
+  private keyboardNavigationItems: HTMLElement[] = [];
+  private selectedNavigationIndex: number = -1;
+  private dropdownKeyboardHandler: ((e: KeyboardEvent) => void) | null = null;
 
   constructor(app: JupyterFrontEnd, notebookTracker: INotebookTracker) {
     this.app = app;
@@ -1135,9 +1140,18 @@ class SHMFunctionSelector {
       if (isVisible) {
         dropdownContent.style.display = 'none';
         arrow.style.transform = 'rotate(0deg)';
+        this.cleanupDropdownKeyboardNavigation();
       } else {
         dropdownContent.style.display = 'block';
         arrow.style.transform = 'rotate(180deg)';
+        // Auto-focus the search box when dropdown opens
+        setTimeout(() => {
+          const searchBox = dropdownContent.querySelector('input') as HTMLInputElement;
+          if (searchBox) {
+            searchBox.focus();
+          }
+          this.setupDropdownKeyboardNavigation(dropdownContent);
+        }, 50);
       }
     });
 
@@ -1146,6 +1160,7 @@ class SHMFunctionSelector {
       if (!enhancedDropdown.contains(e.target as Node)) {
         dropdownContent.style.display = 'none';
         arrow.style.transform = 'rotate(0deg)';
+        this.cleanupDropdownKeyboardNavigation();
       }
     });
 
@@ -1367,6 +1382,9 @@ class SHMFunctionSelector {
 
     // Add hover effects
     item.addEventListener('mouseenter', () => {
+      // Clear keyboard selection when mouse is used
+      this.selectedNavigationIndex = -1;
+      this.updateNavigationHighlight();
       item.style.background = isRecent ? '#fff8e1' : '#f8f9fa';
     });
 
@@ -1377,16 +1395,7 @@ class SHMFunctionSelector {
     // Add click handler for main area
     contentDiv.addEventListener('click', () => {
       this.selectFunction(func);
-      // Close the dropdown
-      const dropdown = item.closest('.shm-dropdown-content') as HTMLElement;
-      if (dropdown) {
-        dropdown.style.display = 'none';
-        const trigger = dropdown.parentElement?.querySelector('.shm-dropdown-trigger');
-        const arrow = trigger?.querySelector('span');
-        if (arrow) {
-          arrow.style.transform = 'rotate(0deg)';
-        }
-      }
+      this.closeDropdown();
     });
 
     return item;
@@ -1915,6 +1924,158 @@ class SHMFunctionSelector {
         }
       }
     });
+  }
+
+  // Keyboard navigation methods
+  private setupDropdownKeyboardNavigation(dropdownContent: HTMLElement): void {
+    // Find all navigable function items
+    this.updateNavigableItems(dropdownContent);
+    this.selectedNavigationIndex = -1;
+
+    // Create keyboard handler
+    this.dropdownKeyboardHandler = (e: KeyboardEvent) => {
+      // Only handle events when dropdown is actually visible
+      if (dropdownContent.style.display === 'none') {
+        return;
+      }
+
+      // Allow normal typing in search box
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT') {
+        // Handle arrow keys and Enter in search box
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          this.selectedNavigationIndex = 0;
+          this.updateNavigationHighlight();
+          // Move focus away from search box to enable navigation
+          (target as HTMLInputElement).blur();
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          this.closeDropdown();
+        }
+        return;
+      }
+
+      // Handle navigation keys when not in search box
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        this.selectedNavigationIndex = Math.min(
+          this.selectedNavigationIndex + 1, 
+          this.keyboardNavigationItems.length - 1
+        );
+        this.updateNavigationHighlight();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        this.selectedNavigationIndex = Math.max(this.selectedNavigationIndex - 1, -1);
+        if (this.selectedNavigationIndex === -1) {
+          // Return focus to search box
+          const searchBox = dropdownContent.querySelector('input') as HTMLInputElement;
+          if (searchBox) {
+            searchBox.focus();
+          }
+        }
+        this.updateNavigationHighlight();
+      } else if (e.key === 'Enter' && this.selectedNavigationIndex >= 0) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        // Get the selected function and trigger it immediately
+        const selectedItem = this.keyboardNavigationItems[this.selectedNavigationIndex];
+        const contentDiv = selectedItem.querySelector('div') as HTMLElement;
+        if (contentDiv) {
+          contentDiv.click();
+        }
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        this.closeDropdown();
+      } else {
+        // For any other key, focus search box and let user type
+        const searchBox = dropdownContent.querySelector('input') as HTMLInputElement;
+        if (searchBox && e.key.length === 1) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          searchBox.focus();
+          // Add the typed character to search box
+          searchBox.value += e.key;
+          searchBox.dispatchEvent(new Event('input'));
+        }
+      }
+    };
+
+    // Add event listener with capture phase to catch events early
+    document.addEventListener('keydown', this.dropdownKeyboardHandler, true);
+
+    // Update navigable items when search results change
+    const searchBox = dropdownContent.querySelector('input');
+    if (searchBox) {
+      const originalHandler = searchBox.getAttribute('data-search-handler');
+      if (!originalHandler) {
+        searchBox.setAttribute('data-search-handler', 'true');
+        const inputHandler = () => {
+          setTimeout(() => {
+            this.updateNavigableItems(dropdownContent);
+            this.selectedNavigationIndex = -1;
+            this.updateNavigationHighlight();
+          }, 10);
+        };
+        searchBox.addEventListener('input', inputHandler);
+      }
+    }
+  }
+
+  private updateNavigableItems(dropdownContent: HTMLElement): void {
+    this.keyboardNavigationItems = Array.from(
+      dropdownContent.querySelectorAll('.shm-function-item')
+    ).filter(item => {
+      const style = (item as HTMLElement).style;
+      return style.display !== 'none';
+    }) as HTMLElement[];
+  }
+
+  private updateNavigationHighlight(): void {
+    this.keyboardNavigationItems.forEach((item, index) => {
+      if (index === this.selectedNavigationIndex) {
+        item.style.background = '#0073e6';
+        item.style.color = 'white';
+        item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      } else {
+        item.style.background = '';
+        item.style.color = '';
+      }
+    });
+  }
+
+  private closeDropdown(): void {
+    const enhancedDropdown = document.querySelector('.shm-enhanced-dropdown') as HTMLElement;
+    if (enhancedDropdown) {
+      const dropdownContent = enhancedDropdown.querySelector('.shm-dropdown-content') as HTMLElement;
+      const arrow = enhancedDropdown.querySelector('.shm-dropdown-trigger span') as HTMLElement;
+      
+      if (dropdownContent) dropdownContent.style.display = 'none';
+      if (arrow) arrow.style.transform = 'rotate(0deg)';
+      
+      this.cleanupDropdownKeyboardNavigation();
+    }
+  }
+
+  private cleanupDropdownKeyboardNavigation(): void {
+    if (this.dropdownKeyboardHandler) {
+      document.removeEventListener('keydown', this.dropdownKeyboardHandler, true);
+      this.dropdownKeyboardHandler = null;
+    }
+    this.keyboardNavigationItems = [];
+    this.selectedNavigationIndex = -1;
   }
 
   private selectFunction(func: SHMFunction): void {
