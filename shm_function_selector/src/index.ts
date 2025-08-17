@@ -980,9 +980,28 @@ class SHMFunctionSelector {
         this.showSettingsPanel();
       });
 
+      // Create help button
+      const helpButton = document.createElement('button');
+      helpButton.textContent = '❓';
+      helpButton.title = 'SHM Extension Help';
+      helpButton.style.cssText = `
+        padding: 4px 6px;
+        font-size: 11px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        background: white;
+        cursor: pointer;
+        min-width: 28px;
+      `;
+
+      helpButton.addEventListener('click', () => {
+        this.showHelpPanel();
+      });
+
       // Add elements to container
       container.appendChild(label);
       container.appendChild(this.dropdown);
+      container.appendChild(helpButton);
       container.appendChild(settingsButton);
 
       // Add to notebook toolbar
@@ -2600,6 +2619,214 @@ class SHMFunctionSelector {
     content.appendChild(title);
     content.appendChild(settingsForm);
     content.appendChild(buttonSection);
+
+    return content;
+  }
+
+  private showHelpPanel(): void {
+    // Remove existing help panel if any
+    const existingPanel = document.querySelector('.shm-help-panel');
+    if (existingPanel) {
+      existingPanel.remove();
+    }
+
+    // Create help overlay
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 10000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    `;
+
+    // Create help panel
+    const panel = document.createElement('div');
+    panel.className = 'shm-help-panel';
+    panel.style.cssText = `
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      max-width: min(600px, 90vw);
+      width: 90vw;
+      max-height: 80vh;
+      overflow-y: auto;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 12px;
+    `;
+
+    // Create panel content
+    const content = this.createHelpContent();
+    panel.appendChild(content);
+
+    // Add close button
+    const closeButton = document.createElement('button');
+    closeButton.textContent = '✕';
+    closeButton.style.cssText = `
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      border: none;
+      background: #f5f5f5;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      color: #666;
+    `;
+
+    closeButton.addEventListener('click', () => {
+      overlay.remove();
+    });
+
+    panel.appendChild(closeButton);
+    overlay.appendChild(panel);
+
+    // Close on overlay click
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        overlay.remove();
+      }
+    });
+
+    // Close on Escape key
+    const escapeHandler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        overlay.remove();
+        document.removeEventListener('keydown', escapeHandler);
+      }
+    };
+    document.addEventListener('keydown', escapeHandler);
+
+    document.body.appendChild(overlay);
+  }
+
+  private createHelpContent(): HTMLElement {
+    const content = document.createElement('div');
+
+    // Title
+    const title = document.createElement('h2');
+    title.textContent = 'SHM Function Selector Help';
+    title.style.cssText = `
+      margin: 0 0 20px 0;
+      color: #333;
+      font-size: 18px;
+      text-align: center;
+    `;
+
+    // General instructions section
+    const generalSection = document.createElement('div');
+    generalSection.style.marginBottom = '24px';
+
+    const generalTitle = document.createElement('h3');
+    generalTitle.textContent = '📚 General Usage';
+    generalTitle.style.cssText = `
+      margin: 0 0 12px 0;
+      color: #2196f3;
+      font-size: 14px;
+    `;
+
+    const generalText = document.createElement('div');
+    generalText.innerHTML = `
+      <ul style="margin: 0; padding-left: 20px; line-height: 1.6;">
+        <li><strong>Function Browser:</strong> Click the "📚 Browse SHM Functions" dropdown to explore categorized functions</li>
+        <li><strong>Parameter Linking:</strong> Right-click on function parameters to link them to compatible variables</li>
+        <li><strong>Variable Plotting:</strong> Hold Alt/Option + Right-click on variables to create plots</li>
+        <li><strong>Smart Suggestions:</strong> The extension recommends compatible variables based on data types</li>
+        <li><strong>Auto-completion:</strong> Functions are automatically inserted with proper parameter structure</li>
+      </ul>
+    `;
+
+    // Keyboard shortcuts section
+    const shortcutsSection = document.createElement('div');
+    shortcutsSection.style.marginBottom = '24px';
+
+    const shortcutsTitle = document.createElement('h3');
+    shortcutsTitle.textContent = '⌨️ Keyboard Shortcuts';
+    shortcutsTitle.style.cssText = `
+      margin: 0 0 12px 0;
+      color: #2196f3;
+      font-size: 14px;
+    `;
+
+    const shortcutsText = document.createElement('div');
+    shortcutsText.innerHTML = `
+      <div style="background: #f5f5f5; padding: 12px; border-radius: 4px; font-family: monospace;">
+        <div style="margin-bottom: 8px;"><strong>Ctrl+Shift+F</strong> - Open function browser</div>
+        <div style="margin-bottom: 8px;"><strong>Ctrl+Shift+H</strong> - Show help for function at cursor</div>
+        <div style="margin-bottom: 8px;"><strong>Ctrl+Shift+I</strong> - Insert popular function</div>
+        <div style="margin-bottom: 8px;"><strong>Ctrl+Shift+L</strong> - Smart parameter link</div>
+        <div style="margin-bottom: 0;"><strong>Ctrl+Shift+S</strong> - Search functions</div>
+      </div>
+    `;
+
+    // Context menu section
+    const contextSection = document.createElement('div');
+    contextSection.style.marginBottom = '24px';
+
+    const contextTitle = document.createElement('h3');
+    contextTitle.textContent = '🎯 Context Menu Features';
+    contextTitle.style.cssText = `
+      margin: 0 0 12px 0;
+      color: #2196f3;
+      font-size: 14px;
+    `;
+
+    const contextText = document.createElement('div');
+    contextText.innerHTML = `
+      <ul style="margin: 0; padding-left: 20px; line-height: 1.6;">
+        <li><strong>Right-click on parameters:</strong> Shows compatible variables with type information</li>
+        <li><strong>Alt+Right-click on variables:</strong> Opens plotting menu for data visualization</li>
+        <li><strong>Smart filtering:</strong> Only shows variables that match the expected data type</li>
+        <li><strong>Recent variables:</strong> Prioritizes recently used variables in suggestions</li>
+      </ul>
+    `;
+
+    // Tips section
+    const tipsSection = document.createElement('div');
+
+    const tipsTitle = document.createElement('h3');
+    tipsTitle.textContent = '💡 Tips & Tricks';
+    tipsTitle.style.cssText = `
+      margin: 0 0 12px 0;
+      color: #2196f3;
+      font-size: 14px;
+    `;
+
+    const tipsText = document.createElement('div');
+    tipsText.innerHTML = `
+      <ul style="margin: 0; padding-left: 20px; line-height: 1.6;">
+        <li>Functions are categorized by type: Core, Features, Classification, Modal, etc.</li>
+        <li>Look for the 🔧 icon to identify functions with interactive parameter linking</li>
+        <li>Use the search functionality to quickly find specific functions</li>
+        <li>Recently used functions appear at the top of categories for quick access</li>
+        <li>Check the settings (⚙️) to customize extension behavior</li>
+      </ul>
+    `;
+
+    // Assemble content
+    generalSection.appendChild(generalTitle);
+    generalSection.appendChild(generalText);
+    shortcutsSection.appendChild(shortcutsTitle);
+    shortcutsSection.appendChild(shortcutsText);
+    contextSection.appendChild(contextTitle);
+    contextSection.appendChild(contextText);
+    tipsSection.appendChild(tipsTitle);
+    tipsSection.appendChild(tipsText);
+
+    content.appendChild(title);
+    content.appendChild(generalSection);
+    content.appendChild(shortcutsSection);
+    content.appendChild(contextSection);
+    content.appendChild(tipsSection);
 
     return content;
   }
