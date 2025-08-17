@@ -909,10 +909,30 @@ class SHMFunctionSelector {
         this.showSettingsPanel();
       });
 
+      // Create help button
+      const helpButton = document.createElement('button');
+      helpButton.textContent = '❓';
+      helpButton.title = 'SHM Extension Help - Usage and Shortcuts';
+      helpButton.style.cssText = `
+        padding: 4px 6px;
+        font-size: 11px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        background: white;
+        cursor: pointer;
+        min-width: 28px;
+        margin-left: 4px;
+      `;
+
+      helpButton.addEventListener('click', () => {
+        this.showHelpPanel();
+      });
+
       // Add elements to container
       container.appendChild(label);
       container.appendChild(this.dropdown);
       container.appendChild(settingsButton);
+      container.appendChild(helpButton);
 
       // Add to notebook toolbar
       const toolbar = nbPanel.toolbar;
@@ -2686,6 +2706,245 @@ class SHMFunctionSelector {
     this.recentlyUsed = this.recentlyUsed.slice(0, maxRecentlyUsed);
 
     console.log('✅ SHM settings applied');
+  }
+
+  private showHelpPanel(): void {
+    // Remove existing help panel if any
+    const existingPanel = document.querySelector('.shm-help-panel');
+    if (existingPanel) {
+      existingPanel.remove();
+    }
+
+    // Create help overlay
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 10000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    `;
+
+    // Create help panel
+    const panel = document.createElement('div');
+    panel.className = 'shm-help-panel';
+    panel.style.cssText = `
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      padding: 24px;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      position: relative;
+    `;
+
+    // Create panel content
+    const content = this.createHelpContent();
+    panel.appendChild(content);
+
+    // Add close button
+    const closeButton = document.createElement('button');
+    closeButton.textContent = '✕';
+    closeButton.style.cssText = `
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      color: #666;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    `;
+
+    closeButton.addEventListener('click', () => {
+      overlay.remove();
+    });
+
+    closeButton.addEventListener('mouseenter', () => {
+      closeButton.style.background = '#f5f5f5';
+    });
+
+    closeButton.addEventListener('mouseleave', () => {
+      closeButton.style.background = 'none';
+    });
+
+    panel.appendChild(closeButton);
+
+    // Close on overlay click
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        overlay.remove();
+      }
+    });
+
+    // Close on Escape key
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        overlay.remove();
+        document.removeEventListener('keydown', handleEscape);
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+  }
+
+  private createHelpContent(): HTMLElement {
+    const content = document.createElement('div');
+
+    // Title
+    const title = document.createElement('h2');
+    title.textContent = '📖 SHM Function Selector - Help & Usage';
+    title.style.cssText = `
+      margin: 0 0 20px 0;
+      color: #333;
+      font-size: 20px;
+      text-align: center;
+      border-bottom: 2px solid #e3f2fd;
+      padding-bottom: 12px;
+    `;
+
+    // Introduction
+    const intro = document.createElement('p');
+    intro.innerHTML = `
+      The SHM Function Selector provides quick access to <strong>108+ structural health monitoring functions</strong> 
+      with intelligent parameter linking and comprehensive documentation.
+    `;
+    intro.style.cssText = `
+      margin: 0 0 24px 0;
+      color: #555;
+      line-height: 1.5;
+      text-align: center;
+      font-size: 14px;
+    `;
+
+    // Keyboard shortcuts section
+    const shortcutsSection = this.createHelpSection(
+      '⌨️ Keyboard Shortcuts', 
+      [
+        '<kbd>Ctrl+Shift+F</kbd> - Open function browser',
+        '<kbd>Ctrl+Shift+H</kbd> - Show function help for current cursor position',
+        '<kbd>Ctrl+Shift+I</kbd> - Insert popular function',
+        '<kbd>Ctrl+Shift+L</kbd> - Show recently used functions',
+        '<kbd>Ctrl+Shift+S</kbd> - Search functions'
+      ]
+    );
+
+    // Basic usage section
+    const usageSection = this.createHelpSection(
+      '🚀 Basic Usage',
+      [
+        'Select a function from the dropdown to insert it into your notebook',
+        'Use the 📖 button next to functions for detailed documentation',
+        'Right-click on variables to automatically link them as function parameters',
+        'Enable auto-insertion in settings for instant function placement',
+        'Recently used functions appear at the top for quick access'
+      ]
+    );
+
+    // Advanced features section  
+    const advancedSection = this.createHelpSection(
+      '⚡ Advanced Features',
+      [
+        '<strong>Smart Parameter Linking:</strong> Right-click variables to auto-populate function parameters',
+        '<strong>Context-Aware Help:</strong> Use Ctrl+Shift+H while cursor is on a function name',
+        '<strong>Function Categories:</strong> Browse functions organized by type (Core, Features, ML, etc.)',
+        '<strong>Documentation Mode:</strong> Choose popup, inline, or sidebar documentation display',
+        '<strong>Parameter Validation:</strong> Optional type checking for linked parameters'
+      ]
+    );
+
+    // Tips section
+    const tipsSection = this.createHelpSection(
+      '💡 Pro Tips',
+      [
+        'Click the ⚙️ button to customize auto-insertion, shortcuts, and display preferences',
+        'Use the search feature (Ctrl+Shift+S) to quickly find functions by name or category',
+        'Function documentation includes examples, parameters, and return values',
+        'Recently used functions are remembered across sessions',
+        'Right-click sensitivity can be adjusted in settings for better parameter detection'
+      ]
+    );
+
+    // Function categories section
+    const categoriesSection = this.createHelpSection(
+      '📂 Function Categories',
+      [
+        '<strong>Core:</strong> Signal processing, filtering, spectral analysis',
+        '<strong>Features:</strong> Time series modeling, feature extraction',
+        '<strong>Classification:</strong> Machine learning, outlier detection',
+        '<strong>Modal:</strong> Modal analysis, structural dynamics',
+        '<strong>Active Sensing:</strong> Guided wave analysis, sensor diagnostics',
+        '<strong>Hardware:</strong> Data acquisition, sensor interfaces',
+        '<strong>Plotting:</strong> Visualization utilities and interactive plots'
+      ]
+    );
+
+    content.appendChild(title);
+    content.appendChild(intro);
+    content.appendChild(shortcutsSection);
+    content.appendChild(usageSection);
+    content.appendChild(advancedSection);
+    content.appendChild(tipsSection);
+    content.appendChild(categoriesSection);
+
+    return content;
+  }
+
+  private createHelpSection(title: string, items: string[]): HTMLElement {
+    const section = document.createElement('div');
+    section.style.cssText = `
+      margin-bottom: 20px;
+      padding: 16px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      border-left: 4px solid #2196f3;
+    `;
+
+    const sectionTitle = document.createElement('h3');
+    sectionTitle.innerHTML = title;
+    sectionTitle.style.cssText = `
+      margin: 0 0 12px 0;
+      color: #1976d2;
+      font-size: 16px;
+      font-weight: 600;
+    `;
+
+    const list = document.createElement('ul');
+    list.style.cssText = `
+      margin: 0;
+      padding-left: 20px;
+      line-height: 1.6;
+    `;
+
+    items.forEach(item => {
+      const listItem = document.createElement('li');
+      listItem.innerHTML = item;
+      listItem.style.cssText = `
+        margin-bottom: 8px;
+        color: #555;
+        font-size: 14px;
+      `;
+      list.appendChild(listItem);
+    });
+
+    section.appendChild(sectionTitle);
+    section.appendChild(list);
+
+    return section;
   }
 }
 
