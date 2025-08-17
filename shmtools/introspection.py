@@ -276,6 +276,7 @@ def discover_functions_locally(config=None):
     import inspect
 
     functions = []
+    seen_functions = set()  # Track functions by (actual_module, function_name) to avoid duplicates
 
     # Use config if provided, otherwise use default modules
     if config and "function_discovery" in config:
@@ -372,9 +373,16 @@ def discover_functions_locally(config=None):
                                      (obj.__module__ and obj.__module__.startswith('LADPackage')))
                                 and not _is_external_library_function(obj)
                             ):
-                                func_info = _extract_function_info(obj, name, category, lad_module)
-                                if func_info:
-                                    functions.append(func_info)
+                                # Check for duplicates using actual module where function is defined
+                                actual_module = obj.__module__ if obj.__module__ else lad_module
+                                function_key = (actual_module, name)
+                                
+                                if function_key not in seen_functions:
+                                    seen_functions.add(function_key)
+                                    
+                                    func_info = _extract_function_info(obj, name, category, lad_module)
+                                    if func_info:
+                                        functions.append(func_info)
                     except ImportError as e:
                         with open('/tmp/debug_introspection.log', 'a') as f:
                             f.write(f"DEBUG: Failed to import LADPackage module {lad_module}: {e}\n")
@@ -412,14 +420,24 @@ def discover_functions_locally(config=None):
                          (obj.__module__ and obj.__module__.startswith(module_name.split('.')[0])))
                     and not _is_external_library_function(obj)
                 ):
-
-                    func_info = _extract_function_info(obj, name, category, module_name)
-                    if func_info:
-                        # Debug output for every function discovered
-                        file_path = getattr(obj, '__code__', {}).co_filename if hasattr(obj, '__code__') else 'unknown'
+                    # Check for duplicates using actual module where function is defined
+                    actual_module = obj.__module__ if obj.__module__ else module_name
+                    function_key = (actual_module, name)
+                    
+                    if function_key not in seen_functions:
+                        seen_functions.add(function_key)
+                        
+                        func_info = _extract_function_info(obj, name, category, module_name)
+                        if func_info:
+                            # Debug output for every function discovered
+                            file_path = getattr(obj, '__code__', {}).co_filename if hasattr(obj, '__code__') else 'unknown'
+                            with open('/tmp/function_discovery_debug.log', 'a') as f:
+                                f.write(f"DISCOVERED: category='{func_info.get('category', 'None')}', name='{func_info.get('name', 'None')}', function='{name}', actual_module='{actual_module}', file='{file_path}'\n")
+                            functions.append(func_info)
+                    else:
+                        # Debug output for skipped duplicates
                         with open('/tmp/function_discovery_debug.log', 'a') as f:
-                            f.write(f"DISCOVERED: category='{func_info.get('category', 'None')}', name='{func_info.get('name', 'None')}', function='{name}', file='{file_path}'\n")
-                        functions.append(func_info)
+                            f.write(f"SKIPPED DUPLICATE: name='{name}', actual_module='{actual_module}', scanning_module='{module_name}'\n")
 
         except ImportError as e:
             # Skip modules that aren't available yet
