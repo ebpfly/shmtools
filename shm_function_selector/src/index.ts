@@ -1991,7 +1991,7 @@ class SHMFunctionSelector {
     // Generate parameter string with enhanced defaults and validation
     let paramStrings: string[] = [];
     
-    params.forEach(param => {
+    params.forEach((param, index) => {
       let paramStr = `    ${param.name}=`;
       let paramValue = this.getEnhancedParameterDefault(param);
       
@@ -1999,7 +1999,13 @@ class SHMFunctionSelector {
       
       // Add comprehensive comment with validation info
       let comment = this.generateParameterComment(param, func);
-      paramStr += `,  # ${comment}`;
+      
+      // Only add comma if this is not the last parameter
+      if (index < params.length - 1) {
+        paramStr += `,  # ${comment}`;
+      } else {
+        paramStr += `  # ${comment}`;
+      }
       
       paramStrings.push(paramStr);
     });
