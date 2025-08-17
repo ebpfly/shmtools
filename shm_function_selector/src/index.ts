@@ -2051,7 +2051,7 @@ class SHMFunctionSelector {
     
     // Sampling frequency parameters
     if (['fs', 'sampling_rate', 'sample_rate', 'freq'].includes(paramName)) {
-      return '1000.0  # Hz';
+      return '1000.0';
     }
     
     // Order parameters
@@ -2109,6 +2109,12 @@ class SHMFunctionSelector {
       comment += param.type;
     }
     
+    // Add units for frequency parameters
+    const paramName = param.name.toLowerCase();
+    if (['fs', 'sampling_rate', 'sample_rate', 'freq'].includes(paramName)) {
+      comment += ' Hz';
+    }
+    
     // Add validation info
     if (param.validation && param.validation.length > 0) {
       const validationInfo = param.validation.map((rule: any) => {
@@ -2123,7 +2129,7 @@ class SHMFunctionSelector {
       }).filter(Boolean).join(', ');
       
       if (validationInfo) {
-        comment += ` (${validationInfo})`;
+        comment += `, ${validationInfo}`;
       }
     }
     
