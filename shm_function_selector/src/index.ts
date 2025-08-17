@@ -1144,6 +1144,8 @@ class SHMFunctionSelector {
       } else {
         dropdownContent.style.display = 'block';
         arrow.style.transform = 'rotate(180deg)';
+        // Collapse all categories when dropdown reopens
+        this.collapseAllCategories(dropdownContent);
         // Auto-focus the search box when dropdown opens
         setTimeout(() => {
           const searchBox = dropdownContent.querySelector('input') as HTMLInputElement;
@@ -1294,6 +1296,20 @@ class SHMFunctionSelector {
     container.appendChild(content);
 
     return { container, header, content };
+  }
+
+  private collapseAllCategories(container: HTMLElement): void {
+    // Find all category sections and collapse them
+    const categorySections = container.querySelectorAll('.shm-category-section');
+    categorySections.forEach(section => {
+      const content = section.querySelector('.shm-category-content') as HTMLElement;
+      const arrow = section.querySelector('.shm-category-header span:last-child') as HTMLElement;
+      
+      if (content && arrow) {
+        content.style.display = 'none';
+        arrow.textContent = '▶';
+      }
+    });
   }
 
   private createFunctionItem(func: SHMFunction, isRecent: boolean = false): HTMLElement {
