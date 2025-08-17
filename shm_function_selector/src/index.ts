@@ -605,30 +605,75 @@ function showFunctionSearchDialog(
   popup.appendChild(resultsContainer);
   overlay.appendChild(popup);
 
+  // Keyboard navigation state
+  let selectedIndex = -1;
+  let searchResults: HTMLElement[] = [];
+
   // Search functionality
   let searchTimeout: number;
   searchInput.addEventListener('input', () => {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
       const query = searchInput.value.toLowerCase();
-      updateSearchResults(resultsContainer, functionSelector, query, overlay);
+      searchResults = updateSearchResults(resultsContainer, functionSelector, query, cleanupAndClose);
+      selectedIndex = -1; // Reset selection when search results change
     }, 200);
   });
+
+  // Function to cleanup and close dialog
+  const cleanupAndClose = () => {
+    document.removeEventListener('keydown', keyboardHandler);
+    if (overlay.parentNode) {
+      overlay.remove();
+    }
+  };
+
+  // Keyboard navigation handler
+  const keyboardHandler = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      cleanupAndClose();
+      return;
+    }
+
+    // Only handle arrow keys and Enter if we have search results
+    if (searchResults.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      e.stopPropagation();
+      selectedIndex = Math.min(selectedIndex + 1, searchResults.length - 1);
+      updateSelectionHighlight(searchResults, selectedIndex);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      e.stopPropagation();
+      selectedIndex = Math.max(selectedIndex - 1, -1);
+      updateSelectionHighlight(searchResults, selectedIndex);
+    } else if (e.key === 'Enter' && selectedIndex >= 0) {
+      e.preventDefault();
+      e.stopPropagation();
+      // Clean up BEFORE triggering the function insertion
+      cleanupAndClose();
+      // Use setTimeout to ensure the event listener is fully removed before triggering
+      setTimeout(() => {
+        const func = (searchResults[selectedIndex] as any).__functionData;
+        if (func) {
+          functionSelector.insertFunction(func);
+          showKeyboardNotification(`✅ Inserted ${func.displayName}`, '#4caf50');
+        }
+      }, 10);
+    }
+  };
 
   // Close handlers
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) {
-      overlay.remove();
+      cleanupAndClose();
     }
   });
 
-  const escapeHandler = (e: KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      overlay.remove();
-      document.removeEventListener('keydown', escapeHandler);
-    }
-  };
-  document.addEventListener('keydown', escapeHandler);
+  document.addEventListener('keydown', keyboardHandler);
 
   document.body.appendChild(overlay);
   searchInput.focus();
@@ -638,9 +683,10 @@ function updateSearchResults(
   container: HTMLElement, 
   functionSelector: SHMFunctionSelector, 
   query: string, 
-  overlay: HTMLElement
-): void {
+  cleanupCallback: () => void
+): HTMLElement[] {
   container.innerHTML = '';
+  const resultElements: HTMLElement[] = [];
 
   if (query.length < 2) {
     const placeholder = document.createElement('div');
@@ -652,7 +698,7 @@ function updateSearchResults(
       padding: 20px;
     `;
     container.appendChild(placeholder);
-    return;
+    return resultElements;
   }
 
   const functions = functionSelector.getAllFunctions();
@@ -673,11 +719,12 @@ function updateSearchResults(
       padding: 20px;
     `;
     container.appendChild(noResults);
-    return;
+    return resultElements;
   }
 
   filteredFunctions.slice(0, 10).forEach(func => { // Limit to 10 results
     const item = document.createElement('div');
+    item.className = 'search-result-item';
     item.style.cssText = `
       padding: 12px;
       border: 1px solid #ddd;
@@ -714,7 +761,12 @@ function updateSearchResults(
     item.appendChild(descDiv);
     item.appendChild(categoryDiv);
 
+    // Store function data on the element for keyboard navigation
+    (item as any).__functionData = func;
+
     item.addEventListener('mouseenter', () => {
+      // Clear keyboard selection when mouse is used
+      updateSelectionHighlight(resultElements, -1);
       item.style.background = '#f0f0f0';
     });
 
@@ -723,12 +775,13 @@ function updateSearchResults(
     });
 
     item.addEventListener('click', () => {
+      cleanupCallback(); // Clean up first
       functionSelector.insertFunction(func);
-      overlay.remove();
       showKeyboardNotification(`✅ Inserted ${func.displayName}`, '#4caf50');
     });
 
     container.appendChild(item);
+    resultElements.push(item);
   });
 
   if (filteredFunctions.length > 10) {
@@ -742,6 +795,25 @@ function updateSearchResults(
     `;
     container.appendChild(moreResults);
   }
+
+  return resultElements;
+}
+
+function updateSelectionHighlight(resultElements: HTMLElement[], selectedIndex: number): void {
+  // Clear all highlights first
+  resultElements.forEach((element, index) => {
+    if (index === selectedIndex) {
+      // Highlight the selected item
+      element.style.background = '#0073e6';
+      element.style.color = 'white';
+      // Ensure the selected item is visible
+      element.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    } else {
+      // Reset non-selected items
+      element.style.background = 'white';
+      element.style.color = '';
+    }
+  });
 }
 
 // ============================================================================

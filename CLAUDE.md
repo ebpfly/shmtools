@@ -2,6 +2,38 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## ⚠️ CRITICAL: ALWAYS ACTIVATE VIRTUAL ENVIRONMENT FIRST ⚠️
+
+**BEFORE DOING ANYTHING**, you MUST activate the Python virtual environment:
+
+```bash
+cd /Users/eric/repo/shm/
+source venv/bin/activate
+```
+
+**NEVER** run Python commands, pip, jupyter, or any extension builds without first activating the virtual environment. This includes:
+- `pip install`
+- `jupyter lab`
+- `jupyter labextension build`
+- `jupyter lab build`
+- `pytest`
+- `python` scripts
+- Extension development commands
+
+**Example of correct workflow:**
+```bash
+# Step 1: ALWAYS activate environment first
+cd /Users/eric/repo/shm/
+source venv/bin/activate
+
+# Step 2: Then run your commands
+cd shm_function_selector/
+npm run build:lib
+npm run build:labextension:dev
+cd ..
+jupyter lab build
+```
+
 ## Project Overview
 
 This repository contains a **unified structural health monitoring (SHM) toolkit** that combines:
@@ -43,9 +75,11 @@ This software is life-safety critical. You cannot skip requirements just to get 
 
 ### Setup and Installation
 ```bash
-# Work from repository root
+# Step 1: ALWAYS activate environment first
 cd /Users/eric/repo/shm/
+source venv/bin/activate
 
+# Step 2: Then proceed with installation
 # Install dependencies
 pip install -r requirements.txt
 
@@ -58,6 +92,10 @@ pip install -r requirements-dev.txt
 
 ### Testing
 ```bash
+# ALWAYS activate environment first
+cd /Users/eric/repo/shm/
+source venv/bin/activate
+
 # Run all tests
 pytest
 
@@ -73,6 +111,10 @@ pytest -m "requires_data"     # Run tests requiring example datasets
 
 ### Code Quality
 ```bash
+# ALWAYS activate environment first
+cd /Users/eric/repo/shm/
+source venv/bin/activate
+
 # Format code
 black shmtools/
 
@@ -85,7 +127,8 @@ mypy shmtools/
 
 ### Running JupyterLab with Extension
 ```bash
-# Activate virtual environment first
+# ALWAYS activate environment first
+cd /Users/eric/repo/shm/
 source venv/bin/activate
 
 # Start JupyterLab (preferred method)
@@ -99,18 +142,21 @@ jupyter lab
 **CRITICAL**: The JupyterLab extension requires a specific 3-step build process that must be followed exactly:
 
 ```bash
-# ALWAYS work from the extension directory
+# Step 0: ALWAYS activate environment first
+cd /Users/eric/repo/shm/
+source venv/bin/activate
+
+# Step 1: Work from the extension directory
 cd shm_function_selector/
 
-# Step 1: Compile TypeScript to JavaScript (REQUIRED FIRST)
+# Step 2: Compile TypeScript to JavaScript (REQUIRED FIRST)
 npm run build:lib
 
-# Step 2: Build the JupyterLab extension (uses compiled JS)
+# Step 3: Build the JupyterLab extension (uses compiled JS)
 npm run build:labextension:dev
 
-# Step 3: Integrate extension into JupyterLab (from parent directory)
+# Step 4: Integrate extension into JupyterLab (from parent directory)
 cd ..
-source venv/bin/activate
 jupyter lab build
 ```
 
@@ -123,6 +169,10 @@ jupyter lab build
 
 **Debugging Extension Issues**:
 ```bash
+# ALWAYS activate environment first
+cd /Users/eric/repo/shm/
+source venv/bin/activate
+
 # Check if TypeScript compiled correctly
 cd shm_function_selector/
 npm run build:lib
@@ -136,7 +186,8 @@ grep "your_debug_text" shm_function_selector/labextension/static/lib_index_js.*.
 rm -rf shm_function_selector/labextension/static/*.js
 npm run build:lib
 npm run build:labextension:dev
-cd .. && source venv/bin/activate && jupyter lab build
+cd ..
+jupyter lab build
 ```
 
 ## AWS Cloud Deployment (Primary Deployment Method)
