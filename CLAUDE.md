@@ -425,27 +425,6 @@ ssh -i ~/.ssh/class-key-ssh-rsa ubuntu@<IP> "python3 -c 'from shmtools.introspec
 - **Full recovery**: Terminate and redeploy (5-10 minutes)
 - **Data recovery**: EBS snapshots (configure separately)
 
-### Why Cloud Deployment?
-
-#### Advantages Over Local Installation
-1. **Zero setup friction**: Complete environment in 5-10 minutes
-2. **Consistent environment**: Same setup for all researchers
-3. **Collaborative**: Multiple users can work simultaneously
-4. **Scalable**: Easy to provision more compute/memory
-5. **Accessible**: Works from any device with web browser
-6. **Cost-effective**: Pay only when used, stop when idle
-7. **Maintainable**: Infrastructure as code, reproducible deployments
-
-#### Research Environment Benefits
-1. **Complete SHMTools library**: All 108+ functions available immediately  
-2. **Interactive development**: JupyterLab extension for function discovery
-3. **AI assistance**: Claude Code integration for faster development
-4. **Data handling**: Pre-configured for .mat files and large datasets
-5. **Reproducibility**: Exact environment specifications in code
-6. **Sharing**: Easy to spin up identical environments for collaborators
-
-**The cloud deployment is the recommended approach for all SHMTools research and development work.**
-
 ## Development Architecture
 
 ### Core Python Library (`shmtools/`)
@@ -791,29 +770,6 @@ git checkout -b docs/issue-125-update-readme
 4. **Validate HTML export** works without errors
 5. **Update notebook metadata** if needed
 
-### 4. Quality Assurance (MANDATORY)
-
-**Before committing any changes:**
-
-```bash
-# Format code (required)
-black shmtools/
-
-# Lint code (required)
-flake8 shmtools/
-
-# Type checking (recommended)
-mypy shmtools/
-
-# Run tests (required for core changes)
-pytest tests/test_shmtools/ -v
-
-# Test notebooks (for notebook-related changes)
-pytest tests/test_notebooks/ -k "basic" -v
-
-# Test specific functionality
-python -c "import shmtools; # test your changes"
-```
 
 ### 5. Commit Standards
 

@@ -1048,40 +1048,54 @@ class SHMFunctionSelector {
     this.notebookTracker.widgetAdded.connect((sender, nbPanel) => {
       console.log('📓 Adding function selector to notebook toolbar');
       
-      // Create the dropdown container with responsive behavior
+      // Create the container for toolbar items
       const container = document.createElement('div');
       container.className = 'jp-Toolbar-item';
-      const isMobile = window.innerWidth < 768;
       container.style.cssText = `
         display: inline-flex;
         align-items: center;
         margin: 2px 5px;
-        gap: ${isMobile ? '8px' : '5px'};
+        gap: 5px;
         flex-shrink: 0;
         white-space: nowrap;
         z-index: 1000;
-        ${isMobile ? 'width: 100%; justify-content: center;' : ''}
       `;
 
-      // Create dropdown
-      this.dropdown = document.createElement('select');
-      this.dropdown.className = 'shm-function-dropdown';
-      this.dropdown.style.cssText = `
-        padding: 4px 8px !important;
-        font-size: 11px !important;
-        border: 1px solid #ccc !important;
-        border-radius: 3px !important;
-        background: white !important;
-        cursor: pointer !important;
-        width: 400px !important;
-        min-width: 400px !important;
-        max-width: 400px !important;
-        flex-shrink: 0 !important;
-        box-sizing: border-box !important;
+      // Create compact jFUSE button
+      const jfuseButton = document.createElement('button');
+      jfuseButton.className = 'shm-jfuse-button';
+      jfuseButton.textContent = 'jFUSE';
+      jfuseButton.title = 'SHM Function Selector';
+      jfuseButton.style.cssText = `
+        padding: 4px 10px;
+        font-size: 11px;
+        font-weight: 500;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        background: white;
+        cursor: pointer;
+        min-width: fit-content;
+        color: #333;
+        transition: background-color 0.2s;
       `;
 
-      // Add automatic insertion on selection change
-      this.dropdown.onchange = () => this.insertSelectedFunction(nbPanel);
+      // Add hover effect
+      jfuseButton.addEventListener('mouseenter', () => {
+        jfuseButton.style.backgroundColor = '#f0f0f0';
+      });
+      jfuseButton.addEventListener('mouseleave', () => {
+        jfuseButton.style.backgroundColor = 'white';
+      });
+
+      // Add click handler to show the full menu overlay
+      jfuseButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.showFunctionSelectorOverlay(nbPanel);
+      });
+
+      // Store reference for later use
+      this.dropdown = document.createElement('select'); // Keep for compatibility
+      this.dropdown.style.display = 'none';
 
       // Create settings button
       const settingsButton = document.createElement('button');
@@ -1113,7 +1127,6 @@ class SHMFunctionSelector {
         background: white;
         cursor: pointer;
         min-width: 28px;
-        margin-left: 4px;
       `;
 
       helpButton.addEventListener('click', () => {
@@ -1121,8 +1134,7 @@ class SHMFunctionSelector {
       });
 
       // Add elements to container
-      container.appendChild(this.dropdown);
-      container.appendChild(helpButton);
+      container.appendChild(jfuseButton);
       container.appendChild(settingsButton);
       container.appendChild(helpButton);
 
@@ -1130,10 +1142,10 @@ class SHMFunctionSelector {
       const toolbar = nbPanel.toolbar;
       if (toolbar) {
         toolbar.node.appendChild(container);
-        console.log('✅ Added function selector to toolbar');
+        console.log('✅ Added compact jFUSE button to toolbar');
         
-        // Populate dropdown
-        this.populateDropdown();
+        // Load functions (but don't create dropdown)
+        // Functions are loaded when overlay is shown
       }
     });
   }
@@ -1173,7 +1185,7 @@ class SHMFunctionSelector {
     // Create the trigger button
     const triggerButton = document.createElement('button');
     triggerButton.className = 'shm-dropdown-trigger';
-    triggerButton.textContent = '📚 Browse SHM Functions';
+    triggerButton.textContent = 'jFUSE';
     triggerButton.style.cssText = `
       width: 100%;
       padding: 6px 12px;
@@ -1303,6 +1315,17 @@ class SHMFunctionSelector {
     `;
     container.appendChild(searchBox);
 
+    // Add the main content
+    this.populateFoldingContentWithoutSearch(container);
+
+    // Add search functionality
+    searchBox.addEventListener('input', (e) => {
+      const searchTerm = (e.target as HTMLInputElement).value.toLowerCase();
+      this.filterFunctions(container, searchTerm);
+    });
+  }
+
+  private populateFoldingContentWithoutSearch(container: HTMLElement): void {
     // Add recently used section if any
     if (this.recentlyUsed.length > 0) {
       const recentSection = this.createFoldingSection('⏱️ Recently Used', true);
@@ -1342,12 +1365,6 @@ class SHMFunctionSelector {
       });
       
       container.appendChild(section.container);
-    });
-
-    // Add search functionality
-    searchBox.addEventListener('input', (e) => {
-      const searchTerm = (e.target as HTMLInputElement).value.toLowerCase();
-      this.filterFunctions(container, searchTerm);
     });
   }
 
@@ -1432,6 +1449,7 @@ class SHMFunctionSelector {
   private createFunctionItem(func: SHMFunction, isRecent: boolean = false): HTMLElement {
     const item = document.createElement('div');
     item.className = 'shm-function-item';
+    item.setAttribute('data-function-name', func.name); // Add data attribute for click handler
     item.style.cssText = `
       padding: 8px 16px;
       cursor: pointer;
@@ -1541,6 +1559,9 @@ class SHMFunctionSelector {
       existingPopup.remove();
     }
 
+    // Check if we're inside the function selector overlay
+    const isInFunctionSelector = !!document.querySelector('.shm-function-overlay');
+
     // Create documentation popup
     const popup = document.createElement('div');
     popup.className = 'shm-documentation-popup';
@@ -1557,7 +1578,7 @@ class SHMFunctionSelector {
       width: 90vw;
       max-height: 80vh;
       overflow-y: auto;
-      z-index: 10001;
+      z-index: ${isInFunctionSelector ? '10002' : '10001'};
       font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
       font-size: clamp(10px, 2vw, 12px);
     `;
@@ -1592,6 +1613,9 @@ class SHMFunctionSelector {
 
     closeButton.addEventListener('click', () => {
       popup.remove();
+      if (!isInFunctionSelector && overlay) {
+        overlay.remove();
+      }
     });
 
     closeButton.addEventListener('mouseenter', () => {
@@ -1606,25 +1630,29 @@ class SHMFunctionSelector {
 
     popup.appendChild(closeButton);
 
-    // Add overlay
-    const overlay = document.createElement('div');
-    overlay.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 10000;
-    `;
+    // Only add overlay if we're not already in the function selector
+    let overlay: HTMLElement | null = null;
+    if (!isInFunctionSelector) {
+      overlay = document.createElement('div');
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 10000;
+      `;
 
-    overlay.addEventListener('click', () => {
-      popup.remove();
-      overlay.remove();
-    });
+      overlay.addEventListener('click', () => {
+        popup.remove();
+        overlay!.remove();
+      });
+
+      document.body.appendChild(overlay);
+    }
 
     // Add to DOM
-    document.body.appendChild(overlay);
     document.body.appendChild(popup);
 
     // Focus management
@@ -1634,7 +1662,9 @@ class SHMFunctionSelector {
     const escapeHandler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         popup.remove();
-        overlay.remove();
+        if (!isInFunctionSelector && overlay) {
+          overlay.remove();
+        }
         document.removeEventListener('keydown', escapeHandler);
       }
     };
@@ -2704,6 +2734,219 @@ class SHMFunctionSelector {
 
   public showDocumentationPopup(func: SHMFunction): void {
     this.showFunctionDocumentation(func, document.body);
+  }
+
+  private showFunctionSelectorOverlay(nbPanel: any): void {
+    // Remove existing overlay if any
+    const existingOverlay = document.querySelector('.shm-function-overlay');
+    if (existingOverlay) {
+      existingOverlay.remove();
+    }
+
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'shm-function-overlay';
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 10000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    `;
+
+    // Create function selector panel
+    const panel = document.createElement('div');
+    panel.className = 'shm-function-selector-panel';
+    panel.style.cssText = `
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      max-width: min(500px, 90vw);
+      width: 90vw;
+      max-height: 80vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    `;
+
+    // Create header
+    const header = document.createElement('div');
+    header.style.cssText = `
+      padding: 16px 20px;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8f9fa;
+    `;
+
+    const title = document.createElement('h3');
+    title.textContent = 'jFUSE - SHM Function Selector';
+    title.style.cssText = `
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+    `;
+
+    // Create close button
+    const closeButton = document.createElement('button');
+    closeButton.textContent = '✕';
+    closeButton.style.cssText = `
+      border: none;
+      background: transparent;
+      font-size: 20px;
+      cursor: pointer;
+      color: #666;
+      padding: 0;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    `;
+
+    closeButton.addEventListener('click', () => {
+      overlay.remove();
+      this.cleanupDropdownKeyboardNavigation();
+    });
+
+    header.appendChild(title);
+    header.appendChild(closeButton);
+    panel.appendChild(header);
+
+    // Create content container
+    const contentContainer = document.createElement('div');
+    contentContainer.style.cssText = `
+      flex: 1;
+      overflow-y: auto;
+      padding: 0;
+    `;
+
+    // Add search box
+    const searchContainer = document.createElement('div');
+    searchContainer.style.cssText = `
+      padding: 12px 20px;
+      background: white;
+      border-bottom: 1px solid #e0e0e0;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    `;
+
+    const searchBox = document.createElement('input');
+    searchBox.type = 'text';
+    searchBox.placeholder = '🔍 Search functions...';
+    searchBox.style.cssText = `
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 13px;
+      outline: none;
+    `;
+
+    searchBox.addEventListener('focus', () => {
+      searchBox.style.borderColor = '#4CAF50';
+    });
+
+    searchBox.addEventListener('blur', () => {
+      searchBox.style.borderColor = '#ddd';
+    });
+
+    searchContainer.appendChild(searchBox);
+    contentContainer.appendChild(searchContainer);
+
+    // Create functions list container
+    const functionsContainer = document.createElement('div');
+    functionsContainer.style.cssText = `
+      padding: 8px 0;
+    `;
+
+    // Populate with functions (without adding another search box)
+    this.populateFoldingContentWithoutSearch(functionsContainer);
+
+    // Update search functionality
+    searchBox.addEventListener('input', () => {
+      const searchTerm = searchBox.value.toLowerCase();
+      const allSections = functionsContainer.querySelectorAll('.shm-folding-section');
+      
+      allSections.forEach(section => {
+        const items = section.querySelectorAll('.shm-function-item');
+        let hasVisibleItems = false;
+        
+        items.forEach(item => {
+          const text = item.textContent?.toLowerCase() || '';
+          if (text.includes(searchTerm)) {
+            (item as HTMLElement).style.display = 'flex';
+            hasVisibleItems = true;
+          } else {
+            (item as HTMLElement).style.display = 'none';
+          }
+        });
+        
+        // Show/hide entire section based on visible items
+        (section as HTMLElement).style.display = hasVisibleItems ? 'block' : 'none';
+      });
+    });
+
+    // Add click handlers to function items
+    functionsContainer.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      const functionItem = target.closest('.shm-function-item');
+      
+      if (functionItem) {
+        const funcName = functionItem.getAttribute('data-function-name');
+        const func = this.functions.find(f => f.name === funcName);
+        
+        if (func) {
+          // Only call selectFunction which handles insertion
+          this.selectFunction(func);
+          // Close the overlay
+          overlay.remove();
+          this.cleanupDropdownKeyboardNavigation();
+        }
+      }
+    });
+
+    contentContainer.appendChild(functionsContainer);
+    panel.appendChild(contentContainer);
+
+    // Add panel to overlay
+    overlay.appendChild(panel);
+
+    // Close on overlay click
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        overlay.remove();
+        this.cleanupDropdownKeyboardNavigation();
+      }
+    });
+
+    // Close on Escape key
+    const escapeHandler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        overlay.remove();
+        this.cleanupDropdownKeyboardNavigation();
+        document.removeEventListener('keydown', escapeHandler);
+      }
+    };
+    document.addEventListener('keydown', escapeHandler);
+
+    // Add to DOM
+    document.body.appendChild(overlay);
+
+    // Focus search box after a short delay
+    setTimeout(() => {
+      searchBox.focus();
+      this.setupDropdownKeyboardNavigation(functionsContainer);
+    }, 100);
   }
 
   private showSettingsPanel(): void {
