@@ -1547,6 +1547,13 @@ class SHMFunctionSelector {
     contentDiv.addEventListener('click', () => {
       this.selectFunction(func);
       this.closeDropdown();
+      
+      // Also close overlay if it exists
+      const overlay = document.querySelector('.shm-function-overlay');
+      if (overlay) {
+        overlay.remove();
+        this.cleanupDropdownKeyboardNavigation();
+      }
     });
 
     return item;
@@ -2307,7 +2314,7 @@ class SHMFunctionSelector {
       console.log('✅ Successfully created new cell with function');
     }
 
-    // Always create a new empty cell after function insertion for chaining
+    // Create a new empty cell after function insertion for chaining
     console.log('📄 Creating new empty cell for next function');
     const currentCellIndex = notebook.activeCellIndex;
     const nextCellIndex = currentCellIndex + 1;
@@ -2896,24 +2903,9 @@ class SHMFunctionSelector {
       });
     });
 
-    // Add click handlers to function items
-    functionsContainer.addEventListener('click', (e) => {
-      const target = e.target as HTMLElement;
-      const functionItem = target.closest('.shm-function-item');
-      
-      if (functionItem) {
-        const funcName = functionItem.getAttribute('data-function-name');
-        const func = this.functions.find(f => f.name === funcName);
-        
-        if (func) {
-          // Only call selectFunction which handles insertion
-          this.selectFunction(func);
-          // Close the overlay
-          overlay.remove();
-          this.cleanupDropdownKeyboardNavigation();
-        }
-      }
-    });
+    // Note: Click handlers are already attached to individual function items
+    // in createFunctionItem(), so we don't need another delegated handler here.
+    // The items will handle their own clicks and close the dropdown.
 
     contentContainer.appendChild(functionsContainer);
     panel.appendChild(contentContainer);
