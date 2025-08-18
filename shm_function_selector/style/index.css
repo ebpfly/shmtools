@@ -118,3 +118,19 @@
     box-shadow: none;
   }
 }
+
+/* Force dropdown width - highest specificity */
+.jp-Toolbar-item .shm-function-dropdown,
+select.shm-function-dropdown {
+  width: 400px !important;
+  min-width: 400px !important;
+  max-width: 400px !important;
+  padding: 4px 8px !important;
+  font-size: 11px !important;
+  border: 1px solid #ccc !important;
+  border-radius: 3px !important;
+  background: white !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+}

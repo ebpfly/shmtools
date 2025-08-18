@@ -190,6 +190,41 @@ cd ..
 jupyter lab build
 ```
 
+**Advanced Extension Debugging - DOM Structure and CSS Issues**:
+
+When extension changes don't appear visually despite successful compilation:
+
+1. **Check for Enhanced Dropdown Container**: The extension uses a `createFoldingDropdown()` function that creates an enhanced dropdown container with specific width constraints. This container can override individual element styling.
+
+2. **Common Width Constraint Issues**: 
+   - Look for `.shm-enhanced-dropdown` containers with `min-width: min(280px, 80vw)` 
+   - The enhanced dropdown wrapper constrains the actual `<select>` element
+   - Browser default `<select>` styling can override inline styles without `!important`
+
+3. **Proper Investigation Method**:
+   ```bash
+   # Search for width constraints in the codebase
+   grep -n "min-width\|max-width\|width.*px" shm_function_selector/src/index.ts
+   
+   # Look for enhanced dropdown creation
+   grep -n "enhanced.*dropdown\|createFoldingDropdown" shm_function_selector/src/index.ts
+   
+   # Check if specific width values appear in compiled JS
+   grep "280px\|400px" shm_function_selector/shm_function_selector/labextension/static/lib_index_js.*.js
+   ```
+
+4. **Root Cause Analysis**: When CSS changes don't take effect, the issue is usually:
+   - Wrong element being styled (styling child instead of parent container)
+   - Enhanced/wrapper containers overriding individual element styles  
+   - Missing CSS class names needed for JupyterLab integration (`jp-Toolbar-item`)
+   - Browser default styling taking precedence over inline styles
+
+5. **Effective Fix Strategy**:
+   - Identify the actual constraining container (often not the `<select>` element itself)
+   - Add proper JupyterLab CSS classes (`jp-Toolbar-item`, etc.)
+   - Use both inline styles with `!important` AND CSS file rules for maximum compatibility
+   - Fix width constraints in all relevant containers, not just the target element
+
 ## AWS Cloud Deployment (Primary Deployment Method)
 
 ### Overview

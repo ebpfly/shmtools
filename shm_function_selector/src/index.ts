@@ -975,6 +975,7 @@ class SHMFunctionSelector {
       
       // Create the dropdown container with responsive behavior
       const container = document.createElement('div');
+      container.className = 'jp-Toolbar-item';
       const isMobile = window.innerWidth < 768;
       container.style.cssText = `
         display: inline-flex;
@@ -987,27 +988,21 @@ class SHMFunctionSelector {
         ${isMobile ? 'width: 100%; justify-content: center;' : ''}
       `;
 
-      // Create label
-      const label = document.createElement('label');
-      label.textContent = 'SHM Function:';
-      label.style.cssText = `
-        font-size: 12px;
-        font-weight: bold;
-        color: #333;
-      `;
-
       // Create dropdown
       this.dropdown = document.createElement('select');
+      this.dropdown.className = 'shm-function-dropdown';
       this.dropdown.style.cssText = `
-        padding: 4px 8px;
-        font-size: 11px;
-        border: 1px solid #ccc;
-        border-radius: 3px;
-        background: white;
-        cursor: pointer;
-        min-width: 180px;
-        max-width: 250px;
-        flex-shrink: 1;
+        padding: 4px 8px !important;
+        font-size: 11px !important;
+        border: 1px solid #ccc !important;
+        border-radius: 3px !important;
+        background: white !important;
+        cursor: pointer !important;
+        width: 400px !important;
+        min-width: 400px !important;
+        max-width: 400px !important;
+        flex-shrink: 0 !important;
+        box-sizing: border-box !important;
       `;
 
       // Add automatic insertion on selection change
@@ -1051,7 +1046,6 @@ class SHMFunctionSelector {
       });
 
       // Add elements to container
-      container.appendChild(label);
       container.appendChild(this.dropdown);
       container.appendChild(settingsButton);
       container.appendChild(helpButton);
@@ -1091,9 +1085,9 @@ class SHMFunctionSelector {
       enhancedDropdown.className = 'shm-enhanced-dropdown';
       enhancedDropdown.style.cssText = `
         position: relative;
-        min-width: min(280px, 80vw);
-        max-width: min(350px, 90vw);
-        width: 100%;
+        min-width: 400px;
+        max-width: 400px;
+        width: 400px;
       `;
       container.appendChild(enhancedDropdown);
     }
