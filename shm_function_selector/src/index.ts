@@ -865,10 +865,12 @@ interface SHMFunction {
   }>;
 }
 
+
 class SHMFunctionSelector {
   private app: JupyterFrontEnd;
   private notebookTracker: INotebookTracker;
   private functions: SHMFunction[] = [];
+  private moduleImports: string[] = [];  // Store imports here
   private dropdown: HTMLSelectElement | null = null;
   private recentlyUsed: string[] = [];
   
@@ -886,6 +888,29 @@ class SHMFunctionSelector {
     
     // Set up notebook tracking
     this.setupNotebookTracking();
+  }
+
+  private async loadModuleImports(): Promise<void> {
+    try {
+      console.log('📥 Loading module imports from server...');
+      const response = await requestAPI<any>('imports');
+      
+      let imports: string[];
+      if (typeof response === 'string') {
+        imports = JSON.parse(response);
+      } else if (Array.isArray(response)) {
+        imports = response;
+      } else {
+        console.warn('Unexpected imports response type:', typeof response);
+        imports = [];
+      }
+      
+      this.moduleImports = imports;
+      console.log(`✅ Loaded ${imports.length} module imports:`, imports);
+    } catch (error) {
+      console.error('❌ Failed to load module imports:', error);
+      this.moduleImports = [];  // Fallback to empty
+    }
   }
 
   private async loadFunctions(): Promise<void> {
@@ -908,10 +933,29 @@ class SHMFunctionSelector {
       this.functions = functions;
       console.log(`✅ Loaded ${functions.length} SHM functions`, functions.slice(0, 3));
       
+      // Also load module imports
+      await this.loadModuleImports();
+      
+      // Add special import function at the beginning of the list
+      const importFunction: SHMFunction = {
+        name: '__import_all_modules__',
+        displayName: '📦 Import All Modules',
+        category: '⚡ Quick Actions',
+        module: 'builtin',
+        signature: 'import_all_modules()',
+        description: 'Add import statements for all available top-level modules',
+        docstring: 'Imports all available modules like shmtools, examples, ladpackage',
+        parameters: [],
+        guiMetadata: {},
+        returns: []
+      };
+      this.functions.unshift(importFunction);
+      
       // If dropdown exists, populate it
       if (this.dropdown) {
         this.populateDropdown();
       }
+      
     } catch (error) {
       console.error('❌ Failed to load SHM functions:', error);
       console.error('Error details:', error);
@@ -923,6 +967,7 @@ class SHMFunctionSelector {
       this.showNotification('⚠️ Failed to load SHM functions. Check browser console.', '#ff9800');
     }
   }
+
 
   private setupNotebookTracking(): void {
     this.notebookTracker.widgetAdded.connect((sender, nbPanel) => {
@@ -1170,6 +1215,7 @@ class SHMFunctionSelector {
     enhancedDropdown.appendChild(dropdownContent);
   }
 
+
   private populateFoldingContent(container: HTMLElement): void {
     container.innerHTML = '';
 
@@ -1297,6 +1343,7 @@ class SHMFunctionSelector {
 
     return { container, header, content };
   }
+
 
   private collapseAllCategories(container: HTMLElement): void {
     // Find all category sections and collapse them
@@ -2254,6 +2301,13 @@ class SHMFunctionSelector {
   }
 
   private generateCodeSnippet(func: SHMFunction): string {
+    // Special handling for import all modules
+    if (func.name === '__import_all_modules__') {
+      return this.moduleImports.length > 0 
+        ? this.moduleImports.join('\n')
+        : '# No modules available to import';
+    }
+
     const params = func.parameters;
     const hasRequiredParams = params.some(p => !p.optional);
     

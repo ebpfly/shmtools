@@ -1,0 +1,42 @@
+{
+  "_comment": "Example configuration showing how to include functions from the examples folder",
+  "function_discovery": {
+    "enabled": true,
+    "discovery_mode": "modules",
+    "modules_to_scan": [
+      "shmtools.core.spectral",
+      "shmtools.features.time_series",
+      "shmtools.classification.outlier_detection",
+      "examples.data",
+      "examples.data.data_imports",
+      "examples.data.data_loaders"
+    ],
+    "include_patterns": [
+      "*_shm",
+      "import_*",
+      "load_*"
+    ],
+    "exclude_patterns": [
+      "_*",
+      "__*"
+    ],
+    "custom_categories": {
+      "shmtools.core": "Core Functions",
+      "shmtools.features": "Feature Extraction", 
+      "shmtools.classification": "Classification",
+      "examples.data": "📁 Example Data Import",
+      "examples": "📚 Example Functions"
+    }
+  },
+  "variable_discovery": {
+    "enabled": true,
+    "include_notebook_variables": true,
+    "include_kernel_variables": false
+  },
+  "gui_integration": {
+    "show_parameter_hints": true,
+    "show_function_descriptions": true,
+    "group_by_category": true,
+    "max_functions_per_category": 25
+  }
+}

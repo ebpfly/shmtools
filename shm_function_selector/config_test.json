@@ -1,0 +1,32 @@
+{
+  "function_discovery": {
+    "enabled": true,
+    "discovery_mode": "modules",
+    "modules_to_scan": [
+      "shmtools.core.spectral",
+      "shmtools.features.time_series"
+    ],
+    "include_patterns": ["*_shm", "ar_*", "psd_*"],
+    "exclude_patterns": ["_internal*", "*_test"],
+    "custom_categories": {
+      "shmtools.core": "Test Core Functions",
+      "shmtools.features": "Test Feature Functions"
+    }
+  },
+  "variable_discovery": {
+    "enabled": true,
+    "include_notebook_variables": true,
+    "include_kernel_variables": false,
+    "type_inference": {
+      "enabled": true,
+      "use_annotations": true,
+      "infer_from_values": true
+    }
+  },
+  "gui_integration": {
+    "show_parameter_hints": true,
+    "show_function_descriptions": true,
+    "group_by_category": true,
+    "max_functions_per_category": 10
+  }
+}

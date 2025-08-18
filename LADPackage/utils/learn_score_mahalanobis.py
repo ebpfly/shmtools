@@ -177,7 +177,3 @@ def learn_score_mahalanobis(features: np.ndarray,
         scores = scores.reshape(-1, 1)
     
     return scores
-
-
-# Add alias for exact LADPackage compatibility
-LearnScoreMahalanobis = learn_score_mahalanobis

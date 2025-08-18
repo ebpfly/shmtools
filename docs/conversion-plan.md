@@ -33,27 +33,6 @@
 - **Phase 24**: LADPackage Full Active Sensing ⏳ (Complex - requires specialized functions)
 - **Phase 25**: LADPackage Optimal Sensor Placement ⚠️ (Partial - plotting and function issues)
 
-### 📋 mFUSE TO JUPYTER CONVERSION
-
-**Goal**: Convert all mFUSE workflow instructions to Jupyter extension equivalents.
-
-**Process**: 
-1. Extract text from mFUSE .docx instruction files using python-docx
-2. Map MATLAB function calls to Python equivalents using function metadata
-3. Create step-by-step Jupyter extension instructions following the dropdown → right-click → parameter linking workflow
-4. Verify all functions exist and have proper category metadata for the function selector
-
-**Status**: 
-- ✅ **Conversion Guide**: Complete methodology documented in `docs/mfuse-to-jupyter-conversion-guide.md`
-- ✅ **Example Conversion**: Outlier Detection workflow converted to `examples/notebooks/outlier_detection/jupyter_extension_outlier_detection_instructions.md`
-- ⏳ **Remaining Conversions**: 3 additional mFUSE workflows need conversion:
-  - Condition Based Monitoring.docx
-  - Guided Wave Active Sensing.docx  
-  - Optimal Sensor Placement.docx
-
-**Files Locations**:
-- Original: `matlab/LADPackage/Demos/Instructions/*.docx`
-- Converted: `examples/notebooks/*/jupyter_extension_*_instructions.md`
 
 ### 📊 COMPLETION METRICS
 - **Core ExampleUsageScripts**: **85% COMPLETE** (20 of 23 phases)

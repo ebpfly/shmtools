@@ -617,6 +617,44 @@ class SHMFunctionHandler(APIHandler):
         return validation
 
 
+class SHMImportsHandler(APIHandler):
+    """Handler for generating required imports based on available functions."""
+    
+    @authenticated
+    def get(self):
+        """Get list of required imports organized by module."""
+        try:
+            imports = self._analyze_required_imports()
+            self.finish(json.dumps(imports, cls=InfinityJSONEncoder))
+        except Exception as e:
+            self.log.error(f"Error analyzing imports: {e}")
+            self.set_status(500)
+            self.finish({"error": str(e)})
+    
+    def _analyze_required_imports(self) -> List[str]:
+        """Get list of high-level module imports."""
+        # Get available functions from the main handler
+        function_handler = SHMFunctionHandler(self.application, self.request)
+        function_handler._config = None  # Reset config cache
+        functions = function_handler._discover_shm_functions()
+        
+        # Find all top-level modules
+        top_level_modules = set()
+        
+        for func in functions:
+            module = func.get('module', '')
+            if not module:
+                continue
+                
+            # Extract top-level module (e.g., 'shmtools' from 'shmtools.core.spectral')
+            module_parts = module.split('.')
+            if module_parts:
+                top_level_modules.add(module_parts[0])
+        
+        # Return sorted list of import statements
+        return sorted([f"import {module}" for module in top_level_modules])
+
+
 class SHMVariableHandler(APIHandler):
     """Handler for notebook variable parsing."""
     
@@ -761,6 +799,7 @@ def setup_handlers(web_app):
     
     handlers = [
         (url_path_join(base_url, "shm-function-selector", "functions"), SHMFunctionHandler),
+        (url_path_join(base_url, "shm-function-selector", "imports"), SHMImportsHandler),
         (url_path_join(base_url, "shm-function-selector", "variables"), SHMVariableHandler),
     ]
     
