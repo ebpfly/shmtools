@@ -360,7 +360,7 @@ def map_active_sensing_geometry(
     x_spacing: Optional[float],
     y_spacing: Optional[float],
     sample_rate: float,
-    offset: np.ndarray,
+    actuation_waveform: np.ndarray,
     data: np.ndarray,
     pair_list: np.ndarray,
     sensor_layout: np.ndarray
@@ -395,8 +395,8 @@ def map_active_sensing_geometry(
         Desired spacing between Y coordinates
     sample_rate : float
         Sample rate (Hz)
-    offset : ndarray
-        Offset of impulse from start of waveform
+    actuation_waveform : ndarray
+        Waveform used for actuation
     data : ndarray
         Full data matrix
     pair_list : ndarray
@@ -498,11 +498,11 @@ def map_active_sensing_geometry(
     
     # Step 5: Distance to index
     # The offset should be the length of the actuation waveform, not the waveform itself
-    if isinstance(offset, np.ndarray) and offset.size > 1:
+    if isinstance(actuation_waveform, np.ndarray) and actuation_waveform.size > 1:
         # Use the length of the actuation waveform as the offset
-        offset_value = len(offset)
+        offset_value = len(actuation_waveform)
     else:
-        offset_value = offset if np.isscalar(offset) else 0
+        offset_value = actuation_waveform if np.isscalar(actuation_waveform) else 0
     
     indices = distance_2_index_shm(prop_distance, sample_rate, velocity, offset_value)
     

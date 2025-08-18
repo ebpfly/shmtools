@@ -65,11 +65,15 @@ function activate(
         return;
       }
 
+      console.log('🚀 Right-click detected, altKey:', event.altKey, 'ctrlKey:', event.ctrlKey, 'shiftKey:', event.shiftKey);
+
       // Check if Alt/Option key is held for plotting mode
       if (event.altKey) {
         // Alt+Right-click: Show plotting menu for variables in the cell
         const cellCode = activeCell.editor?.model?.sharedModel?.getSource() || '';
+        console.log('📝 Cell code for plotting:', cellCode);
         const allVariables = contextMenuManager.getAllVariablesFromCodeForPlotting(cellCode);
+        console.log('🔍 Variables detected for plotting:', allVariables);
         
         if (allVariables.length > 0) {
           console.log('🎯 Plotting mode: Found variables:', allVariables);
