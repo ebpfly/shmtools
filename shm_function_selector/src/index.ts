@@ -5,6 +5,8 @@ import {
 
 import { INotebookTracker } from '@jupyterlab/notebook';
 import { Cell } from '@jupyterlab/cells';
+import { IConsoleTracker } from '@jupyterlab/console';
+import { CodeConsole } from '@jupyterlab/console';
 import { requestAPI } from './serverAPI';
 
 /**
@@ -14,7 +16,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
   id: 'shm-function-selector:plugin',
   description: 'SHM Function Selector for JupyterLab with function dropdown and context menu parameter linking',
   autoStart: true,
-  requires: [INotebookTracker],
+  requires: [INotebookTracker, IConsoleTracker],
   activate: activate
 };
 
@@ -23,7 +25,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
  */
 function activate(
   app: JupyterFrontEnd,
-  notebookTracker: INotebookTracker
+  notebookTracker: INotebookTracker,
+  consoleTracker: IConsoleTracker
 ): void {
   console.log('🚀 SHM Function Selector JupyterLab extension activated!');
 
@@ -59,6 +62,74 @@ function activate(
     notebook.node.addEventListener('contextmenu', (event: MouseEvent) => {
       const activeCell = notebook.activeCell;
       if (!activeCell || activeCell.model.type !== 'code') {
+        return;
+      }
+
+      // Check if Alt/Option key is held for plotting mode
+      if (event.altKey) {
+        // Alt+Right-click: Show plotting menu for variables in the cell
+        const cellCode = activeCell.editor?.model?.sharedModel?.getSource() || '';
+        const allVariables = contextMenuManager.getAllVariablesFromCodeForPlotting(cellCode);
+        
+        if (allVariables.length > 0) {
+          console.log('🎯 Plotting mode: Found variables:', allVariables);
+          event.preventDefault();
+          event.stopPropagation();
+          
+          if (allVariables.length > 1) {
+            // Show menu with all variables from the assignment
+            contextMenuManager.showMultiVariablePlottingMenu(event, allVariables, consoleTracker);
+          } else {
+            // Show single variable plotting menu
+            contextMenuManager.showPlottingContextMenu(event, allVariables[0], consoleTracker);
+          }
+          return;
+        } else {
+          // No variables found for plotting
+          const notification = document.createElement('div');
+          notification.textContent = '📊 No output variables found in this cell';
+          notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #ff9800;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            z-index: 10000;
+            font-family: monospace;
+            font-size: 11px;
+          `;
+          document.body.appendChild(notification);
+          
+          setTimeout(() => {
+            if (notification.parentNode) {
+              notification.parentNode.removeChild(notification);
+            }
+          }, 2000);
+          return;
+        }
+      }
+      
+      // Also check if we're right-clicking directly on an output area
+      const outputVariable = contextMenuManager.detectOutputVariable(event, activeCell);
+      if (outputVariable) {
+        console.log('🎯 Output variable detected for plotting:', outputVariable);
+        
+        // Get all variables from the most recent assignment
+        const cellCode = activeCell.editor?.model?.sharedModel?.getSource() || '';
+        const allVariables = contextMenuManager.getAllVariablesFromCodeForPlotting(cellCode);
+        
+        event.preventDefault();
+        event.stopPropagation();
+        
+        if (allVariables.length > 1) {
+          // Show menu with all variables from the assignment
+          contextMenuManager.showMultiVariablePlottingMenu(event, allVariables, consoleTracker);
+        } else {
+          // Show single variable plotting menu
+          contextMenuManager.showPlottingContextMenu(event, outputVariable, consoleTracker);
+        }
         return;
       }
 
@@ -1029,7 +1100,7 @@ class SHMFunctionSelector {
       // Create help button
       const helpButton = document.createElement('button');
       helpButton.textContent = '❓';
-      helpButton.title = 'SHM Extension Help - Usage and Shortcuts';
+      helpButton.title = 'SHM Extension Help';
       helpButton.style.cssText = `
         padding: 4px 6px;
         font-size: 11px;
@@ -1047,6 +1118,7 @@ class SHMFunctionSelector {
 
       // Add elements to container
       container.appendChild(this.dropdown);
+      container.appendChild(helpButton);
       container.appendChild(settingsButton);
       container.appendChild(helpButton);
 
@@ -2862,6 +2934,7 @@ class SHMFunctionSelector {
     return content;
   }
 
+
   private createSettingSection(
     label: string,
     description: string,
@@ -3269,6 +3342,126 @@ interface Variable {
 class SHMContextMenuManager {
   private variables: Variable[] = [];
   private contextMenu: HTMLElement | null = null;
+
+  /**
+   * Detect if right-click happened on a variable in cell output area ONLY
+   */
+  detectOutputVariable(event: MouseEvent, cell: any): string | null {
+    const target = event.target as HTMLElement;
+    
+    // ONLY check if we're clicking on actual output area - be very restrictive
+    if (target.closest('.jp-OutputArea')) {
+      // Look for text content that looks like a variable name
+      const outputText = target.textContent || '';
+      
+      // Simple pattern matching for variable names in output
+      const variablePattern = /\b([a-zA-Z_][a-zA-Z0-9_]*)\s*=/g;
+      let variableMatches: string[] = [];
+      let match;
+      while ((match = variablePattern.exec(outputText)) !== null) {
+        variableMatches.push(match[1]);
+      }
+      
+      if (variableMatches.length > 0) {
+        return variableMatches[0];
+      }
+      
+      // Also check for standalone variable names that could be plottable
+      const standalonePattern = /\b([a-zA-Z_][a-zA-Z0-9_]*)\b/g;
+      let standaloneMatches: string[] = [];
+      while ((match = standalonePattern.exec(outputText)) !== null) {
+        standaloneMatches.push(match[1]);
+      }
+      
+      // Filter out common non-variable words
+      const excludeWords = ['array', 'dtype', 'shape', 'nan', 'inf', 'true', 'false', 'none', 'out', 'in'];
+      
+      for (const matchStr of standaloneMatches) {
+        const word = matchStr.toLowerCase();
+        if (!excludeWords.includes(word) && word.length > 1) {
+          return matchStr;
+        }
+      }
+      
+      // If we're in output area but no specific variable found, offer to plot the last assignment
+      const cellCode = cell.editor?.model?.sharedModel?.getSource() || '';
+      return this.extractVariablesFromCodeForPlotting(cellCode);
+    }
+    
+    // Return null if not in output area - let the original parameter detection handle it
+    return null;
+  }
+
+  /**
+   * Extract variable names from code (assignments) for plotting
+   */
+  extractVariablesFromCodeForPlotting(code: string): string | null {
+    // Use regex to find variable assignments that span multiple lines
+    // Pattern: variable(s) = anything (including multi-line function calls)
+    
+    // Remove comments first
+    const codeWithoutComments = code.replace(/#[^\n]*/g, '');
+    
+    // Look for assignments that start at beginning of lines
+    // This will match: "x, y, z = function(...)" even across multiple lines
+    const assignmentRegex = /^([a-zA-Z_][a-zA-Z0-9_,\s]*)\s*=\s*[^=]/gm;
+    
+    let lastMatch = null;
+    let match;
+    
+    // Find the LAST assignment in the code
+    while ((match = assignmentRegex.exec(codeWithoutComments)) !== null) {
+      lastMatch = match;
+    }
+    
+    if (lastMatch) {
+      const leftSide = lastMatch[1].trim();
+      
+      // Handle tuple assignments like "x, y, z = ..."
+      if (leftSide.includes(',')) {
+        const varNames = leftSide.split(',').map(v => v.trim()).filter(v => v.match(/^[a-zA-Z_][a-zA-Z0-9_]*$/));
+        return varNames.length > 0 ? varNames[0] : null;
+      } else {
+        // Single assignment like "x = ..."
+        return leftSide.match(/^[a-zA-Z_][a-zA-Z0-9_]*$/) ? leftSide : null;
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * Get all variables from the most recent assignment in code for plotting
+   */
+  getAllVariablesFromCodeForPlotting(code: string): string[] {
+    // Remove comments first
+    const codeWithoutComments = code.replace(/#[^\n]*/g, '');
+    
+    // Look for assignments that start at beginning of lines
+    const assignmentRegex = /^([a-zA-Z_][a-zA-Z0-9_,\s]*)\s*=\s*[^=]/gm;
+    
+    let lastMatch = null;
+    let match;
+    
+    // Find the LAST assignment in the code
+    while ((match = assignmentRegex.exec(codeWithoutComments)) !== null) {
+      lastMatch = match;
+    }
+    
+    if (lastMatch) {
+      const leftSide = lastMatch[1].trim();
+      
+      // Handle tuple assignments like "x, y, z = ..."
+      if (leftSide.includes(',')) {
+        return leftSide.split(',').map(v => v.trim()).filter(v => v.match(/^[a-zA-Z_][a-zA-Z0-9_]*$/));
+      } else {
+        // Single assignment like "x = ..."
+        return leftSide.match(/^[a-zA-Z_][a-zA-Z0-9_]*$/) ? [leftSide] : [];
+      }
+    }
+    
+    return [];
+  }
 
   /**
    * Parse code to detect parameter context at cursor position
@@ -4188,6 +4381,304 @@ class SHMContextMenuManager {
       this.contextMenu.parentNode.removeChild(this.contextMenu);
     }
     this.contextMenu = null;
+  }
+
+  /**
+   * Show plotting context menu for output variables
+   */
+  showPlottingContextMenu(
+    event: MouseEvent, 
+    variableName: string,
+    consoleTracker: any
+  ): void {
+    this.hideContextMenu();
+    
+    // Create context menu
+    this.contextMenu = document.createElement('div');
+    this.contextMenu.className = 'shm-plotting-context-menu';
+    
+    // Calculate position
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    let menuLeft = event.pageX;
+    let menuTop = event.pageY;
+    
+    // Adjust if menu would go off screen
+    if (menuLeft + 250 > viewportWidth) {
+      menuLeft = viewportWidth - 260;
+    }
+    if (menuTop + 200 > viewportHeight) {
+      menuTop = viewportHeight - 210;
+    }
+    
+    this.contextMenu.style.cssText = `
+      position: fixed;
+      left: ${menuLeft}px;
+      top: ${menuTop}px;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      z-index: 10000;
+      min-width: 220px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      font-size: 13px;
+    `;
+
+    // Header
+    const header = document.createElement('div');
+    header.textContent = `📊 Plot: ${variableName}`;
+    header.style.cssText = `
+      padding: 10px 12px;
+      background: #f5f5f5;
+      border-bottom: 1px solid #ddd;
+      font-weight: bold;
+      color: #333;
+    `;
+    this.contextMenu.appendChild(header);
+
+    // Plot options
+    const plotOptions = [
+      { label: '📈 Line Plot', code: `import matplotlib.pyplot as plt\nplt.figure(figsize=(10, 6))\nplt.plot(${variableName})\nplt.title('${variableName}')\nplt.grid(True)\nplt.show()` },
+      { label: '📊 Histogram', code: `import matplotlib.pyplot as plt\nplt.figure(figsize=(10, 6))\nplt.hist(${variableName}, bins=30, alpha=0.7)\nplt.title('Histogram of ${variableName}')\nplt.xlabel('Values')\nplt.ylabel('Frequency')\nplt.grid(True, alpha=0.3)\nplt.show()` },
+      { label: '🗺️ Heatmap (2D)', code: `import matplotlib.pyplot as plt\nimport numpy as np\nplt.figure(figsize=(10, 8))\nif ${variableName}.ndim == 2:\n    plt.imshow(${variableName}, cmap='viridis', aspect='auto')\n    plt.colorbar()\n    plt.title('Heatmap of ${variableName}')\nelse:\n    print("Variable must be 2D for heatmap")\nplt.show()` },
+      { label: '📉 Scatter Plot', code: `import matplotlib.pyplot as plt\nimport numpy as np\nplt.figure(figsize=(10, 6))\nif ${variableName}.ndim == 1:\n    plt.scatter(range(len(${variableName})), ${variableName})\n    plt.xlabel('Index')\nelse:\n    if ${variableName}.shape[1] >= 2:\n        plt.scatter(${variableName}[:, 0], ${variableName}[:, 1])\n        plt.xlabel('Column 0')\n        plt.ylabel('Column 1')\n    else:\n        print("Need at least 2 columns for scatter plot")\nplt.title('Scatter Plot of ${variableName}')\nplt.grid(True, alpha=0.3)\nplt.show()` }
+    ];
+
+    plotOptions.forEach(option => {
+      const menuItem = document.createElement('div');
+      menuItem.textContent = option.label;
+      menuItem.style.cssText = `
+        padding: 8px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
+        transition: background-color 0.2s;
+      `;
+
+      menuItem.addEventListener('mouseenter', () => {
+        menuItem.style.background = '#f0f0f0';
+      });
+
+      menuItem.addEventListener('mouseleave', () => {
+        menuItem.style.background = '';
+      });
+
+      menuItem.addEventListener('click', () => {
+        this.executeInConsole(option.code, consoleTracker);
+        this.hideContextMenu();
+      });
+
+      this.contextMenu.appendChild(menuItem);
+    });
+
+    document.body.appendChild(this.contextMenu);
+
+    // Close menu on outside click
+    const closeHandler = (e: MouseEvent) => {
+      if (!this.contextMenu?.contains(e.target as Node)) {
+        this.hideContextMenu();
+        document.removeEventListener('click', closeHandler);
+      }
+    };
+    
+    setTimeout(() => {
+      document.addEventListener('click', closeHandler);
+    }, 100);
+  }
+
+  /**
+   * Execute code in the console associated with the current notebook
+   */
+  async executeInConsole(code: string, consoleTracker: any): Promise<void> {
+    try {
+      // Find or create a console for the current notebook
+      let console = consoleTracker.currentWidget;
+      
+      if (!console) {
+        // No console open, show notification
+        const notification = document.createElement('div');
+        notification.textContent = '📱 Please open a console first (File → New → Console)';
+        notification.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: #ff9800;
+          color: white;
+          padding: 10px 15px;
+          border-radius: 4px;
+          z-index: 10000;
+          font-family: monospace;
+          font-size: 12px;
+        `;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+          if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+          }
+        }, 4000);
+        return;
+      }
+
+      // Execute the code in the console
+      await console.console.inject(code, false);
+      
+      // Show success notification
+      const notification = document.createElement('div');
+      notification.textContent = '✅ Plot command sent to console';
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #4caf50;
+        color: white;
+        padding: 10px 15px;
+        border-radius: 4px;
+        z-index: 10000;
+        font-family: monospace;
+        font-size: 12px;
+      `;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
+        }
+      }, 3000);
+      
+    } catch (error) {
+      console.error('Error executing code in console:', error);
+      
+      // Show error notification
+      const notification = document.createElement('div');
+      notification.textContent = '❌ Error sending to console';
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #f44336;
+        color: white;
+        padding: 10px 15px;
+        border-radius: 4px;
+        z-index: 10000;
+        font-family: monospace;
+        font-size: 12px;
+      `;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
+        }
+      }, 3000);
+    }
+  }
+
+  /**
+   * Show plotting context menu for multiple variables
+   */
+  showMultiVariablePlottingMenu(
+    event: MouseEvent, 
+    variables: string[],
+    consoleTracker: any
+  ): void {
+    this.hideContextMenu();
+    
+    // Create context menu
+    this.contextMenu = document.createElement('div');
+    this.contextMenu.className = 'shm-multi-plotting-context-menu';
+    
+    // Calculate position
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    let menuLeft = event.pageX;
+    let menuTop = event.pageY;
+    
+    // Adjust if menu would go off screen
+    if (menuLeft + 300 > viewportWidth) {
+      menuLeft = viewportWidth - 310;
+    }
+    if (menuTop + 250 > viewportHeight) {
+      menuTop = viewportHeight - 260;
+    }
+    
+    this.contextMenu.style.cssText = `
+      position: fixed;
+      left: ${menuLeft}px;
+      top: ${menuTop}px;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      z-index: 10000;
+      min-width: 250px;
+      max-height: 400px;
+      overflow-y: auto;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      font-size: 13px;
+    `;
+
+    // Header
+    const header = document.createElement('div');
+    header.textContent = `📊 Select Variable to Plot`;
+    header.style.cssText = `
+      padding: 10px 12px;
+      background: #f5f5f5;
+      border-bottom: 1px solid #ddd;
+      font-weight: bold;
+      color: #333;
+      position: sticky;
+      top: 0;
+    `;
+    this.contextMenu.appendChild(header);
+
+    // Variable list
+    variables.forEach((variable, index) => {
+      const variableItem = document.createElement('div');
+      variableItem.textContent = `${index + 1}. ${variable}`;
+      variableItem.style.cssText = `
+        padding: 8px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
+        transition: background-color 0.2s;
+        display: flex;
+        align-items: center;
+      `;
+
+      variableItem.addEventListener('mouseenter', () => {
+        variableItem.style.background = '#f0f8ff';
+      });
+
+      variableItem.addEventListener('mouseleave', () => {
+        variableItem.style.background = '';
+      });
+
+      variableItem.addEventListener('click', () => {
+        this.hideContextMenu();
+        // Show individual plotting menu for selected variable
+        setTimeout(() => {
+          this.showPlottingContextMenu(event, variable, consoleTracker);
+        }, 100);
+      });
+
+      this.contextMenu.appendChild(variableItem);
+    });
+
+    document.body.appendChild(this.contextMenu);
+
+    // Close menu on outside click
+    const closeHandler = (e: MouseEvent) => {
+      if (!this.contextMenu?.contains(e.target as Node)) {
+        this.hideContextMenu();
+        document.removeEventListener('click', closeHandler);
+      }
+    };
+    
+    setTimeout(() => {
+      document.addEventListener('click', closeHandler);
+    }, 100);
   }
 
   /**
