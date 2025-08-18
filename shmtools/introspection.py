@@ -631,8 +631,9 @@ def _extract_return_info(docstring):
         ]:
             break
 
-        # Parse return value
-        if in_returns and ":" in stripped and not stripped.startswith(" "):
+        # Parse return value - skip directive blocks like .. gui::
+        if (in_returns and ":" in stripped and not stripped.startswith(" ") 
+            and not stripped.startswith("..") and not stripped.startswith(":")):
             if current_return:
                 returns.append(current_return)
 
