@@ -34,6 +34,14 @@ GIT_USER_EMAIL="ericbflynn@gmail.com"
 GITHUB_PAT_SSM_PARAMETER_NAME="/github/pat"  # where we'll store/read your PAT
 SECURITY_GROUP_NAME="tljh-sg"
 INSTANCE_NAME_TAG="tljh-class-server"
+
+# Elastic IP configuration
+ELASTIC_IP_NAME="shmtools-static-ip"  # Name tag for the Elastic IP
+USE_DOMAIN="jfuse.shmtools.com"       # Domain name (optional, for display only)
+
+# SSL/HTTPS configuration
+ENABLE_SSL=true                       # Set to false to disable SSL setup
+SSL_EMAIL="ericbflynn@gmail.com"       # Email for Let's Encrypt certificates
 ############################################
 
 # --- helpers ---
@@ -133,6 +141,12 @@ aws ec2 authorize-security-group-ingress --group-id "$SG_ID" \
 aws ec2 authorize-security-group-ingress --group-id "$SG_ID" \
   --ip-permissions "IpProtocol=tcp,FromPort=80,ToPort=80,IpRanges=[{CidrIp=0.0.0.0/0,Description='HTTP'}]" \
   --region "$AWS_REGION" --profile "$AWS_PROFILE" || echo "ℹ HTTP rule already present"
+
+if [ "$ENABLE_SSL" = "true" ]; then
+  aws ec2 authorize-security-group-ingress --group-id "$SG_ID" \
+    --ip-permissions "IpProtocol=tcp,FromPort=443,ToPort=443,IpRanges=[{CidrIp=0.0.0.0/0,Description='HTTPS'}]" \
+    --region "$AWS_REGION" --profile "$AWS_PROFILE" || echo "ℹ HTTPS rule already present"
+fi
 
 # --- IAM: role + instance profile with narrow SSM read ---
 ROLE_NAME="tljh-ec2-role"
@@ -363,10 +377,86 @@ echo "Claude Code installed and PATH configured!"
 # Keep port 80 open if ufw is present
 ufw disable || true
 
+# SSL/HTTPS setup with Let's Encrypt
+if [ "${ENABLE_SSL}" = "true" ] && [ -n "${USE_DOMAIN}" ]; then
+  echo "========================================="
+  echo "Setting up SSL/HTTPS with Let's Encrypt"
+  echo "========================================="
+  
+  # Install Nginx and Certbot
+  apt-get install -y nginx certbot python3-certbot-nginx
+  
+  # Create Nginx configuration for JupyterHub reverse proxy
+  cat >/etc/nginx/sites-available/${USE_DOMAIN} <<'NGINXCONF'
+server {
+    listen 80;
+    server_name jfuse.shmtools.com www.jfuse.shmtools.com;
+    
+    # Redirect all HTTP traffic to HTTPS
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name jfuse.shmtools.com www.jfuse.shmtools.com;
+    
+    # SSL certificates will be managed by Certbot
+    
+    # JupyterHub reverse proxy
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # WebSocket support for JupyterLab
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        
+        # Timeouts
+        proxy_read_timeout 86400;
+        proxy_send_timeout 86400;
+    }
+}
+NGINXCONF
+  
+  # Enable the site
+  ln -sf /etc/nginx/sites-available/jfuse.shmtools.com /etc/nginx/sites-enabled/
+  rm -f /etc/nginx/sites-enabled/default
+  
+  # Test Nginx configuration
+  nginx -t
+  systemctl reload nginx
+  
+  # Wait a moment for DNS propagation
+  echo "Waiting 30 seconds for DNS propagation..."
+  sleep 30
+  
+  # Obtain SSL certificate
+  certbot --nginx -d jfuse.shmtools.com -d www.jfuse.shmtools.com \\
+    --email ericbflynn@gmail.com \\
+    --agree-tos \\
+    --non-interactive \\
+    --redirect
+  
+  # Set up automatic renewal
+  systemctl enable certbot.timer
+  systemctl start certbot.timer
+  
+  echo "SSL setup complete!"
+fi
+
 echo "========================================="
 echo "SETUP COMPLETE at \$(date)"
 echo "========================================="
-echo "JupyterHub is ready at http://\$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)"
+if [ "${ENABLE_SSL}" = "true" ] && [ -n "${USE_DOMAIN}" ]; then
+  echo "JupyterHub is ready at https://jfuse.shmtools.com"
+  echo "Backup access: http://\$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)"
+else
+  echo "JupyterHub is ready at http://\$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)"
+fi
 echo "Login with username: ${JUPYTER_ADMIN_USER}"
 echo "Set your password on first login"
 USERDATA
@@ -405,10 +495,34 @@ else
   echo "⏳ Waiting for 'running'…"
   aws ec2 wait instance-running --instance-ids "$INSTANCE_ID" --region "$AWS_REGION" --profile "$AWS_PROFILE"
 
-  PUBLIC_IP=$(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" \
-    --query 'Reservations[0].Instances[0].PublicIpAddress' --output text \
-    --region "$AWS_REGION" --profile "$AWS_PROFILE")
-  echo "🌐 Public IP: $PUBLIC_IP"
+  # Check for existing Elastic IP
+  echo "🔗 Checking for existing Elastic IP..."
+  ELASTIC_IP_INFO=$(aws ec2 describe-addresses \
+    --filters "Name=tag:Name,Values=$ELASTIC_IP_NAME" \
+    --query 'Addresses[0]' \
+    --region "$AWS_REGION" --profile "$AWS_PROFILE" \
+    --output json 2>/dev/null || echo "{}")
+  
+  ELASTIC_IP=$(echo "$ELASTIC_IP_INFO" | jq -r '.PublicIp // empty')
+  ALLOCATION_ID=$(echo "$ELASTIC_IP_INFO" | jq -r '.AllocationId // empty')
+  
+  if [ -n "$ELASTIC_IP" ] && [ "$ELASTIC_IP" != "null" ]; then
+    echo "✔ Found existing Elastic IP: $ELASTIC_IP"
+    echo "🔗 Associating Elastic IP with instance..."
+    aws ec2 associate-address \
+      --instance-id "$INSTANCE_ID" \
+      --allocation-id "$ALLOCATION_ID" \
+      --region "$AWS_REGION" --profile "$AWS_PROFILE" >/dev/null
+    PUBLIC_IP="$ELASTIC_IP"
+    echo "✔ Associated Elastic IP: $PUBLIC_IP"
+  else
+    echo "ℹ No existing Elastic IP found, using auto-assigned IP"
+    PUBLIC_IP=$(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" \
+      --query 'Reservations[0].Instances[0].PublicIpAddress' --output text \
+      --region "$AWS_REGION" --profile "$AWS_PROFILE")
+    echo "🌐 Public IP: $PUBLIC_IP"
+    echo "💡 To use a static IP, create an Elastic IP with Name tag: $ELASTIC_IP_NAME"
+  fi
 fi
 
 cat <<NEXT
@@ -417,7 +531,7 @@ Instance launched successfully!
 ====================================================================
 Instance ID: ${INSTANCE_ID}
 Public IP: ${PUBLIC_IP}
-JupyterHub URL: http://${PUBLIC_IP} (ready in ~5-10 minutes)
+JupyterHub URL: http://${PUBLIC_IP} (ready in ~5-10 minutes)$(if [ -n "$USE_DOMAIN" ] && [ -n "$ELASTIC_IP" ]; then echo "\nDomain URL: http://jfuse.shmtools.com (configure DNS A record)$(if [ "$ENABLE_SSL" = "true" ]; then echo "\nHTTPS URL: https://jfuse.shmtools.com (with SSL certificate)"; fi)"; fi)
 
 Waiting for SSH to become available...
 ====================================================================
@@ -454,7 +568,7 @@ echo "Connecting to cloud-init logs..."
 echo "Press Ctrl+C to exit monitoring (installation will continue)"
 echo ""
 echo "Quick reference while monitoring:"
-echo "  - JupyterHub URL: http://${PUBLIC_IP}"
+echo "  - JupyterHub URL: http://${PUBLIC_IP}$(if [ -n "$USE_DOMAIN" ] && [ "$PUBLIC_IP" = "$ELASTIC_IP" ]; then echo "\n  - Domain URL: http://jfuse.shmtools.com$(if [ "$ENABLE_SSL" = "true" ]; then echo "\n  - Secure URL: https://jfuse.shmtools.com"; fi)"; fi)"
 echo "  - Username: ${JUPYTER_ADMIN_USER}"
 echo "  - Repo location: /srv/classrepo"
 echo "======================================================================"
