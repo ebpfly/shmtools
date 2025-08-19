@@ -1,0 +1,13 @@
+include LICENSE
+include README.md
+include pyproject.toml
+include install.json
+include config.json
+
+recursive-include shm_function_selector *.py
+recursive-include shm_function_selector/labextension *
+
+global-exclude *.pyc
+global-exclude __pycache__
+global-exclude .git
+global-exclude .ipynb_checkpoints

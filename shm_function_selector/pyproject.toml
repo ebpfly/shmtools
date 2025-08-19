@@ -42,6 +42,7 @@ exclude = [".github", "binder"]
 [tool.hatch.build.targets.wheel.shared-data]
 "shm_function_selector/labextension" = "share/jupyter/labextensions/shm-function-selector"
 "install.json" = "share/jupyter/labextensions/shm-function-selector/install.json"
+"config.json" = "share/jupyter/labextensions/shm-function-selector/config.json"
 
 [tool.hatch.build.hooks.version]
 path = "shm_function_selector/_version.py"

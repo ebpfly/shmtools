@@ -23,6 +23,10 @@ echo "Installing server extension in TLJH user environment..."
 # First install the extension package in user environment
 sudo -E /opt/tljh/user/bin/pip install ./shm_function_selector/
 
+# Copy config.json to ensure it's available
+echo "Copying config.json..."
+sudo cp shm_function_selector/config.json /opt/tljh/user/lib/python3.12/site-packages/
+
 # Enable the server extension in user environment
 echo "Enabling server extension..."
 sudo -E /opt/tljh/user/bin/jupyter server extension enable shm_function_selector

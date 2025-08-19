@@ -55,12 +55,26 @@ class SHMFunctionHandler(APIHandler):
         if self._config is not None:
             return self._config
             
-        # Find config file relative to this handler file
-        handler_dir = Path(__file__).parent.parent
-        config_path = handler_dir / "config.json"
+        # Try multiple locations for config file
+        possible_paths = [
+            # 1. In the parent directory (for installed package)
+            Path(__file__).parent.parent / "config.json",
+            # 2. In the same directory as handler (for development)
+            Path(__file__).parent / "config.json",
+            # 3. In the repository (for TLJH installations)
+            Path("/srv/classrepo/shm_function_selector/config.json"),
+            # 4. In site-packages root (for pip installed)
+            Path(__file__).parent.parent.parent / "config.json",
+        ]
+        
+        config_path = None
+        for path in possible_paths:
+            if path.exists():
+                config_path = path
+                break
         
         try:
-            if config_path.exists():
+            if config_path and config_path.exists():
                 with open(config_path, 'r') as f:
                     self._config = json.load(f)
                 self.log.info(f"Loaded configuration from {config_path}")
