@@ -7,6 +7,8 @@ import sys
 import os
 import json
 import requests
+import tempfile
+import getpass
 from IPython import get_ipython
 from IPython.core.magic import register_line_magic, register_cell_magic
 
@@ -322,11 +324,18 @@ def discover_functions_locally(config=None):
             "shmtools.plotting.bokeh_plotting",
         ]
 
-    # Debug: log modules being scanned to file  
-    with open('/tmp/debug_introspection.log', 'a') as f:
-        f.write(f"DEBUG: Scanning {len(modules_to_scan)} modules\n")
-        if any("examples" in m for m in modules_to_scan):
-            f.write(f"DEBUG: Examples modules found in config: {[m for m in modules_to_scan if 'examples' in m]}\n")
+    # Debug: log modules being scanned to user-specific file
+    try:
+        # Create user-specific debug log file
+        username = getpass.getuser()
+        debug_log_path = os.path.join(tempfile.gettempdir(), f'debug_introspection_{username}.log')
+        with open(debug_log_path, 'a') as f:
+            f.write(f"DEBUG: Scanning {len(modules_to_scan)} modules\n")
+            if any("examples" in m for m in modules_to_scan):
+                f.write(f"DEBUG: Examples modules found in config: {[m for m in modules_to_scan if 'examples' in m]}\n")
+    except Exception:
+        # If debug logging fails, just continue without it
+        pass
     
     for module_name in modules_to_scan:
         try:
@@ -384,8 +393,13 @@ def discover_functions_locally(config=None):
                                     if func_info:
                                         functions.append(func_info)
                     except ImportError as e:
-                        with open('/tmp/debug_introspection.log', 'a') as f:
-                            f.write(f"DEBUG: Failed to import LADPackage module {lad_module}: {e}\n")
+                        try:
+                            username = getpass.getuser()
+                            debug_log_path = os.path.join(tempfile.gettempdir(), f'debug_introspection_{username}.log')
+                            with open(debug_log_path, 'a') as f:
+                                f.write(f"DEBUG: Failed to import LADPackage module {lad_module}: {e}\n")
+                        except Exception:
+                            pass
                         continue
                 
                 # Skip to next module in the list
@@ -402,8 +416,13 @@ def discover_functions_locally(config=None):
             module = importlib.import_module(module_name)
             category = _get_category_from_module_name(module_name, config)
             if "examples" in module_name:
-                with open('/tmp/debug_introspection.log', 'a') as f:
-                    f.write(f"DEBUG: Successfully imported {module_name}\n")
+                try:
+                    username = getpass.getuser()
+                    debug_log_path = os.path.join(tempfile.gettempdir(), f'debug_introspection_{username}.log')
+                    with open(debug_log_path, 'a') as f:
+                        f.write(f"DEBUG: Successfully imported {module_name}\n")
+                except Exception:
+                    pass
 
             # Find functions in the module
             for name in dir(module):
@@ -431,20 +450,25 @@ def discover_functions_locally(config=None):
                         if func_info:
                             # Debug output for every function discovered
                             file_path = getattr(obj, '__code__', {}).co_filename if hasattr(obj, '__code__') else 'unknown'
-                            with open('/tmp/function_discovery_debug.log', 'a') as f:
+                            with open(os.path.join(tempfile.gettempdir(), f'function_discovery_debug_{getpass.getuser()}.log'), 'a') as f:
                                 f.write(f"DISCOVERED: category='{func_info.get('category', 'None')}', name='{func_info.get('name', 'None')}', function='{name}', actual_module='{actual_module}', file='{file_path}'\n")
                             functions.append(func_info)
                     else:
                         # Debug output for skipped duplicates
-                        with open('/tmp/function_discovery_debug.log', 'a') as f:
+                        with open(os.path.join(tempfile.gettempdir(), f'function_discovery_debug_{getpass.getuser()}.log'), 'a') as f:
                             f.write(f"SKIPPED DUPLICATE: name='{name}', actual_module='{actual_module}', scanning_module='{module_name}'\n")
 
         except ImportError as e:
             # Skip modules that aren't available yet
             if "examples" in module_name:
                 # Log to a file since prints might not show up in JupyterLab logs
-                with open('/tmp/debug_introspection.log', 'a') as f:
-                    f.write(f"DEBUG: Failed to import {module_name}: {e}\n")
+                try:
+                    username = getpass.getuser()
+                    debug_log_path = os.path.join(tempfile.gettempdir(), f'debug_introspection_{username}.log')
+                    with open(debug_log_path, 'a') as f:
+                        f.write(f"DEBUG: Failed to import {module_name}: {e}\n")
+                except Exception:
+                    pass
             continue
 
     return functions

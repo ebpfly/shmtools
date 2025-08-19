@@ -362,7 +362,11 @@ sudo -E jupyter labextension develop --overwrite shm_function_selector/
 # Configure server extension in user environment
 echo "Configuring server extension..."
 sudo mkdir -p /opt/tljh/user/etc/jupyter
-echo 'c.ServerApp.jpserver_extensions = {"shm_function_selector": True}' | sudo tee /opt/tljh/user/etc/jupyter/jupyter_server_config.py
+sudo tee /opt/tljh/user/etc/jupyter/jupyter_server_config.py << 'EOF'
+c.ServerApp.jpserver_extensions = {
+    'shm_function_selector': True
+}
+EOF
 
 # Rebuild JupyterLab to include the extension
 echo "Rebuilding JupyterLab..."
