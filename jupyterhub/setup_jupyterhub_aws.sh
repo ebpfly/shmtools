@@ -256,65 +256,6 @@ echo "Installing base packages..."
 apt-get update -y
 apt-get install -y python3 curl git awscli
 
-# SSL/HTTPS setup with Let's Encrypt (BEFORE JupyterHub installation)
-if [ "true" = "true" ] && [ -n "jfuse.shmtools.com" ]; then
-  echo "========================================="
-  echo "Setting up SSL/HTTPS with Let's Encrypt"
-  echo "========================================="
-  
-  # Install Nginx and Certbot
-  apt-get install -y nginx certbot python3-certbot-nginx
-  
-  # Create HTTP-only Nginx configuration (Certbot will add SSL automatically)
-  echo 'server {' > /etc/nginx/sites-available/jfuse.shmtools.com
-  echo '    listen 80;' >> /etc/nginx/sites-available/jfuse.shmtools.com
-  echo '    server_name jfuse.shmtools.com www.jfuse.shmtools.com;' >> /etc/nginx/sites-available/jfuse.shmtools.com
-  echo '    ' >> /etc/nginx/sites-available/jfuse.shmtools.com
-  echo '    # JupyterHub reverse proxy' >> /etc/nginx/sites-available/jfuse.shmtools.com
-  echo '    location / {' >> /etc/nginx/sites-available/jfuse.shmtools.com
-  echo '        proxy_pass http://127.0.0.1:8000;' >> /etc/nginx/sites-available/jfuse.shmtools.com
-  echo '        proxy_set_header X-Real-IP \$remote_addr;' >> /etc/nginx/sites-available/jfuse.shmtools.com
-  echo '        proxy_set_header Host \$host;' >> /etc/nginx/sites-available/jfuse.shmtools.com
-  echo '        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;' >> /etc/nginx/sites-available/jfuse.shmtools.com
-  echo '        proxy_set_header X-Forwarded-Proto \$scheme;' >> /etc/nginx/sites-available/jfuse.shmtools.com
-  echo '        ' >> /etc/nginx/sites-available/jfuse.shmtools.com
-  echo '        # WebSocket support for JupyterLab' >> /etc/nginx/sites-available/jfuse.shmtools.com
-  echo '        proxy_http_version 1.1;' >> /etc/nginx/sites-available/jfuse.shmtools.com
-  echo '        proxy_set_header Upgrade \$http_upgrade;' >> /etc/nginx/sites-available/jfuse.shmtools.com
-  echo '        proxy_set_header Connection "upgrade";' >> /etc/nginx/sites-available/jfuse.shmtools.com
-  echo '        ' >> /etc/nginx/sites-available/jfuse.shmtools.com
-  echo '        # Timeouts' >> /etc/nginx/sites-available/jfuse.shmtools.com
-  echo '        proxy_read_timeout 86400;' >> /etc/nginx/sites-available/jfuse.shmtools.com
-  echo '        proxy_send_timeout 86400;' >> /etc/nginx/sites-available/jfuse.shmtools.com
-  echo '    }' >> /etc/nginx/sites-available/jfuse.shmtools.com
-  echo '}' >> /etc/nginx/sites-available/jfuse.shmtools.com
-  
-  # Enable the site
-  ln -sf /etc/nginx/sites-available/jfuse.shmtools.com /etc/nginx/sites-enabled/
-  rm -f /etc/nginx/sites-enabled/default
-  
-  # Test Nginx configuration
-  nginx -t
-  systemctl reload nginx
-  
-  # Wait a moment for DNS propagation
-  echo "Waiting 30 seconds for DNS propagation..."
-  sleep 30
-  
-  # Obtain SSL certificate
-  certbot --nginx -d jfuse.shmtools.com -d www.jfuse.shmtools.com \\
-    --email ericbflynn@gmail.com \\
-    --agree-tos \\
-    --non-interactive \\
-    --redirect
-  
-  # Set up automatic renewal
-  systemctl enable certbot.timer
-  systemctl start certbot.timer
-  
-  echo "SSL setup complete!"
-fi
-
 echo "Installing TLJH (The Littlest JupyterHub)..."
 curl -L https://tljh.jupyter.org/bootstrap.py | sudo python3 - --admin ${JUPYTER_ADMIN_USER}
 echo "TLJH installation complete!"
@@ -435,6 +376,65 @@ echo "Claude Code installed and PATH configured!"
 
 # Keep port 80 open if ufw is present
 ufw disable || true
+
+# SSL/HTTPS setup with Let's Encrypt (AFTER JupyterHub installation)
+if [ "true" = "true" ] && [ -n "jfuse.shmtools.com" ]; then
+  echo "========================================="
+  echo "Setting up SSL/HTTPS with Let's Encrypt"
+  echo "========================================="
+  
+  # Install Nginx and Certbot
+  apt-get install -y nginx certbot python3-certbot-nginx
+  
+  # Create HTTP-only Nginx configuration (Certbot will add SSL automatically)
+  echo 'server {' > /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '    listen 80;' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '    server_name jfuse.shmtools.com www.jfuse.shmtools.com;' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '    ' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '    # JupyterHub reverse proxy' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '    location / {' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '        proxy_pass http://127.0.0.1:8000;' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '        proxy_set_header X-Real-IP \$remote_addr;' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '        proxy_set_header Host \$host;' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '        proxy_set_header X-Forwarded-Proto \$scheme;' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '        ' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '        # WebSocket support for JupyterLab' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '        proxy_http_version 1.1;' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '        proxy_set_header Upgrade \$http_upgrade;' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '        proxy_set_header Connection "upgrade";' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '        ' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '        # Timeouts' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '        proxy_read_timeout 86400;' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '        proxy_send_timeout 86400;' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '    }' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '}' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  
+  # Enable the site
+  ln -sf /etc/nginx/sites-available/jfuse.shmtools.com /etc/nginx/sites-enabled/
+  rm -f /etc/nginx/sites-enabled/default
+  
+  # Test Nginx configuration
+  nginx -t
+  systemctl reload nginx
+  
+  # Wait a moment for DNS propagation and JupyterHub startup
+  echo "Waiting 30 seconds for JupyterHub to be fully ready..."
+  sleep 30
+  
+  # Obtain SSL certificate
+  certbot --nginx -d jfuse.shmtools.com -d www.jfuse.shmtools.com \\
+    --email ericbflynn@gmail.com \\
+    --agree-tos \\
+    --non-interactive \\
+    --redirect
+  
+  # Set up automatic renewal
+  systemctl enable certbot.timer
+  systemctl start certbot.timer
+  
+  echo "SSL setup complete!"
+fi
 
 echo "========================================="
 echo "SETUP COMPLETE at \$(date)"
