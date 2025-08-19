@@ -257,7 +257,7 @@ apt-get update -y
 apt-get install -y python3 curl git awscli
 
 # SSL/HTTPS setup with Let's Encrypt (BEFORE JupyterHub installation)
-if [ "${ENABLE_SSL}" = "true" ] && [ -n "${USE_DOMAIN}" ]; then
+if [ "true" = "true" ] && [ -n "jfuse.shmtools.com" ]; then
   echo "========================================="
   echo "Setting up SSL/HTTPS with Let's Encrypt"
   echo "========================================="
@@ -265,41 +265,29 @@ if [ "${ENABLE_SSL}" = "true" ] && [ -n "${USE_DOMAIN}" ]; then
   # Install Nginx and Certbot
   apt-get install -y nginx certbot python3-certbot-nginx
   
-  # Create Nginx configuration for JupyterHub reverse proxy
-  cat >/etc/nginx/sites-available/jfuse.shmtools.com <<'NGINXCONF'
-server {
-    listen 80;
-    server_name jfuse.shmtools.com www.jfuse.shmtools.com;
-    
-    # Redirect all HTTP traffic to HTTPS
-    return 301 https://$server_name$request_uri;
-}
-
-server {
-    listen 443 ssl;
-    server_name jfuse.shmtools.com www.jfuse.shmtools.com;
-    
-    # SSL certificates will be managed by Certbot
-    
-    # JupyterHub reverse proxy
-    location / {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        
-        # WebSocket support for JupyterLab
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        
-        # Timeouts
-        proxy_read_timeout 86400;
-        proxy_send_timeout 86400;
-    }
-}
-NGINXCONF
+  # Create HTTP-only Nginx configuration (Certbot will add SSL automatically)
+  echo 'server {' > /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '    listen 80;' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '    server_name jfuse.shmtools.com www.jfuse.shmtools.com;' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '    ' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '    # JupyterHub reverse proxy' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '    location / {' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '        proxy_pass http://127.0.0.1:8000;' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '        proxy_set_header X-Real-IP \$remote_addr;' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '        proxy_set_header Host \$host;' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '        proxy_set_header X-Forwarded-Proto \$scheme;' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '        ' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '        # WebSocket support for JupyterLab' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '        proxy_http_version 1.1;' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '        proxy_set_header Upgrade \$http_upgrade;' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '        proxy_set_header Connection "upgrade";' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '        ' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '        # Timeouts' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '        proxy_read_timeout 86400;' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '        proxy_send_timeout 86400;' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '    }' >> /etc/nginx/sites-available/jfuse.shmtools.com
+  echo '}' >> /etc/nginx/sites-available/jfuse.shmtools.com
   
   # Enable the site
   ln -sf /etc/nginx/sites-available/jfuse.shmtools.com /etc/nginx/sites-enabled/
@@ -451,7 +439,7 @@ ufw disable || true
 echo "========================================="
 echo "SETUP COMPLETE at \$(date)"
 echo "========================================="
-if [ "${ENABLE_SSL}" = "true" ] && [ -n "${USE_DOMAIN}" ]; then
+if [ "true" = "true" ] && [ -n "jfuse.shmtools.com" ]; then
   echo "JupyterHub is ready at https://jfuse.shmtools.com"
   echo "Backup access: http://\$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)"
 else
