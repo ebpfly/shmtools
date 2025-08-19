@@ -350,27 +350,46 @@ npm run build:labextension:dev
 echo "Installing extension into JupyterLab..."
 cd /srv/classrepo
 
-# Install server extension in both hub and user environments
-echo "Installing server extension in TLJH environments..."
-sudo -E /opt/tljh/hub/bin/pip install -e shm_function_selector/
-sudo -E /opt/tljh/user/bin/pip install -e shm_function_selector/
+# Install server extension properly in TLJH user environment
+echo "Installing server extension in TLJH user environment..."
+# First install the extension package in user environment
+sudo -E /opt/tljh/user/bin/pip install ./shm_function_selector/
 
-# Install and develop JupyterLab extension
-sudo -E pip3 install -e shm_function_selector/
-sudo -E jupyter labextension develop --overwrite shm_function_selector/
+# Enable the server extension in user environment
+sudo -E /opt/tljh/user/bin/jupyter server extension enable shm_function_selector
 
-# Configure server extension in user environment
+# Install the labextension (frontend) in user environment
+sudo -E /opt/tljh/user/bin/jupyter labextension develop --overwrite shm_function_selector/
+
+# Create proper configuration directories
 echo "Configuring server extension..."
 sudo mkdir -p /opt/tljh/user/etc/jupyter
-sudo tee /opt/tljh/user/etc/jupyter/jupyter_server_config.py << 'EOF'
-c.ServerApp.jpserver_extensions = {
-    'shm_function_selector': True
+sudo mkdir -p /opt/tljh/user/share/jupyter/jupyter_server_config.d
+
+# Create JSON config file for server extension
+sudo tee /opt/tljh/user/share/jupyter/jupyter_server_config.d/shm_function_selector.json << 'EOF'
+{
+  "ServerApp": {
+    "jpserver_extensions": {
+      "shm_function_selector": true
+    }
+  }
 }
 EOF
 
-# Rebuild JupyterLab to include the extension
+# Also create Python config as backup
+sudo tee /opt/tljh/user/etc/jupyter/jupyter_server_config.py << 'EOF'
+# Server extension configuration
+c.ServerApp.jpserver_extensions = {
+    'shm_function_selector': True
+}
+# Allow the extension to run for all users
+c.ServerApp.allow_origin = '*'
+EOF
+
+# Rebuild JupyterLab in user environment
 echo "Rebuilding JupyterLab..."
-sudo -E jupyter lab build
+sudo -E /opt/tljh/user/bin/jupyter lab build
 echo "JupyterLab extension installed!"
 
 # Set proper ownership
