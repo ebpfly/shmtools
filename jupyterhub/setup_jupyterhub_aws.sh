@@ -260,6 +260,14 @@ echo "Installing TLJH (The Littlest JupyterHub)..."
 curl -L https://tljh.jupyter.org/bootstrap.py | sudo python3 - --admin ${JUPYTER_ADMIN_USER}
 echo "TLJH installation complete!"
 
+# Configure FirstUse Authenticator for self-service account creation
+echo "Installing and configuring FirstUse Authenticator..."
+sudo -E pip install jupyterhub-firstuseauthenticator
+sudo tljh-config set auth.type firstuseauthenticator.FirstUseAuthenticator
+sudo tljh-config set auth.FirstUseAuthenticator.create_users true
+sudo tljh-config reload
+echo "FirstUse Authenticator configured!"
+
 # Repo dir
 mkdir -p /srv/classrepo
 chown ${JUPYTER_ADMIN_USER}:${JUPYTER_ADMIN_USER} /srv/classrepo
@@ -409,8 +417,8 @@ if [ "true" = "true" ] && [ -n "jfuse.shmtools.com" ]; then
 else
   echo "JupyterHub is ready at http://\$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)"
 fi
-echo "Login with username: ${JUPYTER_ADMIN_USER}"
-echo "Set your password on first login"
+echo "Admin login with username: ${JUPYTER_ADMIN_USER} (set password on first login)"
+echo "Users can create accounts by choosing any username and password"
 USERDATA
 
 echo "📝 User data written to $USERDATA_FILE"
@@ -521,7 +529,8 @@ echo "Press Ctrl+C to exit monitoring (installation will continue)"
 echo ""
 echo "Quick reference while monitoring:"
 echo "  - JupyterHub URL: http://${PUBLIC_IP}$(if [ -n "$USE_DOMAIN" ] && [ "$PUBLIC_IP" = "$ELASTIC_IP" ]; then echo "\n  - Domain URL: http://jfuse.shmtools.com$(if [ "$ENABLE_SSL" = "true" ]; then echo "\n  - Secure URL: https://jfuse.shmtools.com"; fi)"; fi)"
-echo "  - Username: ${JUPYTER_ADMIN_USER}"
+echo "  - Admin username: ${JUPYTER_ADMIN_USER}"
+echo "  - Users can create their own accounts (any username + password)"
 echo "  - Repo location: /srv/classrepo"
 echo "======================================================================"
 echo ""
