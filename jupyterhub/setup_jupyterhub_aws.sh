@@ -387,7 +387,7 @@ if [ "true" = "true" ] && [ -n "jfuse.shmtools.com" ]; then
   sudo tljh-config set https.enabled true
   sudo tljh-config set https.letsencrypt.email ericbflynn@gmail.com
   sudo tljh-config add-item https.letsencrypt.domains jfuse.shmtools.com
-  sudo tljh-config add-item https.letsencrypt.domains www.jfuse.shmtools.com
+  # Note: Only requesting certificate for main domain since www.jfuse.shmtools.com has no DNS record
   
   # Show configuration for verification
   echo "TLJH HTTPS configuration:"
