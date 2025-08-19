@@ -25,7 +25,7 @@ EXISTING_INSTANCE_IP="${EXISTING_INSTANCE_IP:-}"
 JUPYTER_ADMIN_USER="ubuntu"    # TLJH admin (also your SSH user)
 
 GITHUB_OWNER="ebpfly"
-GITHUB_REPO="shm"
+GITHUB_REPO="shmtools"
 GITHUB_BRANCH="main"
 
 GIT_USER_NAME="Eric Flynn"
