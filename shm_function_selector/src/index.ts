@@ -419,7 +419,7 @@ function showPopularFunctionsQuickSelect(
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0,0,0,0.7);
+    background: rgba(0,0,0,0.35);
     z-index: 10000;
     display: flex;
     justify-content: center;
@@ -627,7 +627,7 @@ function showFunctionSearchDialog(
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0,0,0,0.7);
+    background: rgba(0,0,0,0.35);
     z-index: 10000;
     display: flex;
     justify-content: center;
@@ -1647,7 +1647,7 @@ class SHMFunctionSelector {
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(0,0,0,0.5);
+        background: rgba(0,0,0,0.25);
         z-index: 10000;
       `;
 
@@ -2759,7 +2759,7 @@ class SHMFunctionSelector {
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0,0,0,0.5);
+      background: rgba(0,0,0,0.25);
       z-index: 10000;
       display: flex;
       justify-content: center;
@@ -2956,7 +2956,7 @@ class SHMFunctionSelector {
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0,0,0,0.5);
+      background: rgba(0,0,0,0.25);
       z-index: 10000;
       display: flex;
       justify-content: center;
@@ -3332,7 +3332,7 @@ class SHMFunctionSelector {
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.25);
       z-index: 10000;
       display: flex;
       justify-content: center;
