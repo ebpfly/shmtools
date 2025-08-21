@@ -272,57 +272,89 @@ def _is_external_library_function(func):
     return False
 
 
+def _expand_top_level_modules(top_level_modules):
+    """Expand top-level module names to include all their submodules."""
+    import pkgutil
+    import importlib
+    
+    expanded_modules = []
+    
+    for top_module in top_level_modules:
+        try:
+            # Import the top-level module
+            module = importlib.import_module(top_module)
+            
+            # Add the top-level module itself
+            expanded_modules.append(top_module)
+            
+            # Walk through all submodules
+            for importer, modname, ispkg in pkgutil.walk_packages(module.__path__, module.__name__ + "."):
+                # Skip private modules
+                if not modname.split('.')[-1].startswith('_'):
+                    expanded_modules.append(modname)
+                    
+        except ImportError:
+            # Module not available, skip it
+            continue
+    
+    return expanded_modules
+
+
+def _discover_shmtools_modules():
+    """Automatically discover all shmtools submodules recursively."""
+    import pkgutil
+    import shmtools
+    
+    modules_to_scan = []
+    
+    # Walk through all submodules of shmtools
+    for importer, modname, ispkg in pkgutil.walk_packages(shmtools.__path__, shmtools.__name__ + "."):
+        # Skip private modules and __pycache__
+        if not modname.split('.')[-1].startswith('_'):
+            modules_to_scan.append(modname)
+    
+    # Also scan examples modules if they exist
+    try:
+        import examples
+        for importer, modname, ispkg in pkgutil.walk_packages(examples.__path__, examples.__name__ + "."):
+            if not modname.split('.')[-1].startswith('_'):
+                modules_to_scan.append(modname)
+    except ImportError:
+        # examples module not available
+        pass
+    
+    # Also check for LADPackage if it exists
+    try:
+        import LADPackage
+        modules_to_scan.append('LADPackage')
+    except ImportError:
+        # LADPackage not available
+        pass
+    
+    return modules_to_scan
+
+
 def discover_functions_locally(config=None):
-    """Discover SHM functions using local backend logic."""
+    """Discover SHM functions using local backend logic with automatic module discovery."""
     import importlib
     import inspect
+    import pkgutil
 
     functions = []
     seen_functions = set()  # Track functions by (actual_module, function_name) to avoid duplicates
 
-    # Use config if provided, otherwise use default modules
+    # Use config if provided, otherwise discover modules automatically
     if config and "function_discovery" in config:
-        modules_to_scan = config["function_discovery"].get("modules_to_scan", [])
+        top_level_modules = config["function_discovery"].get("modules_to_scan", [])
+        # If config provides empty list, fall back to automatic discovery
+        if not top_level_modules:
+            modules_to_scan = _discover_shmtools_modules()
+        else:
+            # Expand top-level modules to include all submodules
+            modules_to_scan = _expand_top_level_modules(top_level_modules)
     else:
-        # Default modules to scan
-        modules_to_scan = [
-            # Core modules
-            "shmtools.core.spectral",
-            "shmtools.core.statistics",
-            "shmtools.core.filtering",
-            "shmtools.core.preprocessing",
-            
-            # Feature extraction
-            "shmtools.features.time_series",
-            
-            # Classification and detection
-            "shmtools.classification.outlier_detection",
-            "shmtools.classification.nonparametric",
-            "shmtools.classification.high_level_detection",
-            
-            # Active sensing
-            "shmtools.active_sensing.matched_filter",
-            "shmtools.active_sensing.utilities",
-            "shmtools.active_sensing.geometry",
-            
-            # Modal analysis
-            "shmtools.modal.modal_analysis",
-            "shmtools.modal.oma",
-            
-            # Hardware and data acquisition
-            "shmtools.hardware.data_acquisition",
-            "shmtools.hardware.serial_interface",
-            
-            # Utilities and data I/O (data import functions moved to examples.data)
-            "shmtools.utils.data_segmentation",
-            "shmtools.utils.spatial_analysis",
-            
-            # Sensor diagnostics
-            "shmtools.sensor_diagnostics.diagnostic_functions",
-            
-            # Plotting utilities
-            "shmtools.plotting.bokeh_plotting",
-        ]
+        # Automatically discover all shmtools submodules
+        modules_to_scan = _discover_shmtools_modules()
 
     # Debug: log modules being scanned to user-specific file
     try:
@@ -339,75 +371,8 @@ def discover_functions_locally(config=None):
     
     for module_name in modules_to_scan:
         try:
-            # Special handling for LADPackage - scan its submodules
-            if module_name == 'LADPackage':
-                # Get the repository root directory
-                current_file = os.path.abspath(__file__)
-                repo_root = os.path.dirname(os.path.dirname(current_file))
-                ladpackage_path = os.path.join(repo_root, 'LADPackage')
-                
-                if repo_root not in sys.path:
-                    sys.path.insert(0, repo_root)
-                
-                # Find all Python modules in LADPackage
-                ladpackage_modules = []
-                if os.path.exists(ladpackage_path):
-                    # Scan for Python files in subdirectories
-                    for subdir in os.listdir(ladpackage_path):
-                        subdir_path = os.path.join(ladpackage_path, subdir)
-                        if os.path.isdir(subdir_path):
-                            # Check for Python files in this subdirectory
-                            for file in os.listdir(subdir_path):
-                                if file.endswith('.py') and not file.startswith('__'):
-                                    # Construct module name (e.g., LADPackage.utils.data_import)
-                                    module_name_full = f"LADPackage.{subdir}.{file[:-3]}"
-                                    ladpackage_modules.append(module_name_full)
-                
-                # Process each LADPackage submodule
-                for lad_module in ladpackage_modules:
-                    try:
-                        module = importlib.import_module(lad_module)
-                        category = _get_category_from_module_name(lad_module, config)
-                        
-                        # Find functions in the module
-                        for name in dir(module):
-                            obj = getattr(module, name)
-                            
-                            if (
-                                callable(obj)
-                                and not name.startswith("_")
-                                and inspect.isfunction(obj)
-                                and hasattr(obj, '__module__')
-                                and (obj.__module__ == lad_module or 
-                                     (obj.__module__ and obj.__module__.startswith('LADPackage')))
-                                and not _is_external_library_function(obj)
-                            ):
-                                # Check for duplicates using actual module where function is defined
-                                actual_module = obj.__module__ if obj.__module__ else lad_module
-                                function_key = (actual_module, name)
-                                
-                                if function_key not in seen_functions:
-                                    seen_functions.add(function_key)
-                                    
-                                    func_info = _extract_function_info(obj, name, category, lad_module)
-                                    if func_info:
-                                        functions.append(func_info)
-                    except ImportError as e:
-                        try:
-                            username = getpass.getuser()
-                            debug_log_path = os.path.join(tempfile.gettempdir(), f'debug_introspection_{username}.log')
-                            with open(debug_log_path, 'a') as f:
-                                f.write(f"DEBUG: Failed to import LADPackage module {lad_module}: {e}\n")
-                        except Exception:
-                            pass
-                        continue
-                
-                # Skip to next module in the list
-                continue
-                
-            # Special handling for examples modules - ensure repo root is in path
-            if module_name.startswith('examples'):
-                # Get the repository root directory (where examples folder is located)
+            # Ensure repo root is in path for examples and LADPackage modules
+            if module_name.startswith('examples') or module_name.startswith('LADPackage'):
                 current_file = os.path.abspath(__file__)
                 repo_root = os.path.dirname(os.path.dirname(current_file))  # Go up 2 levels from shmtools/introspection.py
                 if repo_root not in sys.path:
@@ -415,14 +380,6 @@ def discover_functions_locally(config=None):
                     
             module = importlib.import_module(module_name)
             category = _get_category_from_module_name(module_name, config)
-            if "examples" in module_name:
-                try:
-                    username = getpass.getuser()
-                    debug_log_path = os.path.join(tempfile.gettempdir(), f'debug_introspection_{username}.log')
-                    with open(debug_log_path, 'a') as f:
-                        f.write(f"DEBUG: Successfully imported {module_name}\n")
-                except Exception:
-                    pass
 
             # Find functions in the module
             for name in dir(module):
@@ -459,16 +416,14 @@ def discover_functions_locally(config=None):
                             f.write(f"SKIPPED DUPLICATE: name='{name}', actual_module='{actual_module}', scanning_module='{module_name}'\n")
 
         except ImportError as e:
-            # Skip modules that aren't available yet
-            if "examples" in module_name:
-                # Log to a file since prints might not show up in JupyterLab logs
-                try:
-                    username = getpass.getuser()
-                    debug_log_path = os.path.join(tempfile.gettempdir(), f'debug_introspection_{username}.log')
-                    with open(debug_log_path, 'a') as f:
-                        f.write(f"DEBUG: Failed to import {module_name}: {e}\n")
-                except Exception:
-                    pass
+            # Skip modules that aren't available yet - log for debugging
+            try:
+                username = getpass.getuser()
+                debug_log_path = os.path.join(tempfile.gettempdir(), f'debug_introspection_{username}.log')
+                with open(debug_log_path, 'a') as f:
+                    f.write(f"DEBUG: Failed to import {module_name}: {e}\n")
+            except Exception:
+                pass
             continue
 
     return functions
