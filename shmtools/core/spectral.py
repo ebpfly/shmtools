@@ -19,44 +19,105 @@ def psd_welch_shm(
     use_one_sided: Optional[bool] = None,
 ) -> Tuple[np.ndarray, np.ndarray, bool]:
     """
-    Feature Extraction: Estimate power spectral density via Welch's method.
+    Estimate power spectral density via Welch's method.
 
-    Estimate the power spectral density (PSD) of X using Welch's overlapped
-    segment averaging estimator. X is divided into overlapping segments. Each
-    segment is windowed by the Hamming window and its periodogram is computed.
-    The periodograms are then averaged to obtain the PSD estimate and reduce
-    the noise inherent in the periodogram.
+    .. meta::
+        :category: Feature Extraction - Spectral Analysis
+        :matlab_equivalent: psdWelch_shm
+        :complexity: Intermediate
+        :data_type: Time Series
+        :output_type: Spectral
+        :display_name: Power Spectral Density via Welch's Method
+        :verbose_call: [PSD Matrix, Frequency Vector, PSD Range] = Power Spectral Density via Welch's Method (Signal Matrix, Window Length, Overlap Length, FFT Bins, Sampling Frequency, Use One-Sided PSD)
+
+    Computes the power spectral density of a digital signal using Welch's
+    method. Welch's method segments a signal into a specified number of
+    windowed signals with a specified number of overlapping samples and
+    computes their Fourier transforms independently then averages these
+    Fourier transforms to get an estimate of the power spectral density of
+    a signal. Typically the number of overlapping segments should be
+    between 50 to 75 percent of the window length.
 
     Parameters
     ----------
     X : ndarray, shape (time, channels, instances)
         Matrix of time series data.
+
+        .. gui::
+            :widget: file_upload
+            :formats: [".csv", ".mat", ".npy"]
+            :description: Time series data matrix
+
     n_win : int, optional
-        Window length in samples. Default varies based on signal length.
+        Samples per window. Default is 8 windows based on signal length.
+
+        .. gui::
+            :widget: number_input
+            :min: 16
+            :max: 2048
+            :description: Window length in samples
+
     n_ovlap : int, optional
         Number of overlapping samples between windows. Default is 50% of window.
+
+        .. gui::
+            :widget: number_input
+            :min: 0
+            :description: Number of overlapping samples
+
     n_fft : int, optional
-        Number of FFT frequency bins. Default is max(256, 2^nextpow2(n_win)).
+        Number of FFT frequency bins. Default is max(256, nextPow2(nWin)).
+
+        .. gui::
+            :widget: number_input
+            :min: 64
+            :max: 4096
+            :description: Number of FFT frequency bins
+
     fs : float, optional
         Sampling frequency in Hz. Default is 1.
+
+        .. gui::
+            :widget: number_input
+            :min: 0.1
+            :max: 100000.0
+            :default: 1.0
+            :units: "Hz"
+            :description: Sampling frequency
+
     use_one_sided : bool, optional
         Create one-sided PSD instead of two-sided. Default is True.
+
+        .. gui::
+            :widget: checkbox
+            :default: true
+            :description: Use one-sided PSD
 
     Returns
     -------
     psd_matrix : ndarray, shape (n_fft, channels, instances)
         Power spectral density matrix.
+
+        .. gui::
+            :plot_type: "spectral"
+            :description: Power spectral density matrix
+
     f : ndarray, shape (n_fft,)
         Frequency vector corresponding to psd_matrix.
+
+        .. gui::
+            :plot_type: "line"
+            :description: Frequency vector
+
     use_one_sided : bool
-        Whether one-sided PSD was computed.
+        Specifies type of PSD: one-sided or two-sided.
 
     Examples
     --------
     >>> import numpy as np
     >>> from shmtools.core import psd_welch_shm
     >>>
-    >>> # Generate test signal
+    >>> # Generate test signal with dominant frequency
     >>> fs = 1000
     >>> t = np.linspace(0, 1, fs, endpoint=False)
     >>> signal = np.sin(2*np.pi*50*t) + 0.1*np.random.randn(fs)
@@ -66,6 +127,17 @@ def psd_welch_shm(
     >>> psd, f, one_sided = psd_welch_shm(X, fs=fs)
     >>> peak_freq = f[np.argmax(psd[:, 0, 0])]
     >>> print(f"Peak frequency: {peak_freq:.1f} Hz")
+
+    References
+    ----------
+    [1] Welch P., The Use of Fast Fourier Transform for the Estimation of
+    Power Spectra: A Method Based on Time Averaging Over Short, Modified
+    Periodograms. IEEE Transactions on Audio and ElectroAcoustics, Vol.
+    AU-15, No. 2. June 1967.
+
+    See Also
+    --------
+    frf_shm : Frequency response function estimation
     """
     # Handle input validation and defaults
     if X.ndim == 1:

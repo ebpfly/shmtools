@@ -879,8 +879,8 @@ function updateSelectionHighlight(resultElements: HTMLElement[], selectedIndex: 
   resultElements.forEach((element, index) => {
     if (index === selectedIndex) {
       // Highlight the selected item
-      element.style.background = '#0073e6';
-      element.style.color = 'white';
+      element.style.background = '#cce7ff';
+      element.style.color = 'black';
       // Ensure the selected item is visible
       element.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     } else {
@@ -2206,8 +2206,8 @@ class SHMFunctionSelector {
   private updateNavigationHighlight(): void {
     this.keyboardNavigationItems.forEach((item, index) => {
       if (index === this.selectedNavigationIndex) {
-        item.style.background = '#0073e6';
-        item.style.color = 'white';
+        item.style.background = '#cce7ff';
+        item.style.color = 'black';
         item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       } else {
         item.style.background = '';
@@ -2457,7 +2457,11 @@ class SHMFunctionSelector {
     }
     
     // Priority 2: Use function signature default
-    if (param.default && param.default !== 'None' && param.default !== '<inspect.Parameter.empty>') {
+    if (param.default && param.default !== '<inspect.Parameter.empty>') {
+      // Handle None as a valid default value
+      if (param.default === 'None') {
+        return 'None';
+      }
       return this.ensureProperQuoting(param.default, param.type);
     }
     
