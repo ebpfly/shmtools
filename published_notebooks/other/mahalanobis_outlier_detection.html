@@ -4,7 +4,7 @@
         <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>Dataloader Demo - SHMTools</title>
+            <title>Mahalanobis Outlier Detection - SHMTools</title>
             
         <style>
         body { 
@@ -86,8 +86,8 @@
         <body>
             
         <div class="notebook-header">
-            <h1 class="notebook-title">Dataloader Demo</h1>
-            <p class="notebook-subtitle">SHMTools Example - Notebooks Level</p>
+            <h1 class="notebook-title">Mahalanobis Outlier Detection</h1>
+            <p class="notebook-subtitle">SHMTools Example - Parametric_Detectors Level</p>
         </div>
         
             
@@ -102,7 +102,7 @@
 <html lang="en">
 <head><meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Dataloader Demo</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>Mahalanobis Outlier Detection</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <style type="text/css">
     pre { line-height: 125%; }
 td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
@@ -7616,23 +7616,25 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="SHMTools-Dataloader-Demo">SHMTools Dataloader Demo<a class="anchor-link" href="#SHMTools-Dataloader-Demo">¶</a></h1><p>This notebook demonstrates the new simplified dataloader functions that make it easy to reproduce the conversion-plan.md examples.</p>
-<h2 id="Three-ways-to-load-data:">Three ways to load data:<a class="anchor-link" href="#Three-ways-to-load-data:">¶</a></h2><ol>
-<li><strong>Quick setup</strong>: <code>setup_notebook_environment()</code> - handles imports and path setup</li>
-<li><strong>Example-specific</strong>: <code>load_example_data('pca')</code> - preprocessed data for specific examples</li>
-<li><strong>Direct loading</strong>: <code>load_3story_data()</code> - raw data loading functions</li>
+<h1 id="Outlier-Detection-Based-on-Mahalanobis-Distance">Outlier Detection Based on Mahalanobis Distance<a class="anchor-link" href="#Outlier-Detection-Based-on-Mahalanobis-Distance">¶</a></h1><h2 id="Introduction">Introduction<a class="anchor-link" href="#Introduction">¶</a></h2><p>The goal of this example is to discriminate undamaged and damaged structural state conditions based on outlier detection. The parameters from an autoregressive (AR) model are used as damage-sensitive features and a machine learning algorithm based on the Mahalanobis distance is used to create damage indicators (DIs) invariant for feature vectors from normal structural condition and that increase when feature vectors are from damaged structural conditions.</p>
+<p>Data sets of an array of sensors from Channel 2-5 of the base-excited three story structure are used in this example. More details about the data sets can be found in the <a href="https://www.lanl.gov/projects/ei">3-Story Data Sets documentation</a>.</p>
+<p>This example demonstrates:</p>
+<ol>
+<li><strong>Data Loading</strong>: 3-story structure dataset with 4 channels, multiple conditions</li>
+<li><strong>Feature Extraction</strong>: AR(15) model parameters from channels 2-5 (not RMSE as in PCA example)</li>
+<li><strong>Train/Test Split</strong>: Training on conditions 1-9, testing on conditions 1-9 (baseline) + 10-17 (damage)</li>
+<li><strong>Mahalanobis Modeling</strong>: Learn mean and covariance from training features</li>
+<li><strong>Damage Detection</strong>: Score test data and apply 95% threshold for classification</li>
+<li><strong>Visualization</strong>: Time histories, feature plots, damage indicator bar charts</li>
 </ol>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Method-1:-Quick-Setup-(Recommended-for-new-notebooks)">Method 1: Quick Setup (Recommended for new notebooks)<a class="anchor-link" href="#Method-1:-Quick-Setup-(Recommended-for-new-notebooks)">¶</a></h2>
+<p><strong>References:</strong></p>
+<p>Worden, K., &amp; Manson, G. (2000). Damage Detection using Outlier Analysis. Journal of Sound and Vibration, 229 (3), 647-667.</p>
+<p><strong>SHMTools functions used:</strong></p>
+<ul>
+<li><code>ar_model_shm</code></li>
+<li><code>learn_mahalanobis_shm</code></li>
+<li><code>score_mahalanobis_shm</code></li>
+</ul>
 </div>
 </div>
 </div>
@@ -7644,17 +7646,94 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [1]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># One-line setup for notebooks</span>
-<span class="c1"># setup_notebook_environment not needed - import directly</span>
-<span class="n">nb</span> <span class="o">=</span> <span class="n">setup_notebook_environment</span><span class="p">()</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
-<span class="c1"># Now you have everything you need</span>
-<span class="n">np</span> <span class="o">=</span> <span class="n">nb</span><span class="p">[</span><span class="s1">'np'</span><span class="p">]</span>
-<span class="n">plt</span> <span class="o">=</span> <span class="n">nb</span><span class="p">[</span><span class="s1">'plt'</span><span class="p">]</span>
-<span class="n">import_3story_structure_shm</span> <span class="o">=</span> <span class="n">nb</span><span class="p">[</span><span class="s1">'import_3story_structure_shm'</span><span class="p">]</span>
-<span class="n">check_data_availability</span> <span class="o">=</span> <span class="n">nb</span><span class="p">[</span><span class="s1">'check_data_availability'</span><span class="p">]</span>
+<span class="c1"># Add the repository root to Python path for examples.data import</span>
+<span class="n">repo_root</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span>
+<span class="k">while</span> <span class="ow">not</span> <span class="p">(</span><span class="n">repo_root</span> <span class="o">/</span> <span class="s1">'shmtools'</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="n">repo_root</span><span class="o">.</span><span class="n">parent</span> <span class="o">!=</span> <span class="n">repo_root</span><span class="p">:</span>
+    <span class="n">repo_root</span> <span class="o">=</span> <span class="n">repo_root</span><span class="o">.</span><span class="n">parent</span>
+<span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">repo_root</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">repo_root</span><span class="p">))</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">"Available functions:"</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">nb</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+
+
+<span class="c1"># Import shmtools(installed package)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">examples.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_3story_structure_shm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shmtools.features.time_series</span><span class="w"> </span><span class="kn">import</span> <span class="n">ar_model_shm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shmtools.classification.outlier_detection</span><span class="w"> </span><span class="kn">import</span> <span class="n">learn_mahalanobis_shm</span><span class="p">,</span> <span class="n">score_mahalanobis_shm</span>
+
+<span class="c1"># Set up plotting</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">'default'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">'figure.figsize'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">'font.size'</span><span class="p">]</span> <span class="o">=</span> <span class="mi">10</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>/Users/eric/repo/shm/shmtools/classification/nlpca.py:27: UserWarning: TensorFlow not available. NLPCA functions will not work. Install TensorFlow: pip install tensorflow
+  warnings.warn(
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Load-Raw-Data">Load Raw Data<a class="anchor-link" href="#Load-Raw-Data">¶</a></h2><p>Load the 3-story structure dataset and extract channels 2-5 for analysis.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Load data set</span>
+<span class="n">data_dict</span> <span class="o">=</span> <span class="n">load_3story_dat</span>
+<span class="n">a</span><span class="p">()</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">data_dict</span><span class="p">[</span><span class="s1">'datase</span>
+<span class="n">t</span><span class="s1">']</span>
+<span class="n">fs</span> <span class="o">=</span> <span class="n">data_dict</span><span class="p">[</span><span class="s1">'f</span>
+<span class="n">s</span><span class="s1">']</span>
+<span class="n">channels</span> <span class="o">=</span> <span class="n">data_dict</span><span class="p">[</span><span class="s1">'channel</span>
+<span class="n">s</span><span class="s1">']</span>
+<span class="n">damage_states</span> <span class="o">=</span> <span class="n">data_dict</span><span class="p">[</span><span class="s1">'damage_state</span>
+<span class="n">s</span><span class="s1">']</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Dataset shape: </span><span class="si">{</span><span class="n">dataset</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Sampling frequency: </span><span class="si">{</span><span class="n">fs</span><span class="si">}</span><span class="s2"> Hz"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Channels: </span><span class="si">{</span><span class="n">channels</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Number of damage states: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">damage_states</span><span class="p">))</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="c1"># Extract channels 2-5(indices 1-4 in Python)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">datase</span>
+<span class="n">t</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span> <span class="p">:]</span>
+<span class="n">t</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shap</span>
+<span class="n">e</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Data for analysis:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Time points: </span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Channels: </span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2"> (Ch2-Ch5)"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Conditions: </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -7668,31 +7747,11 @@ a.anchor-link {
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
 <pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[1]</span><span class="ansi-green-fg">, line 3</span>
-<span class="ansi-green-fg">      1</span> <span style="color: rgb(95,135,135)"># One-line setup for notebooks</span>
-<span class="ansi-green-fg">      2</span> <span style="color: rgb(95,135,135)"># setup_notebook_environment not needed - import directly</span>
-<span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">3</span> nb = <span class="ansi-yellow-bg">setup_notebook_environment</span>()
-<span class="ansi-green-fg">      5</span> <span style="color: rgb(95,135,135)"># Now you have everything you need</span>
-<span class="ansi-green-fg">      6</span> np = nb[<span class="ansi-yellow-fg">'</span><span class="ansi-yellow-fg">np</span><span class="ansi-yellow-fg">'</span>]
-
-<span class="ansi-red-fg">NameError</span>: name 'setup_notebook_environment' is not defined</pre>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Check what data is available</span>
-<span class="n">check_data_availability</span><span class="p">()</span>
-</pre></div>
+  <span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[2]</span><span class="ansi-green-fg">, line 4</span>
+<span class="ansi-red-fg">    </span><span class="ansi-red-fg">dataset = data_dict['datase</span>
+                        ^
+<span class="ansi-red-fg">SyntaxError</span><span class="ansi-red-fg">:</span> unterminated string literal (detected at line 4)
+</pre>
 </div>
 </div>
 </div>
@@ -7704,7 +7763,7 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Method-2:-Example-Specific-Loading-(Best-for-reproducing-conversion-plan.md-examples)">Method 2: Example-Specific Loading (Best for reproducing conversion-plan.md examples)<a class="anchor-link" href="#Method-2:-Example-Specific-Loading-(Best-for-reproducing-conversion-plan.md-examples)">¶</a></h2>
+<h3 id="Plot-Time-History-from-Baseline-and-Damaged-Conditions">Plot Time History from Baseline and Damaged Conditions<a class="anchor-link" href="#Plot-Time-History-from-Baseline-and-Damaged-Conditions">¶</a></h3><p>The figure below plots time histories from State#1 (baseline condition, black) and State#16 (damaged with simulated operational changes, red) in concatenated format.</p>
 </div>
 </div>
 </div>
@@ -7716,56 +7775,45 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Channel labels</span>
+<span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'Channel 2'</span><span class="p">,</span> <span class="s1">'Channel 3'</span><span class="p">,</span> <span class="s1">'Channel 4'</span><span class="p">,</span> <span class="s1">'Channe</span>
+<span class="n">l</span> <span class="mi">5</span><span class="s1">']</span>
 
-<span class="c1"># Add the repository root to Python path for examples.data import</span>
-<span class="n">repo_root</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span>
-<span class="k">while</span> <span class="ow">not</span> <span class="p">(</span><span class="n">repo_root</span> <span class="o">/</span> <span class="s1">'shmtools'</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="n">repo_root</span><span class="o">.</span><span class="n">parent</span> <span class="o">!=</span> <span class="n">repo_root</span><span class="p">:</span>
-    <span class="n">repo_root</span> <span class="o">=</span> <span class="n">repo_root</span><span class="o">.</span><span class="n">parent</span>
-<span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">repo_root</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
-    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">repo_root</span><span class="p">))</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsiz</span>
+<span class="n">e</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<span class="n">axes</span> <span class="o">=</span> <span class="n">axes</span><span class="o">.</span><span class="n">flatte</span>
+<span class="n">n</span><span class="p">()</span>
 
+<span class="n">time_1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> 
+<span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">time_2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span>
+<span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">examples.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_example_data</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
+    <span class="c1"># State #1 (condition index 0) and State #16 (condition index 150)</span>
+    <span class="n">baseline_signal</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>   <span class="c1"># First condition (Stat</span>
+<span class="n">e</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">damaged_signal</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="n">i</span><span class="p">,</span> <span class="mi">150</span><span class="p">]</span>  <span class="c1"># Condition 151(State 16, damaged with operational changes)</span>
+    
+    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time_1</span><span class="p">,</span> <span class="n">baseline_signal</span><span class="p">,</span> <span class="s1">'k-'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'State #1 (Baseline)'</span><span class="p">,</span> <span class="n">linewidt</span>
+<span class="n">h</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time_2</span><span class="p">,</span> <span class="n">damaged_signal</span><span class="p">,</span> <span class="s1">'r--'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'State #16 (Damage)'</span><span class="p">,</span> <span class="n">linewidt</span>
+<span class="n">h</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+    
+    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">labels</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([</span><span class="o">-</span><span class="mf">2.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">])</span>
+    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">t</span><span class="p">])</span>
+    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">([</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>  <span class="c1"># Bottom row</span>
+        <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">'Data Points'</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Left colum n axes[i].set_ylabel('Acceleration (g)')</span>
+    
+    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Add legend to first subplo t axes[i].legend(loc='upper right', fontsiz</span>
+<span class="n">e</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
 
-<span class="c1"># Load preprocessed data for PCA/Mahalanobis/SVD examples</span>
-<span class="n">data</span> <span class="o">=</span> <span class="n">load_example_data</span><span class="p">(</span><span class="s1">'pc</span>
-<span class="n">a</span><span class="s1">')</span>
-
-<span class="c1"># Data is ready to use - channels 2-5 already extracted</span>
-<span class="n">signals</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'signals'</span><span class="p">]</span>  <span class="c1"># Shap</span>
-<span class="n">e</span><span class="p">:</span> <span class="p">(</span><span class="mi">8192</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">170</span><span class="p">)</span>
-<span class="n">fs</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'f</span>
-<span class="n">s</span><span class="s1">']</span>
-<span class="n">damage_states</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'damage_state</span>
-<span class="n">s</span><span class="s1">']</span>
-<span class="n">t</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'t'</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s1">'m'</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s1">'n'</span><span class="p">]</span>  <span class="c1"># Same variables as in notebook s print(f"Signals shape: {signals.shape}")</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Channels: </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">'channels'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Time points: </span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">, Channels: </span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2">, Conditions: </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Quick visualization</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">signals</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s1">'k-'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Channel 2, Conditio</span>
-<span class="n">n</span> <span class="mi">1</span><span class="s1">')</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">signals</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">90</span><span class="p">],</span> <span class="s1">'r--'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Channel 2, Condition 91 (Damage)'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Sample time histories from loaded data'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'Time points'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'Acceleration'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -7779,7 +7827,7 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Method-3:-Direct-Loading-(For-custom-data-processing)">Method 3: Direct Loading (For custom data processing)<a class="anchor-link" href="#Method-3:-Direct-Loading-(For-custom-data-processing)">¶</a></h2>
+<h2 id="Extraction-of-Damage-Sensitive-Features">Extraction of Damage-Sensitive Features<a class="anchor-link" href="#Extraction-of-Damage-Sensitive-Features">¶</a></h2><p>This section estimates the AR(15) model parameters from the time histories of Channels 2-5 and plots the feature vectors for each instance (or condition). <strong>Note</strong>: Unlike the PCA example, this uses AR parameters directly as features, not the RMSE values.</p>
 </div>
 </div>
 </div>
@@ -7791,23 +7839,20 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Direct access to raw data loading functions</span>
-<span class="n">data_dict</span> <span class="o">=</span> <span class="n">load_3story_dat</span>
-<span class="n">a</span><span class="p">()</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># AR model order</span>
+<span class="n">ar_order</span> <span class="o">=</span> <span class="mi">15</span>
 
-<span class="c1"># Full dataset with all channels</span>
-<span class="n">dataset</span> <span class="o">=</span> <span class="n">data_dict</span><span class="p">[</span><span class="s1">'dataset'</span><span class="p">]</span>  <span class="c1"># Shap</span>
-<span class="n">e</span><span class="p">:</span> <span class="p">(</span><span class="mi">8192</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">170</span><span class="p">)</span>
-<span class="n">channels</span> <span class="o">=</span> <span class="n">data_dict</span><span class="p">[</span><span class="s1">'channel</span>
-<span class="n">s</span><span class="s1">']</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Extracting AR(</span><span class="si">{</span><span class="n">ar_order</span><span class="si">}</span><span class="s2">) model parameters as features..."</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Full dataset shape: </span><span class="si">{</span><span class="n">dataset</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"All channels: </span><span class="si">{</span><span class="n">channels</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="c1"># Estimation of AR Parameters (we need the parameters, not RMSE)</span>
+<span class="n">ar_parameters_fv</span><span class="p">,</span> <span class="n">rmse_fv</span><span class="p">,</span> <span class="n">ar_parameters</span><span class="p">,</span> <span class="n">ar_residuals</span><span class="p">,</span> <span class="n">ar_prediction</span> <span class="o">=</span> <span class="n">ar_model_shm</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ar_order</span><span class="p">)</span>
 
-<span class="c1"># Manual extraction of channels 2-5(like in original notebooks)</span>
-<span class="n">data</span> <span class="o">=</span> <span class="n">datase</span>
-<span class="n">t</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span> <span class="p">:]</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Extracted channels 2-5 shape: </span><span class="si">{</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"AR parameters FV shape: </span><span class="si">{</span><span class="n">ar_parameters_fv</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"RMSE shape: </span><span class="si">{</span><span class="n">rmse_fv</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"AR parameters shape: </span><span class="si">{</span><span class="n">ar_parameters</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="c1"># Use AR parameters as features(not RMSE as in PCA example)</span>
+<span class="n">features</span> <span class="o">=</span> <span class="n">ar_parameters_fv</span>  <span class="c1"># Shape: (instances, features) where features = channels * ar_orde r print(f"Features shape: {features.shape} (instances, channels*ar_order)")</span>
 </pre></div>
 </div>
 </div>
@@ -7820,53 +7865,349 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Loading-Other-Dataset-Types">Loading Other Dataset Types<a class="anchor-link" href="#Loading-Other-Dataset-Types">¶</a></h2>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Load different dataset types</span>
-<span class="n">cbm_data</span> <span class="o">=</span> <span class="n">load_example_data</span><span class="p">(</span><span class="s1">'cb</span>
-<span class="n">m</span><span class="s1">')</span>
-<span class="n">sensor_data</span> <span class="o">=</span> <span class="n">load_example_data</span><span class="p">(</span><span class="s1">'sensor_diagnosti</span>
-<span class="n">c</span><span class="s1">')</span>
-<span class="n">active_data</span> <span class="o">=</span> <span class="n">load_example_data</span><span class="p">(</span><span class="s1">'active_sensin</span>
-<span class="n">g</span><span class="s1">')</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"CBM data keys: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">cbm_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Sensor diagnostic keys: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">sensor_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Active sensing keys: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">active_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Summary">Summary<a class="anchor-link" href="#Summary">¶</a></h2><p>These dataloader functions make it much easier to:</p>
-<ol>
-<li><strong>Get started quickly</strong> with <code>setup_notebook_environment()</code></li>
-<li><strong>Reproduce examples</strong> with <code>load_example_data('pca')</code> etc.</li>
-<li><strong>Handle different execution contexts</strong> automatically (different working directories)</li>
-<li><strong>Reduce repetitive code</strong> in notebook imports</li>
-</ol>
-<p><strong>For conversion-plan.md examples</strong>, use Method 2 with the appropriate example type:</p>
+<h3 id="Prepare-Training-and-Test-Data">Prepare Training and Test Data<a class="anchor-link" href="#Prepare-Training-and-Test-Data">¶</a></h3><p>Following the original MATLAB example exactly:</p>
 <ul>
-<li>Phase 1-3: <code>load_example_data('pca')</code>, <code>load_example_data('mahalanobis')</code>, <code>load_example_data('svd')</code></li>
-<li>Phase 4-5: <code>load_example_data('factor_analysis')</code>, <code>load_example_data('nlpca')</code></li>
-<li>Phase 6: <code>load_example_data('ar_model_order')</code></li>
+<li><strong>Training Data</strong>: From conditions 1-9 (first 9 from each of the first 9 damage states)</li>
+<li><strong>Test Data</strong>: Every 10th condition from all damage states (conditions 10, 20, 30, ..., 170)</li>
+</ul>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Training Data - following MATLAB exactly</span>
+<span class="c1"># for i=1:9; learnData(i*9-8:i*9,:)=arParameters(i*10-9:i*10-1,:); en d num_features = features.shap</span>
+<span class="n">e</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">learn_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">9</span><span class="o">*</span><span class="mi">9</span><span class="p">,</span> <span class="n">num_features</span><span class="p">))</span>  <span class="c1"># 81 samples x(4 channels * 15 AR params)</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">):</span>  <span class="c1"># i = 1 t o 9</span>
+    <span class="n">start_idx</span> <span class="o">=</span> <span class="n">i</span><span class="o">*</span><span class="mi">9</span> <span class="o">-</span> <span class="mi">8</span> <span class="o">-</span> <span class="mi">1</span>  <span class="c1"># gend_idx = </span>
+<span class="n">i</span><span class="o">*</span><span class="mi">9</span> <span class="o">-</span> <span class="mi">1</span>
+    
+    <span class="n">features_start_idx</span> <span class="o">=</span> <span class="n">i</span><span class="o">*</span><span class="mi">10</span> <span class="o">-</span> <span class="mi">9</span> <span class="o">-</span> <span class="mi">1</span>  <span class="c1"># gfeatures_end_idx = </span>
+<span class="n">i</span><span class="o">*</span><span class="mi">10</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="mi">1</span>
+    
+    <span class="n">learn_data</span><span class="p">[</span><span class="n">start_idx</span><span class="p">:</span><span class="n">end_idx</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">features</span><span class="p">[</span><span class="n">features_start_idx</span><span class="p">:</span><span class="n">features_end_idx</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
+
+<span class="c1"># Test Data - every 10th condition</span>
+<span class="c1"># scoreData=arParameter</span>
+<span class="n">s</span><span class="p">(</span><span class="mi">10</span><span class="p">:</span><span class="mi">10</span><span class="p">:</span><span class="mi">170</span><span class="p">,:)</span>
+<span class="n">test_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mi">170</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>  <span class="c1"># 10:10:170 in MATLAB (0-base</span>
+<span class="n">d</span><span class="p">:</span> <span class="mi">9</span><span class="p">:</span><span class="mi">10</span><span class="p">:</span><span class="mi">169</span><span class="p">)</span>
+<span class="n">score_data</span> <span class="o">=</span> <span class="n">features</span><span class="p">[</span><span class="n">test_indice</span>
+<span class="n">s</span><span class="p">,</span> <span class="p">:]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Training data shape: </span><span class="si">{</span><span class="n">learn_data</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Test data shape: </span><span class="si">{</span><span class="n">score_data</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Test indices (MATLAB 1-based): </span><span class="si">{</span><span class="n">test_indices</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="n">n_test</span> <span class="o">=</span> <span class="n">score_data</span><span class="o">.</span><span class="n">shap</span>
+<span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="Plot-Test-Data-Features">Plot Test Data Features<a class="anchor-link" href="#Plot-Test-Data-Features">¶</a></h3><p>Visualization of the extracted AR parameter features showing the feature vectors composed of AR parameters from Channel 2-5.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Plot test data(following MATLAB exactly)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+
+<span class="c1"># Get dimensions: n = instances, m = feature s n_test_plot, m = score_data.shap</span>
+<span class="n">e</span>
+
+<span class="c1"># MATLAB: plot(1:m,scoreData(1:9,:)','k',1:m,scoreData(10:17,:)','r')</span>
+<span class="c1"># Let's try the transpose approach but plot each COLUMN of the transposed matrix</span>
+
+<span class="c1"># X-axis: feature indices(1 tom)</span>
+<span class="n">feature_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> 
+<span class="n">m</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># MATLAB scoreData(1:9,:)' creates a (m x 9) matrix, then plots each column as a line</span>
+<span class="n">undamaged_transposed</span> <span class="o">=</span> <span class="n">score_data</span><span class="p">[:</span><span class="mi">9</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">T</span>  <span class="c1"># Shap</span>
+<span class="n">e</span><span class="p">:</span> <span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="mi">9</span><span class="p">)</span>
+<span class="n">damaged_transposed</span> <span class="o">=</span> <span class="n">score_data</span><span class="p">[</span><span class="mi">9</span><span class="p">:</span><span class="mi">17</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">T</span>  <span class="c1"># Shap</span>
+<span class="n">e</span><span class="p">:</span> <span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+
+<span class="c1"># Plot each column of the transposed matrices</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">undamaged_transposed</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>  <span class="c1"># 9 undamaged instances</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">feature_indices</span><span class="p">,</span> <span class="n">undamaged_transposed</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="s1">'k-'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">alph</span>
+<span class="n">a</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">damaged_transposed</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>  <span class="c1"># 8 damaged instances  </span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">feature_indices</span><span class="p">,</span> <span class="n">damaged_transposed</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="s1">'r-'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">alph</span>
+<span class="n">a</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Feature Vectors Compose of AR Parameters from Channel2-5'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'AR Parameters in Concatenated Format'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'Amplitude'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="n">m</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">([</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">])</span>
+
+<span class="c1"># Add legend(MATLAB style)</span>
+<span class="c1"># Create dummy lines for legend</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.lines</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mlines</span>
+<span class="n">undamaged_line</span> <span class="o">=</span> <span class="n">mlines</span><span class="o">.</span><span class="n">Line2D</span><span class="p">([],</span> <span class="p">[],</span> <span class="n">color</span><span class="o">=</span><span class="s1">'k'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Undamage</span>
+<span class="n">d</span><span class="s1">')</span>
+<span class="n">damaged_line</span> <span class="o">=</span> <span class="n">mlines</span><span class="o">.</span><span class="n">Line2D</span><span class="p">([],</span> <span class="p">[],</span> <span class="n">color</span><span class="o">=</span><span class="s1">'r'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Damage</span>
+<span class="n">d</span><span class="s1">')</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">handles</span><span class="o">=</span><span class="p">[</span><span class="n">undamaged_line</span><span class="p">,</span> <span class="n">damaged_lin</span>
+<span class="n">e</span><span class="p">])</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+
+<span class="c1"># Add vertical separator lines (MATLAB: m/4, m/4*2, m/4*3)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">m</span><span class="o">/</span><span class="mi">4</span> <span class="o">*</span> <span class="n">i</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">'k'</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">'-.'</span><span class="p">,</span> <span class="n">alph</span>
+<span class="n">a</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+
+<span class="c1"># Add channel labels(following MATLAB text positions)</span>
+<span class="c1"># MATLAB positions: 4, 18, 33, 48 for channels 2-5</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="o">-</span><span class="mi">7</span><span class="p">,</span> <span class="s1">'Channel 2'</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">'center'</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s1">'to</span>
+<span class="n">p</span><span class="s1">', </span>
+         <span class="n">bbox</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">boxstyle</span><span class="o">=</span><span class="s1">'round'</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">'white'</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">'k'</span><span class="p">,</span> <span class="n">alph</span>
+<span class="n">a</span><span class="o">=</span><span class="mf">0.8</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mi">18</span><span class="p">,</span> <span class="o">-</span><span class="mi">7</span><span class="p">,</span> <span class="s1">'Channel 3'</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">'center'</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s1">'to</span>
+<span class="n">p</span><span class="s1">',</span>
+         <span class="n">bbox</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">boxstyle</span><span class="o">=</span><span class="s1">'round'</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">'white'</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">'k'</span><span class="p">,</span> <span class="n">alph</span>
+<span class="n">a</span><span class="o">=</span><span class="mf">0.8</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mi">33</span><span class="p">,</span> <span class="o">-</span><span class="mi">7</span><span class="p">,</span> <span class="s1">'Channel 4'</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">'center'</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s1">'to</span>
+<span class="n">p</span><span class="s1">',</span>
+         <span class="n">bbox</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">boxstyle</span><span class="o">=</span><span class="s1">'round'</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">'white'</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">'k'</span><span class="p">,</span> <span class="n">alph</span>
+<span class="n">a</span><span class="o">=</span><span class="mf">0.8</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mi">48</span><span class="p">,</span> <span class="o">-</span><span class="mi">7</span><span class="p">,</span> <span class="s1">'Channel 5'</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">'center'</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s1">'to</span>
+<span class="n">p</span><span class="s1">',</span>
+         <span class="n">bbox</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">boxstyle</span><span class="o">=</span><span class="s1">'round'</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">'white'</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">'k'</span><span class="p">,</span> <span class="n">alph</span>
+<span class="n">a</span><span class="o">=</span><span class="mf">0.8</span><span class="p">))</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Statistical-Modeling-for-Feature-Classification">Statistical Modeling for Feature Classification<a class="anchor-link" href="#Statistical-Modeling-for-Feature-Classification">¶</a></h2><p>The Mahalanobis-based machine learning algorithm is used to normalize the features and reduce each feature vector into a score.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Learn Mahalanobis model </span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">training</span> <span class="n">data</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Learning Mahalanobis model from training data..."</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">learn_mahalanobis_shm</span><span class="p">(</span><span class="n">learn_data</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Mahalanobis model mean shape: </span><span class="si">{</span><span class="n">model</span><span class="p">[</span><span class="s1">'dataMean'</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Mahalanobis model covariance shape: </span><span class="si">{</span><span class="n">model</span><span class="p">[</span><span class="s1">'dataCov'</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="c1"># Score test data using the learned model</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Scoring test data..."</span><span class="p">)</span>
+<span class="n">DI</span> <span class="o">=</span> <span class="n">score_mahalanobis_shm</span><span class="p">(</span><span class="n">score_data</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Damage indicators shape: </span><span class="si">{</span><span class="n">DI</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Damage indicators (first 10): </span><span class="si">{</span><span class="n">DI</span><span class="p">[:</span><span class="mi">10</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Outlier-Detection">Outlier Detection<a class="anchor-link" href="#Outlier-Detection">¶</a></h2><p>Threshold determination based on the 95% cut-off over the training data and visualization of damage indicators.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Threshold based on the 95% cut-off over the training data</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Computing threshold from training data..."</span><span class="p">)</span>
+<span class="n">threshold_scores</span> <span class="o">=</span> <span class="n">score_mahalanobis_shm</span><span class="p">(</span><span class="n">learn_data</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+<span class="n">threshold_sorted</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="o">-</span><span class="n">threshold_scores</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>  <span class="c1"># Sort negative scores (following MATLA</span>
+<span class="n">B</span><span class="p">)</span>
+
+<span class="c1"># MATLAB: UCL=threshold(round(length(threshold)*0.95));</span>
+<span class="c1"># In MATLAB(1-indexed): round(81*0.95) = round(76.95) = 77, so threshold(77)</span>
+<span class="c1"># In Python(0-indexed): we want index 76, so threshold_sorted[76]</span>
+<span class="n">matlab_index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">threshold_sorted</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.95</span><span class="p">))</span>  <span class="c1"># This gives 77(MATLAB 1-based)</span>
+<span class="n">python_index</span> <span class="o">=</span> <span class="n">matlab_index</span> <span class="o">-</span> <span class="mi">1</span>  <span class="c1"># ed: 77-1=76</span>
+<span class="n">UCL</span> <span class="o">=</span> <span class="n">threshold_sorted</span><span class="p">[</span><span class="n">python_inde</span>
+<span class="n">x</span><span class="p">]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Upper Control Limit (UCL): </span><span class="si">{</span><span class="n">UCL</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Number of training samples: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">threshold_scores</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"MATLAB index (1-based): </span><span class="si">{</span><span class="n">matlab_index</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Python index (0-based): </span><span class="si">{</span><span class="n">python_index</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="Plot-Damage-Indicators">Plot Damage Indicators<a class="anchor-link" href="#Plot-Damage-Indicators">¶</a></h3><p>The figure below shows that the approach for damage detection, based on Mahalanobis distance along with the AR(15) parameters from Channel 2-5, is able to discriminate all the undamaged (1-9) and damaged (10-17) state conditions.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Plot DIs</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+
+<span class="n">state_conditions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_tes</span>
+<span class="n">t</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Undamaged conditions (1-9)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">state_conditions</span><span class="p">[:</span><span class="mi">9</span><span class="p">],</span> <span class="o">-</span><span class="n">DI</span><span class="p">[:</span><span class="mi">9</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">color</span><span class="o">=</span><span class="s1">'k'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Undamage</span>
+<span class="n">d</span><span class="s1">')</span>
+
+<span class="c1"># Damaged conditions (10-17)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">state_conditions</span><span class="p">[</span><span class="mi">9</span><span class="p">:</span><span class="mi">17</span><span class="p">],</span> <span class="o">-</span><span class="n">DI</span><span class="p">[</span><span class="mi">9</span><span class="p">:</span><span class="mi">17</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">color</span><span class="o">=</span><span class="s1">'r'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Damage</span>
+<span class="n">d</span><span class="s1">')</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Damage Indicators from the Test Data'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_test</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">state_conditions</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'State Condition [Undamaged(1-9) and Damaged (10-17)]'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'DI'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+
+<span class="c1"># Add threshold line</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">UCL</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">'b'</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">'-.'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">'95% Threshold (</span><span class="si">{</span><span class="n">UCL</span><span class="si">:</span><span class="s1">.4</span>
+<span class="n">f</span><span class="p">})</span><span class="s1">')</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="c1"># Print classification results</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Classification Results:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">50</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_test</span><span class="p">):</span>
+    <span class="n">state_type</span> <span class="o">=</span> <span class="s2">"Undamaged"</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">9</span> <span class="k">else</span> <span class="s2">"Damage</span>
+<span class="n">d</span><span class="s2">"</span>
+    <span class="n">detected</span> <span class="o">=</span> <span class="s2">"DAMAGE"</span> <span class="k">if</span> <span class="o">-</span><span class="n">DI</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">UCL</span> <span class="k">else</span> <span class="s2">"norma</span>
+<span class="n">l</span><span class="s2">"</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="s2">"✓"</span> <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="mi">9</span> <span class="ow">and</span> <span class="n">detected</span> <span class="o">==</span> <span class="s2">"normal"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">9</span> <span class="ow">and</span> <span class="n">detected</span> <span class="o">==</span> <span class="s2">"DAMAGE"</span><span class="p">)</span> <span class="n">els</span>
+<span class="n">e</span> <span class="s2">"✗"</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"State </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">:</span><span class="s2">2d</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">state_type</span><span class="si">:</span><span class="s2">9s</span><span class="si">}</span><span class="s2">): DI = </span><span class="si">{</span><span class="o">-</span><span class="n">DI</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">8.4f</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">detected</span><span class="si">:</span><span class="s2">6s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">statu</span>
+<span class="n">s</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="c1"># Calculate performance metrics</span>
+<span class="n">undamaged_correct</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="n">DI</span><span class="p">[:</span><span class="mi">9</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">UC</span>
+<span class="n">L</span><span class="p">)</span>
+<span class="n">damaged_correct</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="n">DI</span><span class="p">[</span><span class="mi">9</span><span class="p">:</span><span class="mi">17</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">UC</span>
+<span class="n">L</span><span class="p">)</span>
+<span class="n">total_correct</span> <span class="o">=</span> <span class="n">undamaged_correct</span> <span class="o">+</span> <span class="n">damaged_correc</span>
+<span class="n">t</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Performance Summary:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Undamaged correctly classified: </span><span class="si">{</span><span class="n">undamaged_correct</span><span class="si">}</span><span class="s2">/9"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Damaged correctly classified: </span><span class="si">{</span><span class="n">damaged_correct</span><span class="si">}</span><span class="s2">/8"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Overall accuracy: </span><span class="si">{</span><span class="n">total_correct</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">n_test</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="mi">100</span><span class="o">*</span><span class="n">total_correct</span><span class="o">/</span><span class="n">n_test</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%)"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"False positives: </span><span class="si">{</span><span class="mi">9</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">undamaged_correct</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"False negatives: </span><span class="si">{</span><span class="mi">8</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">damaged_correct</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Summary">Summary<a class="anchor-link" href="#Summary">¶</a></h2><p>This example demonstrated the complete Mahalanobis distance-based outlier detection workflow for structural health monitoring:</p>
+<ol>
+<li><strong>Data Loading</strong>: Successfully loaded the 3-story structure dataset</li>
+<li><strong>Feature Extraction</strong>: Used AR(15) model parameters as damage-sensitive features (different from PCA example)</li>
+<li><strong>Mahalanobis Modeling</strong>: Learned mean vector and covariance matrix from baseline training data</li>
+<li><strong>Damage Detection</strong>: Applied Mahalanobis distance-based scoring with 95% threshold</li>
+<li><strong>Classification</strong>: Achieved excellent separation between undamaged and damaged conditions</li>
+</ol>
+<p>The results show that the Mahalanobis distance-based approach successfully discriminates between undamaged (states 1-9) and damaged (states 10-17) conditions using AR model parameters as features.</p>
+<p><strong>Key differences from PCA approach:</strong></p>
+<ul>
+<li>Uses AR parameters directly as features (not RMSE values)</li>
+<li>Computes Mahalanobis distance instead of PCA reconstruction error</li>
+<li>Simpler statistical model (mean + covariance vs. principal components)</li>
+<li>More direct interpretation of feature importance</li>
+</ul>
+<p><strong>Key advantages of Mahalanobis distance:</strong></p>
+<ul>
+<li>Accounts for feature correlations through covariance matrix</li>
+<li>Scale-invariant distance metric</li>
+<li>Well-established statistical foundation</li>
+<li>Computationally efficient</li>
+<li>Robust to multivariate outliers when training data is clean</li>
+</ul>
+<p><strong>See also:</strong></p>
+<ul>
+<li><a href="pca_outlier_detection.ipynb">Outlier Detection based on Principal Component Analysis</a></li>
+<li><a href="svd_outlier_detection.ipynb">Outlier Detection based on the Singular Value Decomposition</a></li>
+<li><a href="factor_analysis_outlier_detection.ipynb">Outlier Detection based on the Factor Analysis Model</a></li>
+<li><a href="nlpca_outlier_detection.ipynb">Outlier Detection based on Nonlinear Principal Component Analysis</a></li>
 </ul>
 </div>
 </div>
@@ -7878,7 +8219,7 @@ a.anchor-link {
 
             
         <div class="footer">
-            <p>Generated on 2025-08-19 20:30:32 from <code>dataloader_demo.ipynb</code></p>
+            <p>Generated on 2025-08-19 20:30:53 from <code>mahalanobis_outlier_detection.ipynb</code></p>
             <p>Part of the SHMTools Python Package - Structural Health Monitoring Toolkit</p>
         </div>
         

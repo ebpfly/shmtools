@@ -4,7 +4,7 @@
         <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>Semiparametric Outlier Detection - SHMTools</title>
+            <title>Custom Detector Assembly - SHMTools</title>
             
         <style>
         body { 
@@ -86,8 +86,8 @@
         <body>
             
         <div class="notebook-header">
-            <h1 class="notebook-title">Semiparametric Outlier Detection</h1>
-            <p class="notebook-subtitle">SHMTools Example - Advanced Level</p>
+            <h1 class="notebook-title">Custom Detector Assembly</h1>
+            <p class="notebook-subtitle">SHMTools Example - Outlier_Detection Level</p>
         </div>
         
             
@@ -102,7 +102,7 @@
 <html lang="en">
 <head><meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Semiparametric Outlier Detection</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>Custom Detector Assembly</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <style type="text/css">
     pre { line-height: 125%; }
 td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
@@ -7616,7 +7616,19 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="Example-Usage:-Direct-Use-of-Semi-Parametric-Routines">Example Usage: Direct Use of Semi-Parametric Routines<a class="anchor-link" href="#Example-Usage:-Direct-Use-of-Semi-Parametric-Routines">¶</a></h1>
+<h1 id="Custom-Detector-Assembly">Custom Detector Assembly<a class="anchor-link" href="#Custom-Detector-Assembly">¶</a></h1><p>This notebook demonstrates how to assemble custom outlier detectors by mixing and matching learning/scoring function pairs from different detector categories. The custom detector assembly framework allows you to:</p>
+<ol>
+<li><strong>Parametric Detectors</strong>: PCA, Mahalanobis, SVD, Factor Analysis</li>
+<li><strong>Non-parametric Detectors</strong>: Kernel density estimation with various kernels</li>
+<li><strong>Semi-parametric Detectors</strong>: Gaussian Mixture Models with partitioning algorithms</li>
+</ol>
+<h2 id="Overview">Overview<a class="anchor-link" href="#Overview">¶</a></h2><p>The <code>assemble_outlier_detector_shm</code> function provides an interactive framework for creating custom detectors. You can:</p>
+<ul>
+<li>Select from pre-built detector combinations</li>
+<li>Configure parameters for each detector type</li>
+<li>Generate custom training functions that work with the universal <code>detect_outlier_shm</code> interface</li>
+<li>Save and load detector configurations for reproducibility</li>
+</ul>
 </div>
 </div>
 </div>
@@ -7627,20 +7639,7 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Introduction">Introduction<a class="anchor-link" href="#Introduction">¶</a></h2><p>Here we show how to directly use the Semiparametric routines while bypassing the "trainOutlierDetector" routine.</p>
-<p>The data used in this example is from the 3-story structure. More details about the data sets can be found in 3-Story Data Sets.</p>
-<p>Requires data3SS.mat dataset.</p>
-<p>SHMTools functions called:</p>
-<ul>
-<li>arModel_shm</li>
-<li>learnGMMSemiParametricModel_shm</li>
-<li>scoreGMM_shm</li>
-</ul>
-<p>Author: Samory Kpotufe</p>
-<p>Date Created: August 19, 2009</p>
-<p>LA-CC-14-046<br/>
-Copyright (c) 2014, Los Alamos National Security, LLC<br/>
-All rights reserved.</p>
+<h2 id="Setup-and-Imports">Setup and Imports<a class="anchor-link" href="#Setup-and-Imports">¶</a></h2>
 </div>
 </div>
 </div>
@@ -7654,16 +7653,24 @@ All rights reserved.</p>
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">stats</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="c1"># Add the repository root to Python path for examples.data import</span>
+<span class="n">repo_root</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span>
+<span class="k">while</span> <span class="ow">not</span> <span class="p">(</span><span class="n">repo_root</span> <span class="o">/</span> <span class="s1">'shmtools'</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="n">repo_root</span><span class="o">.</span><span class="n">parent</span> <span class="o">!=</span> <span class="n">repo_root</span><span class="p">:</span>
+    <span class="n">repo_root</span> <span class="o">=</span> <span class="n">repo_root</span><span class="o">.</span><span class="n">parent</span>
+<span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">repo_root</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">repo_root</span><span class="p">))</span>
+
+
+<span class="c1"># Import shmtools(installed package)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">examples.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_3story_structure_shm</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">shmtools.features</span><span class="w"> </span><span class="kn">import</span> <span class="n">ar_model_shm</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">shmtools.classification</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">learn_gmm_semiparametric_model_shm</span><span class="p">,</span>
-    <span class="n">score_gmm_shm</span><span class="p">,</span>
-    <span class="n">score_gmm_semiparametric_model_shm</span><span class="p">,</span>
-    <span class="n">k_medians_shm</span><span class="p">,</span>
-    <span class="n">roc_shm</span>
-<span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">shmtools.utils.data_loading</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_3story_data</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shmtools.classification</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="c1"># Set up plotting</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">'default'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">'figure.figsize'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">'font.size'</span><span class="p">]</span> <span class="o">=</span> <span class="mi">10</span>
 </pre></div>
 </div>
 </div>
@@ -7676,408 +7683,11 @@ All rights reserved.</p>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>/Users/eric/repo/shm/shmtools-python/shmtools/classification/nlpca.py:27: UserWarning: TensorFlow not available. NLPCA functions will not work. Install TensorFlow: pip install tensorflow
-  warnings.warn(
-/Users/eric/repo/shm/shmtools-python/venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
-  warnings.warn(
-</pre>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Load-data">Load data<a class="anchor-link" href="#Load-data">¶</a></h2><p>The data here is in the form of time series in a 3 dimensional matrix (time, sensors, instances) and also a state vector representing the various environmental conditions under which the data is collected.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">load_3story_data</span><span class="p">()</span>
-<span class="n">dataset</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'dataset'</span><span class="p">]</span>
-<span class="n">states</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'damage_states'</span><span class="p">]</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>For this example, we will break each 8192 point time series into 4, 2048 point time series.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">time_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2048</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">680</span><span class="p">))</span>
-<span class="n">time_data_states</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">680</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
-    <span class="n">start_idx</span> <span class="o">=</span> <span class="mi">2048</span> <span class="o">*</span> <span class="n">i</span>
-    <span class="n">end_idx</span> <span class="o">=</span> <span class="mi">2048</span> <span class="o">*</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">time_data</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="n">start_idx</span><span class="p">:</span><span class="n">end_idx</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
-    <span class="n">time_data_states</span><span class="p">[</span><span class="n">i</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">states</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Extract some features using your favorite function, but first pick N of the instances (each time series reading over all sensors). Each instance is then transformed into a feature vector: the returned matrix has the form (instances, features).</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">N</span> <span class="o">=</span> <span class="mi">400</span>
-<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>  <span class="c1"># For reproducibility</span>
-<span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="n">time_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">])[:</span><span class="n">N</span><span class="p">]</span>
-<span class="n">X_data</span> <span class="o">=</span> <span class="n">ar_model_shm</span><span class="p">(</span><span class="n">time_data</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">idx</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># Get RMS residuals feature vector</span>
-<span class="n">X_states</span> <span class="o">=</span> <span class="n">time_data_states</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Now set 80% of states 1:9 aside as the training data, these states correspond to undamaged readings. We'll then test on the remaining 20% of 1:9 and on the "damaged" states 10:17.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">X_states</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>  <span class="c1"># States 1:9</span>
-<span class="n">X_undamaged</span> <span class="o">=</span> <span class="n">X_data</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="p">:]</span>
-<span class="n">n_undamaged</span> <span class="o">=</span> <span class="n">X_undamaged</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-<span class="n">n_train</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="mf">0.8</span> <span class="o">*</span> <span class="n">n_undamaged</span><span class="p">)</span>
-<span class="n">X_train</span> <span class="o">=</span> <span class="n">X_undamaged</span><span class="p">[:</span><span class="n">n_train</span><span class="p">,</span> <span class="p">:]</span>
-<span class="n">X_test</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">X_undamaged</span><span class="p">[</span><span class="n">n_train</span><span class="p">:,</span> <span class="p">:],</span> <span class="n">X_data</span><span class="p">[</span><span class="o">~</span><span class="n">idx</span><span class="p">,</span> <span class="p">:]])</span>
-<span class="n">n_test</span> <span class="o">=</span> <span class="n">X_test</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Now set labels for the test data, 0 corresponds to undamaged, and 1 to damaged.</p>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>number of undamaged in test.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">n_test_0</span> <span class="o">=</span> <span class="n">n_undamaged</span> <span class="o">-</span> <span class="n">n_train</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>test labels</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">test_labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_test_0</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_test</span> <span class="o">-</span> <span class="n">n_test_0</span><span class="p">)])</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Train-a-model-over-the-undamaged-data">Train a model over the undamaged data<a class="anchor-link" href="#Train-a-model-over-the-undamaged-data">¶</a></h2><p>The next call learns a mixture of k gaussians over the undamaged data and returns the parameters of this model in dModel. The partition function is one of those in "SemiParametricDetectors/PartitioningAlgorithms/" or should have the same behavior as one of those functions (including signature). The "MMFun" is a Mixture Model function from "SemiParametricDetectors/ParametricMixtures" or should have the same behavior.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">partition_fun</span> <span class="o">=</span> <span class="n">k_medians_shm</span>
-<span class="n">k</span> <span class="o">=</span> <span class="mi">5</span>
-<span class="n">d_model</span> <span class="o">=</span> <span class="n">learn_gmm_semiparametric_model_shm</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">partition_fun</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Pick-a-threshold-from-the-training-data">Pick a threshold from the training data<a class="anchor-link" href="#Pick-a-threshold-from-the-training-data">¶</a></h2><p>We will first obtain the "scores" over the training data, that is the log-likelihoods that are given by the learned distribution. Then we learn a distribution of these scores, and pick a threshold so that 90% of the training data (undamaged data) has scores above this threshold (according to the distribution of scores).</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">likelihoods</span> <span class="o">=</span> <span class="n">score_gmm_shm</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">d_model</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>learn a normal distribution over the scores</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">model_p</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">likelihoods</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>pick the threshold</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">confidence</span> <span class="o">=</span> <span class="mf">0.9</span>
-<span class="n">threshold</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">confidence</span><span class="p">,</span> <span class="n">model_p</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">model_p</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Test-the-detector">Test the detector<a class="anchor-link" href="#Test-the-detector">¶</a></h2><p>Now the detector consists simply of getting the distribution of scores over the test data, under the distribution learned on the undamaged training data (dModel). We simply flag a test point as "damaged" whenever it falls below our threshold.</p>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Test scores</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [12]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">scores</span> <span class="o">=</span> <span class="n">score_gmm_semiparametric_model_shm</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">d_model</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Results contains a 1 whenever we think the point is damaged, a 0 otherwise.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [13]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">results</span> <span class="o">=</span> <span class="n">scores</span> <span class="o">&lt;=</span> <span class="n">threshold</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Report-the-detector's-performance">Report the detector's performance<a class="anchor-link" href="#Report-the-detector's-performance">¶</a></h2>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Various error rates</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [14]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">total_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">results</span> <span class="o">!=</span> <span class="n">test_labels</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_test</span>
-<span class="n">false_positive_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">results</span><span class="p">[:</span><span class="n">n_test_0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_test_0</span>
-<span class="n">false_negative_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">n_test_0</span><span class="p">:]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_test</span> <span class="o">-</span> <span class="n">n_test_0</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'</span><span class="se">\n</span><span class="s1"> Total error: </span><span class="si">{</span><span class="n">total_err</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="se">\n</span><span class="s1"> False Positive rate: </span><span class="si">{</span><span class="n">false_positive_err</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="se">\n</span><span class="s1"> False Negative rate: </span><span class="si">{</span><span class="n">false_negative_err</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>
- Total error: 0.09
- False Positive rate: 0.20
- False Negative rate: 0.06
+  <span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[1]</span><span class="ansi-green-fg">, line 17</span>
+<span class="ansi-red-fg">    </span><span class="ansi-red-fg">from shmtools.classification import (# Set up plotting</span>
+                                        ^
+<span class="ansi-red-fg">SyntaxError</span><span class="ansi-red-fg">:</span> '(' was never closed
 </pre>
 </div>
 </div>
@@ -8090,7 +7700,7 @@ All rights reserved.</p>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>ROC curve</p>
+<h2 id="Load-and-Prepare-Data">Load and Prepare Data<a class="anchor-link" href="#Load-and-Prepare-Data">¶</a></h2><p>We'll use the 3-story structure dataset and extract AR model features:</p>
 </div>
 </div>
 </div>
@@ -8099,10 +7709,40 @@ All rights reserved.</p>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [15]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">true_positives</span><span class="p">,</span> <span class="n">false_positives</span> <span class="o">=</span> <span class="n">roc_shm</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">test_labels</span><span class="p">)</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Load the 3-story structure dataset</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">load_3story_dat</span>
+<span class="n">a</span><span class="p">()</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'datase</span>
+<span class="n">t</span><span class="s1">']</span>
+<span class="n">damage_states</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'damage_state</span>
+<span class="n">s</span><span class="s1">']</span>
+
+<span class="c1"># Extract channels 2-5(accelerations) - skip channel 0(force)</span>
+<span class="n">acceleration_data</span> <span class="o">=</span> <span class="n">datase</span>
+<span class="n">t</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:,</span> <span class="p">:]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Data shape: </span><span class="si">{</span><span class="n">acceleration_data</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> (time_points, channels, instances)"</span><span class="p">)</span>
+
+<span class="c1"># Extract AR model features</span>
+<span class="n">ar_order</span> <span class="o">=</span> <span class="mi">15</span>
+<span class="n">ar_features</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">ar_model_shm</span><span class="p">(</span><span class="n">acceleration_data</span><span class="p">,</span> <span class="n">ar_order</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"AR features shape: </span><span class="si">{</span><span class="n">ar_features</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> (instances, features)"</span><span class="p">)</span>
+
+<span class="c1"># Separate undamaged and damaged data</span>
+<span class="n">undamaged_mask</span> <span class="o">=</span> <span class="n">damage_state</span>
+<span class="n">s</span> <span class="o">&lt;=</span> <span class="mi">9</span>
+<span class="n">damaged_mask</span> <span class="o">=</span> <span class="n">damage_state</span>
+<span class="n">s</span> <span class="o">&gt;</span> <span class="mi">9</span>
+
+<span class="n">undamaged_features</span> <span class="o">=</span> <span class="n">ar_features</span><span class="p">[</span><span class="n">undamaged_mas</span>
+<span class="n">k</span><span class="p">]</span>
+<span class="n">damaged_features</span> <span class="o">=</span> <span class="n">ar_features</span><span class="p">[</span><span class="n">damaged_mas</span>
+<span class="n">k</span><span class="p">]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Undamaged instances: </span><span class="si">{</span><span class="n">undamaged_features</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Damaged instances: </span><span class="si">{</span><span class="n">damaged_features</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -8115,38 +7755,520 @@ All rights reserved.</p>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Now plot the curve</p>
+<h2 id="Explore-Available-Detectors">Explore Available Detectors<a class="anchor-link" href="#Explore-Available-Detectors">¶</a></h2><p>Let's see what detectors are available in each category:</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [16]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">false_positives</span><span class="p">,</span> <span class="n">true_positives</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'falsePositives'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'truePositives'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'ROC curve'</span><span class="p">)</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Display available detectors </span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">the</span> <span class="n">registry</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"=== PARAMETRIC DETECTORS ==="</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">detector_registry</span><span class="o">.</span><span class="n">parametric_detectors</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">:"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Display Name: </span><span class="si">{</span><span class="n">info</span><span class="p">[</span><span class="s1">'display_name'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Description: </span><span class="si">{</span><span class="n">info</span><span class="p">[</span><span class="s1">'description'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Learn Function: </span><span class="si">{</span><span class="n">info</span><span class="p">[</span><span class="s1">'learn_function'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Score Function: </span><span class="si">{</span><span class="n">info</span><span class="p">[</span><span class="s1">'score_function'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">=== NON-PARAMETRIC DETECTOR</span>
+<span class="n">S</span> <span class="o">===</span><span class="s2">")</span>
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">detector_registry</span><span class="o">.</span><span class="n">nonparametric_detectors</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">:"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Display Name: </span><span class="si">{</span><span class="n">info</span><span class="p">[</span><span class="s1">'display_name'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Description: </span><span class="si">{</span><span class="n">info</span><span class="p">[</span><span class="s1">'description'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Available Kernels: </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">detector_registry</span><span class="o">.</span><span class="n">available_kernels</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">=== SEMI-PARAMETRIC DETECTOR</span>
+<span class="n">S</span> <span class="o">===</span><span class="s2">")</span>
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">detector_registry</span><span class="o">.</span><span class="n">semiparametric_detectors</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">:"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Display Name: </span><span class="si">{</span><span class="n">info</span><span class="p">[</span><span class="s1">'display_name'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Description: </span><span class="si">{</span><span class="n">info</span><span class="p">[</span><span class="s1">'description'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Partitioning Algorithms: </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">detector_registry</span><span class="o">.</span><span class="n">partitioning_algorithms</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Example-1:-Assemble-a-Parametric-Detector-(PCA)">Example 1: Assemble a Parametric Detector (PCA)<a class="anchor-link" href="#Example-1:-Assemble-a-Parametric-Detector-(PCA)">¶</a></h2><p>First, let's assemble a PCA-based detector programmatically (non-interactive mode):</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Assemble a PCA detector with custom parameters</span>
+<span class="n">pca_detector</span> <span class="o">=</span> <span class="n">assemble_outlier_detector_sh</span>
+<span class="n">m</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s2">"PCA_Custo</span>
+<span class="n">m</span><span class="s2">",</span>
+    <span class="n">detector_type</span><span class="o">=</span><span class="s2">"parametri</span>
+<span class="n">c</span><span class="s2">",</span>
+    <span class="n">detector_name</span><span class="o">=</span><span class="s2">"pc</span>
+<span class="n">a</span><span class="s2">",</span>
+    <span class="n">parameters</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">"per_var"</span><span class="p">:</span> <span class="mf">0.95</span><span class="p">,</span>  <span class="c1"># Retain 95% of variance</span>
+        <span class="s2">"stand"</span><span class="p">:</span> <span class="mi">0</span>        <span class="c1"># Use standardization</span>
+    <span class="p">},</span>
+    <span class="n">interactive</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Assembled PCA Detector:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Type: </span><span class="si">{</span><span class="n">pca_detector</span><span class="p">[</span><span class="s1">'type'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Name: </span><span class="si">{</span><span class="n">pca_detector</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Learn Function: </span><span class="si">{</span><span class="n">pca_detector</span><span class="p">[</span><span class="s1">'learn_function'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Score Function: </span><span class="si">{</span><span class="n">pca_detector</span><span class="p">[</span><span class="s1">'score_function'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Parameters: </span><span class="si">{</span><span class="n">pca_detector</span><span class="p">[</span><span class="s1">'parameters'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Training Function: </span><span class="si">{</span><span class="n">pca_detector</span><span class="p">[</span><span class="s1">'training_function'</span><span class="p">]</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Use-the-Assembled-PCA-Detector">Use the Assembled PCA Detector<a class="anchor-link" href="#Use-the-Assembled-PCA-Detector">¶</a></h2><p>Now let's use the assembled detector to train and test on our data:</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Split data for training and testing</span>
+<span class="n">train_split</span> <span class="o">=</span> <span class="mf">0.8</span>
+<span class="n">n_train</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">train_split</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">undamaged_features</span><span class="p">))</span>
+
+<span class="c1"># Training data: 80% of undamaged</span>
+<span class="n">train_features</span> <span class="o">=</span> <span class="n">undamaged_features</span><span class="p">[:</span><span class="n">n_trai</span>
+<span class="n">n</span><span class="p">]</span>
+
+<span class="c1"># Test data: 20% undamaged + all damaged</span>
+<span class="n">test_features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstac</span>
+<span class="n">k</span><span class="p">([</span>
+    <span class="n">undamaged_features</span><span class="p">[</span><span class="n">n_train</span><span class="p">:],</span>
+    <span class="n">damaged_features</span>
+<span class="p">])</span>
+
+<span class="c1"># Create labels for test data</span>
+<span class="n">test_labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenat</span>
+<span class="n">e</span><span class="p">([</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">undamaged_features</span><span class="p">[</span><span class="n">n_train</span><span class="p">:])),</span>  <span class="c1"># Undamaged = 0</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">damaged_features</span><span class="p">))</span>                <span class="c1"># Damaged = 1</span>
+<span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Training samples: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">train_features</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Test samples: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">test_features</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">test_labels</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="si">}</span><span class="s2"> undamaged, </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">test_labels</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> damaged)"</span><span class="p">)</span>
+
+<span class="c1"># Train using the assembled detector's training function</span>
+<span class="n">models</span> <span class="o">=</span> <span class="n">pca_detector</span><span class="p">[</span><span class="s1">'training_functio</span>
+<span class="n">n</span><span class="s1">'](</span>
+    <span class="n">train_features</span><span class="p">,</span>
+    <span class="n">k</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+    <span class="n">confidence</span><span class="o">=</span><span class="mf">0.95</span><span class="p">,</span>
+    <span class="n">model_filename</span><span class="o">=</span><span class="s2">"assembled_pca_model.pk</span>
+<span class="n">l</span><span class="s2">"</span>
+<span class="p">)</span>
+
+<span class="c1"># Detect outliers</span>
+<span class="n">results</span><span class="p">,</span> <span class="n">confidences</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="n">threshold</span> <span class="o">=</span> <span class="n">detect_outlier_sh</span>
+<span class="n">m</span><span class="p">(</span><span class="n">test_features</span><span class="p">,</span>
+    <span class="n">models</span><span class="o">=</span><span class="n">models</span><span class="p">)</span>
+
+<span class="c1"># Calculate performance metrics</span>
+<span class="n">accuracy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">results</span> <span class="o">==</span> <span class="n">test_labels</span><span class="p">)</span>
+<span class="n">false_positive_rate</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">test_label</span>
+<span class="n">s</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">false_negative_rate</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">test_label</span>
+<span class="n">s</span> <span class="o">==</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Performance Metrics:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Accuracy: </span><span class="si">{</span><span class="n">accuracy</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  False Positive Rate: </span><span class="si">{</span><span class="n">false_positive_rate</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  False Negative Rate: </span><span class="si">{</span><span class="n">false_negative_rate</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Example-2:-Assemble-a-Non-Parametric-Detector-(Kernel-Density)">Example 2: Assemble a Non-Parametric Detector (Kernel Density)<a class="anchor-link" href="#Example-2:-Assemble-a-Non-Parametric-Detector-(Kernel-Density)">¶</a></h2><p>Let's assemble a kernel density detector with Epanechnikov kernel:</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Assemble a kernel density detector</span>
+<span class="n">kde_detector</span> <span class="o">=</span> <span class="n">assemble_outlier_detector_sh</span>
+<span class="n">m</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s2">"KDE_Epanechniko</span>
+<span class="n">v</span><span class="s2">",</span>
+    <span class="n">detector_type</span><span class="o">=</span><span class="s2">"nonparametri</span>
+<span class="n">c</span><span class="s2">",</span>
+    <span class="n">detector_name</span><span class="o">=</span><span class="s2">"kernel_densit</span>
+<span class="n">y</span><span class="s2">",</span>
+    <span class="n">parameters</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">"kernel_function"</span><span class="p">:</span> <span class="s2">"epanechnikov"</span><span class="p">,</span>
+        <span class="s2">"bandwidth_method"</span><span class="p">:</span> <span class="s2">"scott"</span>  <span class="c1"># Use Scott's rule for bandwidth</span>
+    <span class="p">},</span>
+    <span class="n">interactive</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Assembled KDE Detector:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Type: </span><span class="si">{</span><span class="n">kde_detector</span><span class="p">[</span><span class="s1">'type'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Name: </span><span class="si">{</span><span class="n">kde_detector</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Parameters: </span><span class="si">{</span><span class="n">kde_detector</span><span class="p">[</span><span class="s1">'parameters'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="c1"># Train and test with KDE detector</span>
+<span class="n">kde_models</span> <span class="o">=</span> <span class="n">kde_detector</span><span class="p">[</span><span class="s1">'training_functio</span>
+<span class="n">n</span><span class="s1">'](</span>
+    <span class="n">train_features</span><span class="p">,</span>
+    <span class="n">k</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">confidence</span><span class="o">=</span><span class="mf">0.95</span><span class="p">,</span>
+    <span class="n">model_filename</span><span class="o">=</span><span class="s2">"assembled_kde_model.pk</span>
+<span class="n">l</span><span class="s2">"</span>
+<span class="p">)</span>
+
+<span class="c1"># Detect outliers</span>
+<span class="n">kde_results</span><span class="p">,</span> <span class="n">kde_confidences</span><span class="p">,</span> <span class="n">kde_scores</span><span class="p">,</span> <span class="n">kde_threshold</span> <span class="o">=</span> <span class="n">detect_outlier_sh</span>
+<span class="n">m</span><span class="p">(</span><span class="n">test_features</span><span class="p">,</span>
+    <span class="n">models</span><span class="o">=</span><span class="n">kde_models</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Example-3:-Assemble-a-Semi-Parametric-Detector-(GMM)">Example 3: Assemble a Semi-Parametric Detector (GMM)<a class="anchor-link" href="#Example-3:-Assemble-a-Semi-Parametric-Detector-(GMM)">¶</a></h2><p>Let's assemble a GMM-based semi-parametric detector:</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Assemble a GMM semi-parametric detector</span>
+<span class="n">gmm_detector</span> <span class="o">=</span> <span class="n">assemble_outlier_detector_sh</span>
+<span class="n">m</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s2">"GMM_KMean</span>
+<span class="n">s</span><span class="s2">",</span>
+    <span class="n">detector_type</span><span class="o">=</span><span class="s2">"semiparametri</span>
+<span class="n">c</span><span class="s2">",</span>
+    <span class="n">detector_name</span><span class="o">=</span><span class="s2">"gmm_sem</span>
+<span class="n">i</span><span class="s2">",</span>
+    <span class="n">parameters</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">"partitioning_algorithm"</span><span class="p">:</span> <span class="s2">"kmeans"</span><span class="p">,</span>
+        <span class="s2">"n_components"</span><span class="p">:</span> <span class="mi">5</span>
+    <span class="p">},</span>
+    <span class="n">interactive</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Assembled GMM Detector:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Type: </span><span class="si">{</span><span class="n">gmm_detector</span><span class="p">[</span><span class="s1">'type'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Name: </span><span class="si">{</span><span class="n">gmm_detector</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Parameters: </span><span class="si">{</span><span class="n">gmm_detector</span><span class="p">[</span><span class="s1">'parameters'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="c1"># Train and test with GMM detector</span>
+<span class="n">gmm_models</span> <span class="o">=</span> <span class="n">gmm_detector</span><span class="p">[</span><span class="s1">'training_functio</span>
+<span class="n">n</span><span class="s1">'](</span>
+    <span class="n">train_features</span><span class="p">,</span>
+    <span class="n">k</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+    <span class="n">confidence</span><span class="o">=</span><span class="mf">0.95</span><span class="p">,</span>
+    <span class="n">model_filename</span><span class="o">=</span><span class="s2">"assembled_gmm_model.pk</span>
+<span class="n">l</span><span class="s2">",</span>
+    <span class="n">dist_for_scores</span><span class="o">=</span><span class="s2">"norm"</span>  <span class="c1"># Use normal distribution for threshold)</span>
+
+<span class="c1"># Detect outliers</span>
+<span class="n">gmm_results</span><span class="p">,</span> <span class="n">gmm_confidences</span><span class="p">,</span> <span class="n">gmm_scores</span><span class="p">,</span> <span class="n">gmm_threshold</span> <span class="o">=</span> <span class="n">detect_outlier_sh</span>
+<span class="n">m</span><span class="p">(</span><span class="n">test_features</span><span class="p">,</span>
+    <span class="n">models</span><span class="o">=</span><span class="n">gmm_models</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Compare-Detector-Performance">Compare Detector Performance<a class="anchor-link" href="#Compare-Detector-Performance">¶</a></h2><p>Let's compare the performance of all three assembled detectors:</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Calculate ROC curves for all detectors</span>
+<span class="n">pca_tpr</span><span class="p">,</span> <span class="n">pca_fpr</span> <span class="o">=</span> <span class="n">roc_shm</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">test_labels</span><span class="p">)</span>
+<span class="n">kde_tpr</span><span class="p">,</span> <span class="n">kde_fpr</span> <span class="o">=</span> <span class="n">roc_shm</span><span class="p">(</span><span class="n">kde_scores</span><span class="p">,</span> <span class="n">test_labels</span><span class="p">)</span>
+<span class="n">gmm_tpr</span><span class="p">,</span> <span class="n">gmm_fpr</span> <span class="o">=</span> <span class="n">roc_shm</span><span class="p">(</span><span class="n">gmm_scores</span><span class="p">,</span> <span class="n">test_labels</span><span class="p">)</span>
+
+<span class="c1"># Plot ROC curves</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+
+<span class="c1"># Calculate AUC using trapezoidal rule</span>
+<span class="n">pca_auc</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">pca_tpr</span><span class="p">,</span> <span class="n">pca_fpr</span><span class="p">)</span>
+<span class="n">kde_auc</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">kde_tpr</span><span class="p">,</span> <span class="n">kde_fpr</span><span class="p">)</span>
+<span class="n">gmm_auc</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">gmm_tpr</span><span class="p">,</span> <span class="n">gmm_fpr</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">pca_fpr</span><span class="p">,</span> <span class="n">pca_tpr</span><span class="p">,</span> <span class="s1">'b-'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">'PCA (AUC = </span><span class="si">{</span><span class="n">pca_auc</span><span class="si">:</span><span class="s1">.3</span>
+<span class="n">f</span><span class="p">})</span><span class="s1">')</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kde_fpr</span><span class="p">,</span> <span class="n">kde_tpr</span><span class="p">,</span> <span class="s1">'r-'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">'KDE (AUC = </span><span class="si">{</span><span class="n">kde_auc</span><span class="si">:</span><span class="s1">.3</span>
+<span class="n">f</span><span class="p">})</span><span class="s1">')</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">gmm_fpr</span><span class="p">,</span> <span class="n">gmm_tpr</span><span class="p">,</span> <span class="s1">'g-'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">'GMM (AUC = </span><span class="si">{</span><span class="n">gmm_auc</span><span class="si">:</span><span class="s1">.3</span>
+<span class="n">f</span><span class="p">})</span><span class="s1">')</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">'k--'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Random Classifie</span>
+<span class="sa">r</span><span class="s1">')</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'False Positive Rate'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'True Positive Rate'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'ROC Curves for Assembled Detectors'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">'lower righ</span>
+<span class="n">t</span><span class="s1">')</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="c1"># Performance summary table</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">=== PERFORMANCE SUMMAR</span>
+<span class="n">Y</span> <span class="o">===</span><span class="s2">")</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'Detector'</span><span class="si">:</span><span class="s2">&lt;15</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">'Accuracy'</span><span class="si">:</span><span class="s2">&lt;10</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">'FPR'</span><span class="si">:</span><span class="s2">&lt;10</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">'FNR'</span><span class="si">:</span><span class="s2">&lt;10</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">'AUC'</span><span class="si">:</span><span class="s2">&lt;10</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"-"</span> <span class="o">*</span> <span class="mi">55</span><span class="p">)</span>
+
+<span class="c1"># PCA performance</span>
+<span class="n">pca_acc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">results</span> <span class="o">==</span> <span class="n">test_labels</span><span class="p">)</span>
+<span class="n">pca_fpr_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">test_label</span>
+<span class="n">s</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">pca_fnr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">test_label</span>
+<span class="n">s</span> <span class="o">==</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'PCA'</span><span class="si">:</span><span class="s2">&lt;15</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">pca_acc</span><span class="si">:</span><span class="s2">&lt;10.3f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">pca_fpr_val</span><span class="si">:</span><span class="s2">&lt;10.3f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">pca_fnr</span><span class="si">:</span><span class="s2">&lt;10.3f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">pca_auc</span><span class="si">:</span><span class="s2">&lt;10.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="c1"># KDE performance</span>
+<span class="n">kde_acc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">kde_results</span> <span class="o">==</span> <span class="n">test_labels</span><span class="p">)</span>
+<span class="n">kde_fpr_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">kde_results</span><span class="p">[</span><span class="n">test_label</span>
+<span class="n">s</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">kde_fnr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">kde_results</span><span class="p">[</span><span class="n">test_label</span>
+<span class="n">s</span> <span class="o">==</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'KDE'</span><span class="si">:</span><span class="s2">&lt;15</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">kde_acc</span><span class="si">:</span><span class="s2">&lt;10.3f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">kde_fpr_val</span><span class="si">:</span><span class="s2">&lt;10.3f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">kde_fnr</span><span class="si">:</span><span class="s2">&lt;10.3f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">kde_auc</span><span class="si">:</span><span class="s2">&lt;10.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="c1"># GMM performance</span>
+<span class="n">gmm_acc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">gmm_results</span> <span class="o">==</span> <span class="n">test_labels</span><span class="p">)</span>
+<span class="n">gmm_fpr_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">gmm_results</span><span class="p">[</span><span class="n">test_label</span>
+<span class="n">s</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">gmm_fnr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">gmm_results</span><span class="p">[</span><span class="n">test_label</span>
+<span class="n">s</span> <span class="o">==</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'GMM'</span><span class="si">:</span><span class="s2">&lt;15</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">gmm_acc</span><span class="si">:</span><span class="s2">&lt;10.3f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">gmm_fpr_val</span><span class="si">:</span><span class="s2">&lt;10.3f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">gmm_fnr</span><span class="si">:</span><span class="s2">&lt;10.3f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">gmm_auc</span><span class="si">:</span><span class="s2">&lt;10.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Save-and-Load-Detector-Configurations">Save and Load Detector Configurations<a class="anchor-link" href="#Save-and-Load-Detector-Configurations">¶</a></h2><p>Detector assemblies can be saved and loaded for reproducibility:</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Save detector configurations</span>
+<span class="n">save_detector_assembly</span><span class="p">(</span><span class="n">pca_detector</span><span class="p">,</span> <span class="s2">"pca_detector_config.json"</span><span class="p">)</span>
+<span class="n">save_detector_assembly</span><span class="p">(</span><span class="n">kde_detector</span><span class="p">,</span> <span class="s2">"kde_detector_config.json"</span><span class="p">)</span>
+<span class="n">save_detector_assembly</span><span class="p">(</span><span class="n">gmm_detector</span><span class="p">,</span> <span class="s2">"gmm_detector_config.json"</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Detector configurations saved!"</span><span class="p">)</span>
+
+<span class="c1"># Load a detector configuration</span>
+<span class="n">loaded_pca</span> <span class="o">=</span> <span class="n">load_detector_assembly</span><span class="p">(</span><span class="s2">"pca_detector_config.jso</span>
+<span class="n">n</span><span class="s2">")</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Loaded PCA detector configuration:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Type: </span><span class="si">{</span><span class="n">loaded_pca</span><span class="p">[</span><span class="s1">'type'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Name: </span><span class="si">{</span><span class="n">loaded_pca</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Parameters: </span><span class="si">{</span><span class="n">loaded_pca</span><span class="p">[</span><span class="s1">'parameters'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Interactive-Assembly-Example">Interactive Assembly Example<a class="anchor-link" href="#Interactive-Assembly-Example">¶</a></h2><p>For interactive assembly (when <code>interactive=True</code>), the function will prompt you for:</p>
+<ol>
+<li>Detector type selection</li>
+<li>Specific detector algorithm selection</li>
+<li>Parameter configuration</li>
+</ol>
+<p>This is useful for exploring different detector configurations without writing code.</p>
+<div class="highlight"><pre><span></span><span class="c1"># Example of interactive assembly (commented out for notebook execution)</span>
+<span class="c1"># interactive_detector = assemble_outlier_detector_shm(interactive=True)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Visualize-Score-Distributions">Visualize Score Distributions<a class="anchor-link" href="#Visualize-Score-Distributions">¶</a></h2><p>Let's visualize how different detectors score the data:</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsiz</span>
+<span class="n">e</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+
+<span class="c1"># PCA scores</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">scores</span><span class="p">[</span><span class="n">test_labels</span> <span class="o">==</span> <span class="mi">0</span><span class="p">],</span> <span class="n">bins</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Undamage</span>
+<span class="n">d</span><span class="s1">')</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">scores</span><span class="p">[</span><span class="n">test_labels</span> <span class="o">==</span> <span class="mi">1</span><span class="p">],</span> <span class="n">bins</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Damage</span>
+<span class="n">d</span><span class="s1">')</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">threshold</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">'r'</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">'--'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">'Threshold = </span><span class="si">{</span><span class="n">threshold</span><span class="si">:</span><span class="s1">.2</span>
+<span class="n">f</span><span class="p">}</span><span class="s1">')</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">'Score'</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">'Density'</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">'PCA Detector Scores'</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+<span class="c1"># KDE scores</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">kde_scores</span><span class="p">[</span><span class="n">test_labels</span> <span class="o">==</span> <span class="mi">0</span><span class="p">],</span> <span class="n">bins</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Undamage</span>
+<span class="n">d</span><span class="s1">')</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">kde_scores</span><span class="p">[</span><span class="n">test_labels</span> <span class="o">==</span> <span class="mi">1</span><span class="p">],</span> <span class="n">bins</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Damage</span>
+<span class="n">d</span><span class="s1">')</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">kde_threshold</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">'r'</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">'--'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">'Threshold = </span><span class="si">{</span><span class="n">kde_threshold</span><span class="si">:</span><span class="s1">.2</span>
+<span class="n">f</span><span class="p">}</span><span class="s1">')</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">'Score'</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">'Density'</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">'KDE Detector Scores'</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+<span class="c1"># GMM scores</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">gmm_scores</span><span class="p">[</span><span class="n">test_labels</span> <span class="o">==</span> <span class="mi">0</span><span class="p">],</span> <span class="n">bins</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Undamage</span>
+<span class="n">d</span><span class="s1">')</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">gmm_scores</span><span class="p">[</span><span class="n">test_labels</span> <span class="o">==</span> <span class="mi">1</span><span class="p">],</span> <span class="n">bins</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Damage</span>
+<span class="n">d</span><span class="s1">')</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">gmm_threshold</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">'r'</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">'--'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">'Threshold = </span><span class="si">{</span><span class="n">gmm_threshold</span><span class="si">:</span><span class="s1">.2</span>
+<span class="n">f</span><span class="p">}</span><span class="s1">')</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">'Score'</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">'Density'</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">'GMM Detector Scores'</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
 </div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedImage jp-OutputArea-output" tabindex="0">
-<img alt="No description has been provided for this image" class="" src="data:image/png;base64,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KdWvXz+pV6+eqZtRvXr1MjOs2rZta66Js2PHDtObo9sdIQcAAPg3r4abpKQk2bdvn4wdO1bS0tKkTZs2snTpUmeRcUpKiktPzZNPPikBAQHmcffu3VK7dm0TbJ555hkvngUAAKhKAiw/G8/RqeAxMTGmuDg6Otpj77s+5ZD0eXmNNKgZKatGdvXY+wIAACnX97dPzZYCAAA4E8INAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAADw73Bz7NgxOXr0qHP9t99+k5kzZ8qyZcs83TYAAIBzH2569+4tb731lnmekZEhHTp0kGnTppntr7zySvlbAAAA4M1ws379eunSpYt5vmjRIomLizO9Nxp4XnjhBU+2DQAA4NyHGx2SioqKMs91KKpPnz4SGBgol19+uQk5AAAAPhVumjVrJp988omkpqbKF198Id27dzfb9+7dK9HR0eeijQAAAOcu3IwdO1ZGjBghjRo1ksTEROnYsaOzF6dt27blfTsAAACPCi7vAbfffrtcccUVsmfPHmndurVz+7XXXiu33nqrZ1sHAABQGde5iY+PN3U3y5cvN1PD1Z/+9Cdp0aJFRd4OAADAe+HmwIEDppfmwgsvlJ49e5oeHDVw4ED5+9//7rmWAQAAVEa4GTZsmISEhEhKSopERkY6tyclJcnSpUsr0gYAAADv1dxo4bDOkqpfv77L9gsuuICp4AAAwPd6brKzs116bBwOHjwoYWFhnmoXAABA5YQbvTqx4/YLKiAgQAoKCuS5556Trl27VqwVAAAA3hqW0hCjBcXff/+95ObmysiRI2Xz5s2m5+abb77xVLsAAAAqp+fmkksukZ9//tlc60ZvlqnDVHoLhg0bNkjTpk0r1goAAABv9dyomJgYeeKJJzzVBgAAAO/eW2r8+PGyfft2z7UCAADAW+HmoYcekiVLlkjz5s3NVYlnzZolaWlpnmoPAABA5V/E77vvvpOtW7eaKxTPnj1bEhISzN3BC8+iAgAA8Jl7Sym9/cKECRNMcfHXX38t+/btkwEDBni2dQAAAJVRUOywbt06ee+992ThwoWSlZUlf/7zn8/m7QAAACo/3GhPzbvvvivvv/++7Nq1S6655hr5xz/+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MFCaN28uEydOlO7du3uqXQAAAOc+3OTn58uAAQOkVatWUqNGDfGE2bNny9SpUyUtLU1at24tL774oiQmJpa4v96cUy8iuHjxYjl48KA0bNhQZs6cKT179vRIewAAgB/V3AQFBZneGU/d/XvhwoUyfPhwGTdunKxfv96Emx49esjevXvd7p+bmyvXXXed/Prrr7Jo0SJzh/K5c+dKvXr1PNIeAADgh8NSl1xyiezcuVMaN2581h8+ffp0cyNO7Q1Sc+bMkSVLlphZV3oPq6J0u/bWrFmzRkJCQsy2Ro0anXU7AACAH8+WmjRpkrlJ5meffWYKibOyslyWstJemOTkZOnWrdvpxgQGmnWdeeXOp59+Kh07dpSHHnpI4uLiTNCaPHmyGS4rSU5OToXbCAAA/KDnxlHbcvPNN7vchkFnTel6aUGjsP3795t9NaQUputbt251e4z2GOntHe655x75/PPPzY07//rXv5qrJOvQljtTpkyRCRMmlOMMAQCAX4WbN954QxISEkz9TWEFBQWSkpIi55J+Rp06deS1114zn9+uXTvZvXu3KUguKdyMGTPG1PU4aM+Nth8AANhTucPN/fffb4ajNGQUduDAATOkVNb7S9WqVcsElPT0dJftuh4fH+/2mLp165pam8LB6qKLLjIzrXSYS+9UXlRYWJhZAACAfyh3zY1j+Kkova9Uea5QrEFEe15WrFjh0jOj61pX407nzp3NUJTu5/Dzzz+b0OMu2AAAAP9T5p4bx9COBhu9EnFkZKTzNa2d+fbbb4vdMbws76k9Pe3btzfXttHr1WRnZztnT/Xr189M89a6GfXggw/KSy+9JH/729/kkUceke3bt5uC4kcffbRcnwsAAOyrzOFmw4YNzp6bTZs2ufSU6HO9Ro3OoiqPpKQk2bdvn4wdO9YMLWk4Wrp0qbPIWGt4dAaVg9bKfPHFFzJs2DC59NJLTfDRoDNq1KhyfS4AALCvAEvTSjlor8qsWbMkOjpafJEWFOstJDIzMz16DutTDkmfl9dIg5qRsmpkV4+9LwAAkHJ9f1dothQAAIBtCooBAACqMsINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwlSoRbmbPni2NGjWS8PBw6dChg6xbt67EfRcsWCABAQEuix4HAABQJcLNwoULZfjw4TJu3DhZv369tG7dWnr06CF79+4t8Zjo6GjZs2ePc/ntt98qtc0AAKDq8nq4mT59ugwePFgGDBggLVu2lDlz5khkZKTMnz+/xGO0tyY+Pt65xMXFVWqbAQBA1eXVcJObmyvJycnSrVu30w0KDDTra9euLfG4I0eOSMOGDSUhIUF69+4tmzdvrqQWAwCAqs6r4Wb//v2Sn59frOdF19PS0twe07x5c9Or869//UveeecdKSgokE6dOsnvv//udv+cnBzJyspyWQAAgH15fViqvDp27Cj9+vWTNm3ayFVXXSWLFy+W2rVry6uvvup2/ylTpkhMTIxz0d4eAABgX14NN7Vq1ZKgoCBJT0932a7rWktTFiEhIdK2bVvZsWOH29fHjBkjmZmZziU1NdUjbQcAAFWTV8NNaGiotGvXTlasWOHcpsNMuq49NGWhw1qbNm2SunXrun09LCzMzK4qvAAAAPsK9nYDdBp4//79pX379pKYmCgzZ86U7OxsM3tK6RBUvXr1zPCSmjhxolx++eXSrFkzycjIkKlTp5qp4IMGDfLymQAAgKrA6+EmKSlJ9u3bJ2PHjjVFxFpLs3TpUmeRcUpKiplB5XDo0CEzdVz3rVGjhun5WbNmjZlGDgAAEGBZliV+RGdLaWGx1t94cohqfcoh6fPyGmlQM1JWjezqsfcFAABSru9vn5stBQAAUBrCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsBXCDQAAsJUqEW5mz54tjRo1kvDwcOnQoYOsW7euTMd98MEHEhAQILfccss5byMAAPANXg83CxculOHDh8u4ceNk/fr10rp1a+nRo4fs3bu31ON+/fVXGTFihHTp0qXS2goAAKo+r4eb6dOny+DBg2XAgAHSsmVLmTNnjkRGRsr8+fNLPCY/P1/uuecemTBhgjRp0qRS2wsAAKo2r4ab3NxcSU5Olm7dup1uUGCgWV+7dm2Jx02cOFHq1KkjAwcOPONn5OTkSFZWlssCAADsy6vhZv/+/aYXJi4uzmW7rqelpbk9ZvXq1TJv3jyZO3dumT5jypQpEhMT41wSEhI80nYAAFA1eX1YqjwOHz4sffv2NcGmVq1aZTpmzJgxkpmZ6VxSU1PPeTsBAID3BHvzwzWgBAUFSXp6ust2XY+Pjy+2/y+//GIKiXv16uXcVlBQYB6Dg4Nl27Zt0rRpU5djwsLCzAIAAPyDV3tuQkNDpV27drJixQqXsKLrHTt2LLZ/ixYtZNOmTbJx40bncvPNN0vXrl3Nc4acAACAV3tulE4D79+/v7Rv314SExNl5syZkp2dbWZPqX79+km9evVM7YxeB+eSSy5xOT42NtY8Ft0OAAD8k9fDTVJSkuzbt0/Gjh1riojbtGkjS5cudRYZp6SkmBlUAAAAZRFgWZYlfkSnguusKS0ujo6O9tj7rk85JH1eXiMNakbKqpFdPfa+AABAyvX9TZcIAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcINAACwFcKNhwSISFhwoIQG80cKAIA3BXv1022kbYMasm3SDd5uBgAAfo9uBgAAYCuEGwAAYCuEGwAAYCuEGwAAYCuEGwAAYCuEGwAAYCuEGwAAYCuEGwAAYCuEGwAAYCuEGwAAYCuEGwAAYCuEGwAAYCuEGwAAYCuEGwAAYCvB4mcsyzKPWVlZ3m4KAAAoI8f3tuN7vDR+F24OHz5sHhMSErzdFAAAUIHv8ZiYmFL3CbDKEoFspKCgQP744w+JioqSgIAAj6dKDU2pqakSHR0t/sAfz9lfz9sfz9lfz9sfz9lfzzvLh85Z44oGm/PPP18CA0uvqvG7nhv9A6lfv/45/Qz9AanqPySe5o/n7K/n7Y/n7K/n7Y/n7K/nHe0j53ymHhsHCooBAICtEG4AAICtEG48KCwsTMaNG2ce/YU/nrO/nrc/nrO/nrc/nrO/nneYTc/Z7wqKAQCAvdFzAwAAbIVwAwAAbIVwAwAAbIVwAwAAbIVwU06zZ8+WRo0aSXh4uHTo0EHWrVtX6v4fffSRtGjRwuzfqlUr+fzzz8XO57x582a57bbbzP56BeiZM2eKryrPec+dO1e6dOkiNWrUMEu3bt3O+LPh6+e8ePFiad++vcTGxkq1atWkTZs28vbbb4s//H/t8MEHH5if81tuuUXsfM4LFiww51l40eP84e86IyNDHnroIalbt66ZUXThhRf63O/x2eU456uvvrrY37UuN954o/gUnS2Fsvnggw+s0NBQa/78+dbmzZutwYMHW7GxsVZ6errb/b/55hsrKCjIeu6556yffvrJevLJJ62QkBBr06ZNll3Ped26ddaIESOs999/34qPj7dmzJhh+aLynvfdd99tzZ4929qwYYO1ZcsW67777rNiYmKs33//3bLrOX/11VfW4sWLzc/2jh07rJkzZ5qf96VLl1q+pLzn7bBr1y6rXr16VpcuXazevXtbdj7nN954w4qOjrb27NnjXNLS0ixfU97zzsnJsdq3b2/17NnTWr16tfk7X7lypbVx40bLrud84MABl7/nH3/80fx/rT8DvoRwUw6JiYnWQw895FzPz8+3zj//fGvKlClu97/jjjusG2+80WVbhw4drL/85S+WXc+5sIYNG/psuDmb81YnTpywoqKirDfffNPyl3NWbdu2NSHel1TkvPXvt1OnTtbrr79u9e/f3+fCTXnPWb/YNKz7uvKe9yuvvGI1adLEys3NtXxV4ln+f62/w/V32ZEjRyxfwrBUGeXm5kpycrIZbih8nypdX7t2rdtjdHvh/VWPHj1K3N8O52wHnjjvo0ePSl5entSsWVP84Zz1H0orVqyQbdu2yZVXXim+oqLnPXHiRKlTp44MHDhQfE1Fz/nIkSPSsGFDc5PF3r17myFou5/3p59+Kh07djTDUnFxcXLJJZfI5MmTJT8/X/zld9m8efPkzjvvNEPPvoRwU0b79+83P9D6A16Yrqelpbk9RreXZ387nLMdeOK8R40aZe5cWzTc2u2cMzMzpXr16hIaGmrG5F988UW57rrrxFdU5LxXr15tfuFrnZUvqsg5N2/eXObPny//+te/5J133pGCggLp1KmT/P7772Ln8965c6csWrTIHKd1Nk899ZRMmzZNJk2aJP7wu2zdunXy448/yqBBg8TX+N1dwYFz7dlnnzWFpitXrvTZosuyioqKko0bN5p/1WvPzfDhw6VJkyamKNGODh8+LH379jXBplatWuIvtPdCFwcNNhdddJG8+uqr8vTTT4tdaYjTHrrXXntNgoKCpF27drJ7926ZOnWquWWB3c2bN89MhElMTBRfQ7gpI/1Fpj/c6enpLtt1PT4+3u0xur08+9vhnO3gbM77+eefN+HmP//5j1x66aVi93PWLu5mzZqZ5zpbasuWLTJlyhSfCTflPe9ffvlFfv31V+nVq5fLF6AKDg42w3JNmzYVu/9/HRISIm3btpUdO3aIr6jIeesMKT1XPc5BQ532euiQj/ZY2vXvOjs72/wjTYdgfRHDUmWkP8Sa2vVfp4V/qel64X/RFKbbC++vli9fXuL+djhnO6joeT/33HPmX7FLly41U6R9iaf+rvWYnJwcset562UdNm3aZHqrHMvNN98sXbt2Nc+1HsUf/q51qEP/HPTL31dU5Lw7d+5sApwjwKqff/7ZnHdVDzZn+3etlzHR/5fvvfde8Unermj2JTqlLiwszFqwYIGZ/vrAAw+YKXWOKZF9+/a1Ro8e7TIVPDg42Hr++efN9OBx48b55FTw8pyzTp3U6dC61K1b10wL1+fbt2+3fEl5z/vZZ5810y0XLVrkMo3y8OHDll3PefLkydayZcusX375xeyvP+f68z537lzLl5T3vIvyxdlS5T3nCRMmWF988YX5u05OTrbuvPNOKzw83EwttvN5p6SkmJlCDz/8sLVt2zbrs88+s+rUqWNNmjTJsvvP9xVXXGElJSVZvopwU04vvvii1aBBA/NFplPs/vvf/zpfu+qqq8wvusI+/PBD68ILLzT7X3zxxdaSJUssO5+zXgdCM3PRRfez83nrtHd3562B1q7n/MQTT1jNmjUzX3I1atSwOnbsaH6R+sP/174ebsp7zkOHDnXuGxcXZ677sn79essf/q7XrFljLuGhAUGnhT/zzDPmUgB2PuetW7ea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"/>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Summary">Summary<a class="anchor-link" href="#Summary">¶</a></h2><p>This notebook demonstrated:</p>
+<ol>
+<li><strong>Custom Detector Assembly</strong>: How to create custom outlier detectors by combining different learning and scoring functions</li>
+<li><strong>Detector Categories</strong>: Working with parametric (PCA), non-parametric (KDE), and semi-parametric (GMM) detectors</li>
+<li><strong>Parameter Configuration</strong>: Setting specific parameters for each detector type</li>
+<li><strong>Performance Comparison</strong>: Evaluating multiple detectors on the same dataset</li>
+<li><strong>Configuration Management</strong>: Saving and loading detector configurations for reproducibility</li>
+</ol>
+<p>The custom detector assembly framework provides flexibility to:</p>
+<ul>
+<li>Mix and match algorithms based on your specific application</li>
+<li>Fine-tune parameters for optimal performance</li>
+<li>Create reproducible detection workflows</li>
+<li>Integrate seamlessly with the universal <code>detect_outlier_shm</code> interface</li>
+</ul>
+<p>This framework is particularly useful when:</p>
+<ul>
+<li>Default detectors don't meet your specific requirements</li>
+<li>You need to explore different algorithmic approaches</li>
+<li>You want to create application-specific detection pipelines</li>
+<li>Reproducibility and configuration management are important</li>
+</ul>
 </div>
 </div>
 </div>
@@ -8157,7 +8279,7 @@ All rights reserved.</p>
 
             
         <div class="footer">
-            <p>Generated on 2025-07-27 17:16:50 from <code>semiparametric_outlier_detection.ipynb</code></p>
+            <p>Generated on 2025-08-19 20:30:45 from <code>custom_detector_assembly.ipynb</code></p>
             <p>Part of the SHMTools Python Package - Structural Health Monitoring Toolkit</p>
         </div>
         

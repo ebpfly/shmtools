@@ -4,7 +4,7 @@
         <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>Dataloader Demo - SHMTools</title>
+            <title>Factor Analysis Outlier Detection - SHMTools</title>
             
         <style>
         body { 
@@ -86,8 +86,8 @@
         <body>
             
         <div class="notebook-header">
-            <h1 class="notebook-title">Dataloader Demo</h1>
-            <p class="notebook-subtitle">SHMTools Example - Notebooks Level</p>
+            <h1 class="notebook-title">Factor Analysis Outlier Detection</h1>
+            <p class="notebook-subtitle">SHMTools Example - Parametric_Detectors Level</p>
         </div>
         
             
@@ -102,7 +102,7 @@
 <html lang="en">
 <head><meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Dataloader Demo</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>Factor Analysis Outlier Detection</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <style type="text/css">
     pre { line-height: 125%; }
 td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
@@ -7610,33 +7610,45 @@ a.anchor-link {
 <!-- End of mermaid configuration --></head>
 <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
 <main>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-0">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="SHMTools-Dataloader-Demo">SHMTools Dataloader Demo<a class="anchor-link" href="#SHMTools-Dataloader-Demo">¶</a></h1><p>This notebook demonstrates the new simplified dataloader functions that make it easy to reproduce the conversion-plan.md examples.</p>
-<h2 id="Three-ways-to-load-data:">Three ways to load data:<a class="anchor-link" href="#Three-ways-to-load-data:">¶</a></h2><ol>
-<li><strong>Quick setup</strong>: <code>setup_notebook_environment()</code> - handles imports and path setup</li>
-<li><strong>Example-specific</strong>: <code>load_example_data('pca')</code> - preprocessed data for specific examples</li>
-<li><strong>Direct loading</strong>: <code>load_3story_data()</code> - raw data loading functions</li>
+<h1 id="Outlier-Detection-Based-on-Factor-Analysis">Outlier Detection Based on Factor Analysis<a class="anchor-link" href="#Outlier-Detection-Based-on-Factor-Analysis">¶</a></h1><h2 id="Introduction">Introduction<a class="anchor-link" href="#Introduction">¶</a></h2><p>The goal of this example is to discriminate time histories from undamaged and damaged conditions based on outlier detection. The parameters from an autoregressive (AR) model are used as damage-sensitive features and a machine learning algorithm based on the factor analysis (FA) technique is used to create damage indicators (DIs) invariant for feature vectors from normal structural condition and that increase when feature vectors are from damaged structural condition.</p>
+<p>Additionally, the receiver operating characteristic (ROC) curve is applied to evaluate the performance of the classification algorithm.</p>
+<p>Data sets from <strong>Channel 5 only</strong> of the base-excited three story structure are used in this example. More details about the data sets can be found in the <a href="https://www.lanl.gov/projects/ei">3-Story Data Sets documentation</a>.</p>
+<p>This example demonstrates:</p>
+<ol>
+<li><strong>Data Loading</strong>: 3-story structure dataset with Channel 5 only</li>
+<li><strong>Feature Extraction</strong>: AR(15) model parameters as damage-sensitive features</li>
+<li><strong>Train/Test Split</strong>: Training on conditions 1-90 (undamaged), testing on all 170 conditions</li>
+<li><strong>Factor Analysis Modeling</strong>: Learn FA-based outlier detection model with 2 common factors</li>
+<li><strong>Damage Detection</strong>: Score test data using unique factors as damage indicators</li>
+<li><strong>Performance Evaluation</strong>: ROC curve analysis for classification performance</li>
+<li><strong>Visualization</strong>: Time histories, damage indicators, and ROC curves</li>
 </ol>
+<p><strong>Key Insight:</strong></p>
+<p>Factor analysis assumes that the observed variables (AR parameters) are linear combinations of unobserved common factors plus unique factors. In the context of SHM:</p>
+<ul>
+<li><strong>Common factors</strong>: Capture operational and environmental variations (temperature, loading conditions, etc.)</li>
+<li><strong>Unique factors</strong>: Capture variance not explained by common factors, including damage-related changes</li>
+</ul>
+<p>The damage detection is based on the magnitude of the unique factors - undamaged conditions should have small unique factors while damaged conditions should show larger deviations.</p>
+<p><strong>References:</strong></p>
+<p>Kerschen, G., Poncelet, F., &amp; Golinval, J.-C. (2007). Physical interpretation of independent component analysis in structural dynamics. Mechanical Systems and Signal Processing, 21(4), 1561-1575.</p>
+<p><strong>SHMTools functions used:</strong></p>
+<ul>
+<li><code>ar_model_shm</code></li>
+<li><code>learn_factor_analysis_shm</code></li>
+<li><code>score_factor_analysis_shm</code></li>
+<li><code>roc_shm</code></li>
+</ul>
 </div>
 </div>
 </div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Method-1:-Quick-Setup-(Recommended-for-new-notebooks)">Method 1: Quick Setup (Recommended for new notebooks)<a class="anchor-link" href="#Method-1:-Quick-Setup-(Recommended-for-new-notebooks)">¶</a></h2>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=cell-1">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7644,17 +7656,93 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [1]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># One-line setup for notebooks</span>
-<span class="c1"># setup_notebook_environment not needed - import directly</span>
-<span class="n">nb</span> <span class="o">=</span> <span class="n">setup_notebook_environment</span><span class="p">()</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
-<span class="c1"># Now you have everything you need</span>
-<span class="n">np</span> <span class="o">=</span> <span class="n">nb</span><span class="p">[</span><span class="s1">'np'</span><span class="p">]</span>
-<span class="n">plt</span> <span class="o">=</span> <span class="n">nb</span><span class="p">[</span><span class="s1">'plt'</span><span class="p">]</span>
-<span class="n">import_3story_structure_shm</span> <span class="o">=</span> <span class="n">nb</span><span class="p">[</span><span class="s1">'import_3story_structure_shm'</span><span class="p">]</span>
-<span class="n">check_data_availability</span> <span class="o">=</span> <span class="n">nb</span><span class="p">[</span><span class="s1">'check_data_availability'</span><span class="p">]</span>
+<span class="c1"># Add the repository root to Python path for examples.data import</span>
+<span class="n">repo_root</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span>
+<span class="k">while</span> <span class="ow">not</span> <span class="p">(</span><span class="n">repo_root</span> <span class="o">/</span> <span class="s1">'shmtools'</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="n">repo_root</span><span class="o">.</span><span class="n">parent</span> <span class="o">!=</span> <span class="n">repo_root</span><span class="p">:</span>
+    <span class="n">repo_root</span> <span class="o">=</span> <span class="n">repo_root</span><span class="o">.</span><span class="n">parent</span>
+<span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">repo_root</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">repo_root</span><span class="p">))</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">"Available functions:"</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">nb</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+
+<span class="c1"># Import shmtools(installed package)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">examples.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_3story_structure_shm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shmtools.features.time_series</span><span class="w"> </span><span class="kn">import</span> <span class="n">ar_model_shm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shmtools.classification.outlier_detection</span><span class="w"> </span><span class="kn">import</span> <span class="n">learn_factor_analysis_shm</span><span class="p">,</span> <span class="n">score_factor_analysis_shm</span><span class="p">,</span> <span class="n">roc_shm</span>
+<span class="c1"># Set up plotting</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">'default'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">'figure.figsize'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">'font.size'</span><span class="p">]</span> <span class="o">=</span> <span class="mi">10</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>/Users/eric/repo/shm/shmtools/classification/nlpca.py:27: UserWarning: TensorFlow not available. NLPCA functions will not work. Install TensorFlow: pip install tensorflow
+  warnings.warn(
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-2">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Load-Raw-Data">Load Raw Data<a class="anchor-link" href="#Load-Raw-Data">¶</a></h2><p>Load the 3-story structure dataset and extract Channel 5 data for analysis.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=cell-3">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Load data set</span>
+<span class="n">data_dict</span> <span class="o">=</span> <span class="n">load_3story_dat</span>
+<span class="n">a</span><span class="p">()</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">data_dict</span><span class="p">[</span><span class="s1">'datase</span>
+<span class="n">t</span><span class="s1">']</span>
+<span class="n">fs</span> <span class="o">=</span> <span class="n">data_dict</span><span class="p">[</span><span class="s1">'f</span>
+<span class="n">s</span><span class="s1">']</span>
+<span class="n">channels</span> <span class="o">=</span> <span class="n">data_dict</span><span class="p">[</span><span class="s1">'channel</span>
+<span class="n">s</span><span class="s1">']</span>
+<span class="n">damage_states</span> <span class="o">=</span> <span class="n">data_dict</span><span class="p">[</span><span class="s1">'damage_state</span>
+<span class="n">s</span><span class="s1">']</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Dataset shape: </span><span class="si">{</span><span class="n">dataset</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Sampling frequency: </span><span class="si">{</span><span class="n">fs</span><span class="si">}</span><span class="s2"> Hz"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Channels: </span><span class="si">{</span><span class="n">channels</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Number of damage states: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">damage_states</span><span class="p">))</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="c1"># Extract Channel 5 only(index 4 in Python)</span>
+<span class="n">channel_5_data</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">,</span> <span class="p">:]</span>  <span class="c1"># Shap</span>
+<span class="n">e</span><span class="p">:</span> <span class="p">(</span><span class="mi">8192</span><span class="p">,</span> <span class="mi">170</span><span class="p">)</span>
+<span class="n">t</span><span class="p">,</span> <span class="n">n_conditions</span> <span class="o">=</span> <span class="n">channel_5_data</span><span class="o">.</span><span class="n">shap</span>
+<span class="n">e</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Channel 5 data:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Time points: </span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Conditions: </span><span class="si">{</span><span class="n">n_conditions</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Conditions 1-90: Undamaged baseline"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Conditions 91-170: Progressive damage states"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -7668,47 +7756,27 @@ a.anchor-link {
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
 <pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[1]</span><span class="ansi-green-fg">, line 3</span>
-<span class="ansi-green-fg">      1</span> <span style="color: rgb(95,135,135)"># One-line setup for notebooks</span>
-<span class="ansi-green-fg">      2</span> <span style="color: rgb(95,135,135)"># setup_notebook_environment not needed - import directly</span>
-<span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">3</span> nb = <span class="ansi-yellow-bg">setup_notebook_environment</span>()
-<span class="ansi-green-fg">      5</span> <span style="color: rgb(95,135,135)"># Now you have everything you need</span>
-<span class="ansi-green-fg">      6</span> np = nb[<span class="ansi-yellow-fg">'</span><span class="ansi-yellow-fg">np</span><span class="ansi-yellow-fg">'</span>]
-
-<span class="ansi-red-fg">NameError</span>: name 'setup_notebook_environment' is not defined</pre>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Check what data is available</span>
-<span class="n">check_data_availability</span><span class="p">()</span>
-</pre></div>
+  <span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[2]</span><span class="ansi-green-fg">, line 4</span>
+<span class="ansi-red-fg">    </span><span class="ansi-red-fg">dataset = data_dict['datase</span>
+                        ^
+<span class="ansi-red-fg">SyntaxError</span><span class="ansi-red-fg">:</span> unterminated string literal (detected at line 4)
+</pre>
 </div>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-4">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Method-2:-Example-Specific-Loading-(Best-for-reproducing-conversion-plan.md-examples)">Method 2: Example-Specific Loading (Best for reproducing conversion-plan.md examples)<a class="anchor-link" href="#Method-2:-Example-Specific-Loading-(Best-for-reproducing-conversion-plan.md-examples)">¶</a></h2>
+<h3 id="Plot-Sample-Time-Histories">Plot Sample Time Histories<a class="anchor-link" href="#Plot-Sample-Time-Histories">¶</a></h3><p>Plot representative time histories from undamaged and damaged conditions to visualize the data.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=cell-5">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7716,56 +7784,38 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Plot sample time histories </span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">different</span> <span class="n">damage</span> <span class="n">states</span><span class="p">(</span><span class="n">following</span> <span class="n">MATLAB</span> <span class="n">example</span><span class="p">)</span>
+<span class="n">conditions</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">45</span><span class="p">,</span> <span class="mi">91</span><span class="p">,</span> <span class="mi">135</span><span class="p">]</span>  <span class="c1"># MATLAB 1-based condition number s condition_indices = [c - 1 for c in conditions]  # Convert to 0-based Python indice s condition_labels = ['Undamaged (State 1)', 'Undamaged (State 45)', 'Damaged (State 91)', 'Damaged (Stat</span>
+<span class="n">e</span> <span class="mi">135</span><span class="p">)</span><span class="s1">']</span>
 
-<span class="c1"># Add the repository root to Python path for examples.data import</span>
-<span class="n">repo_root</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span>
-<span class="k">while</span> <span class="ow">not</span> <span class="p">(</span><span class="n">repo_root</span> <span class="o">/</span> <span class="s1">'shmtools'</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="n">repo_root</span><span class="o">.</span><span class="n">parent</span> <span class="o">!=</span> <span class="n">repo_root</span><span class="p">:</span>
-    <span class="n">repo_root</span> <span class="o">=</span> <span class="n">repo_root</span><span class="o">.</span><span class="n">parent</span>
-<span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">repo_root</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
-    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">repo_root</span><span class="p">))</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsiz</span>
+<span class="n">e</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+<span class="n">axes</span> <span class="o">=</span> <span class="n">axes</span><span class="o">.</span><span class="n">flatte</span>
+<span class="n">n</span><span class="p">()</span>
 
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">condition_indices</span><span class="p">,</span> <span class="n">condition_labels</span><span class="p">)):</span>
+    <span class="c1"># Plot time history </span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">this</span> <span class="n">condition</span>
+    <span class="n">time_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> 
+<span class="n">t</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">signal</span> <span class="o">=</span> <span class="n">channel_5_data</span><span class="p">[:,</span> <span class="nb">id</span>
+<span class="n">x</span><span class="p">]</span>
+    
+    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time_points</span><span class="p">,</span> <span class="n">signal</span><span class="p">,</span> <span class="s1">'k-'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="n">t</span><span class="p">])</span>
+    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">([</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>  <span class="c1"># Bottom row</span>
+        <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">'Observations'</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Left colum n axes[i].set_ylabel('Acceleration (g)')</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">examples.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_example_data</span>
-
-<span class="c1"># Load preprocessed data for PCA/Mahalanobis/SVD examples</span>
-<span class="n">data</span> <span class="o">=</span> <span class="n">load_example_data</span><span class="p">(</span><span class="s1">'pc</span>
-<span class="n">a</span><span class="s1">')</span>
-
-<span class="c1"># Data is ready to use - channels 2-5 already extracted</span>
-<span class="n">signals</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'signals'</span><span class="p">]</span>  <span class="c1"># Shap</span>
-<span class="n">e</span><span class="p">:</span> <span class="p">(</span><span class="mi">8192</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">170</span><span class="p">)</span>
-<span class="n">fs</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'f</span>
-<span class="n">s</span><span class="s1">']</span>
-<span class="n">damage_states</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'damage_state</span>
-<span class="n">s</span><span class="s1">']</span>
-<span class="n">t</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'t'</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s1">'m'</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s1">'n'</span><span class="p">]</span>  <span class="c1"># Same variables as in notebook s print(f"Signals shape: {signals.shape}")</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Channels: </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">'channels'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Time points: </span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">, Channels: </span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2">, Conditions: </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Quick visualization</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">signals</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s1">'k-'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Channel 2, Conditio</span>
-<span class="n">n</span> <span class="mi">1</span><span class="s1">')</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">signals</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">90</span><span class="p">],</span> <span class="s1">'r--'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Channel 2, Condition 91 (Damage)'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Sample time histories from loaded data'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'Time points'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'Acceleration'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">'Sample Time Histories from Channel 5'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">'bol</span>
+<span class="n">d</span><span class="s1">')</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -7773,17 +7823,17 @@ a.anchor-link {
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-6">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Method-3:-Direct-Loading-(For-custom-data-processing)">Method 3: Direct Loading (For custom data processing)<a class="anchor-link" href="#Method-3:-Direct-Loading-(For-custom-data-processing)">¶</a></h2>
+<h2 id="Extraction-of-Damage-Sensitive-Features">Extraction of Damage-Sensitive Features<a class="anchor-link" href="#Extraction-of-Damage-Sensitive-Features">¶</a></h2><p>Extraction of the AR(15) model parameters from acceleration time histories. The AR parameters capture the dynamic characteristics of the structure and serve as damage-sensitive features.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=cell-7">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7791,82 +7841,417 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Direct access to raw data loading functions</span>
-<span class="n">data_dict</span> <span class="o">=</span> <span class="n">load_3story_dat</span>
-<span class="n">a</span><span class="p">()</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Reshape data for AR model: (TIME, CHANNELS, INSTANCES)</span>
+<span class="n">time_data</span> <span class="o">=</span> <span class="n">channel_5_data</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]</span>  <span class="c1"># Shap</span>
+<span class="n">e</span><span class="p">:</span> <span class="p">(</span><span class="mi">8192</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">170</span><span class="p">)</span>
 
-<span class="c1"># Full dataset with all channels</span>
-<span class="n">dataset</span> <span class="o">=</span> <span class="n">data_dict</span><span class="p">[</span><span class="s1">'dataset'</span><span class="p">]</span>  <span class="c1"># Shap</span>
-<span class="n">e</span><span class="p">:</span> <span class="p">(</span><span class="mi">8192</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">170</span><span class="p">)</span>
-<span class="n">channels</span> <span class="o">=</span> <span class="n">data_dict</span><span class="p">[</span><span class="s1">'channel</span>
-<span class="n">s</span><span class="s1">']</span>
+<span class="c1"># Set AR model order</span>
+<span class="n">ar_order</span> <span class="o">=</span> <span class="mi">15</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Full dataset shape: </span><span class="si">{</span><span class="n">dataset</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"All channels: </span><span class="si">{</span><span class="n">channels</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Extracting AR(</span><span class="si">{</span><span class="n">ar_order</span><span class="si">}</span><span class="s2">) model parameters as features..."</span><span class="p">)</span>
 
-<span class="c1"># Manual extraction of channels 2-5(like in original notebooks)</span>
-<span class="n">data</span> <span class="o">=</span> <span class="n">datase</span>
-<span class="n">t</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span> <span class="p">:]</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Extracted channels 2-5 shape: </span><span class="si">{</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="c1"># Estimation of AR Parameters</span>
+<span class="n">ar_parameters_fv</span><span class="p">,</span> <span class="n">rmse_fv</span><span class="p">,</span> <span class="n">ar_parameters</span><span class="p">,</span> <span class="n">ar_residuals</span><span class="p">,</span> <span class="n">ar_prediction</span> <span class="o">=</span> <span class="n">ar_model_shm</span><span class="p">(</span><span class="n">time_data</span><span class="p">,</span> <span class="n">ar_order</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"AR parameters FV shape: </span><span class="si">{</span><span class="n">ar_parameters_fv</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"RMSE shape: </span><span class="si">{</span><span class="n">rmse_fv</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"AR parameters shape: </span><span class="si">{</span><span class="n">ar_parameters</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="c1"># Use AR parameters as features</span>
+<span class="n">features</span> <span class="o">=</span> <span class="n">ar_parameters_fv</span>  <span class="c1"># Shape: (instances, features)</span>
+<span class="n">n_instances</span><span class="p">,</span> <span class="n">n_features</span> <span class="o">=</span> <span class="n">features</span><span class="o">.</span><span class="n">shap</span>
+<span class="n">e</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Feature matrix:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Instances: </span><span class="si">{</span><span class="n">n_instances</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Features: </span><span class="si">{</span><span class="n">n_features</span><span class="si">}</span><span class="s2"> (1 channel × </span><span class="si">{</span><span class="n">ar_order</span><span class="si">}</span><span class="s2"> AR parameters)"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-8">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Loading-Other-Dataset-Types">Loading Other Dataset Types<a class="anchor-link" href="#Loading-Other-Dataset-Types">¶</a></h2>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Load different dataset types</span>
-<span class="n">cbm_data</span> <span class="o">=</span> <span class="n">load_example_data</span><span class="p">(</span><span class="s1">'cb</span>
-<span class="n">m</span><span class="s1">')</span>
-<span class="n">sensor_data</span> <span class="o">=</span> <span class="n">load_example_data</span><span class="p">(</span><span class="s1">'sensor_diagnosti</span>
-<span class="n">c</span><span class="s1">')</span>
-<span class="n">active_data</span> <span class="o">=</span> <span class="n">load_example_data</span><span class="p">(</span><span class="s1">'active_sensin</span>
-<span class="n">g</span><span class="s1">')</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"CBM data keys: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">cbm_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Sensor diagnostic keys: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">sensor_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Active sensing keys: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">active_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Summary">Summary<a class="anchor-link" href="#Summary">¶</a></h2><p>These dataloader functions make it much easier to:</p>
-<ol>
-<li><strong>Get started quickly</strong> with <code>setup_notebook_environment()</code></li>
-<li><strong>Reproduce examples</strong> with <code>load_example_data('pca')</code> etc.</li>
-<li><strong>Handle different execution contexts</strong> automatically (different working directories)</li>
-<li><strong>Reduce repetitive code</strong> in notebook imports</li>
-</ol>
-<p><strong>For conversion-plan.md examples</strong>, use Method 2 with the appropriate example type:</p>
+<h3 id="Prepare-Training-and-Test-Data">Prepare Training and Test Data<a class="anchor-link" href="#Prepare-Training-and-Test-Data">¶</a></h3><p>Following the original MATLAB example:</p>
 <ul>
-<li>Phase 1-3: <code>load_example_data('pca')</code>, <code>load_example_data('mahalanobis')</code>, <code>load_example_data('svd')</code></li>
-<li>Phase 4-5: <code>load_example_data('factor_analysis')</code>, <code>load_example_data('nlpca')</code></li>
-<li>Phase 6: <code>load_example_data('ar_model_order')</code></li>
+<li><strong>Training Data</strong>: Conditions 1-90 (undamaged baseline states)</li>
+<li><strong>Test Data</strong>: All 170 conditions (both undamaged and damaged)</li>
+</ul>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=cell-9">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Define break point between undamaged and damaged conditions</span>
+<span class="n">break_point</span> <span class="o">=</span> <span class="mi">90</span>  <span class="c1"># ed</span>
+
+<span class="c1"># Training feature vectors(undamaged conditions only)</span>
+<span class="n">learn_data</span> <span class="o">=</span> <span class="n">features</span><span class="p">[:</span><span class="n">break_poin</span>
+<span class="n">t</span><span class="p">,</span> <span class="p">:]</span>
+
+<span class="c1"># Test feature vectors(all conditions)</span>
+<span class="n">score_data</span> <span class="o">=</span> <span class="n">features</span><span class="o">.</span><span class="n">cop</span>
+<span class="n">y</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Training data shape: </span><span class="si">{</span><span class="n">learn_data</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Test data shape: </span><span class="si">{</span><span class="n">score_data</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Data split:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Training (undamaged): conditions 1-</span><span class="si">{</span><span class="n">break_point</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Test undamaged: conditions 1-</span><span class="si">{</span><span class="n">break_point</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Test damaged: conditions </span><span class="si">{</span><span class="n">break_point</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">n_instances</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-10">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Statistical-Modeling-for-Feature-Classification">Statistical Modeling for Feature Classification<a class="anchor-link" href="#Statistical-Modeling-for-Feature-Classification">¶</a></h2><p>Factor Analysis assumes that the observed features are linear combinations of a smaller number of unobserved common factors plus unique factors:</p>
+<p><strong>X = Λf + u</strong></p>
+<p>Where:</p>
+<ul>
+<li><strong>X</strong>: Observed features (AR parameters)</li>
+<li><strong>Λ</strong>: Factor loadings matrix</li>
+<li><strong>f</strong>: Common factors (capture operational/environmental variations)</li>
+<li><strong>u</strong>: Unique factors (capture damage-related changes)</li>
+</ul>
+<p>The magnitude of the unique factors serves as the damage indicator.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=cell-11">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Training: Learn Factor Analysis model</span>
+<span class="n">num_factors</span> <span class="o">=</span> <span class="mi">2</span>  <span class="c1"># est_method = "thomson"  # Factor scores estimation metho d print(f"Learning Factor Analysis model from training data...")</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Number of common factors: </span><span class="si">{</span><span class="n">num_factors</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Estimation method: </span><span class="si">{</span><span class="n">est_method</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">learn_factor_analysis_shm</span><span class="p">(</span><span class="n">learn_data</span><span class="p">,</span> <span class="n">num_factors</span><span class="o">=</span><span class="n">num_factors</span><span class="p">,</span> <span class="n">est_method</span><span class="o">=</span><span class="n">est_method</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Factor Analysis model components:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Factor loadings shape: </span><span class="si">{</span><span class="n">model</span><span class="p">[</span><span class="s1">'lambda'</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Specific variances shape: </span><span class="si">{</span><span class="n">model</span><span class="p">[</span><span class="s1">'psi'</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Data mean shape: </span><span class="si">{</span><span class="n">model</span><span class="p">[</span><span class="s1">'dataMean'</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Data std shape: </span><span class="si">{</span><span class="n">model</span><span class="p">[</span><span class="s1">'dataStd'</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="c1"># Display factor loadings(first few elements)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Factor loadings (first 5 features, both factors):"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s1">'lambda'</span><span class="p">][:</span><span class="mi">5</span><span class="p">,</span> <span class="p">:])</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=cell-12">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Scoring: Apply Factor Analysis model to test data</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Scoring test data..."</span><span class="p">)</span>
+<span class="n">DI</span><span class="p">,</span> <span class="n">unique_factors</span><span class="p">,</span> <span class="n">factor_scores</span> <span class="o">=</span> <span class="n">score_factor_analysis_shm</span><span class="p">(</span><span class="n">score_data</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Damage indicators shape: </span><span class="si">{</span><span class="n">DI</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unique factors shape: </span><span class="si">{</span><span class="n">unique_factors</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Factor scores shape: </span><span class="si">{</span><span class="n">factor_scores</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Damage indicators (first 10): </span><span class="si">{</span><span class="n">DI</span><span class="p">[:</span><span class="mi">10</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Damage indicators (last 10): </span><span class="si">{</span><span class="n">DI</span><span class="p">[</span><span class="o">-</span><span class="mi">10</span><span class="p">:]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="c1"># Display factor scores for first few instances</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Factor scores (first 5 instances):"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">factor_scores</span><span class="p">[:</span><span class="mi">5</span><span class="p">,</span> <span class="p">:])</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-13">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="Plot-Damage-Indicators">Plot Damage Indicators<a class="anchor-link" href="#Plot-Damage-Indicators">¶</a></h3><p>Visualization of the Factor Analysis-based damage indicators showing the separation between undamaged and damaged conditions.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=cell-14">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Plot DIs</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+
+<span class="n">condition_numbers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_instance</span>
+<span class="n">s</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Undamaged conditions(1 to break_point)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">condition_numbers</span><span class="p">[:</span><span class="n">break_point</span><span class="p">],</span> <span class="o">-</span><span class="n">DI</span><span class="p">[:</span><span class="n">break_point</span><span class="p">],</span>  <span class="c1"># Note: DI is already negative, so we negate it for display</span>
+        <span class="n">color</span><span class="o">=</span><span class="s1">'k'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Undamaged'</span><span class="p">,</span> <span class="n">widt</span>
+<span class="n">h</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+
+<span class="c1"># Damaged conditions(break_point+1 to n_instances)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">condition_numbers</span><span class="p">[</span><span class="n">break_point</span><span class="p">:],</span> <span class="o">-</span><span class="n">DI</span><span class="p">[</span><span class="n">break_point</span><span class="p">:],</span> 
+        <span class="n">color</span><span class="o">=</span><span class="s1">'r'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Damaged'</span><span class="p">,</span> <span class="n">widt</span>
+<span class="n">h</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Damage Indicators (DIs) from Factor Analysis'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">'bol</span>
+<span class="n">d</span><span class="s1">')</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Structural Condition [Undamaged(1-</span><span class="si">{</span><span class="n">break_point</span><span class="si">}</span><span class="s1">) and Damaged (</span><span class="si">{</span><span class="n">break_point</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s1">-</span><span class="si">{</span><span class="n">n_instances</span><span class="si">}</span><span class="s1">)]'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">"DI's Amplitude"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_instances</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="c1"># Print basic statistics</span>
+<span class="n">undamaged_di</span> <span class="o">=</span> <span class="n">DI</span><span class="p">[:</span><span class="n">break_poin</span>
+<span class="n">t</span><span class="p">]</span>
+<span class="n">damaged_di</span> <span class="o">=</span> <span class="n">DI</span><span class="p">[</span><span class="n">break_poin</span>
+<span class="n">t</span><span class="p">:]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Damage Indicator Statistics:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Undamaged - Mean: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">undamaged_di</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, Std: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">undamaged_di</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Damaged - Mean: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">damaged_di</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, Std: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">damaged_di</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Separation (damaged - undamaged mean): </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">damaged_di</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">undamaged_di</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-15">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="Visualize-Factor-Analysis-Components">Visualize Factor Analysis Components<a class="anchor-link" href="#Visualize-Factor-Analysis-Components">¶</a></h3><p>Plot the factor scores and unique factors to understand how the FA model separates common and unique variations.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=cell-16">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Plot factor scores</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsiz</span>
+<span class="n">e</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+
+<span class="c1"># Factor scores for both factors</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_factors</span><span class="p">):</span>
+    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">condition_numbers</span><span class="p">[:</span><span class="n">break_point</span><span class="p">],</span> <span class="n">factor_scores</span><span class="p">[:</span><span class="n">break_point</span><span class="p">,</span> <span class="n">i</span><span class="p">],</span> 
+                <span class="n">color</span><span class="o">=</span><span class="s1">'k'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Undamaged'</span><span class="p">,</span> <span class="n">widt</span>
+<span class="n">h</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">condition_numbers</span><span class="p">[</span><span class="n">break_point</span><span class="p">:],</span> <span class="n">factor_scores</span><span class="p">[</span><span class="n">break_point</span><span class="p">:,</span> <span class="n">i</span><span class="p">],</span> 
+                <span class="n">color</span><span class="o">=</span><span class="s1">'r'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Damaged'</span><span class="p">,</span> <span class="n">widt</span>
+<span class="n">h</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+    
+    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Factor </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s1"> Scores'</span><span class="p">)</span>
+    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">'Structural Condition'</span><span class="p">)</span>
+    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">'Factor Score'</span><span class="p">)</span>
+    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_instances</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">'Common Factor Scores (Operational/Environmental Variations)'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">'bol</span>
+<span class="n">d</span><span class="s1">')</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="c1"># Print factor scores statistics</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Factor Scores Statistics:"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_factors</span><span class="p">):</span>
+    <span class="n">undamaged_fs</span> <span class="o">=</span> <span class="n">factor_scores</span><span class="p">[:</span><span class="n">break_point</span><span class="p">,</span> 
+<span class="n">i</span><span class="p">]</span>
+    <span class="n">damaged_fs</span> <span class="o">=</span> <span class="n">factor_scores</span><span class="p">[</span><span class="n">break_point</span><span class="p">:,</span> 
+<span class="n">i</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Factor </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">:"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Undamaged - Mean: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">undamaged_fs</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, Std: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">undamaged_fs</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Damaged - Mean: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">damaged_fs</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, Std: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">damaged_fs</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-17">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Receiver-Operating-Characteristic-Curve">Receiver Operating Characteristic Curve<a class="anchor-link" href="#Receiver-Operating-Characteristic-Curve">¶</a></h2><p>The ROC curve is used to evaluate the performance of the Factor Analysis-based classification algorithm. Each point on the curve represents a different threshold for damage detection.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=cell-18">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Flag all the instances(0=undamaged, 1=damaged)</span>
+<span class="n">flag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_instances</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+<span class="n">flag</span><span class="p">[</span><span class="n">break_point</span><span class="p">:]</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># print(f"Damage state flags:")</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Undamaged instances: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">flag</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="si">}</span><span class="s2"> (conditions 1-</span><span class="si">{</span><span class="n">break_poin</span>
+<span class="n">t</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Damaged instances: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">flag</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> (conditions </span><span class="si">{</span><span class="n">break_point</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">n_instance</span>
+<span class="n">s</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+
+<span class="c1"># Run ROC curve algorithm</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Computing ROC curve..."</span><span class="p">)</span>
+<span class="n">TPR</span><span class="p">,</span> <span class="n">FPR</span> <span class="o">=</span> <span class="n">roc_shm</span><span class="p">(</span><span class="n">DI</span><span class="p">,</span> <span class="n">flag</span><span class="p">)</span>  <span class="c1"># Use original DI score s print(f"ROC curve computed with {len(TPR)} points")</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=cell-19">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Plot ROC curve</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">FPR</span><span class="p">,</span> <span class="n">TPR</span><span class="p">,</span> <span class="s1">'.-b'</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Factor Analysis Classifie</span>
+<span class="sa">r</span><span class="s1">')</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">'k-.'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Random Classifie</span>
+<span class="sa">r</span><span class="s1">')</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'ROC Curve for Factor Analysis Outlier Detection'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s1">'bol</span>
+<span class="n">d</span><span class="s1">')</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'False Alarm Rate (FPR)'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'True Detection Rate (TPR)'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">yticks</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+<span class="c1"># Add area under curve (AUC) calculation</span>
+<span class="n">auc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">trapezoid</span><span class="p">(</span><span class="n">TPR</span><span class="p">,</span> <span class="n">FP</span>
+<span class="n">R</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="sa">f</span><span class="s1">'AUC = </span><span class="si">{</span><span class="n">auc</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">'</span><span class="p">,</span> <span class="n">fontsiz</span>
+<span class="n">e</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> 
+         <span class="n">bbox</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">boxstyle</span><span class="o">=</span><span class="s1">'round'</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">'white'</span><span class="p">,</span> <span class="n">alph</span>
+<span class="n">a</span><span class="o">=</span><span class="mf">0.8</span><span class="p">))</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">ROC Analysis Results:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Area Under Curve (AUC): </span><span class="si">{</span><span class="n">auc</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Perfect classifier AUC: 1.000"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Random classifier AUC: 0.500"</span><span class="p">)</span>
+
+<span class="c1"># Find optimal threshold(closest to top-left corner)</span>
+<span class="n">distances</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">TPR</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">FP</span>
+<span class="n">R</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">optimal_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">distances</span><span class="p">)</span>
+<span class="n">optimal_tpr</span> <span class="o">=</span> <span class="n">TPR</span><span class="p">[</span><span class="n">optimal_id</span>
+<span class="n">x</span><span class="p">]</span>
+<span class="n">optimal_fpr</span> <span class="o">=</span> <span class="n">FPR</span><span class="p">[</span><span class="n">optimal_id</span>
+<span class="n">x</span><span class="p">]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Optimal Operating Point:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"True Positive Rate: </span><span class="si">{</span><span class="n">optimal_tpr</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"False Positive Rate: </span><span class="si">{</span><span class="n">optimal_fpr</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Accuracy: </span><span class="si">{</span><span class="p">(</span><span class="n">optimal_tpr</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">flag</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">optimal_fpr</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">flag</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">))</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">flag</span><span class="p">)</span><span class="si">:</span><span class="s2">.3</span>
+<span class="n">f</span><span class="p">}</span><span class="s2">")</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-20">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Summary">Summary<a class="anchor-link" href="#Summary">¶</a></h2><p>This example demonstrated the complete Factor Analysis-based outlier detection workflow for structural health monitoring:</p>
+<ol>
+<li><strong>Data Preparation</strong>: Successfully loaded and processed the 3-story structure dataset (Channel 5)</li>
+<li><strong>Feature Extraction</strong>: Used AR(15) model parameters as damage-sensitive features</li>
+<li><strong>Factor Analysis Modeling</strong>: Learned FA model with 2 common factors from undamaged training data</li>
+<li><strong>Damage Detection</strong>: Applied FA scoring to all test instances using unique factors as damage indicators</li>
+<li><strong>Performance Evaluation</strong>: Generated ROC curve for classification performance assessment</li>
+</ol>
+<p><strong>Key insights from Factor Analysis:</strong></p>
+<p>Factor Analysis provides a probabilistic interpretation of the data where:</p>
+<ul>
+<li><strong>Common factors</strong> capture shared variations across features (operational/environmental effects)</li>
+<li><strong>Unique factors</strong> capture feature-specific variations, including damage-related changes</li>
+</ul>
+<p>The approach effectively separates operational/environmental variations from damage-related changes, making it particularly suitable for SHM applications where environmental conditions vary.</p>
+<p><strong>Key advantages of Factor Analysis-based detection:</strong></p>
+<ul>
+<li>Explicit modeling of common (environmental) vs. unique (damage) variations</li>
+<li>Probabilistic framework with maximum likelihood estimation</li>
+<li>Multiple factor score estimation methods (Thomson, Regression, Bartlett)</li>
+<li>Interpretable factor loadings show which features are most affected by each factor</li>
+<li>Effective separation of environmental and damage effects</li>
+</ul>
+<p><strong>Key differences from other methods:</strong></p>
+<ul>
+<li><strong>vs. PCA</strong>: Factor Analysis explicitly models noise/unique variance, while PCA focuses on total variance</li>
+<li><strong>vs. Mahalanobis</strong>: Uses factor structure rather than simple statistical distance</li>
+<li><strong>vs. SVD</strong>: Probabilistic model with explicit noise modeling rather than deterministic decomposition</li>
+<li><strong>Factor interpretation</strong>: Common factors represent environmental effects, unique factors represent damage</li>
+</ul>
+<p><strong>See also:</strong></p>
+<ul>
+<li><a href="../basic/pca_outlier_detection.ipynb">Outlier Detection based on Principal Component Analysis</a></li>
+<li><a href="../basic/mahalanobis_outlier_detection.ipynb">Outlier Detection based on Mahalanobis Distance</a></li>
+<li><a href="../basic/svd_outlier_detection.ipynb">Outlier Detection based on Singular Value Decomposition</a></li>
+<li><a href="../advanced/nlpca_outlier_detection.ipynb">Outlier Detection based on Nonlinear Principal Component Analysis</a></li>
 </ul>
 </div>
 </div>
@@ -7878,7 +8263,7 @@ a.anchor-link {
 
             
         <div class="footer">
-            <p>Generated on 2025-08-19 20:30:32 from <code>dataloader_demo.ipynb</code></p>
+            <p>Generated on 2025-08-19 20:30:51 from <code>factor_analysis_outlier_detection.ipynb</code></p>
             <p>Part of the SHMTools Python Package - Structural Health Monitoring Toolkit</p>
         </div>
         

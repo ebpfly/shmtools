@@ -88,6 +88,9 @@ pip install -e .
 
 # Install development dependencies
 pip install -r requirements-dev.txt
+
+# Step 3: Create custom Jupyter kernel (REQUIRED for examples module)
+python -m ipykernel install --user --name=shm-venv --display-name="SHM Python (venv)"
 ```
 
 ### Testing
@@ -136,6 +139,8 @@ jupyter lab
 
 # Extension provides interactive function selection
 # Access at http://localhost:8888
+
+# IMPORTANT: Use "SHM Python (venv)" kernel for notebooks that import examples module
 ```
 
 ### JupyterLab Extension Development

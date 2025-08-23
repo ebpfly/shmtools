@@ -4,7 +4,7 @@
         <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>Dataloader Demo - SHMTools</title>
+            <title>Sensor Diagnostics - SHMTools</title>
             
         <style>
         body { 
@@ -86,8 +86,8 @@
         <body>
             
         <div class="notebook-header">
-            <h1 class="notebook-title">Dataloader Demo</h1>
-            <p class="notebook-subtitle">SHMTools Example - Notebooks Level</p>
+            <h1 class="notebook-title">Sensor Diagnostics</h1>
+            <p class="notebook-subtitle">SHMTools Example - Active_Sensing Level</p>
         </div>
         
             
@@ -102,7 +102,7 @@
 <html lang="en">
 <head><meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Dataloader Demo</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>Sensor Diagnostics</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <style type="text/css">
     pre { line-height: 125%; }
 td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
@@ -7616,12 +7616,7 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="SHMTools-Dataloader-Demo">SHMTools Dataloader Demo<a class="anchor-link" href="#SHMTools-Dataloader-Demo">¶</a></h1><p>This notebook demonstrates the new simplified dataloader functions that make it easy to reproduce the conversion-plan.md examples.</p>
-<h2 id="Three-ways-to-load-data:">Three ways to load data:<a class="anchor-link" href="#Three-ways-to-load-data:">¶</a></h2><ol>
-<li><strong>Quick setup</strong>: <code>setup_notebook_environment()</code> - handles imports and path setup</li>
-<li><strong>Example-specific</strong>: <code>load_example_data('pca')</code> - preprocessed data for specific examples</li>
-<li><strong>Direct loading</strong>: <code>load_3story_data()</code> - raw data loading functions</li>
-</ol>
+<h1 id="Piezoelectric-Sensor-Diagnostics">Piezoelectric Sensor Diagnostics<a class="anchor-link" href="#Piezoelectric-Sensor-Diagnostics">¶</a></h1><p>This notebook demonstrates automated detection of sensor failures (fractures and debonding) in piezoelectric active-sensor arrays using electrical admittance measurements.</p>
 </div>
 </div>
 </div>
@@ -7632,7 +7627,24 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Method-1:-Quick-Setup-(Recommended-for-new-notebooks)">Method 1: Quick Setup (Recommended for new notebooks)<a class="anchor-link" href="#Method-1:-Quick-Setup-(Recommended-for-new-notebooks)">¶</a></h2>
+<h2 id="Introduction">Introduction<a class="anchor-link" href="#Introduction">¶</a></h2><p>The goal of this example is to perform the piezoelectric sensor diagnostic process to check the operational status of piezoelectric sensors in SHM applications. Both sensor fractures and debonding between the sensor and a host structure can be automatically identified. The basic principle of this technique is to track the changes in capacitance value of piezoelectric materials for sensor diagnostics. Because the capacitance is temperature sensitive, this algorithm uses an array of sensors to instantaneously establishes a baseline, which can be robust against temperature variations.</p>
+<p>The data sets are measured from twelve piezoelectric patches (1/2 inch diameter) installed on a thin (1/8th thickness) aluminum plates. Three of the sensors were improperly installed, one with 80% debonding, two with sensor fracture. The following process shows the identification of these faulty sensors.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h1 id="Import-required-libraries">Import required libraries<a class="anchor-link" href="#Import-required-libraries">¶</a></h1><p>import numpy as np
+import matplotlib.pyplot as plt</p>
+<h1 id="Import-shmtools-(installed-package)">Import shmtools (installed package)<a class="anchor-link" href="#Import-shmtools-(installed-package)">¶</a></h1><p>from examples.data import load_sensor_diagnostic_data
+from shmtools.sensor_diagnostics import sd_feature_shm, sd_autoclassify_shm, sd_plot_shm</p>
+<h1 id="Set-up-plotting-parameters">Set up plotting parameters<a class="anchor-link" href="#Set-up-plotting-parameters">¶</a></h1><p>plt.rcParams['figure.figsize'] = (10, 6)
+plt.rcParams['font.size'] = 12</p>
 </div>
 </div>
 </div>
@@ -7644,17 +7656,78 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [1]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># One-line setup for notebooks</span>
-<span class="c1"># setup_notebook_environment not needed - import directly</span>
-<span class="n">nb</span> <span class="o">=</span> <span class="n">setup_notebook_environment</span><span class="p">()</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Import required libraries</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
-<span class="c1"># Now you have everything you need</span>
-<span class="n">np</span> <span class="o">=</span> <span class="n">nb</span><span class="p">[</span><span class="s1">'np'</span><span class="p">]</span>
-<span class="n">plt</span> <span class="o">=</span> <span class="n">nb</span><span class="p">[</span><span class="s1">'plt'</span><span class="p">]</span>
-<span class="n">import_3story_structure_shm</span> <span class="o">=</span> <span class="n">nb</span><span class="p">[</span><span class="s1">'import_3story_structure_shm'</span><span class="p">]</span>
-<span class="n">check_data_availability</span> <span class="o">=</span> <span class="n">nb</span><span class="p">[</span><span class="s1">'check_data_availability'</span><span class="p">]</span>
+<span class="c1"># Add the repository root to Python path for examples.data import</span>
+<span class="n">repo_root</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span>
+<span class="k">while</span> <span class="ow">not</span> <span class="p">(</span><span class="n">repo_root</span> <span class="o">/</span> <span class="s1">'shmtools'</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="n">repo_root</span><span class="o">.</span><span class="n">parent</span> <span class="o">!=</span> <span class="n">repo_root</span><span class="p">:</span>
+    <span class="n">repo_root</span> <span class="o">=</span> <span class="n">repo_root</span><span class="o">.</span><span class="n">parent</span>
+<span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">repo_root</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">repo_root</span><span class="p">))</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">"Available functions:"</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">nb</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+
+
+<span class="c1"># Import shmtools(installed package)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">examples.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_sensor_diagnostic_shm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shmtools.sensor_diagnostics.sensor_diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">sd_feature_shm</span><span class="p">,</span> <span class="n">sd_autoclassify_shm</span><span class="p">,</span> <span class="n">sd_plot_shm</span>
+
+<span class="c1"># Set up plotting parameters</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">'figure.figsize'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">'font.size'</span><span class="p">]</span> <span class="o">=</span> <span class="mi">12</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>/Users/eric/repo/shm/shmtools/classification/nlpca.py:27: UserWarning: TensorFlow not available. NLPCA functions will not work. Install TensorFlow: pip install tensorflow
+  warnings.warn(
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Load-Raw-Data">Load Raw Data<a class="anchor-link" href="#Load-Raw-Data">¶</a></h2><p>Load the sensor diagnostic dataset containing admittance measurements from 12 piezoelectric sensors.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Load the sensor diagnostic data</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">load_sensor_diagnostic_dat</span>
+<span class="n">a</span><span class="p">()</span>
+
+<span class="c1"># Extract the admittance data with known sensor faults</span>
+<span class="n">admittance_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'sd_ex_broke</span>
+<span class="n">n</span><span class="s1">']</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Data shape: </span><span class="si">{</span><span class="n">admittance_data</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Number of frequency points: </span><span class="si">{</span><span class="n">admittance_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Number of sensors: </span><span class="si">{</span><span class="n">admittance_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Frequency range: </span><span class="si">{</span><span class="n">admittance_data</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">admittance_data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> Hz"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -7668,31 +7741,11 @@ a.anchor-link {
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
 <pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[1]</span><span class="ansi-green-fg">, line 3</span>
-<span class="ansi-green-fg">      1</span> <span style="color: rgb(95,135,135)"># One-line setup for notebooks</span>
-<span class="ansi-green-fg">      2</span> <span style="color: rgb(95,135,135)"># setup_notebook_environment not needed - import directly</span>
-<span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">3</span> nb = <span class="ansi-yellow-bg">setup_notebook_environment</span>()
-<span class="ansi-green-fg">      5</span> <span style="color: rgb(95,135,135)"># Now you have everything you need</span>
-<span class="ansi-green-fg">      6</span> np = nb[<span class="ansi-yellow-fg">'</span><span class="ansi-yellow-fg">np</span><span class="ansi-yellow-fg">'</span>]
-
-<span class="ansi-red-fg">NameError</span>: name 'setup_notebook_environment' is not defined</pre>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Check what data is available</span>
-<span class="n">check_data_availability</span><span class="p">()</span>
-</pre></div>
+  <span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[2]</span><span class="ansi-green-fg">, line 6</span>
+<span class="ansi-red-fg">    </span><span class="ansi-red-fg">admittance_data = data['sd_ex_broke</span>
+                           ^
+<span class="ansi-red-fg">SyntaxError</span><span class="ansi-red-fg">:</span> unterminated string literal (detected at line 6)
+</pre>
 </div>
 </div>
 </div>
@@ -7704,7 +7757,7 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Method-2:-Example-Specific-Loading-(Best-for-reproducing-conversion-plan.md-examples)">Method 2: Example-Specific Loading (Best for reproducing conversion-plan.md examples)<a class="anchor-link" href="#Method-2:-Example-Specific-Loading-(Best-for-reproducing-conversion-plan.md-examples)">¶</a></h2>
+<h3 id="Visualize-Raw-Admittance-Data">Visualize Raw Admittance Data<a class="anchor-link" href="#Visualize-Raw-Admittance-Data">¶</a></h3><p>Let's plot the imaginary part of the admittance for all sensors to see the raw data.</p>
 </div>
 </div>
 </div>
@@ -7716,56 +7769,23 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Plot admittance data for all sensors</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
 
-<span class="c1"># Add the repository root to Python path for examples.data import</span>
-<span class="n">repo_root</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span>
-<span class="k">while</span> <span class="ow">not</span> <span class="p">(</span><span class="n">repo_root</span> <span class="o">/</span> <span class="s1">'shmtools'</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="n">repo_root</span><span class="o">.</span><span class="n">parent</span> <span class="o">!=</span> <span class="n">repo_root</span><span class="p">:</span>
-    <span class="n">repo_root</span> <span class="o">=</span> <span class="n">repo_root</span><span class="o">.</span><span class="n">parent</span>
-<span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">repo_root</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
-    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">repo_root</span><span class="p">))</span>
+<span class="n">frequency</span> <span class="o">=</span> <span class="n">admittance_dat</span>
+<span class="n">a</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
 
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">admittance_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">frequency</span><span class="p">,</span> <span class="n">admittance_data</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">'Sensor </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">'</span><span class="p">,</span> <span class="n">alph</span>
+<span class="n">a</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">examples.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_example_data</span>
-
-<span class="c1"># Load preprocessed data for PCA/Mahalanobis/SVD examples</span>
-<span class="n">data</span> <span class="o">=</span> <span class="n">load_example_data</span><span class="p">(</span><span class="s1">'pc</span>
-<span class="n">a</span><span class="s1">')</span>
-
-<span class="c1"># Data is ready to use - channels 2-5 already extracted</span>
-<span class="n">signals</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'signals'</span><span class="p">]</span>  <span class="c1"># Shap</span>
-<span class="n">e</span><span class="p">:</span> <span class="p">(</span><span class="mi">8192</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">170</span><span class="p">)</span>
-<span class="n">fs</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'f</span>
-<span class="n">s</span><span class="s1">']</span>
-<span class="n">damage_states</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'damage_state</span>
-<span class="n">s</span><span class="s1">']</span>
-<span class="n">t</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'t'</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s1">'m'</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s1">'n'</span><span class="p">]</span>  <span class="c1"># Same variables as in notebook s print(f"Signals shape: {signals.shape}")</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Channels: </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">'channels'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Time points: </span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">, Channels: </span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2">, Conditions: </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Quick visualization</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">signals</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s1">'k-'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Channel 2, Conditio</span>
-<span class="n">n</span> <span class="mi">1</span><span class="s1">')</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">signals</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">90</span><span class="p">],</span> <span class="s1">'r--'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Channel 2, Condition 91 (Damage)'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Sample time histories from loaded data'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'Time points'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'Acceleration'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'Frequency (Hz)'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'Imaginary Admittance (S)'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Raw Admittance Data from Piezoelectric Sensors'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mf">1.05</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">loc</span><span class="o">=</span><span class="s1">'upper lef</span>
+<span class="n">t</span><span class="s1">')</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -7779,7 +7799,7 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Method-3:-Direct-Loading-(For-custom-data-processing)">Method 3: Direct Loading (For custom data processing)<a class="anchor-link" href="#Method-3:-Direct-Loading-(For-custom-data-processing)">¶</a></h2>
+<h2 id="Feature-Extraction">Feature Extraction<a class="anchor-link" href="#Feature-Extraction">¶</a></h2><p>Extract the capacitance values by fitting a linear polynomial to the imaginary part of the admittance data.</p>
 </div>
 </div>
 </div>
@@ -7791,23 +7811,17 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Direct access to raw data loading functions</span>
-<span class="n">data_dict</span> <span class="o">=</span> <span class="n">load_3story_dat</span>
-<span class="n">a</span><span class="p">()</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Extract capacitance features</span>
+<span class="n">capacitance</span> <span class="o">=</span> <span class="n">sd_feature_shm</span><span class="p">(</span><span class="n">admittance_data</span><span class="p">)</span>
 
-<span class="c1"># Full dataset with all channels</span>
-<span class="n">dataset</span> <span class="o">=</span> <span class="n">data_dict</span><span class="p">[</span><span class="s1">'dataset'</span><span class="p">]</span>  <span class="c1"># Shap</span>
-<span class="n">e</span><span class="p">:</span> <span class="p">(</span><span class="mi">8192</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">170</span><span class="p">)</span>
-<span class="n">channels</span> <span class="o">=</span> <span class="n">data_dict</span><span class="p">[</span><span class="s1">'channel</span>
-<span class="n">s</span><span class="s1">']</span>
+<span class="c1"># Convert to nF for display</span>
+<span class="n">capacitance_nF</span> <span class="o">=</span> <span class="n">capacitance</span> <span class="o">*</span> <span class="mi">1</span>
+<span class="n">e9</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Full dataset shape: </span><span class="si">{</span><span class="n">dataset</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"All channels: </span><span class="si">{</span><span class="n">channels</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-
-<span class="c1"># Manual extraction of channels 2-5(like in original notebooks)</span>
-<span class="n">data</span> <span class="o">=</span> <span class="n">datase</span>
-<span class="n">t</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span> <span class="p">:]</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Extracted channels 2-5 shape: </span><span class="si">{</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Capacitance values for each sensor:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"-"</span> <span class="o">*</span> <span class="mi">30</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">cap</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">capacitance_nF</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Sensor </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">:</span><span class="s2">2d</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">cap</span><span class="si">:</span><span class="s2">6.2f</span><span class="si">}</span><span class="s2"> nF"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -7820,7 +7834,7 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Loading-Other-Dataset-Types">Loading Other Dataset Types<a class="anchor-link" href="#Loading-Other-Dataset-Types">¶</a></h2>
+<h3 id="Visualize-Capacitance-Distribution">Visualize Capacitance Distribution<a class="anchor-link" href="#Visualize-Capacitance-Distribution">¶</a></h3><p>Plot the distribution of capacitance values to identify potential outliers.</p>
 </div>
 </div>
 </div>
@@ -7832,17 +7846,26 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Load different dataset types</span>
-<span class="n">cbm_data</span> <span class="o">=</span> <span class="n">load_example_data</span><span class="p">(</span><span class="s1">'cb</span>
-<span class="n">m</span><span class="s1">')</span>
-<span class="n">sensor_data</span> <span class="o">=</span> <span class="n">load_example_data</span><span class="p">(</span><span class="s1">'sensor_diagnosti</span>
-<span class="n">c</span><span class="s1">')</span>
-<span class="n">active_data</span> <span class="o">=</span> <span class="n">load_example_data</span><span class="p">(</span><span class="s1">'active_sensin</span>
-<span class="n">g</span><span class="s1">')</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Create bar plot of capacitance values</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"CBM data keys: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">cbm_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Sensor diagnostic keys: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">sensor_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Active sensing keys: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">active_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">sensor_ids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">capacitance</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">bars</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">sensor_ids</span><span class="p">,</span> <span class="n">capacitance_nF</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">'skyblue'</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">'nav</span>
+<span class="n">y</span><span class="s1">')</span>
+
+<span class="c1"># Add mean line</span>
+<span class="n">mean_cap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">capacitance_n</span>
+<span class="n">F</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">mean_cap</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">'red'</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">'--'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">'Mean: </span><span class="si">{</span><span class="n">mean_cap</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> n</span>
+<span class="sa">F</span><span class="s1">')</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'Sensor Number'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'Capacitance (nF)'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Extracted Capacitance Values'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">capacitance</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -7855,19 +7878,189 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Summary">Summary<a class="anchor-link" href="#Summary">¶</a></h2><p>These dataloader functions make it much easier to:</p>
+<h2 id="Sensor-Status-Classification">Sensor Status Classification<a class="anchor-link" href="#Sensor-Status-Classification">¶</a></h2><p>Automatically classify sensors as healthy, de-bonded, or broken using the instantaneous baseline approach.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Classify sensor status with 2% threshold</span>
+<span class="n">sensor_status</span><span class="p">,</span> <span class="n">data_for_plotting</span> <span class="o">=</span> <span class="n">sd_autoclassify_shm</span><span class="p">(</span><span class="n">capacitance</span><span class="p">,</span> <span class="n">threshol</span>
+<span class="n">d</span><span class="o">=</span><span class="mf">0.02</span><span class="p">)</span>
+
+<span class="c1"># Display classification results</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Sensor Classification Results:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">50</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'Sensor ID'</span><span class="si">:</span><span class="s2">^10</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="s1">'Status'</span><span class="si">:</span><span class="s2">^20</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="s1">'Capacitance (nF)'</span><span class="si">:</span><span class="s2">^15</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"-"</span> <span class="o">*</span> <span class="mi">50</span><span class="p">)</span>
+
+<span class="n">status_names</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="s1">'Healthy'</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="s1">'De-bonded'</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="s1">'Broken/Fracture</span>
+<span class="n">d</span><span class="s1">'}</span>
+
+<span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">sensor_status</span><span class="p">:</span>
+    <span class="n">sensor_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ro</span>
+<span class="n">w</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">status_names</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">ro</span>
+<span class="n">w</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span>
+    <span class="n">cap_value</span> <span class="o">=</span> <span class="n">ro</span>
+<span class="n">w</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">sensor_id</span><span class="si">:</span><span class="s2">^10d</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">status</span><span class="si">:</span><span class="s2">^20s</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">cap_value</span><span class="si">:</span><span class="s2">^15.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="Summary-of-Results">Summary of Results<a class="anchor-link" href="#Summary-of-Results">¶</a></h3><p>Count and display the number of sensors in each category.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Count sensors by status</span>
+<span class="n">healthy_count</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">sensor_statu</span>
+<span class="n">s</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">debonded_count</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">sensor_statu</span>
+<span class="n">s</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">broken_count</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">sensor_statu</span>
+<span class="n">s</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Summary:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">30</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total sensors: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sensor_status</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Healthy sensors: </span><span class="si">{</span><span class="n">healthy_count</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"De-bonded sensors: </span><span class="si">{</span><span class="n">debonded_count</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Broken/fractured sensors: </span><span class="si">{</span><span class="n">broken_count</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Plotting-Results">Plotting Results<a class="anchor-link" href="#Plotting-Results">¶</a></h2><p>Visualize the classification process and results using the built-in plotting function.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Plot the diagnostic results</span>
+<span class="n">sd_plot_shm</span><span class="p">(</span><span class="n">data_for_plotting</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="Interpretation-of-Results">Interpretation of Results<a class="anchor-link" href="#Interpretation-of-Results">¶</a></h3><p>The first figure shows the outcome of the automated identification process based on Overly et al. Sensors 3, 6, 10 are identified as faulty and the remaining sensors are healthy.</p>
+<p>The second figure shows the quantitative results. Blue bars are healthy sensors, red bars are broken sensors, and magenta bars are debonded sensors. This figure shows the percent deviations from the mean values of the healthy sensors.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Sensitivity-Analysis">Sensitivity Analysis<a class="anchor-link" href="#Sensitivity-Analysis">¶</a></h2><p>Let's examine how the threshold parameter affects the classification results.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Test different threshold values</span>
+<span class="n">thresholds</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.03</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.10</span><span class="p">]</span>
+<span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">thresh</span> <span class="ow">in</span> <span class="n">thresholds</span><span class="p">:</span>
+    <span class="n">status</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">sd_autoclassify_shm</span><span class="p">(</span><span class="n">capacitance</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">thresh</span><span class="p">)</span>
+    <span class="n">healthy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">statu</span>
+<span class="n">s</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">debonded</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">statu</span>
+<span class="n">s</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">broken</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">statu</span>
+<span class="n">s</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">thresh</span><span class="p">,</span> <span class="n">healthy</span><span class="p">,</span> <span class="n">debonded</span><span class="p">,</span> <span class="n">broken</span><span class="p">))</span>
+
+<span class="c1"># Display results table</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Threshold Sensitivity Analysis:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'Threshold'</span><span class="si">:</span><span class="s2">^12</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="s1">'Healthy'</span><span class="si">:</span><span class="s2">^10</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="s1">'De-bonded'</span><span class="si">:</span><span class="s2">^12</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="s1">'Broken'</span><span class="si">:</span><span class="s2">^10</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"-"</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">thresh</span><span class="p">,</span> <span class="n">healthy</span><span class="p">,</span> <span class="n">debonded</span><span class="p">,</span> <span class="n">broken</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">thresh</span><span class="si">:</span><span class="s2">^12.0%</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">healthy</span><span class="si">:</span><span class="s2">^10d</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">debonded</span><span class="si">:</span><span class="s2">^12d</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">broken</span><span class="si">:</span><span class="s2">^10d</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Conclusions">Conclusions<a class="anchor-link" href="#Conclusions">¶</a></h2><p>This example demonstrated the piezoelectric sensor diagnostic process for structural health monitoring applications. The key findings are:</p>
 <ol>
-<li><strong>Get started quickly</strong> with <code>setup_notebook_environment()</code></li>
-<li><strong>Reproduce examples</strong> with <code>load_example_data('pca')</code> etc.</li>
-<li><strong>Handle different execution contexts</strong> automatically (different working directories)</li>
-<li><strong>Reduce repetitive code</strong> in notebook imports</li>
-</ol>
-<p><strong>For conversion-plan.md examples</strong>, use Method 2 with the appropriate example type:</p>
+<li><p><strong>Automatic Classification</strong>: The algorithm successfully identified faulty sensors using an instantaneous baseline approach that is robust to temperature variations.</p>
+</li>
+<li><p><strong>Feature Extraction</strong>: Capacitance values extracted from the imaginary part of admittance data provide a reliable indicator of sensor health.</p>
+</li>
+<li><p><strong>Fault Types</strong>: The method can distinguish between two types of sensor failures:</p>
 <ul>
-<li>Phase 1-3: <code>load_example_data('pca')</code>, <code>load_example_data('mahalanobis')</code>, <code>load_example_data('svd')</code></li>
-<li>Phase 4-5: <code>load_example_data('factor_analysis')</code>, <code>load_example_data('nlpca')</code></li>
-<li>Phase 6: <code>load_example_data('ar_model_order')</code></li>
+<li><strong>De-bonded sensors</strong>: Higher capacitance than healthy sensors</li>
+<li><strong>Broken/fractured sensors</strong>: Lower capacitance than healthy sensors</li>
 </ul>
+</li>
+<li><p><strong>Threshold Selection</strong>: The 2% threshold provides good classification results, but the optimal value may depend on the specific application and sensor array.</p>
+</li>
+</ol>
+<p>This diagnostic capability is essential for maintaining the reliability of SHM systems that depend on permanently installed piezoelectric sensors.</p>
 </div>
 </div>
 </div>
@@ -7878,7 +8071,7 @@ a.anchor-link {
 
             
         <div class="footer">
-            <p>Generated on 2025-08-19 20:30:32 from <code>dataloader_demo.ipynb</code></p>
+            <p>Generated on 2025-08-19 20:30:28 from <code>sensor_diagnostics.ipynb</code></p>
             <p>Part of the SHMTools Python Package - Structural Health Monitoring Toolkit</p>
         </div>
         

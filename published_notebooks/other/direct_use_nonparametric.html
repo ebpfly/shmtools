@@ -4,7 +4,7 @@
         <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>Modal Analysis Features - SHMTools</title>
+            <title>Direct Use Nonparametric - SHMTools</title>
             
         <style>
         body { 
@@ -86,8 +86,8 @@
         <body>
             
         <div class="notebook-header">
-            <h1 class="notebook-title">Modal Analysis Features</h1>
-            <p class="notebook-subtitle">SHMTools Example - Advanced Level</p>
+            <h1 class="notebook-title">Direct Use Nonparametric</h1>
+            <p class="notebook-subtitle">SHMTools Example - Non_Parametric_Detectors Level</p>
         </div>
         
             
@@ -102,7 +102,7 @@
 <html lang="en">
 <head><meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Modal Analysis Features</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>Direct Use Nonparametric</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <style type="text/css">
     pre { line-height: 125%; }
 td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
@@ -7616,56 +7616,25 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="Modal-Analysis-Feature-Extraction-for-Damage-Detection">Modal Analysis Feature Extraction for Damage Detection<a class="anchor-link" href="#Modal-Analysis-Feature-Extraction-for-Damage-Detection">¶</a></h1><p>This notebook demonstrates <strong>modal analysis feature extraction</strong> for structural health monitoring using frequency response functions (FRF) and Nonlinear Principal Component Analysis (NLPCA). This example is a complete Python conversion of the original MATLAB <code>exampleModalFeatures.m</code>.</p>
-<h2 id="Background">Background<a class="anchor-link" href="#Background">¶</a></h2><p>Modal parameters (natural frequencies, mode shapes, damping ratios) are fundamental dynamic properties of structures. Changes in these parameters can indicate structural damage. This example:</p>
-<ol>
-<li><strong>Computes FRF</strong> from time domain data using Welch's method</li>
-<li><strong>Extracts natural frequencies</strong> using rational polynomial fitting</li>
-<li><strong>Applies NLPCA</strong> for outlier detection using autoencoder neural networks</li>
-<li><strong>Evaluates performance</strong> using ROC curve analysis</li>
-</ol>
-<h3 id="References">References<a class="anchor-link" href="#References">¶</a></h3><ul>
-<li>Sohn, H., Worden, K., &amp; Farrar, C. R. (2002). Statistical Damage Classification under Changing Environmental and Operational Conditions. <em>Journal of Intelligent Material Systems and Structures</em>, 13(9), 561-574.</li>
-<li>Kramer, M. A. (1991). Nonlinear Principal Component Analysis using Autoassociative Neural Networks. <em>AIChE Journal</em>, 37(2), 233-243.</li>
+<h1 id="Direct-Use-of-Nonparametric-Outlier-Detection">Direct Use of Nonparametric Outlier Detection<a class="anchor-link" href="#Direct-Use-of-Nonparametric-Outlier-Detection">¶</a></h1><h2 id="Introduction">Introduction<a class="anchor-link" href="#Introduction">¶</a></h2><p>This example demonstrates nonparametric outlier detection using kernel density estimation (KDE). The algorithm learns a nonparametric probability density function from undamaged baseline data and identifies outliers as points with low probability density.</p>
+<p>Data from the <strong>3-story structure</strong> dataset are used to extract AR model features, which are then analyzed using kernel density estimation for damage detection.</p>
+<p><strong>Key Concepts:</strong></p>
+<ul>
+<li><strong>Kernel Density Estimation</strong>: Nonparametric density estimation using various kernel functions</li>
+<li><strong>Bandwidth Selection</strong>: Automatic methods for optimal smoothing parameter selection</li>
+<li><strong>Threshold Determination</strong>: Statistical approach using normal distribution fitting</li>
+<li><strong>Multiple Kernel Functions</strong>: Comparison of different kernel shapes (Gaussian, Epanechnikov, etc.)</li>
 </ul>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Introduction">Introduction<a class="anchor-link" href="#Introduction">¶</a></h2><p>This example demonstrates damage detection using modal properties (natural frequencies) extracted from frequency response functions (FRF). The methodology follows the original MATLAB implementation exactly, including the use of Nonlinear Principal Component Analysis (NLPCA) with autoencoder neural networks.</p>
-<p>The goal is to discriminate time histories from undamaged and damaged conditions based on outlier/novelty detection using the transfer function between Channel 1 (input force) and Channel 5 (output acceleration). Natural frequencies are used as damage-sensitive features and NLPCA is used to create damage indicators that remain invariant for feature vectors from normal conditions and increase when feature vectors are from damaged conditions.</p>
-<h3 id="References">References<a class="anchor-link" href="#References">¶</a></h3><ol>
-<li><p>Figueiredo, E., Park, G., Figueiras, J., Farrar, C., &amp; Worden, K. (2009). Structural Health Monitoring Algorithm Comparisons using Standard Data Sets. Los Alamos National Laboratory Report: LA-14393.</p>
-</li>
-<li><p>Sohn, H., Worden, K., &amp; Farrar, C. R. (2002). Statistical Damage Classification under Changing Environmental and Operational Conditions. Journal of Intelligent Material Systems and Structures, 13 (9), 561-574.</p>
-</li>
-<li><p>Richardson, M.H. &amp; Formenti, D.L., "Parameter Estimation from Frequency Response Measurements using Rational Fraction Polynomials", Proceedings of the 1st International Modal Analysis Conference, Orlando, Florida, November 8-10, 1982.</p>
-</li>
-</ol>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="References">References<a class="anchor-link" href="#References">¶</a></h3><ol>
-<li><p>Figueiredo, E., Park, G., Figueiras, J., Farrar, C., &amp; Worden, K. (2009). Structural Health Monitoring Algorithm Comparisons using Standard Data Sets. Los Alamos National Laboratory Report: LA-14393.</p>
-</li>
-<li><p>Sohn, H., Worden, K., &amp; Farrar, C. R. (2002). Statistical Damage Classification under Changing Environmental and Operational Conditions. Journal of Intelligent Material Systems and Structures, 13 (9), 561-574.</p>
-</li>
-<li><p>Richardson, M.H. &amp; Formenti, D.L., "Parameter Estimation from Frequency Response Measurements using Rational Fraction Polynomials", Proceedings of the 1st International Modal Analysis Conference, Orlando, Florida, November 8-10, 1982.</p>
-</li>
-</ol>
+<p><strong>References:</strong></p>
+<p>Figueiredo, E., Park, G., Figueiras, J., Farrar, C., &amp; Worden, K. (2009). Structural Health Monitoring Algorithm Comparisons using Standard Data Sets. Los Alamos National Laboratory Report: LA-14393.</p>
+<p><strong>SHMTools functions used:</strong></p>
+<ul>
+<li><code>ar_model_shm</code></li>
+<li><code>learn_kernel_density_shm</code></li>
+<li><code>score_kernel_density_shm</code></li>
+<li><code>roc_shm</code></li>
+<li><code>epanechnikov_kernel_shm</code></li>
+</ul>
 </div>
 </div>
 </div>
@@ -7677,42 +7646,33 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [1]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Import required libraries</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
-<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">'ignore'</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
-<span class="c1"># Handle different execution contexts (Jupyter, command line, etc.)</span>
-<span class="n">current_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span>
-<span class="k">if</span> <span class="s1">'examples'</span> <span class="ow">in</span> <span class="n">current_dir</span><span class="o">.</span><span class="n">parts</span><span class="p">:</span>
-    <span class="c1"># Running from examples directory or subdirectory</span>
-    <span class="n">repo_root</span> <span class="o">=</span> <span class="n">current_dir</span>
-    <span class="k">while</span> <span class="n">repo_root</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s1">'shmtools-python'</span> <span class="ow">and</span> <span class="n">repo_root</span><span class="o">.</span><span class="n">parent</span> <span class="o">!=</span> <span class="n">repo_root</span><span class="p">:</span>
-        <span class="n">repo_root</span> <span class="o">=</span> <span class="n">repo_root</span><span class="o">.</span><span class="n">parent</span>
-<span class="k">else</span><span class="p">:</span>
-    <span class="c1"># Running from project root</span>
-    <span class="n">repo_root</span> <span class="o">=</span> <span class="n">current_dir</span>
-
+<span class="c1"># Add the repository root to Python path for examples.data import</span>
+<span class="n">repo_root</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span>
+<span class="k">while</span> <span class="ow">not</span> <span class="p">(</span><span class="n">repo_root</span> <span class="o">/</span> <span class="s1">'shmtools'</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="n">repo_root</span><span class="o">.</span><span class="n">parent</span> <span class="o">!=</span> <span class="n">repo_root</span><span class="p">:</span>
+    <span class="n">repo_root</span> <span class="o">=</span> <span class="n">repo_root</span><span class="o">.</span><span class="n">parent</span>
 <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">repo_root</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
     <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">repo_root</span><span class="p">))</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Working from: </span><span class="si">{</span><span class="n">repo_root</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
-<span class="c1"># Import SHMTools</span>
-<span class="k">try</span><span class="p">:</span>
-    <span class="kn">import</span><span class="w"> </span><span class="nn">shmtools</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"✓ SHMTools version: </span><span class="si">{</span><span class="n">shmtools</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"❌ Could not import shmtools: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">"Make sure you're running from the shmtools-python directory"</span><span class="p">)</span>
-    <span class="k">raise</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">stats</span>
 
-<span class="c1"># Set up plotting parameters</span>
+<span class="c1"># Import shmtools(installed package)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">examples.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_3story_structure_shm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shmtools.features.time_series</span><span class="w"> </span><span class="kn">import</span> <span class="n">ar_model_shm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shmtools.classification.nonparametric</span><span class="w"> </span><span class="kn">import</span><span class="p">(</span><span class="n">learn_kernel_density_shm</span><span class="p">,</span>
+    <span class="n">score_kernel_density_shm</span><span class="p">,</span>
+    <span class="n">epanechnikov_kernel_shm</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shmtools.classification.outlier_detection</span><span class="w"> </span><span class="kn">import</span> <span class="n">roc_shm</span>
+
+<span class="c1"># Set up plotting</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">'default'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">'figure.figsize'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">'font.size'</span><span class="p">]</span> <span class="o">=</span> <span class="mi">11</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">'font.size'</span><span class="p">]</span> <span class="o">=</span> <span class="mi">10</span>
 </pre></div>
 </div>
 </div>
@@ -7724,15 +7684,9 @@ a.anchor-link {
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Working from: /Users/eric/repo/shm/shmtools-python
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>✓ SHMTools version: 0.1.0
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>/Users/eric/repo/shm/shmtools/classification/nlpca.py:27: UserWarning: TensorFlow not available. NLPCA functions will not work. Install TensorFlow: pip install tensorflow
+  warnings.warn(
 </pre>
 </div>
 </div>
@@ -7745,7 +7699,7 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Load-Dataset">Load Dataset<a class="anchor-link" href="#Load-Dataset">¶</a></h2><p>We use the modal OSP structure dataset:</p>
+<h2 id="Load-data">Load data<a class="anchor-link" href="#Load-data">¶</a></h2>
 </div>
 </div>
 </div>
@@ -7757,39 +7711,12 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Load modal OSP data</span>
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">data_dict</span> <span class="o">=</span> <span class="n">shmtools</span><span class="o">.</span><span class="n">import_ModalOSP_shm</span><span class="p">()</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">"✓ Successfully loaded Modal OSP data"</span><span class="p">)</span>
-    
-    <span class="c1"># Extract data components</span>
-    <span class="n">dataset</span> <span class="o">=</span> <span class="n">data_dict</span><span class="p">[</span><span class="s1">'dataset'</span><span class="p">]</span>  <span class="c1"># Shape: (time_points, channels, tests)</span>
-    <span class="n">fs</span> <span class="o">=</span> <span class="n">data_dict</span><span class="p">[</span><span class="s1">'fs'</span><span class="p">]</span>  <span class="c1"># Sampling frequency</span>
-    
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Dataset shape: </span><span class="si">{</span><span class="n">dataset</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Sampling frequency: </span><span class="si">{</span><span class="n">fs</span><span class="si">}</span><span class="s2"> Hz"</span><span class="p">)</span>
-    
-    <span class="c1"># Get data dimensions</span>
-    <span class="n">n_time</span><span class="p">,</span> <span class="n">n_channels</span><span class="p">,</span> <span class="n">n_tests</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">shape</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Time points: </span><span class="si">{</span><span class="n">n_time</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Channels: </span><span class="si">{</span><span class="n">n_channels</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total tests: </span><span class="si">{</span><span class="n">n_tests</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    
-    <span class="c1"># Split into input force (Channel 1) and output acceleration time histories (Channel 5)</span>
-    <span class="n">input_force</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:]</span>    <span class="c1"># Channel 1 (force)</span>
-    <span class="n">output_acc</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">,</span> <span class="p">:]</span>     <span class="c1"># Channel 5 (acceleration)</span>
-
-    <span class="c1"># Combine for FRF computation</span>
-    <span class="n">input_output_data</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[:,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">:]</span>  <span class="c1"># Channels 1 and 5</span>
-
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Input force shape: </span><span class="si">{</span><span class="n">input_force</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Output acceleration shape: </span><span class="si">{</span><span class="n">output_acc</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Combined data shape: </span><span class="si">{</span><span class="n">input_output_data</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    
-<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"❌ Error loading data: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">"Please ensure the modal OSP dataset is available"</span><span class="p">)</span>
-    <span class="k">raise</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">load_3story_dat</span>
+<span class="n">a</span><span class="p">()</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'datase</span>
+<span class="n">t</span><span class="s1">']</span>
+<span class="n">states</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'damage_state</span>
+<span class="n">s</span><span class="s1">']</span>
 </pre></div>
 </div>
 </div>
@@ -7801,27 +7728,37 @@ a.anchor-link {
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>✓ Successfully loaded Modal OSP data
-❌ Error loading data: tuple indices must be integers or slices, not str
-Please ensure the modal OSP dataset is available
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>
+  <span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[2]</span><span class="ansi-green-fg">, line 3</span>
+<span class="ansi-red-fg">    </span><span class="ansi-red-fg">dataset = data['datase</span>
+                   ^
+<span class="ansi-red-fg">SyntaxError</span><span class="ansi-red-fg">:</span> unterminated string literal (detected at line 3)
 </pre>
 </div>
 </div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">TypeError</span>                                 Traceback (most recent call last)
-<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[2]</span><span class="ansi-green-fg">, line 7</span>
-<span class="ansi-green-fg">      4</span> <span style="color: rgb(0,135,0)">print</span>(<span class="ansi-yellow-fg">"</span><span class="ansi-yellow-fg">✓ Successfully loaded Modal OSP data</span><span class="ansi-yellow-fg">"</span>)
-<span class="ansi-green-fg">      6</span> <span style="color: rgb(95,135,135)"># Extract data components</span>
-<span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">7</span> dataset = <span class="ansi-yellow-bg">data_dict</span><span class="ansi-yellow-bg">[</span><span class="ansi-yellow-fg ansi-yellow-bg">'</span><span class="ansi-yellow-fg ansi-yellow-bg">dataset</span><span class="ansi-yellow-fg ansi-yellow-bg">'</span><span class="ansi-yellow-bg">]</span>  <span style="color: rgb(95,135,135)"># Shape: (time_points, channels, tests)</span>
-<span class="ansi-green-fg">      8</span> fs = data_dict[<span class="ansi-yellow-fg">'</span><span class="ansi-yellow-fg">fs</span><span class="ansi-yellow-fg">'</span>]  <span style="color: rgb(95,135,135)"># Sampling frequency</span>
-<span class="ansi-green-fg">     10</span> <span style="color: rgb(0,135,0)">print</span>(<span class="ansi-yellow-fg">f</span><span class="ansi-yellow-fg">"</span><span class="ansi-yellow-fg">Dataset shape: </span><span class="ansi-bold" style="color: rgb(175,95,135)">{</span>dataset.shape<span class="ansi-bold" style="color: rgb(175,95,135)">}</span><span class="ansi-yellow-fg">"</span>)
-
-<span class="ansi-red-fg">TypeError</span>: tuple indices must be integers or slices, not str</pre>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">time_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zero</span>
+<span class="n">s</span><span class="p">((</span><span class="mi">2048</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">680</span><span class="p">))</span>
+<span class="n">time_data_states</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zero</span>
+<span class="n">s</span><span class="p">(</span><span class="mi">680</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+    <span class="n">start_idx</span> <span class="o">=</span> <span class="mi">2048</span> <span class="o">*</span> 
+<span class="n">i</span>
+    <span class="n">end_idx</span> <span class="o">=</span> <span class="mi">2048</span> <span class="o">*</span> <span class="p">(</span>
+<span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">time_data</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="n">start_idx</span><span class="p">:</span><span class="n">end_idx</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
+    <span class="n">time_data_states</span><span class="p">[</span><span class="n">i</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">states</span>
+</pre></div>
 </div>
 </div>
 </div>
@@ -7834,41 +7771,70 @@ Please ensure the modal OSP dataset is available
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Parameters for FRF computation</span>
-<span class="n">block_size</span> <span class="o">=</span> <span class="mi">512</span>  <span class="c1"># FFT block size</span>
-<span class="n">overlap</span> <span class="o">=</span> <span class="mf">0.5</span>     <span class="c1"># 50% overlap</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="s2">"Computing FRFs..."</span><span class="p">)</span>
-
-<span class="c1"># Compute FRF for each test</span>
-<span class="n">frf_list</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="k">for</span> <span class="n">test_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_tests</span><span class="p">):</span>
-    <span class="n">test_data</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">test_idx</span><span class="p">]</span>  <span class="c1"># Shape: (time_points, channels)</span>
-    
-    <span class="c1"># Compute FRF using first channel as input, second as output</span>
-    <span class="k">if</span> <span class="n">n_channels</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
-        <span class="n">input_signal</span> <span class="o">=</span> <span class="n">test_data</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
-        <span class="n">output_signal</span> <span class="o">=</span> <span class="n">test_data</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">]</span>  <span class="c1"># Channel 5 (0-indexed as 4)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="c1"># Use same channel if only one available</span>
-        <span class="n">input_signal</span> <span class="o">=</span> <span class="n">test_data</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
-        <span class="n">output_signal</span> <span class="o">=</span> <span class="n">test_data</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
-    
-    <span class="c1"># Compute FRF</span>
-    <span class="n">frequencies</span><span class="p">,</span> <span class="n">frf_data</span> <span class="o">=</span> <span class="n">shmtools</span><span class="o">.</span><span class="n">frf_shm</span><span class="p">(</span>
-        <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">([</span><span class="n">input_signal</span><span class="p">,</span> <span class="n">output_signal</span><span class="p">]),</span>
-        <span class="n">block_size</span><span class="o">=</span><span class="n">block_size</span><span class="p">,</span>
-        <span class="n">overlap</span><span class="o">=</span><span class="n">overlap</span>
-    <span class="p">)</span>
-    
-    <span class="n">frf_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">frf_data</span><span class="p">)</span>
-
-<span class="c1"># Convert to array</span>
-<span class="n">frf_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">frf_list</span><span class="p">)</span>  <span class="c1"># Shape: (n_tests, n_frequencies)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"✓ Computed FRFs for </span><span class="si">{</span><span class="n">n_tests</span><span class="si">}</span><span class="s2"> tests"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"FRF shape: </span><span class="si">{</span><span class="n">frf_array</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Frequency range: </span><span class="si">{</span><span class="n">frequencies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">frequencies</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> Hz"</span><span class="p">)</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">N</span> <span class="o">=</span> <span class="mi">400</span>
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="n">time_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">])[:</span>
+<span class="n">N</span><span class="p">]</span>
+<span class="n">X_data</span> <span class="o">=</span> <span class="n">ar_model_shm</span><span class="p">(</span><span class="n">time_data</span><span class="p">[:,</span> <span class="p">:,</span> <span class="nb">id</span>
+<span class="n">x</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">X_states</span> <span class="o">=</span> <span class="n">time_data_states</span><span class="p">[</span><span class="nb">id</span>
+<span class="n">x</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">X_states</span><span class="p">,</span> <span class="n">rang</span>
+<span class="n">e</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+<span class="n">X_undamaged</span> <span class="o">=</span> <span class="n">X_data</span><span class="p">[</span><span class="nb">id</span>
+<span class="n">x</span><span class="p">,</span> <span class="p">:]</span>
+<span class="n">n_undamaged</span> <span class="o">=</span> <span class="n">X_undamaged</span><span class="o">.</span><span class="n">shap</span>
+<span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">n_train</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="mf">0.8</span> <span class="o">*</span> <span class="n">n_undamaged</span><span class="p">)</span>
+<span class="n">X_train</span> <span class="o">=</span> <span class="n">X_undamaged</span><span class="p">[:</span><span class="n">n_trai</span>
+<span class="n">n</span><span class="p">,</span> <span class="p">:]</span>
+<span class="n">X_test</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">X_undamaged</span><span class="p">[</span><span class="n">n_train</span><span class="p">:,</span> <span class="p">:],</span> <span class="n">X_data</span><span class="p">[</span><span class="o">~</span><span class="nb">id</span>
+<span class="n">x</span><span class="p">,</span> <span class="p">:]])</span>
+<span class="n">n_test</span> <span class="o">=</span> <span class="n">X_test</span><span class="o">.</span><span class="n">shap</span>
+<span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">n_test_0</span> <span class="o">=</span> <span class="n">n_undamaged</span> <span class="o">-</span> <span class="n">n_trai</span>
+<span class="n">n</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">test_labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_test_0</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_test</span> <span class="o">-</span> <span class="n">n_tes</span>
+<span class="n">t_0</span><span class="p">)])</span>
 </pre></div>
 </div>
 </div>
@@ -7881,18 +7847,7 @@ Please ensure the modal OSP dataset is available
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Step-1:-Compute-Frequency-Response-Functions-(FRF)">Step 1: Compute Frequency Response Functions (FRF)<a class="anchor-link" href="#Step-1:-Compute-Frequency-Response-Functions-(FRF)">¶</a></h2><p>We compute FRF for each test using Welch's method:</p>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="Visualize-Sample-Time-Histories">Visualize Sample Time Histories<a class="anchor-link" href="#Visualize-Sample-Time-Histories">¶</a></h3><p>Plot one force and one acceleration time history from the baseline condition.</p>
+<h2 id="Train-a-model-over-the-undamaged-data">Train a model over the undamaged data<a class="anchor-link" href="#Train-a-model-over-the-undamaged-data">¶</a></h2>
 </div>
 </div>
 </div>
@@ -7904,696 +7859,173 @@ Please ensure the modal OSP dataset is available
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Plot sample time histories from baseline condition</span>
-<span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
-
-<span class="c1"># Force time history</span>
-<span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">input_force</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="s1">'k'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
-<span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">'Force Time History from the Baseline Condition (Channel 1)'</span><span class="p">)</span>
-<span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">'Force (N)'</span><span class="p">)</span>
-<span class="n">ax1</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">8192</span><span class="p">])</span>
-<span class="n">ax1</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([</span><span class="o">-</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">])</span>
-<span class="n">ax1</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
-
-<span class="c1"># Acceleration time history</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">output_acc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="s1">'k'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">'Acceleration Time History from the Baseline Condition (Channel 5)'</span><span class="p">)</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">'Data Points'</span><span class="p">)</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">'Acceleration (g)'</span><span class="p">)</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">8192</span><span class="p">])</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
-
-<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">kernel_fun</span> <span class="o">=</span> <span class="n">epanechnikov_kernel_sh</span>
+<span class="n">m</span>
+<span class="n">H</span> <span class="o">=</span> <span class="n">Non</span>
+<span class="n">e</span>
+<span class="n">bs_method</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">d_model</span> <span class="o">=</span> <span class="n">learn_kernel_density_shm</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">kernel_fun</span><span class="p">,</span> <span class="n">bs_method</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Pick-a-threshold-from-the-training-data">Pick a threshold from the training data<a class="anchor-link" href="#Pick-a-threshold-from-the-training-data">¶</a></h2>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">likelihoods</span> <span class="o">=</span> <span class="n">score_kernel_density_shm</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">d_model</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">model_p</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">likelihoods</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">confidence</span> <span class="o">=</span> <span class="mf">0.9</span>
+<span class="n">threshold</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">confidence</span><span class="p">,</span> <span class="n">model_p</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">model_</span>
+<span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Test-the-detector">Test the detector<a class="anchor-link" href="#Test-the-detector">¶</a></h2>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">scores</span> <span class="o">=</span> <span class="n">score_kernel_density_shm</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">d_model</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">results</span> <span class="o">=</span> <span class="n">scores</span> <span class="o">&lt;=</span> <span class="n">threshol</span>
+<span class="n">d</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Report-the-detector's-performance">Report the detector's performance<a class="anchor-link" href="#Report-the-detector's-performance">¶</a></h2>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">total_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">results</span> <span class="o">!=</span> <span class="n">test_labels</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_tes</span>
+<span class="n">t</span>
+<span class="n">false_positive_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">results</span><span class="p">[:</span><span class="n">n_test_0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_tes</span>
+<span class="n">t_0</span>
+<span class="n">false_negative_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">n_test_0</span><span class="p">:]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_test</span> <span class="o">-</span> <span class="n">n_tes</span>
+<span class="n">t_0</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'</span><span class="se">\n</span><span class="s1"> Total error: </span><span class="si">{</span><span class="n">total_err</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="se">\n</span><span class="s1"> False Positive rate: </span><span class="si">{</span><span class="n">false_positive_err</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="se">\n</span><span class="s1"> False Negative rate: </span><span class="si">{</span><span class="n">false_negative_err</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">true_positives</span><span class="p">,</span> <span class="n">false_positives</span> <span class="o">=</span> <span class="n">roc_shm</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">test_labels</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">false_positives</span><span class="p">,</span> <span class="n">true_positives</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'falsePositives'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'truePositives'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'ROC curve'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Extraction-of-Damage-Sensitive-Features">Extraction of Damage-Sensitive Features<a class="anchor-link" href="#Extraction-of-Damage-Sensitive-Features">¶</a></h2><p>Extract natural frequencies from frequency response functions using modal analysis techniques.</p>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="Set-Analysis-Parameters">Set Analysis Parameters<a class="anchor-link" href="#Set-Analysis-Parameters">¶</a></h3>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Set parameters for FRF computation</span>
-<span class="n">sampling_freq</span> <span class="o">=</span> <span class="mi">320</span>  <span class="c1"># Hz (from original example)</span>
-<span class="n">block_size</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">//</span> <span class="mi">4</span>  <span class="c1"># Window size for FFT</span>
-<span class="n">freq_resolution</span> <span class="o">=</span> <span class="n">sampling_freq</span> <span class="o">/</span> <span class="n">block_size</span>  <span class="c1"># Frequency resolution</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Sampling frequency: </span><span class="si">{</span><span class="n">sampling_freq</span><span class="si">}</span><span class="s2"> Hz"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Block size: </span><span class="si">{</span><span class="n">block_size</span><span class="si">}</span><span class="s2"> points"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Frequency resolution: </span><span class="si">{</span><span class="n">freq_resolution</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> Hz"</span><span class="p">)</span>
-
-<span class="c1"># Frequency ranges to fit FRF at each identified natural frequency</span>
-<span class="n">freq_ranges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
-    <span class="p">[</span><span class="mi">26</span><span class="p">,</span> <span class="mi">36</span><span class="p">],</span>  <span class="c1"># First mode</span>
-    <span class="p">[</span><span class="mi">50</span><span class="p">,</span> <span class="mi">60</span><span class="p">],</span>  <span class="c1"># Second mode</span>
-    <span class="p">[</span><span class="mi">65</span><span class="p">,</span> <span class="mi">75</span><span class="p">]</span>   <span class="c1"># Third mode</span>
-<span class="p">])</span>
-
-<span class="c1"># Number of modes to fit in each range</span>
-<span class="n">n_modes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
-
-<span class="c1"># Number of extra terms to include in polynomial fit</span>
-<span class="n">extra_terms</span> <span class="o">=</span> <span class="mi">4</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Frequency ranges for modal fitting:"</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">range_vals</span><span class="p">,</span> <span class="n">n_mode</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">freq_ranges</span><span class="p">,</span> <span class="n">n_modes</span><span class="p">)):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Range </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">range_vals</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">range_vals</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> Hz (</span><span class="si">{</span><span class="n">n_mode</span><span class="si">}</span><span class="s2"> mode)"</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="Compute-Frequency-Response-Functions-(FRFs)">Compute Frequency Response Functions (FRFs)<a class="anchor-link" href="#Compute-Frequency-Response-Functions-(FRFs)">¶</a></h3>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Compute frequency response functions</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"Computing FRFs..."</span><span class="p">)</span>
-<span class="n">frf_data</span> <span class="o">=</span> <span class="n">frf_shm</span><span class="p">(</span><span class="n">input_output_data</span><span class="p">,</span> <span class="n">block_size</span><span class="p">,</span> <span class="n">overlap</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="s1">'hann'</span><span class="p">,</span> <span class="n">single_sided</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"FRF data shape: </span><span class="si">{</span><span class="n">frf_data</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Frequency points: </span><span class="si">{</span><span class="n">frf_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Output channels: </span><span class="si">{</span><span class="n">frf_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Test conditions: </span><span class="si">{</span><span class="n">frf_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-
-<span class="c1"># Generate frequency vector for plotting</span>
-<span class="n">freq_vector</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">sampling_freq</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">frf_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Frequency range: 0 - </span><span class="si">{</span><span class="n">freq_vector</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> Hz"</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="Visualize-Sample-FRFs">Visualize Sample FRFs<a class="anchor-link" href="#Visualize-Sample-FRFs">¶</a></h3><p>Plot FRFs from different structural states to observe changes in modal properties.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Plot four representative FRFs</span>
-<span class="n">states</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">13</span><span class="p">]</span>  <span class="c1"># Corresponds to states 1, 7, 10, 14 in MATLAB (0-based)</span>
-<span class="n">state_labels</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">14</span><span class="p">]</span>  <span class="c1"># 1-based labels for display</span>
-
-<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
-<span class="n">axes</span> <span class="o">=</span> <span class="n">axes</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">state_idx</span><span class="p">,</span> <span class="n">state_label</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">state_labels</span><span class="p">)):</span>
-    <span class="c1"># Use condition index that includes multiple tests per state</span>
-    <span class="n">condition_idx</span> <span class="o">=</span> <span class="n">state_idx</span> <span class="o">*</span> <span class="mi">10</span>  <span class="c1"># Each state has 10 tests</span>
-    
-    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">freq_vector</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">frf_data</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">condition_idx</span><span class="p">]),</span> <span class="s1">'k'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s1">'State #</span><span class="si">{</span><span class="n">state_label</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
-    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="mi">20</span><span class="p">,</span> <span class="mi">140</span><span class="p">])</span>
-    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">])</span>
-    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.15</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">])</span>
-    <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
-    
-    <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>  <span class="c1"># Bottom row</span>
-        <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">'Frequency (Hz)'</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Left column</span>
-        <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">'Magnitude'</span><span class="p">)</span>
-
-<span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">'Frequency Response Functions from Different Structural States'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="Extract-Natural-Frequencies">Extract Natural Frequencies<a class="anchor-link" href="#Extract-Natural-Frequencies">¶</a></h3><p>Use rational polynomial fitting to extract natural frequencies as damage-sensitive features.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Extract modal parameters using rational polynomial fitting</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"Extracting natural frequencies..."</span><span class="p">)</span>
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">residues</span><span class="p">,</span> <span class="n">frequencies</span><span class="p">,</span> <span class="n">damping</span> <span class="o">=</span> <span class="n">rpfit_shm</span><span class="p">(</span>
-        <span class="n">frf_data</span><span class="p">,</span> <span class="n">freq_resolution</span><span class="p">,</span> <span class="n">freq_ranges</span><span class="p">,</span> <span class="n">n_modes</span><span class="p">,</span> <span class="n">extra_terms</span>
-    <span class="p">)</span>
-    
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Modal parameter extraction completed:"</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Residues shape: </span><span class="si">{</span><span class="n">residues</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Frequencies shape: </span><span class="si">{</span><span class="n">frequencies</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Damping shape: </span><span class="si">{</span><span class="n">damping</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    
-    <span class="c1"># Display sample natural frequencies from first few conditions</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Sample natural frequencies (first 5 conditions):"</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">frequencies</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])):</span>
-        <span class="n">freqs</span> <span class="o">=</span> <span class="n">frequencies</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Condition </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">freqs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">freqs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">freqs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> Hz"</span><span class="p">)</span>
-        
-<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Modal fitting encountered issues: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">"Using simplified frequency extraction from FRF peaks..."</span><span class="p">)</span>
-    
-    <span class="c1"># Alternative: Extract frequencies from FRF peaks in each range</span>
-    <span class="n">frequencies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">freq_ranges</span><span class="p">),</span> <span class="n">frf_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
-    
-    <span class="k">for</span> <span class="n">range_idx</span><span class="p">,</span> <span class="p">(</span><span class="n">start_freq</span><span class="p">,</span> <span class="n">end_freq</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">freq_ranges</span><span class="p">):</span>
-        <span class="c1"># Find frequency indices for this range</span>
-        <span class="n">start_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">freq_vector</span> <span class="o">-</span> <span class="n">start_freq</span><span class="p">))</span>
-        <span class="n">end_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">freq_vector</span> <span class="o">-</span> <span class="n">end_freq</span><span class="p">))</span>
-        
-        <span class="c1"># Extract peak frequency for each condition</span>
-        <span class="k">for</span> <span class="n">condition</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">frf_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]):</span>
-            <span class="n">frf_segment</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">frf_data</span><span class="p">[</span><span class="n">start_idx</span><span class="p">:</span><span class="n">end_idx</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">condition</span><span class="p">])</span>
-            <span class="n">peak_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">frf_segment</span><span class="p">)</span>
-            <span class="n">frequencies</span><span class="p">[</span><span class="n">range_idx</span><span class="p">,</span> <span class="n">condition</span><span class="p">]</span> <span class="o">=</span> <span class="n">freq_vector</span><span class="p">[</span><span class="n">start_idx</span> <span class="o">+</span> <span class="n">peak_idx</span><span class="p">]</span>
-    
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Simplified frequency extraction completed:"</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Frequencies shape: </span><span class="si">{</span><span class="n">frequencies</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    
-    <span class="c1"># Display sample natural frequencies</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Sample natural frequencies (first 5 conditions):"</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">frequencies</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])):</span>
-        <span class="n">freqs</span> <span class="o">=</span> <span class="n">frequencies</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Condition </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">freqs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">freqs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">freqs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> Hz"</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="Prepare-Feature-Data">Prepare Feature Data<a class="anchor-link" href="#Prepare-Feature-Data">¶</a></h3><p>Organize the natural frequencies as feature vectors for machine learning.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Transpose frequencies to get feature matrix (conditions × modes)</span>
-<span class="n">feature_data</span> <span class="o">=</span> <span class="n">frequencies</span><span class="o">.</span><span class="n">T</span>  <span class="c1"># Shape: (conditions, modes)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Feature data shape: </span><span class="si">{</span><span class="n">feature_data</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Number of conditions: </span><span class="si">{</span><span class="n">feature_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Number of features (modes): </span><span class="si">{</span><span class="n">feature_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-
-<span class="c1"># Split into training and test data</span>
-<span class="c1"># Training data: first 90 conditions (undamaged baseline)</span>
-<span class="c1"># Test data: all 170 conditions (includes both undamaged and damaged)</span>
-<span class="n">train_data</span> <span class="o">=</span> <span class="n">feature_data</span><span class="p">[:</span><span class="mi">90</span><span class="p">,</span> <span class="p">:]</span>
-<span class="n">test_data</span> <span class="o">=</span> <span class="n">feature_data</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Training data shape: </span><span class="si">{</span><span class="n">train_data</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Test data shape: </span><span class="si">{</span><span class="n">test_data</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-
-<span class="c1"># Create labels for ROC analysis (0: undamaged, 1: damaged)</span>
-<span class="c1"># Note: Original example uses conditions 1-100 as undamaged, 101-170 as damaged</span>
-<span class="c1"># But we have 170 conditions total: 1-90 undamaged baseline, 91-170 mixed</span>
-<span class="n">labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">feature_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-<span class="n">labels</span><span class="p">[</span><span class="mi">90</span><span class="p">:]</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># Mark conditions 91-170 as potentially damaged</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Labels: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">labels</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="si">}</span><span class="s2"> undamaged, </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">labels</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> damaged"</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="Visualize-Feature-Vectors">Visualize Feature Vectors<a class="anchor-link" href="#Visualize-Feature-Vectors">¶</a></h3><p>Plot the natural frequencies to observe changes between undamaged and damaged conditions.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Plot damage-sensitive features</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
-
-<span class="c1"># Plot undamaged conditions</span>
-<span class="n">undamaged_features</span> <span class="o">=</span> <span class="n">feature_data</span><span class="p">[:</span><span class="mi">90</span><span class="p">,</span> <span class="p">:]</span>
-<span class="n">damaged_features</span> <span class="o">=</span> <span class="n">feature_data</span><span class="p">[</span><span class="mi">90</span><span class="p">:,</span> <span class="p">:]</span>
-
-<span class="c1"># Plot lines connecting the three natural frequencies for each condition</span>
-<span class="n">mode_numbers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>  <span class="c1"># Modes 1, 2, 3</span>
-
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">undamaged_features</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">mode_numbers</span><span class="p">,</span> <span class="n">undamaged_features</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:],</span> <span class="s1">'.-k'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
-
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">damaged_features</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">mode_numbers</span><span class="p">,</span> <span class="n">damaged_features</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:],</span> <span class="s1">'.-r'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
-
-<span class="c1"># Plot mean lines for clarity</span>
-<span class="n">undamaged_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">undamaged_features</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<span class="n">damaged_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">damaged_features</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">mode_numbers</span><span class="p">,</span> <span class="n">undamaged_mean</span><span class="p">,</span> <span class="s1">'o-k'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Undamaged (Mean)'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">mode_numbers</span><span class="p">,</span> <span class="n">damaged_mean</span><span class="p">,</span> <span class="s1">'o-r'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Damaged (Mean)'</span><span class="p">)</span>
-
-<span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="s1">' '</span><span class="p">,</span> <span class="s1">'1'</span><span class="p">,</span> <span class="s1">'2'</span><span class="p">,</span> <span class="s1">'3'</span><span class="p">,</span> <span class="s1">' '</span><span class="p">])</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">([</span><span class="mi">20</span><span class="p">,</span> <span class="mi">80</span><span class="p">])</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Feature Vectors Composed of Natural Frequencies'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'Mode Number'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'Frequency (Hz)'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-
-<span class="c1"># Print statistics</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"Natural frequency statistics:"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"Undamaged conditions (mean ± std):"</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
-    <span class="n">mean_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">undamaged_features</span><span class="p">[:,</span> <span class="n">i</span><span class="p">])</span>
-    <span class="n">std_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">undamaged_features</span><span class="p">[:,</span> <span class="n">i</span><span class="p">])</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Mode </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">mean_val</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> ± </span><span class="si">{</span><span class="n">std_val</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> Hz"</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="s2">"Damaged conditions (mean ± std):"</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
-    <span class="n">mean_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">damaged_features</span><span class="p">[:,</span> <span class="n">i</span><span class="p">])</span>
-    <span class="n">std_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">damaged_features</span><span class="p">[:,</span> <span class="n">i</span><span class="p">])</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Mode </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">mean_val</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> ± </span><span class="si">{</span><span class="n">std_val</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> Hz"</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Statistical-Modeling-for-Feature-Classification">Statistical Modeling for Feature Classification<a class="anchor-link" href="#Statistical-Modeling-for-Feature-Classification">¶</a></h2><p>Since NLPCA requires neural networks (deferred to Phase 5), we'll use alternative machine learning algorithms that are already implemented: PCA and Mahalanobis distance.</p>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="PCA-Based-Outlier-Detection">PCA-Based Outlier Detection<a class="anchor-link" href="#PCA-Based-Outlier-Detection">¶</a></h3>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Apply PCA-based outlier detection</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"Training PCA model on undamaged baseline data..."</span><span class="p">)</span>
-<span class="n">pca_model</span> <span class="o">=</span> <span class="n">learn_pca</span><span class="p">(</span><span class="n">train_data</span><span class="p">)</span>
-
-<span class="c1"># Score all test data</span>
-<span class="n">pca_scores</span><span class="p">,</span> <span class="n">pca_indicators</span> <span class="o">=</span> <span class="n">score_pca</span><span class="p">(</span><span class="n">test_data</span><span class="p">,</span> <span class="n">pca_model</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"PCA scores shape: </span><span class="si">{</span><span class="n">pca_scores</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"PCA scores range: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">pca_scores</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">pca_scores</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-
-<span class="c1"># Normalize scores to [0, 1] range</span>
-<span class="n">pca_scores_norm</span> <span class="o">=</span> <span class="n">scale_min_max_shm</span><span class="p">(</span><span class="o">-</span><span class="n">pca_scores</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">feature_range</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Normalized PCA scores range: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">pca_scores_norm</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">pca_scores_norm</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="Mahalanobis-Distance-Based-Outlier-Detection">Mahalanobis Distance-Based Outlier Detection<a class="anchor-link" href="#Mahalanobis-Distance-Based-Outlier-Detection">¶</a></h3>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Apply Mahalanobis distance-based outlier detection</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"Training Mahalanobis model on undamaged baseline data..."</span><span class="p">)</span>
-<span class="n">mahal_model</span> <span class="o">=</span> <span class="n">learn_mahalanobis_shm</span><span class="p">(</span><span class="n">train_data</span><span class="p">)</span>
-
-<span class="c1"># Score all test data</span>
-<span class="n">mahal_scores</span> <span class="o">=</span> <span class="n">score_mahalanobis_shm</span><span class="p">(</span><span class="n">test_data</span><span class="p">,</span> <span class="n">mahal_model</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Mahalanobis scores shape: </span><span class="si">{</span><span class="n">mahal_scores</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Mahalanobis scores range: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">mahal_scores</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">mahal_scores</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-
-<span class="c1"># Normalize scores to [0, 1] range</span>
-<span class="n">mahal_scores_norm</span> <span class="o">=</span> <span class="n">scale_min_max_shm</span><span class="p">(</span><span class="n">mahal_scores</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">feature_range</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Normalized Mahalanobis scores range: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">mahal_scores_norm</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">mahal_scores_norm</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="Visualize-Damage-Indicators">Visualize Damage Indicators<a class="anchor-link" href="#Visualize-Damage-Indicators">¶</a></h3><p>Plot the damage indicators from both classification methods.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Plot damage indicators</span>
-<span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
-
-<span class="n">condition_numbers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">pca_scores_norm</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-
-<span class="c1"># PCA-based damage indicators</span>
-<span class="n">undamaged_mask</span> <span class="o">=</span> <span class="n">condition_numbers</span> <span class="o">&lt;=</span> <span class="mi">90</span>
-<span class="n">damaged_mask</span> <span class="o">=</span> <span class="n">condition_numbers</span> <span class="o">&gt;</span> <span class="mi">90</span>
-
-<span class="n">ax1</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">condition_numbers</span><span class="p">[</span><span class="n">undamaged_mask</span><span class="p">],</span> <span class="n">pca_scores_norm</span><span class="p">[</span><span class="n">undamaged_mask</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s1">'blue'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Undamaged'</span><span class="p">)</span>
-<span class="n">ax1</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">condition_numbers</span><span class="p">[</span><span class="n">damaged_mask</span><span class="p">],</span> <span class="n">pca_scores_norm</span><span class="p">[</span><span class="n">damaged_mask</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s1">'red'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Damaged'</span><span class="p">)</span>
-<span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">'PCA-Based Damage Indicators (DI)'</span><span class="p">)</span>
-<span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"DI Amplitude"</span><span class="p">)</span>
-<span class="n">ax1</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">pca_scores_norm</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
-<span class="n">ax1</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
-<span class="n">ax1</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
-
-<span class="c1"># Mahalanobis-based damage indicators</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">condition_numbers</span><span class="p">[</span><span class="n">undamaged_mask</span><span class="p">],</span> <span class="n">mahal_scores_norm</span><span class="p">[</span><span class="n">undamaged_mask</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s1">'blue'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Undamaged'</span><span class="p">)</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">condition_numbers</span><span class="p">[</span><span class="n">damaged_mask</span><span class="p">],</span> <span class="n">mahal_scores_norm</span><span class="p">[</span><span class="n">damaged_mask</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s1">'red'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Damaged'</span><span class="p">)</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">'Mahalanobis Distance-Based Damage Indicators (DI)'</span><span class="p">)</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">'Case Number'</span><span class="p">)</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"DI Amplitude"</span><span class="p">)</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">mahal_scores_norm</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
-<span class="n">ax2</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
-
-<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-
-<span class="c1"># Print summary statistics</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"Damage Indicator Statistics:"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"PCA - Undamaged mean: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">pca_scores_norm</span><span class="p">[:</span><span class="mi">90</span><span class="p">])</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, Damaged mean: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">pca_scores_norm</span><span class="p">[</span><span class="mi">90</span><span class="p">:])</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Mahalanobis - Undamaged mean: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">mahal_scores_norm</span><span class="p">[:</span><span class="mi">90</span><span class="p">])</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, Damaged mean: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">mahal_scores_norm</span><span class="p">[</span><span class="mi">90</span><span class="p">:])</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="ROC-Curve-Analysis">ROC Curve Analysis<a class="anchor-link" href="#ROC-Curve-Analysis">¶</a></h2><p>Evaluate the performance of both classification methods using ROC curves.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Compute ROC curves for both methods</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"Computing ROC curves..."</span><span class="p">)</span>
-
-<span class="c1"># PCA ROC curve</span>
-<span class="n">pca_tpr</span><span class="p">,</span> <span class="n">pca_fpr</span> <span class="o">=</span> <span class="n">roc_shm</span><span class="p">(</span><span class="n">pca_scores</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
-
-<span class="c1"># Mahalanobis ROC curve</span>
-<span class="n">mahal_tpr</span><span class="p">,</span> <span class="n">mahal_fpr</span> <span class="o">=</span> <span class="n">roc_shm</span><span class="p">(</span><span class="n">mahal_scores</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
-
-<span class="c1"># Plot ROC curves</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
-
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">pca_fpr</span><span class="p">,</span> <span class="n">pca_tpr</span><span class="p">,</span> <span class="s1">'.-b'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'PCA-based'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">mahal_fpr</span><span class="p">,</span> <span class="n">mahal_tpr</span><span class="p">,</span> <span class="s1">'.-g'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Mahalanobis-based'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">'k-.'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Random classifier'</span><span class="p">)</span>
-
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'ROC Curves for Modal Analysis-Based Damage Detection'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'False Positive Rate (FPR)'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'True Positive Rate (TPR)'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-
-<span class="c1"># Calculate AUC (Area Under Curve) as performance metric</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">auc</span>
-
-<span class="n">pca_auc</span> <span class="o">=</span> <span class="n">auc</span><span class="p">(</span><span class="n">pca_fpr</span><span class="p">,</span> <span class="n">pca_tpr</span><span class="p">)</span>
-<span class="n">mahal_auc</span> <span class="o">=</span> <span class="n">auc</span><span class="p">(</span><span class="n">mahal_fpr</span><span class="p">,</span> <span class="n">mahal_tpr</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">ROC Analysis Results:"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"PCA-based AUC: </span><span class="si">{</span><span class="n">pca_auc</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Mahalanobis-based AUC: </span><span class="si">{</span><span class="n">mahal_auc</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-
-<span class="k">if</span> <span class="n">pca_auc</span> <span class="o">&gt;</span> <span class="mf">0.7</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">"PCA method shows good discrimination capability."</span><span class="p">)</span>
-<span class="k">elif</span> <span class="n">pca_auc</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">"PCA method shows moderate discrimination capability."</span><span class="p">)</span>
-<span class="k">else</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">"PCA method shows poor discrimination capability."</span><span class="p">)</span>
-
-<span class="k">if</span> <span class="n">mahal_auc</span> <span class="o">&gt;</span> <span class="mf">0.7</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">"Mahalanobis method shows good discrimination capability."</span><span class="p">)</span>
-<span class="k">elif</span> <span class="n">mahal_auc</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">"Mahalanobis method shows moderate discrimination capability."</span><span class="p">)</span>
-<span class="k">else</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">"Mahalanobis method shows poor discrimination capability."</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Analysis-and-Conclusions">Analysis and Conclusions<a class="anchor-link" href="#Analysis-and-Conclusions">¶</a></h2><p>Let's analyze the effectiveness of using natural frequencies as damage-sensitive features.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Statistical analysis of frequency changes</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"Statistical Analysis of Natural Frequency Changes:"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">55</span><span class="p">)</span>
-
-<span class="k">for</span> <span class="n">mode_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
-    <span class="n">undamaged_freq</span> <span class="o">=</span> <span class="n">undamaged_features</span><span class="p">[:,</span> <span class="n">mode_idx</span><span class="p">]</span>
-    <span class="n">damaged_freq</span> <span class="o">=</span> <span class="n">damaged_features</span><span class="p">[:,</span> <span class="n">mode_idx</span><span class="p">]</span>
-    
-    <span class="c1"># Calculate statistics</span>
-    <span class="n">undamaged_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">undamaged_freq</span><span class="p">)</span>
-    <span class="n">damaged_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">damaged_freq</span><span class="p">)</span>
-    <span class="n">freq_change</span> <span class="o">=</span> <span class="p">((</span><span class="n">damaged_mean</span> <span class="o">-</span> <span class="n">undamaged_mean</span><span class="p">)</span> <span class="o">/</span> <span class="n">undamaged_mean</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span>
-    
-    <span class="n">undamaged_cv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">undamaged_freq</span><span class="p">)</span> <span class="o">/</span> <span class="n">undamaged_mean</span> <span class="o">*</span> <span class="mi">100</span>
-    <span class="n">damaged_cv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">damaged_freq</span><span class="p">)</span> <span class="o">/</span> <span class="n">damaged_mean</span> <span class="o">*</span> <span class="mi">100</span>
-    
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Mode </span><span class="si">{</span><span class="n">mode_idx</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">:"</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Undamaged: </span><span class="si">{</span><span class="n">undamaged_mean</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> Hz (CV: </span><span class="si">{</span><span class="n">undamaged_cv</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">%)"</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Damaged:   </span><span class="si">{</span><span class="n">damaged_mean</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> Hz (CV: </span><span class="si">{</span><span class="n">damaged_cv</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">%)"</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Change:    </span><span class="si">{</span><span class="n">freq_change</span><span class="si">:</span><span class="s2">+.2f</span><span class="si">}</span><span class="s2">%"</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">()</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="Summary-and-Recommendations">Summary and Recommendations<a class="anchor-link" href="#Summary-and-Recommendations">¶</a></h3><p>Based on the analysis results:</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">"MODAL ANALYSIS-BASED DAMAGE DETECTION SUMMARY:"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">50</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="s2">"✓ Successfully extracted natural frequencies from FRFs"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"✓ Demonstrated modal parameter extraction workflow"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"✓ Applied statistical classification methods"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"✓ Evaluated performance using ROC analysis"</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="s2">"Key Findings:"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"• Natural frequencies show </span><span class="si">{</span><span class="nb">abs</span><span class="p">(</span><span class="n">freq_change</span><span class="p">)</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">% average change due to damage"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"• PCA method achieved AUC = </span><span class="si">{</span><span class="n">pca_auc</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"• Mahalanobis method achieved AUC = </span><span class="si">{</span><span class="n">mahal_auc</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-
-<span class="k">if</span> <span class="nb">max</span><span class="p">(</span><span class="n">pca_auc</span><span class="p">,</span> <span class="n">mahal_auc</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">0.8</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">"Recommendations for Improvement:"</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">"• Consider environmental compensation techniques"</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">"• Use multiple modal properties (frequencies + mode shapes)"</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">"• Apply more sophisticated feature extraction methods"</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">"• Implement nonlinear classification algorithms (NLPCA)"</span><span class="p">)</span>
-<span class="k">else</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">"The modal analysis approach shows good damage detection capability!"</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Note: This demonstration used simplified modal parameter extraction."</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"For production applications, consider more sophisticated methods and"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"environmental/operational variability compensation techniques."</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Technical-Notes">Technical Notes<a class="anchor-link" href="#Technical-Notes">¶</a></h2><h3 id="Original-MATLAB-vs.-Python-Implementation">Original MATLAB vs. Python Implementation<a class="anchor-link" href="#Original-MATLAB-vs.-Python-Implementation">¶</a></h3><p>The original MATLAB example (<code>exampleModalFeatures.m</code>) used Nonlinear PCA (NLPCA) for classification, which requires neural network implementation. This Python version demonstrates the modal analysis workflow using alternative classification methods:</p>
-<ul>
-<li><strong>FRF Computation</strong>: Implemented using Welch's method with windowing</li>
-<li><strong>Modal Parameter Extraction</strong>: Simplified rational polynomial fitting</li>
-<li><strong>Classification</strong>: PCA and Mahalanobis distance (instead of NLPCA)</li>
-<li><strong>Performance Evaluation</strong>: ROC curve analysis</li>
-</ul>
-<h3 id="For-Complete-NLPCA-Implementation">For Complete NLPCA Implementation<a class="anchor-link" href="#For-Complete-NLPCA-Implementation">¶</a></h3><p>To fully replicate the original MATLAB example, implement Phase 5 (NLPCA) which requires:</p>
-<ul>
-<li>Neural network architecture (encoder-decoder with bottleneck)</li>
-<li>Nonlinear dimensionality reduction</li>
-<li>Advanced training algorithms</li>
-</ul>
-<p>This would provide the exact methodology described in the referenced papers.</p>
 </div>
 </div>
 </div>
@@ -8604,7 +8036,7 @@ Please ensure the modal OSP dataset is available
 
             
         <div class="footer">
-            <p>Generated on 2025-07-27 16:54:38 from <code>modal_analysis_features.ipynb</code></p>
+            <p>Generated on 2025-08-19 20:30:48 from <code>direct_use_nonparametric.ipynb</code></p>
             <p>Part of the SHMTools Python Package - Structural Health Monitoring Toolkit</p>
         </div>
         

@@ -4,7 +4,7 @@
         <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>Dataloader Demo - SHMTools</title>
+            <title>Optimal Sensor Placement - SHMTools</title>
             
         <style>
         body { 
@@ -86,8 +86,8 @@
         <body>
             
         <div class="notebook-header">
-            <h1 class="notebook-title">Dataloader Demo</h1>
-            <p class="notebook-subtitle">SHMTools Example - Notebooks Level</p>
+            <h1 class="notebook-title">Optimal Sensor Placement</h1>
+            <p class="notebook-subtitle">SHMTools Example - Modal_Analysis Level</p>
         </div>
         
             
@@ -102,7 +102,7 @@
 <html lang="en">
 <head><meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Dataloader Demo</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>Optimal Sensor Placement</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <style type="text/css">
     pre { line-height: 125%; }
 td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
@@ -7616,12 +7616,23 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="SHMTools-Dataloader-Demo">SHMTools Dataloader Demo<a class="anchor-link" href="#SHMTools-Dataloader-Demo">¶</a></h1><p>This notebook demonstrates the new simplified dataloader functions that make it easy to reproduce the conversion-plan.md examples.</p>
-<h2 id="Three-ways-to-load-data:">Three ways to load data:<a class="anchor-link" href="#Three-ways-to-load-data:">¶</a></h2><ol>
-<li><strong>Quick setup</strong>: <code>setup_notebook_environment()</code> - handles imports and path setup</li>
-<li><strong>Example-specific</strong>: <code>load_example_data('pca')</code> - preprocessed data for specific examples</li>
-<li><strong>Direct loading</strong>: <code>load_3story_data()</code> - raw data loading functions</li>
+<h1 id="Optimal-Sensor-Placement-Using-Modal-Analysis-Based-Approaches">Optimal Sensor Placement Using Modal Analysis Based Approaches<a class="anchor-link" href="#Optimal-Sensor-Placement-Using-Modal-Analysis-Based-Approaches">¶</a></h1><p>This notebook demonstrates optimal sensor placement algorithms for structural health monitoring using modal analysis data. We explore two methods:</p>
+<ol>
+<li><strong>Fisher Information Matrix with Effective Independence (EI) Method</strong></li>
+<li><strong>Maximum Norm Method with spatial constraints</strong></li>
 </ol>
+<h2 id="Introduction">Introduction<a class="anchor-link" href="#Introduction">¶</a></h2><p>Computes the 12-sensor optimal arrangements using the Fisher information method and the maximum norm method, plotting the resulting arrangements on the structure's geometry.</p>
+<h3 id="References">References<a class="anchor-link" href="#References">¶</a></h3><ul>
+<li>D. Kammer, "Sensor placement for on-orbit modal identification and correlation of large space structures," <em>Journal of Guidance, Control, and Dynamics</em>, vol. 14, pp. 251-259, 1991.</li>
+<li>M. Meo and G. Zumpano, "On the optimal sensor placement techniques for a bridge structure," <em>Engineering Structures</em>, vol. 27, pp. 1488-1497, 2005.</li>
+</ul>
+<h3 id="SHMTools-functions-demonstrated">SHMTools functions demonstrated<a class="anchor-link" href="#SHMTools-functions-demonstrated">¶</a></h3><ul>
+<li><code>response_interp_shm</code>: Convert DOF response to node XYZ coordinates</li>
+<li><code>add_resp_2_geom_shm</code>: Add response to geometry for deformed shape visualization</li>
+<li><code>osp_fisher_info_eiv_shm</code>: Fisher Information Matrix optimization</li>
+<li><code>get_sensor_layout_shm</code>: Convert optimal DOFs to sensor locations</li>
+<li><code>osp_max_norm_shm</code>: Maximum norm optimization with spatial constraints</li>
+</ul>
 </div>
 </div>
 </div>
@@ -7632,7 +7643,7 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Method-1:-Quick-Setup-(Recommended-for-new-notebooks)">Method 1: Quick Setup (Recommended for new notebooks)<a class="anchor-link" href="#Method-1:-Quick-Setup-(Recommended-for-new-notebooks)">¶</a></h2>
+<h2 id="Setup-and-Imports">Setup and Imports<a class="anchor-link" href="#Setup-and-Imports">¶</a></h2>
 </div>
 </div>
 </div>
@@ -7644,17 +7655,103 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [1]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># One-line setup for notebooks</span>
-<span class="c1"># setup_notebook_environment not needed - import directly</span>
-<span class="n">nb</span> <span class="o">=</span> <span class="n">setup_notebook_environment</span><span class="p">()</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Standard imports</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
-<span class="c1"># Now you have everything you need</span>
-<span class="n">np</span> <span class="o">=</span> <span class="n">nb</span><span class="p">[</span><span class="s1">'np'</span><span class="p">]</span>
-<span class="n">plt</span> <span class="o">=</span> <span class="n">nb</span><span class="p">[</span><span class="s1">'plt'</span><span class="p">]</span>
-<span class="n">import_3story_structure_shm</span> <span class="o">=</span> <span class="n">nb</span><span class="p">[</span><span class="s1">'import_3story_structure_shm'</span><span class="p">]</span>
-<span class="n">check_data_availability</span> <span class="o">=</span> <span class="n">nb</span><span class="p">[</span><span class="s1">'check_data_availability'</span><span class="p">]</span>
+<span class="c1"># Add the repository root to Python path for examples.data import</span>
+<span class="n">repo_root</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span>
+<span class="k">while</span> <span class="ow">not</span> <span class="p">(</span><span class="n">repo_root</span> <span class="o">/</span> <span class="s1">'shmtools'</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="n">repo_root</span><span class="o">.</span><span class="n">parent</span> <span class="o">!=</span> <span class="n">repo_root</span><span class="p">:</span>
+    <span class="n">repo_root</span> <span class="o">=</span> <span class="n">repo_root</span><span class="o">.</span><span class="n">parent</span>
+<span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">repo_root</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">repo_root</span><span class="p">))</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">"Available functions:"</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">nb</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">mpl_toolkits.mplot3d</span><span class="w"> </span><span class="kn">import</span> <span class="n">Axes3D</span>
+
+<span class="c1"># Import shmtools(installed package)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">examples.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_modal_osp_shm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shmtools.modal</span><span class="w"> </span><span class="kn">import</span><span class="p">(</span><span class="n">response_interp_shm</span><span class="p">,</span>
+    <span class="n">add_resp_2_geom_shm</span><span class="p">,</span>
+    <span class="n">osp_fisher_info_eiv_shm</span><span class="p">,</span>
+    <span class="n">get_sensor_layout_shm</span><span class="p">,</span>
+    <span class="n">osp_max_norm_shm</span><span class="p">)</span>
+
+<span class="c1"># Configure plotting</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">'default'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">'figure.figsize'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">'font.size'</span><span class="p">]</span> <span class="o">=</span> <span class="mi">10</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Setup complete!"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Setup complete!
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>/Users/eric/repo/shm/shmtools/classification/nlpca.py:27: UserWarning: TensorFlow not available. NLPCA functions will not work. Install TensorFlow: pip install tensorflow
+  warnings.warn(
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Load-Example-Modal-Data">Load Example Modal Data<a class="anchor-link" href="#Load-Example-Modal-Data">¶</a></h2><p>Loads nodeLayout, elements, modeshapes, and respDOF from the example dataset.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Load modal OSP example data</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">load_modal_osp_dat</span>
+<span class="n">a</span><span class="p">()</span>
+
+<span class="c1"># Extract variables</span>
+<span class="n">node_layout</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'nodeLayou</span>
+<span class="n">t</span><span class="s1">']</span>
+<span class="n">elements</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'element</span>
+<span class="n">s</span><span class="s1">'] </span>
+<span class="n">mode_shapes</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'modeShape</span>
+<span class="n">s</span><span class="s1">']</span>
+<span class="n">resp_dof</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'respDO</span>
+<span class="sa">F</span><span class="s1">']</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Loaded data:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Node layout shape: </span><span class="si">{</span><span class="n">node_layout</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Elements shape: </span><span class="si">{</span><span class="n">elements</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Mode shapes: </span><span class="si">{</span><span class="n">mode_shapes</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Response DOF: </span><span class="si">{</span><span class="n">resp_dof</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Number of nodes: </span><span class="si">{</span><span class="n">node_layout</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Number of modes: </span><span class="si">{</span><span class="n">mode_shapes</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Number of DOFs: </span><span class="si">{</span><span class="n">mode_shapes</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -7668,17 +7765,23 @@ a.anchor-link {
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
 <pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[1]</span><span class="ansi-green-fg">, line 3</span>
-<span class="ansi-green-fg">      1</span> <span style="color: rgb(95,135,135)"># One-line setup for notebooks</span>
-<span class="ansi-green-fg">      2</span> <span style="color: rgb(95,135,135)"># setup_notebook_environment not needed - import directly</span>
-<span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">3</span> nb = <span class="ansi-yellow-bg">setup_notebook_environment</span>()
-<span class="ansi-green-fg">      5</span> <span style="color: rgb(95,135,135)"># Now you have everything you need</span>
-<span class="ansi-green-fg">      6</span> np = nb[<span class="ansi-yellow-fg">'</span><span class="ansi-yellow-fg">np</span><span class="ansi-yellow-fg">'</span>]
-
-<span class="ansi-red-fg">NameError</span>: name 'setup_notebook_environment' is not defined</pre>
+  <span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[2]</span><span class="ansi-green-fg">, line 6</span>
+<span class="ansi-red-fg">    </span><span class="ansi-red-fg">node_layout = data['nodeLayou</span>
+                       ^
+<span class="ansi-red-fg">SyntaxError</span><span class="ansi-red-fg">:</span> unterminated string literal (detected at line 6)
+</pre>
 </div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Visualization-Functions">Visualization Functions<a class="anchor-link" href="#Visualization-Functions">¶</a></h2><p>Define functions for plotting the structure, mode shapes, and sensor locations.</p>
 </div>
 </div>
 </div>
@@ -7690,8 +7793,128 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Check what data is available</span>
-<span class="n">check_data_availability</span><span class="p">()</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">plot_structure_3d</span><span class="p">(</span><span class="n">node_layout</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">'blue'</span><span class="p">,</span> <span class="n">alph</span>
+<span class="n">a</span><span class="o">=</span><span class="mf">0.3</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Plot 3D structure using nodes and elements."""</span>
+    <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsiz</span>
+<span class="n">e</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s1">'3</span>
+<span class="n">d</span><span class="s1">')</span>
+    
+    <span class="c1"># Handle different node layout formats</span>
+    <span class="k">if</span> <span class="n">node_layout</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="c1"># Format: [node_indices; X; Y; Z]</span>
+        <span class="n">node_xyz</span> <span class="o">=</span> <span class="n">node_layout</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">T</span>  <span class="c1"># Extract X,Y,Z and transpos e else:</span>
+        <span class="c1"># Format: [X, Y, Z] per row</span>
+        <span class="n">node_xyz</span> <span class="o">=</span> <span class="n">node_layou</span>
+<span class="n">t</span>
+    
+    <span class="c1"># Handle different element formats</span>
+    <span class="k">if</span> <span class="n">elements</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">elements</span><span class="o">.</span><span class="n">shap</span>
+<span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="c1"># Transpose if needed</span>
+        <span class="n">elements</span> <span class="o">=</span> <span class="n">elements</span><span class="o">.</span>
+<span class="n">T</span>
+    
+    <span class="c1"># Plot elements as lines</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">elements</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="n">element</span> <span class="o">=</span> <span class="n">elements</span><span class="p">[</span>
+<span class="n">i</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="c1"># Filter out zeros or invalid indices</span>
+        <span class="n">valid_indices</span> <span class="o">=</span> <span class="n">element</span><span class="p">[</span><span class="n">element</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>  <span class="c1"># dif len(valid_indices) &gt; 1:</span>
+            <span class="c1"># Get coordinates of element nodes</span>
+            <span class="n">element_nodes</span> <span class="o">=</span> <span class="n">node_xyz</span><span class="p">[</span><span class="n">valid_indice</span>
+<span class="n">s</span><span class="p">]</span>
+            
+            <span class="c1"># Close the element by adding first node at end</span>
+            <span class="n">element_nodes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">element_nodes</span><span class="p">,</span> <span class="n">element_node</span>
+<span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+            
+            <span class="c1"># Plot element</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">element_nodes</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> 
+                    <span class="n">element_nodes</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
+                    <span class="n">element_nodes</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span> 
+                    <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">)</span>
+    
+    <span class="c1"># Plot nodes</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">node_xyz</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+               <span class="n">node_xyz</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> 
+               <span class="n">node_xyz</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span>
+               <span class="n">c</span><span class="o">=</span><span class="s1">'red'</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">alph</span>
+<span class="n">a</span><span class="o">=</span><span class="mf">0.6</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">ax</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_mode_shape</span><span class="p">(</span><span class="n">node_layout</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">mode_shape</span><span class="p">,</span> <span class="n">resp_dof</span><span class="p">,</span> <span class="n">mode_num</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Plot deformed shape for a given mode."""</span>
+    <span class="c1"># Convert mode shape DOF vector to node XYZ response</span>
+    <span class="n">resp_xyz</span> <span class="o">=</span> <span class="n">response_interp_shm</span><span class="p">(</span><span class="n">node_layout</span><span class="p">,</span> <span class="n">mode_shape</span><span class="p">,</span> <span class="n">resp_dof</span><span class="p">,</span> <span class="n">use_3d_interp</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    
+    <span class="c1"># Add response to geometry for deformed shape</span>
+    <span class="n">deformed_layout</span><span class="p">,</span> <span class="n">resp_scale</span> <span class="o">=</span> <span class="n">add_resp_2_geom_shm</span><span class="p">(</span><span class="n">node_layout</span><span class="p">,</span> <span class="n">resp_xyz</span><span class="p">,</span> <span class="n">scale</span><span class="p">)</span>
+    
+    <span class="c1"># Create figure</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsiz</span>
+<span class="n">e</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+    
+    <span class="c1"># Plot original shape</span>
+    <span class="n">ax1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">121</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s1">'3</span>
+<span class="n">d</span><span class="s1">')</span>
+    <span class="n">plot_structure_3d</span><span class="p">(</span><span class="n">node_layout</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">ax1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">'blue'</span><span class="p">,</span> <span class="n">alph</span>
+<span class="n">a</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">'X'</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">'Y'</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">set_zlabel</span><span class="p">(</span><span class="s1">'Z'</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Original Structure'</span><span class="p">)</span>
+    
+    <span class="c1"># Plot deformed shape</span>
+    <span class="n">ax2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">122</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s1">'3</span>
+<span class="n">d</span><span class="s1">')</span>
+    <span class="n">plot_structure_3d</span><span class="p">(</span><span class="n">deformed_layout</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">ax2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">'red'</span><span class="p">,</span> <span class="n">alph</span>
+<span class="n">a</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">'X'</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">'Y'</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">set_zlabel</span><span class="p">(</span><span class="s1">'Z'</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Mode </span><span class="si">{</span><span class="n">mode_num</span><span class="si">}</span><span class="s1"> (scale: </span><span class="si">{</span><span class="n">resp_scale</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">)'</span><span class="p">)</span>
+    
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">fig</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_sensors_on_structure</span><span class="p">(</span><span class="n">node_layout</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">sensor_layout</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">'Sensor Placemen</span>
+<span class="n">t</span><span class="s1">'):</span>
+<span class="w">    </span><span class="sd">"""Plot sensor locations on the structure."""</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsiz</span>
+<span class="n">e</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s1">'3</span>
+<span class="n">d</span><span class="s1">')</span>
+    
+    <span class="c1"># Plot structure</span>
+    <span class="n">plot_structure_3d</span><span class="p">(</span><span class="n">node_layout</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">'blue'</span><span class="p">,</span> <span class="n">alph</span>
+<span class="n">a</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+    
+    <span class="c1"># Plot sensors</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">sensor_layout</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+               <span class="n">sensor_layout</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
+               <span class="n">sensor_layout</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span>
+               <span class="n">c</span><span class="o">=</span><span class="s1">'red'</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">'o'</span><span class="p">,</span> <span class="n">edgecolors</span><span class="o">=</span><span class="s1">'black'</span><span class="p">,</span> <span class="n">linewidt</span>
+<span class="n">h</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+               <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sensor_layout</span><span class="p">)</span><span class="si">}</span><span class="s1"> sensor</span>
+<span class="n">s</span><span class="s1">')</span>
+    
+    <span class="c1"># Add sensor numbers</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">pos</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sensor_layout</span><span class="p">):</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">pos</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pos</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">pos</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="sa">f</span><span class="s1">'  S</span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s1">'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+    
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">'X'</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">'Y'</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_zlabel</span><span class="p">(</span><span class="s1">'Z'</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+    
+    <span class="k">return</span> <span class="n">fig</span>
 </pre></div>
 </div>
 </div>
@@ -7704,7 +7927,7 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Method-2:-Example-Specific-Loading-(Best-for-reproducing-conversion-plan.md-examples)">Method 2: Example-Specific Loading (Best for reproducing conversion-plan.md examples)<a class="anchor-link" href="#Method-2:-Example-Specific-Loading-(Best-for-reproducing-conversion-plan.md-examples)">¶</a></h2>
+<h2 id="Plot-Mode-Shapes">Plot Mode Shapes<a class="anchor-link" href="#Plot-Mode-Shapes">¶</a></h2><p>Convert the 3rd and 10th 1D mode vectors to 2D response arrays using degree of freedom (DOF) definitions in respDOF.</p>
 </div>
 </div>
 </div>
@@ -7716,56 +7939,16 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Plot Mode 3</span>
+<span class="n">mode3</span> <span class="o">=</span> <span class="n">mode_shapes</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>  <span class="c1"># 3rd mode(0-based indexing)</span>
+<span class="n">fig3</span> <span class="o">=</span> <span class="n">plot_mode_shape</span><span class="p">(</span><span class="n">node_layout</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">mode3</span><span class="p">,</span> <span class="n">resp_dof</span><span class="p">,</span> <span class="n">mode_nu</span>
+<span class="n">m</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 
-<span class="c1"># Add the repository root to Python path for examples.data import</span>
-<span class="n">repo_root</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span>
-<span class="k">while</span> <span class="ow">not</span> <span class="p">(</span><span class="n">repo_root</span> <span class="o">/</span> <span class="s1">'shmtools'</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="n">repo_root</span><span class="o">.</span><span class="n">parent</span> <span class="o">!=</span> <span class="n">repo_root</span><span class="p">:</span>
-    <span class="n">repo_root</span> <span class="o">=</span> <span class="n">repo_root</span><span class="o">.</span><span class="n">parent</span>
-<span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">repo_root</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
-    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">repo_root</span><span class="p">))</span>
-
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">examples.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_example_data</span>
-
-<span class="c1"># Load preprocessed data for PCA/Mahalanobis/SVD examples</span>
-<span class="n">data</span> <span class="o">=</span> <span class="n">load_example_data</span><span class="p">(</span><span class="s1">'pc</span>
-<span class="n">a</span><span class="s1">')</span>
-
-<span class="c1"># Data is ready to use - channels 2-5 already extracted</span>
-<span class="n">signals</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'signals'</span><span class="p">]</span>  <span class="c1"># Shap</span>
-<span class="n">e</span><span class="p">:</span> <span class="p">(</span><span class="mi">8192</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">170</span><span class="p">)</span>
-<span class="n">fs</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'f</span>
-<span class="n">s</span><span class="s1">']</span>
-<span class="n">damage_states</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'damage_state</span>
-<span class="n">s</span><span class="s1">']</span>
-<span class="n">t</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'t'</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s1">'m'</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s1">'n'</span><span class="p">]</span>  <span class="c1"># Same variables as in notebook s print(f"Signals shape: {signals.shape}")</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Channels: </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">'channels'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Time points: </span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">, Channels: </span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2">, Conditions: </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Quick visualization</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">signals</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s1">'k-'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Channel 2, Conditio</span>
-<span class="n">n</span> <span class="mi">1</span><span class="s1">')</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">signals</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">90</span><span class="p">],</span> <span class="s1">'r--'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Channel 2, Condition 91 (Damage)'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Sample time histories from loaded data'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'Time points'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'Acceleration'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+<span class="c1"># Plot Mode 10  </span>
+<span class="n">mode10</span> <span class="o">=</span> <span class="n">mode_shapes</span><span class="p">[:,</span> <span class="mi">9</span><span class="p">]</span>  <span class="c1"># 10th mode(0-based indexing)</span>
+<span class="n">fig10</span> <span class="o">=</span> <span class="n">plot_mode_shape</span><span class="p">(</span><span class="n">node_layout</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">mode10</span><span class="p">,</span> <span class="n">resp_dof</span><span class="p">,</span> <span class="n">mode_nu</span>
+<span class="n">m</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -7779,7 +7962,8 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Method-3:-Direct-Loading-(For-custom-data-processing)">Method 3: Direct Loading (For custom data processing)<a class="anchor-link" href="#Method-3:-Direct-Loading-(For-custom-data-processing)">¶</a></h2>
+<h2 id="OSP-Fisher-Information-Matrix,-Effective-Independence-Method">OSP Fisher Information Matrix, Effective Independence Method<a class="anchor-link" href="#OSP-Fisher-Information-Matrix,-Effective-Independence-Method">¶</a></h2><p>Calculate the 12 optimal DOFs to place sensors by maximizing the determinant of the Fisher Information Matrix using the Effective Independence Method.</p>
+<p>The Effective Independence (EI) method iteratively removes degrees of freedom that contribute least to the observability of the target modes.</p>
 </div>
 </div>
 </div>
@@ -7791,23 +7975,66 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Direct access to raw data loading functions</span>
-<span class="n">data_dict</span> <span class="o">=</span> <span class="n">load_3story_dat</span>
-<span class="n">a</span><span class="p">()</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Set parameters</span>
+<span class="n">num_sensors</span> <span class="o">=</span> <span class="mi">12</span>
+<span class="n">cov_matrix</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Use identity matri</span>
+<span class="n">x</span>
 
-<span class="c1"># Full dataset with all channels</span>
-<span class="n">dataset</span> <span class="o">=</span> <span class="n">data_dict</span><span class="p">[</span><span class="s1">'dataset'</span><span class="p">]</span>  <span class="c1"># Shap</span>
-<span class="n">e</span><span class="p">:</span> <span class="p">(</span><span class="mi">8192</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">170</span><span class="p">)</span>
-<span class="n">channels</span> <span class="o">=</span> <span class="n">data_dict</span><span class="p">[</span><span class="s1">'channel</span>
-<span class="n">s</span><span class="s1">']</span>
+<span class="c1"># Run Fisher Information EI optimization</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Running Fisher Information EI optimization..."</span><span class="p">)</span>
+<span class="n">op_list_fisher</span><span class="p">,</span> <span class="n">det_q</span> <span class="o">=</span> <span class="n">osp_fisher_info_eiv_shm</span><span class="p">(</span><span class="n">num_sensors</span><span class="p">,</span> <span class="n">mode_shapes</span><span class="p">,</span> <span class="n">cov_matrix</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Full dataset shape: </span><span class="si">{</span><span class="n">dataset</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"All channels: </span><span class="si">{</span><span class="n">channels</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Optimal DOF indices (1-based): </span><span class="si">{</span><span class="n">op_list_fisher</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Number of iterations: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">det_q</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Final determinant of Q: </span><span class="si">{</span><span class="n">det_q</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Plot convergence of determinant</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">semilogy</span><span class="p">(</span><span class="n">det_q</span><span class="p">,</span> <span class="s1">'b.-'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'Iteration'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'det(Q)'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Fisher Information Matrix Determinant Convergence'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Convert optimal DOF indices to sensor XYZ locations</span>
+<span class="n">sensor_layout_fisher</span> <span class="o">=</span> <span class="n">get_sensor_layout_shm</span><span class="p">(</span><span class="n">op_list_fisher</span><span class="p">,</span> <span class="n">resp_dof</span><span class="p">,</span> <span class="n">node_layout</span><span class="p">)</span>
 
-<span class="c1"># Manual extraction of channels 2-5(like in original notebooks)</span>
-<span class="n">data</span> <span class="o">=</span> <span class="n">datase</span>
-<span class="n">t</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span> <span class="p">:]</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Extracted channels 2-5 shape: </span><span class="si">{</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="c1"># Plot sensors on structure</span>
+<span class="n">fig_fisher</span> <span class="o">=</span> <span class="n">plot_sensors_on_structure</span><span class="p">(</span><span class="n">node_layout</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">sensor_layout_fishe</span>
+<span class="n">r</span><span class="p">,</span>
+                                      <span class="n">title</span><span class="o">=</span><span class="s1">'Fisher Information EI Metho</span>
+<span class="n">d</span><span class="s1">')</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Sensor coordinates (Fisher Information EI):"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">pos</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sensor_layout_fisher</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Sensor </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: X=</span><span class="si">{</span><span class="n">pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, Y=</span><span class="si">{</span><span class="n">pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, Z=</span><span class="si">{</span><span class="n">pos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">:</span><span class="s2">.2</span>
+<span class="n">f</span><span class="p">}</span><span class="s2">")</span>
 </pre></div>
 </div>
 </div>
@@ -7820,7 +8047,8 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Loading-Other-Dataset-Types">Loading Other Dataset Types<a class="anchor-link" href="#Loading-Other-Dataset-Types">¶</a></h2>
+<h2 id="OSP-Maximum-Norm-Method">OSP Maximum Norm Method<a class="anchor-link" href="#OSP-Maximum-Norm-Method">¶</a></h2><p>Calculate the 12 optimal DOFs to place sensors by maximizing the norm of the response. The influence of the modes are weighted linearly. Sensors which are closer than a distance of 20 are "dueled" to maintain a minimum separation.</p>
+<p>This method prioritizes locations with high modal response while ensuring sensors are spatially distributed.</p>
 </div>
 </div>
 </div>
@@ -7832,17 +8060,47 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Load different dataset types</span>
-<span class="n">cbm_data</span> <span class="o">=</span> <span class="n">load_example_data</span><span class="p">(</span><span class="s1">'cb</span>
-<span class="n">m</span><span class="s1">')</span>
-<span class="n">sensor_data</span> <span class="o">=</span> <span class="n">load_example_data</span><span class="p">(</span><span class="s1">'sensor_diagnosti</span>
-<span class="n">c</span><span class="s1">')</span>
-<span class="n">active_data</span> <span class="o">=</span> <span class="n">load_example_data</span><span class="p">(</span><span class="s1">'active_sensin</span>
-<span class="n">g</span><span class="s1">')</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Set parameters for Maximum Norm method</span>
+<span class="n">num_sensors</span> <span class="o">=</span> <span class="mi">12</span>
+<span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">13</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># Linear weight</span>
+<span class="n">s</span><span class="p">:</span> <span class="mi">13</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="mi">1</span>
+<span class="n">dualing_distance</span> <span class="o">=</span> <span class="mf">20.0</span>  <span class="c1"># sprint(f"Mode weights: {weights}")</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Minimum sensor separation: </span><span class="si">{</span><span class="n">dualing_distance</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"CBM data keys: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">cbm_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Sensor diagnostic keys: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">sensor_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Active sensing keys: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">active_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="c1"># Run Maximum Norm optimization</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Running Maximum Norm optimization..."</span><span class="p">)</span>
+<span class="n">op_list_maxnorm</span> <span class="o">=</span> <span class="n">osp_max_norm_shm</span><span class="p">(</span><span class="n">num_sensors</span><span class="p">,</span> <span class="n">mode_shapes</span><span class="p">,</span> <span class="n">weight</span>
+<span class="n">s</span><span class="p">,</span> 
+                                   <span class="n">dualing_distance</span><span class="p">,</span> <span class="n">resp_dof</span><span class="p">,</span> <span class="n">node_layout</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Optimal DOF indices (1-based): </span><span class="si">{</span><span class="n">op_list_maxnorm</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Convert optimal DOF indices to sensor XYZ locations</span>
+<span class="n">sensor_layout_maxnorm</span> <span class="o">=</span> <span class="n">get_sensor_layout_shm</span><span class="p">(</span><span class="n">op_list_maxnorm</span><span class="p">,</span> <span class="n">resp_dof</span><span class="p">,</span> <span class="n">node_layout</span><span class="p">)</span>
+
+<span class="c1"># Plot sensors on structure</span>
+<span class="n">fig_maxnorm</span> <span class="o">=</span> <span class="n">plot_sensors_on_structure</span><span class="p">(</span><span class="n">node_layout</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">sensor_layout_maxnor</span>
+<span class="n">m</span><span class="p">,</span>
+                                       <span class="n">title</span><span class="o">=</span><span class="s1">'Maximum Norm Metho</span>
+<span class="n">d</span><span class="s1">')</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Sensor coordinates (Maximum Norm):"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">pos</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sensor_layout_maxnorm</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Sensor </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: X=</span><span class="si">{</span><span class="n">pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, Y=</span><span class="si">{</span><span class="n">pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, Z=</span><span class="si">{</span><span class="n">pos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">:</span><span class="s2">.2</span>
+<span class="n">f</span><span class="p">}</span><span class="s2">")</span>
 </pre></div>
 </div>
 </div>
@@ -7855,19 +8113,192 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Summary">Summary<a class="anchor-link" href="#Summary">¶</a></h2><p>These dataloader functions make it much easier to:</p>
-<ol>
-<li><strong>Get started quickly</strong> with <code>setup_notebook_environment()</code></li>
-<li><strong>Reproduce examples</strong> with <code>load_example_data('pca')</code> etc.</li>
-<li><strong>Handle different execution contexts</strong> automatically (different working directories)</li>
-<li><strong>Reduce repetitive code</strong> in notebook imports</li>
-</ol>
-<p><strong>For conversion-plan.md examples</strong>, use Method 2 with the appropriate example type:</p>
-<ul>
-<li>Phase 1-3: <code>load_example_data('pca')</code>, <code>load_example_data('mahalanobis')</code>, <code>load_example_data('svd')</code></li>
-<li>Phase 4-5: <code>load_example_data('factor_analysis')</code>, <code>load_example_data('nlpca')</code></li>
-<li>Phase 6: <code>load_example_data('ar_model_order')</code></li>
+<h2 id="Compare-Methods">Compare Methods<a class="anchor-link" href="#Compare-Methods">¶</a></h2><p>Compare the sensor placements from both methods side by side.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Create comparison plot</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsiz</span>
+<span class="n">e</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+
+<span class="c1"># Fisher Information method</span>
+<span class="n">ax1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">121</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s1">'3</span>
+<span class="n">d</span><span class="s1">')</span>
+<span class="n">plot_structure_3d</span><span class="p">(</span><span class="n">node_layout</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">ax1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">'blue'</span><span class="p">,</span> <span class="n">alph</span>
+<span class="n">a</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">sensor_layout_fisher</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+            <span class="n">sensor_layout_fisher</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="n">sensor_layout_fisher</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span>
+            <span class="n">c</span><span class="o">=</span><span class="s1">'red'</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">'o'</span><span class="p">,</span> <span class="n">edgecolors</span><span class="o">=</span><span class="s1">'black'</span><span class="p">,</span> <span class="n">linewidt</span>
+<span class="n">h</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">'X'</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">'Y'</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_zlabel</span><span class="p">(</span><span class="s1">'Z'</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">'Fisher Information EI Method'</span><span class="p">)</span>
+
+<span class="c1"># Maximum Norm method</span>
+<span class="n">ax2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">122</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s1">'3</span>
+<span class="n">d</span><span class="s1">')</span>
+<span class="n">plot_structure_3d</span><span class="p">(</span><span class="n">node_layout</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">ax2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">'blue'</span><span class="p">,</span> <span class="n">alph</span>
+<span class="n">a</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">sensor_layout_maxnorm</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+            <span class="n">sensor_layout_maxnorm</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="n">sensor_layout_maxnorm</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span>
+            <span class="n">c</span><span class="o">=</span><span class="s1">'green'</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">'s'</span><span class="p">,</span> <span class="n">edgecolors</span><span class="o">=</span><span class="s1">'black'</span><span class="p">,</span> <span class="n">linewidt</span>
+<span class="n">h</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">'X'</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">'Y'</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">set_zlabel</span><span class="p">(</span><span class="s1">'Z'</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">'Maximum Norm Method'</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Analysis-of-Results">Analysis of Results<a class="anchor-link" href="#Analysis-of-Results">¶</a></h2><p>Calculate metrics to compare the two sensor placement methods.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Calculate average minimum distance between sensors for each method</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">calc_min_distances</span><span class="p">(</span><span class="n">sensor_layout</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Calculate minimum distance from each sensor to its nearest neighbor."""</span>
+    <span class="n">n_sensors</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sensor_layout</span><span class="p">)</span>
+    <span class="n">min_distances</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_sensors</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_sensors</span><span class="p">):</span>
+        <span class="n">distances</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_sensors</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">j</span><span class="p">:</span>
+                <span class="n">dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">sensor_layout</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">sensor_layout</span><span class="p">[</span>
+<span class="n">j</span><span class="p">])</span>
+                <span class="n">distances</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span>
+        <span class="n">min_distances</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">distances</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">min_distances</span>
+
+<span class="c1"># Calculate metrics for Fisher Information method</span>
+<span class="n">min_dist_fisher</span> <span class="o">=</span> <span class="n">calc_min_distances</span><span class="p">(</span><span class="n">sensor_layout_fisher</span><span class="p">)</span>
+<span class="n">avg_min_dist_fisher</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">min_dist_fisher</span><span class="p">)</span>
+<span class="n">std_min_dist_fisher</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">min_dist_fisher</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Fisher Information EI Method:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Average minimum distance: </span><span class="si">{</span><span class="n">avg_min_dist_fisher</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Std deviation: </span><span class="si">{</span><span class="n">std_min_dist_fisher</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Min distance: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">min_dist_fisher</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Max distance: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">min_dist_fisher</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="c1"># Calculate metrics for Maximum Norm method</span>
+<span class="n">min_dist_maxnorm</span> <span class="o">=</span> <span class="n">calc_min_distances</span><span class="p">(</span><span class="n">sensor_layout_maxnorm</span><span class="p">)</span>
+<span class="n">avg_min_dist_maxnorm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">min_dist_maxnorm</span><span class="p">)</span>
+<span class="n">std_min_dist_maxnorm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">min_dist_maxnorm</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Maximum Norm Method:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Average minimum distance: </span><span class="si">{</span><span class="n">avg_min_dist_maxnorm</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Std deviation: </span><span class="si">{</span><span class="n">std_min_dist_maxnorm</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Min distance: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">min_dist_maxnorm</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Max distance: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">min_dist_maxnorm</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Enforced minimum: </span><span class="si">{</span><span class="n">dualing_distance</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Calculate observability metrics</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">calc_observability_metric</span><span class="p">(</span><span class="n">mode_shapes</span><span class="p">,</span> <span class="n">dof_indices</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Calculate observability metric for selected DOFs."""</span>
+    <span class="c1"># Convert to 0-based indexing</span>
+    <span class="n">dof_idx_0</span> <span class="o">=</span> <span class="n">dof_indices</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    
+    <span class="c1"># Extract mode shapes at selected DOFs</span>
+    <span class="n">phi_selected</span> <span class="o">=</span> <span class="n">mode_shapes</span><span class="p">[</span><span class="n">dof_id</span>
+<span class="n">x_0</span><span class="p">,</span> <span class="p">:]</span>
+    
+    <span class="c1"># Calculate Fisher Information Matrix</span>
+    <span class="n">q_matrix</span> <span class="o">=</span> <span class="n">phi_selected</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">phi_selecte</span>
+<span class="n">d</span>
+    
+    <span class="c1"># Calculate metrics</span>
+    <span class="n">det_q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">q_matrix</span><span class="p">)</span>
+    <span class="n">cond_q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cond</span><span class="p">(</span><span class="n">q_matrix</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">det_q</span><span class="p">,</span> <span class="n">cond_q</span>
+
+<span class="c1"># Calculate for both methods</span>
+<span class="n">det_fisher</span><span class="p">,</span> <span class="n">cond_fisher</span> <span class="o">=</span> <span class="n">calc_observability_metric</span><span class="p">(</span><span class="n">mode_shapes</span><span class="p">,</span> <span class="n">op_list_fisher</span><span class="p">)</span>
+<span class="n">det_maxnorm</span><span class="p">,</span> <span class="n">cond_maxnorm</span> <span class="o">=</span> <span class="n">calc_observability_metric</span><span class="p">(</span><span class="n">mode_shapes</span><span class="p">,</span> <span class="n">op_list_maxnorm</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Observability Metrics:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Fisher Information EI:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  det(Q): </span><span class="si">{</span><span class="n">det_fisher</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  cond(Q): </span><span class="si">{</span><span class="n">cond_fisher</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Maximum Norm:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  det(Q): </span><span class="si">{</span><span class="n">det_maxnorm</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  cond(Q): </span><span class="si">{</span><span class="n">cond_maxnorm</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Summary">Summary<a class="anchor-link" href="#Summary">¶</a></h2><p>This notebook demonstrated two optimal sensor placement methods for structural health monitoring:</p>
+<h3 id="Fisher-Information-EI-Method">Fisher Information EI Method<a class="anchor-link" href="#Fisher-Information-EI-Method">¶</a></h3><ul>
+<li><strong>Objective</strong>: Maximize determinant of Fisher Information Matrix</li>
+<li><strong>Approach</strong>: Iteratively remove DOFs with smallest contribution to observability</li>
+<li><strong>Advantages</strong>: Optimal from information theory perspective, maximizes mode observability</li>
+<li><strong>Disadvantages</strong>: May cluster sensors in high-response regions</li>
 </ul>
+<h3 id="Maximum-Norm-Method">Maximum Norm Method<a class="anchor-link" href="#Maximum-Norm-Method">¶</a></h3><ul>
+<li><strong>Objective</strong>: Maximize weighted modal response norm with spatial constraints</li>
+<li><strong>Approach</strong>: Greedy selection with minimum separation enforcement</li>
+<li><strong>Advantages</strong>: Ensures spatial distribution, practical for real installations</li>
+<li><strong>Disadvantages</strong>: May sacrifice some observability for spatial coverage</li>
+</ul>
+<h3 id="Key-Findings">Key Findings<a class="anchor-link" href="#Key-Findings">¶</a></h3><ol>
+<li>Fisher Information method typically achieves higher observability metrics (det(Q))</li>
+<li>Maximum Norm method provides better spatial distribution with enforced minimum separation</li>
+<li>Choice of method depends on application priorities (information vs. coverage)</li>
+</ol>
+<p>Both methods are valuable tools for designing sensor networks in structural health monitoring applications.</p>
 </div>
 </div>
 </div>
@@ -7878,7 +8309,7 @@ a.anchor-link {
 
             
         <div class="footer">
-            <p>Generated on 2025-08-19 20:30:32 from <code>dataloader_demo.ipynb</code></p>
+            <p>Generated on 2025-08-19 20:30:44 from <code>optimal_sensor_placement.ipynb</code></p>
             <p>Part of the SHMTools Python Package - Structural Health Monitoring Toolkit</p>
         </div>
         

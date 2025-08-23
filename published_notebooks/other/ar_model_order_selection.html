@@ -4,7 +4,7 @@
         <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>Nonparametric Outlier Detection - SHMTools</title>
+            <title>AR Model Order Selection - SHMTools</title>
             
         <style>
         body { 
@@ -86,8 +86,8 @@
         <body>
             
         <div class="notebook-header">
-            <h1 class="notebook-title">Nonparametric Outlier Detection</h1>
-            <p class="notebook-subtitle">SHMTools Example - Advanced Level</p>
+            <h1 class="notebook-title">AR Model Order Selection</h1>
+            <p class="notebook-subtitle">SHMTools Example - Integrating_Examples Level</p>
         </div>
         
             
@@ -102,7 +102,7 @@
 <html lang="en">
 <head><meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Nonparametric Outlier Detection</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>AR Model Order Selection</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <style type="text/css">
     pre { line-height: 125%; }
 td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
@@ -7610,35 +7610,25 @@ a.anchor-link {
 <!-- End of mermaid configuration --></head>
 <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
 <main>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-0">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="Direct-Use-of-Nonparametric-Outlier-Detection">Direct Use of Nonparametric Outlier Detection<a class="anchor-link" href="#Direct-Use-of-Nonparametric-Outlier-Detection">¶</a></h1><h2 id="Introduction">Introduction<a class="anchor-link" href="#Introduction">¶</a></h2><p>This example demonstrates nonparametric outlier detection using kernel density estimation (KDE). The algorithm learns a nonparametric probability density function from undamaged baseline data and identifies outliers as points with low probability density.</p>
-<p>Data from the <strong>3-story structure</strong> dataset are used to extract AR model features, which are then analyzed using kernel density estimation for damage detection.</p>
-<p><strong>Key Concepts:</strong></p>
-<ul>
-<li><strong>Kernel Density Estimation</strong>: Nonparametric density estimation using various kernel functions</li>
-<li><strong>Bandwidth Selection</strong>: Automatic methods for optimal smoothing parameter selection</li>
-<li><strong>Threshold Determination</strong>: Statistical approach using normal distribution fitting</li>
-<li><strong>Multiple Kernel Functions</strong>: Comparison of different kernel shapes (Gaussian, Epanechnikov, etc.)</li>
-</ul>
+<h1 id="Appropriate-Autoregressive-Model-Order">Appropriate Autoregressive Model Order<a class="anchor-link" href="#Appropriate-Autoregressive-Model-Order">¶</a></h1><h2 id="Introduction">Introduction<a class="anchor-link" href="#Introduction">¶</a></h2><p>The goal of this example is to find out the appropriate autoregressive (AR) model order using an algorithm based on the partial autocorrelation function (PAF). One acceleration time history from the baseline condition is used to carry out the analysis.</p>
+<p>Data sets from <strong>Channel 5</strong> of the 3-story structure are used in this example. More details about the data sets can be found in the <a href="https://www.lanl.gov/projects/ei">3-Story Data Sets documentation</a>.</p>
+<p>The PAF-based algorithm suggests an AR model order as a reference starting point. Other algorithms should be tried in order to find out a possible range of AR model orders. (Note that the arModelOrder_shm function contains other techniques, namely, the SVD, AIC, BIC, and RMS.)</p>
 <p><strong>References:</strong></p>
 <p>Figueiredo, E., Park, G., Figueiras, J., Farrar, C., &amp; Worden, K. (2009). Structural Health Monitoring Algorithm Comparisons using Standard Data Sets. Los Alamos National Laboratory Report: LA-14393.</p>
 <p><strong>SHMTools functions used:</strong></p>
 <ul>
-<li><code>ar_model_shm</code></li>
-<li><code>learn_kernel_density_shm</code></li>
-<li><code>score_kernel_density_shm</code></li>
-<li><code>roc_shm</code></li>
-<li><code>epanechnikov_kernel_shm</code></li>
+<li><code>ar_model_order_shm</code></li>
 </ul>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=cell-1">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7648,51 +7638,26 @@ a.anchor-link {
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">stats</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
-<span class="c1"># Add shmtools to path - handle different execution contexts</span>
-<span class="n">current_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span>
-<span class="n">notebook_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="k">if</span> <span class="s1">'__file__'</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">()</span> <span class="k">else</span> <span class="n">current_dir</span>
+<span class="c1"># Add the repository root to Python path for examples.data import</span>
+<span class="n">repo_root</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span>
+<span class="k">while</span> <span class="ow">not</span> <span class="p">(</span><span class="n">repo_root</span> <span class="o">/</span> <span class="s1">'shmtools'</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="n">repo_root</span><span class="o">.</span><span class="n">parent</span> <span class="o">!=</span> <span class="n">repo_root</span><span class="p">:</span>
+    <span class="n">repo_root</span> <span class="o">=</span> <span class="n">repo_root</span><span class="o">.</span><span class="n">parent</span>
+<span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">repo_root</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">repo_root</span><span class="p">))</span>
 
-<span class="c1"># Try different relative paths to find shmtools</span>
-<span class="n">possible_paths</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="n">notebook_dir</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span><span class="p">,</span>  <span class="c1"># From examples/notebooks/advanced/</span>
-    <span class="n">current_dir</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span><span class="p">,</span>          <span class="c1"># From examples/notebooks/</span>
-    <span class="n">current_dir</span><span class="p">,</span>                        <span class="c1"># From project root</span>
-    <span class="n">Path</span><span class="p">(</span><span class="s1">'/Users/eric/repo/shm/shmtools-python'</span><span class="p">)</span>  <span class="c1"># Absolute fallback</span>
-<span class="p">]</span>
 
-<span class="n">shmtools_found</span> <span class="o">=</span> <span class="kc">False</span>
-<span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">possible_paths</span><span class="p">:</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">path</span> <span class="o">/</span> <span class="s1">'shmtools'</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
-            <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
-        <span class="n">shmtools_found</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Found shmtools at: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        <span class="k">break</span>
 
-<span class="k">if</span> <span class="ow">not</span> <span class="n">shmtools_found</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">"Warning: Could not find shmtools module"</span><span class="p">)</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">shmtools.utils.data_loading</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_3story_data</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">shmtools.features.time_series</span><span class="w"> </span><span class="kn">import</span> <span class="n">ar_model_shm</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">shmtools.classification.nonparametric</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">learn_kernel_density_shm</span><span class="p">,</span> 
-    <span class="n">score_kernel_density_shm</span><span class="p">,</span>
-    <span class="n">epanechnikov_kernel_shm</span><span class="p">,</span>
-    <span class="n">gaussian_kernel_shm</span><span class="p">,</span>
-    <span class="n">roc_shm</span>
-<span class="p">)</span>
+<span class="c1"># Import shmtools(installed package)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">examples.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_3story_structure_shm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shmtools.features.time_series</span><span class="w"> </span><span class="kn">import</span> <span class="n">ar_model_order_shm</span><span class="p">,</span> <span class="n">ar_model_shm</span>
 
 <span class="c1"># Set up plotting</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">'default'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">'figure.figsize'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">'font.size'</span><span class="p">]</span> <span class="o">=</span> <span class="mi">10</span>
-
-<span class="c1"># Set random seed for reproducibility</span>
-<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -7704,17 +7669,8 @@ a.anchor-link {
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Found shmtools at: /Users/eric/repo/shm/shmtools-python
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>/Users/eric/repo/shm/shmtools-python/shmtools/classification/nlpca.py:27: UserWarning: TensorFlow not available. NLPCA functions will not work. Install TensorFlow: pip install tensorflow
-  warnings.warn(
-/Users/eric/repo/shm/shmtools-python/venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+<pre>/Users/eric/repo/shm/shmtools/classification/nlpca.py:27: UserWarning: TensorFlow not available. NLPCA functions will not work. Install TensorFlow: pip install tensorflow
   warnings.warn(
 </pre>
 </div>
@@ -7722,17 +7678,17 @@ a.anchor-link {
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-2">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Load-data">Load data<a class="anchor-link" href="#Load-data">¶</a></h2>
+<h2 id="Load-Raw-Data">Load Raw Data<a class="anchor-link" href="#Load-Raw-Data">¶</a></h2><p>Load the 3-story structure dataset and extract Channel 5 data from a baseline condition for AR model order analysis.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=cell-3">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7740,244 +7696,22 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">load_3story_data</span><span class="p">()</span>
-<span class="n">dataset</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'dataset'</span><span class="p">]</span>
-<span class="n">states</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">'damage_states'</span><span class="p">]</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">time_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2048</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">680</span><span class="p">))</span>
-<span class="n">time_data_states</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">680</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
-    <span class="n">start_idx</span> <span class="o">=</span> <span class="mi">2048</span> <span class="o">*</span> <span class="n">i</span>
-    <span class="n">end_idx</span> <span class="o">=</span> <span class="mi">2048</span> <span class="o">*</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">time_data</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="n">start_idx</span><span class="p">:</span><span class="n">end_idx</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
-    <span class="n">time_data_states</span><span class="p">[</span><span class="n">i</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">states</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">N</span> <span class="o">=</span> <span class="mi">400</span>
-<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
-<span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="n">time_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">])[:</span><span class="n">N</span><span class="p">]</span>
-<span class="n">X_data</span> <span class="o">=</span> <span class="n">ar_model_shm</span><span class="p">(</span><span class="n">time_data</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">idx</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>
-<span class="n">X_states</span> <span class="o">=</span> <span class="n">time_data_states</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">X_states</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
-<span class="n">X_undamaged</span> <span class="o">=</span> <span class="n">X_data</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="p">:]</span>
-<span class="n">n_undamaged</span> <span class="o">=</span> <span class="n">X_undamaged</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-<span class="n">n_train</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="mf">0.8</span> <span class="o">*</span> <span class="n">n_undamaged</span><span class="p">)</span>
-<span class="n">X_train</span> <span class="o">=</span> <span class="n">X_undamaged</span><span class="p">[:</span><span class="n">n_train</span><span class="p">,</span> <span class="p">:]</span>
-<span class="n">X_test</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">X_undamaged</span><span class="p">[</span><span class="n">n_train</span><span class="p">:,</span> <span class="p">:],</span> <span class="n">X_data</span><span class="p">[</span><span class="o">~</span><span class="n">idx</span><span class="p">,</span> <span class="p">:]])</span>
-<span class="n">n_test</span> <span class="o">=</span> <span class="n">X_test</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">n_test_0</span> <span class="o">=</span> <span class="n">n_undamaged</span> <span class="o">-</span> <span class="n">n_train</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">test_labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_test_0</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_test</span> <span class="o">-</span> <span class="n">n_test_0</span><span class="p">)])</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Train-a-model-over-the-undamaged-data">Train a model over the undamaged data<a class="anchor-link" href="#Train-a-model-over-the-undamaged-data">¶</a></h2>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">kernel_fun</span> <span class="o">=</span> <span class="n">epanechnikov_kernel_shm</span>
-<span class="n">H</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="n">bs_method</span> <span class="o">=</span> <span class="mi">2</span>
-<span class="n">d_model</span> <span class="o">=</span> <span class="n">learn_kernel_density_shm</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">kernel_fun</span><span class="p">,</span> <span class="n">bs_method</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Pick-a-threshold-from-the-training-data">Pick a threshold from the training data<a class="anchor-link" href="#Pick-a-threshold-from-the-training-data">¶</a></h2>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">likelihoods</span> <span class="o">=</span> <span class="n">score_kernel_density_shm</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">d_model</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">model_p</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">likelihoods</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">confidence</span> <span class="o">=</span> <span class="mf">0.9</span>
-<span class="n">threshold</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">confidence</span><span class="p">,</span> <span class="n">model_p</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">model_p</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Test-the-detector">Test the detector<a class="anchor-link" href="#Test-the-detector">¶</a></h2>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [12]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">scores</span> <span class="o">=</span> <span class="n">score_kernel_density_shm</span><span class="p">(</span><span class="n">X_test</span><span class="p">,</span> <span class="n">d_model</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [13]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">results</span> <span class="o">=</span> <span class="n">scores</span> <span class="o">&lt;=</span> <span class="n">threshold</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Report-the-detector's-performance">Report the detector's performance<a class="anchor-link" href="#Report-the-detector's-performance">¶</a></h2>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [14]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">total_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">results</span> <span class="o">!=</span> <span class="n">test_labels</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_test</span>
-<span class="n">false_positive_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">results</span><span class="p">[:</span><span class="n">n_test_0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_test_0</span>
-<span class="n">false_negative_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">n_test_0</span><span class="p">:]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_test</span> <span class="o">-</span> <span class="n">n_test_0</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'</span><span class="se">\n</span><span class="s1"> Total error: </span><span class="si">{</span><span class="n">total_err</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="se">\n</span><span class="s1"> False Positive rate: </span><span class="si">{</span><span class="n">false_positive_err</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="se">\n</span><span class="s1"> False Negative rate: </span><span class="si">{</span><span class="n">false_negative_err</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Load data set</span>
+<span class="n">data_dict</span> <span class="o">=</span> <span class="n">load_3story_dat</span>
+<span class="n">a</span><span class="p">()</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">data_dict</span><span class="p">[</span><span class="s1">'datase</span>
+<span class="n">t</span><span class="s1">']</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Dataset shape: </span><span class="si">{</span><span class="n">dataset</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="c1"># Acceleration time history </span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">the</span> <span class="n">baseline</span> <span class="n">condition</span> <span class="p">(</span><span class="n">Channel</span> <span class="mi">5</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>  <span class="c1"># Channel 5 (index 4), first condition (inde</span>
+<span class="n">x</span> <span class="mi">0</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Channel 5 baseline data shape: </span><span class="si">{</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Mean: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Std: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -7989,58 +7723,202 @@ a.anchor-link {
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
 <pre>
- Total error: 0.10
- False Positive rate: 0.18
- False Negative rate: 0.08
+  <span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[2]</span><span class="ansi-green-fg">, line 4</span>
+<span class="ansi-red-fg">    </span><span class="ansi-red-fg">dataset = data_dict['datase</span>
+                        ^
+<span class="ansi-red-fg">SyntaxError</span><span class="ansi-red-fg">:</span> unterminated string literal (detected at line 4)
 </pre>
 </div>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-4">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="Plot-Time-History">Plot Time History<a class="anchor-link" href="#Plot-Time-History">¶</a></h3><p>Visualize the baseline acceleration time history from Channel 5.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=cell-5">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [15]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">true_positives</span><span class="p">,</span> <span class="n">false_positives</span> <span class="o">=</span> <span class="n">roc_shm</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">test_labels</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [16]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">false_positives</span><span class="p">,</span> <span class="n">true_positives</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'falsePositives'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'truePositives'</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'ROC curve'</span><span class="p">)</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Plot time series</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s1">'k-'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Acceleration Time History (Channel 5)'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'Data Points'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'Acceleration (g)'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">([</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">yticks</span><span class="p">([</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
 </div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedImage jp-OutputArea-output" tabindex="0">
-<img alt="No description has been provided for this image" class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA/EAAAK9CAYAAABsLOw2AAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjkuNCwgaHR0cHM6Ly9tYXRwbG90bGliLm9yZy8ekN5oAAAACXBIWXMAAA9hAAAPYQGoP6dpAABD+UlEQVR4nO3dCbyVVb0//nUGDoPMkZBI4jykQkpwcahMgtJMs65c9SqRw7W0m3CdzdnEvIpDodw0s7qZmNO/nxoOJH8nigQtzTkH+JmgqIACMpyzf6+1YB/OOZwDHOAMi/N+v15Pez/rGfba9LyQz/6uZz0lhUKhEAAAAIBWr7SlOwAAAACsHyEeAAAAMiHEAwAAQCaEeAAAAMiEEA8AAACZEOIBAAAgE0I8AAAAZEKIBwAAgEwI8QAAAJAJIR4AAAAyIcQDQAu75ZZbQklJSfVSXl4e+vbtG7797W+Ht956q95jCoVC+PWvfx0+//nPh+7du4dOnTqFPfbYI1x88cVh0aJFDX7W3XffHb761a+GXr16hYqKirDVVluFI444Ivzxj39swm8IAGwqJYX4rwAAoEVD/OjRo1MA33bbbcPHH38c/vSnP6X2/v37h+eeey506NChev/Kyspw1FFHhdtvvz3sv//+4fDDD08h/rHHHgu33npr2G233cLDDz8cevfuXX1M/M/9d77znXTOz372s+Fb3/pW6NOnT3j77bdTsJ8xY0Z44oknwj777NNCfwoAwPooX6+9AIAmFyvkgwYNSu+PP/74VC3/8Y9/HH7/+9+nannRFVdckQL8aaedFv77v/+7uv3EE09M+x122GGpiv+HP/yhettVV12VAvypp54axo8fnyr+Reeee26q6scRAC0pjiDYYostWrQPANDaGU4PAK1UrLJH//jHP6rblixZkoL7TjvtFMaNG7fGMYccckgYNWpUmDx5cqrmF4+J++6yyy7hyiuvrBXgi4455pgwePDgtfanqqoqXHvttWnYfhwZ8MlPfjJ85StfCU899VTa/sYbb6Rzxx8L6ortF154YfV6fB/bnn/++TSqoEePHmG//far7t+bb765xjnOPvvsdAvABx98UN325z//OfWhW7duaTTCF77whTSiAAA2V0I8ALRSMRRHMeAWPf744ynExuDbUOX82GOPTa/33ntv9THvv/9+OqasrGyD+3Pcccel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4ZJLLglbbLFFer8248ePX59TAgAAAE0R4p9++umwfPny6vcNiZPeAQAAAC0Y4msOoTecHgAAADJ5TnxdCxcuDPfcc0948cUXN02PAAAAgE0T4o844ojw05/+NL1fsmRJGDRoUGrbY489wp133tnY0wEAAABNFeIfffTRsP/++6f3d999d3pu/Pz588N1110XLr300saeDgAAAGiqEL9gwYLQs2fP9H7y5Mnhm9/8ZujUqVM4+OCDwyuvvNLY0wEAAABNFeL79esXpk2bFhYtWpRC/PDhw1P7Bx98EDp06NDY0wEAAACbcnb6mk499dRw9NFHh86dO4dtttkmfPGLX6weZh/viwcAAABaSYj/3ve+FwYPHhxmz54dvvzlL4fS0pXF/O2228498QAAANCaQnwUZ6SPS5zULi4lJSXpnngAAACglT0n/le/+lUaOt+xY8e07LnnnuHXv/71pu8dAAAAsOGV+PHjx4fzzjsvnHLKKWHfffdNbY8//ng46aSTwrx588KYMWMae0oAAACgKUL8T37yk3DDDTeEY489trrt61//evjMZz4TLrzwQiEeAAAAWstw+rfffjvss88+a7THtrgNAAAAaCUhfocddgi33377Gu2TJk0KO+6446bqFwAAALCxw+kvuuiiMHLkyPRc+OI98U888USYMmVKveEeAAAAaKFK/De/+c0wffr00KtXr3DPPfekJb6Pbd/4xjeappcAAABA4yrxCxcuDH/+85/DsmXLwtVXXx0++clPNl3PAAAAgA0L8c8880w46KCDwty5c0OhUAhdunRJw+dHjBixvqcAAAAAmmM4/Zlnnhm23Xbb9Ez4GTNmhAMPPDA9Kx4AAABoZZX4GNwffPDBsNdee6X1m2++OfTs2TMNse/atWtT9hEAAABoTCX+/fffD1tvvXX1evfu3cMWW2wR3nvvvabqGwAAALChE9s9//zzYc6cOdXr8d74F154IXz44YfVbXvuuWdjTgkAAAA0RYiP98HH4F7T1772tVBSUpLa42tlZWVjTgkAAABs6hD/+uuvr++uAAAAQEuG+G222aYpPh8AAADY1BPb1fTYY4+Ff//3fw9Dhw4Nb731Vmr79a9/nR4/BwAAALSSEH/nnXeGESNGhI4dO4ann346LF26NLUvWLAgXHbZZU3RRwAAAGBDQvyll14aJk6cGG688cbQrl276vZ99903zJw5c1P3DwAAANjQEP/SSy+Fz3/+82u0d+vWLcyfP7+xpwMAAACaKsT36dMnvPrqq2u0x/vht9tuu8aeDgAAAGiqEH/CCSeEH/zgB+HPf/5zei78P//5z/Cb3/wmnHbaaeG73/1uY08HAAAAbOpHzBWdddZZoaqqKhx44IFh8eLFaWh9+/btU4j//ve/39jTAQAAAE0V4mP1/dxzzw2nn356Glb/0Ucfhd122y107ty5sacCAAAAmjLEF1VUVKTwDgAAALTSEH/AAQekanxD/vjHP25snwAAAIBNEeIHDhxYa3358uXhmWeeCc8991wYNWpUY08HAAAANFWIv/rqq+ttv/DCC9P98QAAAEArecRcQ/793/893HzzzZvqdAAAAEBThfhp06aFDh06bKrTAQAAABs7nP7www+vtV4oFMLbb78dnnrqqXDeeec19nQAAABAU4X4bt261VovLS0NO++8c7j44ovD8OHDG3s6AAAAoClCfGVlZRg9enTYY489Qo8ePRpzKAAAANCc98SXlZWlavv8+fM39nMBAACApp7Ybvfddw+vvfZaYw8DAAAAmjvEX3rppeG0004L9957b5rQbuHChbUWAAAAoJVMbHfQQQel169//euhpKSk1iz1cT3eNw8AAAC0ghD/i1/8IvTr1y/dH19TVVVVmDVr1qbsGwAAALAxIf473/lOGka/5ZZb1mp/7733wrBhw8KoUaMae0oAAACgKe6JLw6br+ujjz4KHTp0aOzpAAAAgE1diR87dmx6jQH+vPPOC506dareFu+D//Of/xwGDhy4vqcDAAAAmirEP/3009WV+GeffTZUVFRUb4vvBwwYkGatBwAAAFo4xD/yyCPpdfTo0eHaa68NXbt2baIuAQAAAJtsdnoAAAAgg4ntAAAAgJYhxAMAAEAmhHgAAADIhBAPAAAAmWgVIX7ChAmhf//+oUOHDmHIkCFh+vTp63Xcbbfdlp5bf9hhhzV5HwEAACC09RA/adKkMHbs2HDBBReEmTNnpufNjxgxIrzzzjtrPe6NN95Iz6Xff//9m62vAAAA0KZD/Pjx48MJJ5yQnj+/2267hYkTJ4ZOnTqFm2++ucFjKisrw9FHHx0uuuiisN122631/EuXLg0LFy6stQAAAECOWjTEL1u2LMyYMSMMGzZsdYdKS9P6tGnTGjzu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hxrcHwAAADYXLT6cPg51HzVqVBg0aFAYPHhwuOaaa8KiRYvSbPXRscceG/r27ZvubY9+8IMfhC984QvhqquuCgcffHC47bbbwlNPPRV+9rOftfA3AQAAgM08xI8cOTK8++674fzzz0+T0w0cODBMnjy5evK6WbNmpRnri/bZZ59w6623hh/+8IfhnHPOCTvuuGO45557wu67796C3wIAAACaXkmhUCiENiRObBdnqV+wYEHo2rVrS3cHAACAzdzCTZhDW/SeeAAAAGD9CfEAAACQCSEeAAAAMiHEAwAAQCaEeAAAAMiEEA8AAACZEOIBAAAgE0I8AAAAZEKIBwAAgEwI8QAAAJAJIR4AAAAyIcQDAABAJoR4AAAAyIQQDwAAAJkQ4gEAACATQjwAAABkQogHAACATAjxAAAAkAkhHgAAADIhxAMAAEAmykMbUygU0uvChQtbuisAAAC0AQtX5c9iHt0YbS7Ef/jhh+m1X79+Ld0VAAAA2lge7dat20ado6SwKX4KyEhVVVX45z//Gbp06RJKSkpCa/+1Jv7YMHv27NC1a9eW7g40mmuYnLl+yZ1rmNy5htmcruEuXbqkAL/VVluF0tKNu6u9zVXi4x/Y1ltvHXIS/9LyFxc5cw2TM9cvuXMNkzvXMJvLNdxtIyvwRSa2AwAAgEwI8QAAAJAJIb4Va9++fbjgggvSK+TINUzOXL/kzjVM7lzD5K59E13DbW5iOwAAAMiVSjwAAABkQogHAACATAjxAAAAkAkhHgAAADIhxLegCRMmhP79+4cOHTqEIUOGhOnTp691/9/97ndhl112Sfvvscce4f7772+2vsLGXsM33nhj2H///UOPHj3SMmzYsHVe89Da/h4uuu2220JJSUk47LDDmryPsCmv4fnz54eTTz45fOpTn0qzJe+0007+PUFW1/A111wTdt5559CxY8fQr1+/MGbMmPDxxx83W3+hpkcffTQccsghYauttkr/LrjnnnvCukydOjXstdde6e/gHXbYIdxyyy2hsYT4FjJp0qQwduzY9MiBmTNnhgEDBoQRI0aEd955p979n3zyyXDkkUeG4447Ljz99NPpH45xee6555q977Ah13D8Cytew4888kiYNm1a+g/v8OHDw1tvvdXsfYcNuYaL3njjjXDaaaelH6Ugp2t42bJl4ctf/nK6hu+4447w0ksv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Dfh/CABaJyEeAFrAtddem4JpDM9x2HkMx4sWLQpjx44NTz31VJgyZUooLS0N3/jGN0JVVVW95zjvvPPC888/H/7whz+EF154Idxwww2hV69eadvy5cvDiBEjQpcuXcJjjz2WquydO3cOX/nKV1LQbUgM48XtZ5xxRrjzzjvDL3/5yzBz5sywww47pHO+//776/z8ukPr43mil156KX3f+P3rij8ITJ8+vdYPF3//+9/D3/72t3DUUUel9d/85jfh/PPPDz/60Y/SZ1522WWpH7GP0XXXXZd+hLj99tvTZ8X94w8kALC5MJweAFpAt27dUsCuOez8m9/8Zq19br755lTljkG5vvvlYxX/s5/9bBg0aFBarxlWJ02alMJ/rFrHyncUq+SxKh/vTx8+fPga55sxY0a49dZbw5e+9KX0g0IM5fGe/a9+9atp+4033hgeeuih8POf/zycfvrpa/38muJ3LA6bj1X92IeGhvbHqnvsQwzmUQzhsToff0CILrjggnDVVVeFww8/PK1vu+226c8nDv8fNWpU6lMcERBHDcTvHSvxALA5UYkHgFbilVdeCUceeWTYbrvtQteuXatDcQym9fnud78bbrvttjBw4MBUNX/yySert/31r38Nr776avqhIFbg4xKD9Mcff1yr0v3ss8+mbbECP3jw4DB06NDw05/+NO0Tq/n77rtv9b7t2rVL+8QK+Lo+f0PFanwM8cXZ+3/729+mtij+sBD7ddxxx1V/p7hceuml1d8pDtOPQ/h33nnndCvAgw8+uNF9AoDWRCUeAFqJQw45JFWOY8V7q622SpX0WIFvaPh7rJC/+eab4f77708V8gMPPDCcfPLJ4corr0wzzO+9996pkl1XrO4XxbAbh5/He+PjZ1ZUVKT2uXPnrrO/a/v8DRV/xDjzzDPT8P0lS5ak+/rjvfpRcdb8+OdT9975WO2P9tprr/D666+nIf5xwr44J8CwYcPCHXfcscF9AoDWRIgHgFbgvffeS/dwx4C6//77p7bHH398ncfFQB6HkcclHheHuccQHcNsHFIfh6/Hqn5DYmgvDlWvafvtt0/b4r30xSHpsTIf792v+Vz3hj6/vs+JKisr1/p94hwBX/jCF9KPDzHEf/nLX07fIerdu3f6oeG1116rrs7XJ37fGPzj8q1vfSvNAxDv4zcTPgCbAyEeAFqBOGt7nJH+Zz/7WZpZPQ6hP+uss9Z6TJzgLVbb473kcSb5+Lz5OGt7FEPuf//3f6cZ6YsT6MWqeXwuexz6HtfXZosttkjD5WMoj+H305/+dLjiiivS4+ficPZ1fX5d8YeAeI963Oeggw5Kw/fjUPj6xL7He9/jCISrr7661raLLrooDZOPcwrEcB4/N04EGGfKj5MCjh8/Pv35xXv148SAv/vd79KcAw3dhw8AuXFPPAC0AjFwxvvL4+RycQj9mDFjUghfm1jdPvvss8Oee+4ZPv/5z6ch5fEcUadOncKjjz6awnecBC6G6xi+4z3xa6vM13T55ZenyfaOOeaYVNmP99g/8MAD6QeHdX1+XX379k0BPP4wESvq8TFwDYnV8zgyIf5gcNhhh9Xadvzxx6fJ+uIkfXvssUeq2sfJ9+IEd1GcAyD+2BAn2/vc5z6XHm8Xh/vHP18A2ByUFOKsMQAAAECr52dpAAAAyIQQDwAAAJkQ4gEAACATQjwAAABkQogHAACATAjxAAAAkAkhHgAAADIhxAMAAEAmhHgAAADIhBAPAAAAmRDiAQAAIOTh/wEmTW+YNPQU8gAAAABJRU5ErkJggg=="/>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-6">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Run-Algorithm-to-find-out-the-Appropriate-AR-Model-Order">Run Algorithm to find out the Appropriate AR Model Order<a class="anchor-link" href="#Run-Algorithm-to-find-out-the-Appropriate-AR-Model-Order">¶</a></h2><p>Using the PAF-based algorithm.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=cell-7">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Set parameters</span>
+<span class="n">method</span> <span class="o">=</span> <span class="s1">'PA</span>
+<span class="sa">F</span><span class="s1">'</span>
+<span class="n">ar_order_max</span> <span class="o">=</span> <span class="mi">30</span>
+<span class="n">tolerance</span> <span class="o">=</span> <span class="mf">0.078</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Running AR model order selection..."</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Method: </span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Maximum order: </span><span class="si">{</span><span class="n">ar_order_max</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Tolerance: </span><span class="si">{</span><span class="n">tolerance</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="c1"># Run algorithm(following MATLAB exactly)</span>
+<span class="n">mean_ar_order</span><span class="p">,</span> <span class="n">ar_orders</span><span class="p">,</span> <span class="n">model</span> <span class="o">=</span> <span class="n">ar_model_order_shm</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">ar_order_max</span><span class="p">,</span> <span class="n">tolerance</span><span class="p">)</span>
+
+<span class="c1"># Extract results </span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model</span> <span class="n">structure</span>
+<span class="n">out_data</span> <span class="o">=</span> <span class="n">model</span><span class="p">[</span><span class="s1">'out_dat</span>
+<span class="n">a</span><span class="s1">']</span>
+<span class="n">ar_order_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">out_data</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># Create order lis t control_limit = model['control_limit</span>
+<span class="n">s</span><span class="s1">']</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Results:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Mean AR order: </span><span class="si">{</span><span class="n">mean_ar_order</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"AR order for this instance: </span><span class="si">{</span><span class="n">ar_orders</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Control limits: </span><span class="si">{</span><span class="n">control_limit</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Method used: </span><span class="si">{</span><span class="n">model</span><span class="p">[</span><span class="s1">'method'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Maximum order computed: </span><span class="si">{</span><span class="n">model</span><span class="p">[</span><span class="s1">'ar_order_max'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Tolerance: </span><span class="si">{</span><span class="n">model</span><span class="p">[</span><span class="s1">'tolerance'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-8">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="Plot-Results">Plot Results<a class="anchor-link" href="#Plot-Results">¶</a></h3><p>Display the PAF values along with the confidence interval thresholds.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=cell-9">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Plot results with threshold(following MATLAB exactly)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ar_order_list</span><span class="p">,</span> <span class="n">out_data</span><span class="p">,</span> <span class="s1">'.-k'</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">markersiz</span>
+<span class="n">e</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Appropriate Model Order Selection using </span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s1"> Technique'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'AR Order (p)'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'Magnitude'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">ar_order_list</span><span class="p">)])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+
+<span class="c1"># Add legend with AR order</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="sa">f</span><span class="s1">'AR Order: </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">mean_ar_order</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="si">}</span><span class="s1">'</span><span class="p">])</span>
+
+<span class="c1"># Add control limit lines</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">control_limit</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s1">'r'</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">'-.'</span><span class="p">,</span> <span class="n">linewidt</span>
+<span class="n">h</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> 
+           <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">'Upper limit: </span><span class="si">{</span><span class="n">control_limit</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s1">.4</span>
+<span class="n">f</span><span class="p">}</span><span class="s1">')</span>
+
+<span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">'PA</span>
+<span class="sa">F</span><span class="s1">':</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">control_limit</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s1">'r'</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">'-.'</span><span class="p">,</span> <span class="n">linewidt</span>
+<span class="n">h</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+               <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">'Lower limit: </span><span class="si">{</span><span class="n">control_limit</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s1">.4</span>
+<span class="n">f</span><span class="p">}</span><span class="s1">')</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="c1"># Summary message (following MATLAB)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">The </span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">-based algorithm suggests an AR model of </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">mean_ar_order</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="si">}</span><span class="s2">th order."</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"This indication should be taken as a reference for a starting point."</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Other algorithms should be tried in order to find out a possible range of"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"AR model orders. (Note that the arModelOrder_shm function contains other"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"techniques, namely, the SVD, AIC, BIC, and RMS.)"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=fn70djc9cye">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Summary">Summary<a class="anchor-link" href="#Summary">¶</a></h2><p>This example demonstrated AR model order selection using the Partial Autocorrelation Function (PAF) method. The algorithm suggests an AR model order by finding the first order where the PAF value falls within the confidence bounds for white noise.</p>
+<p><strong>Key Results:</strong></p>
+<ul>
+<li>The PAF method suggested an AR order based on 95% confidence intervals (±2/√N)</li>
+<li>This provides a starting point for AR model selection in SHM applications</li>
+<li>Other methods (AIC, BIC, SVD, RMS) are available in the <code>ar_model_order_shm</code> function for comparison</li>
+</ul>
+<p><strong>For Structural Health Monitoring:</strong></p>
+<p>The choice of AR order affects the quality of damage-sensitive features extracted from time series data. This systematic approach to order selection helps ensure that AR models capture the essential dynamics while avoiding overfitting.</p>
+<p><strong>See also:</strong></p>
+<ul>
+<li><a href="pca_outlier_detection.ipynb">Outlier Detection based on Principal Component Analysis</a></li>
+<li><a href="mahalanobis_outlier_detection.ipynb">Outlier Detection based on Mahalanobis Distance</a></li>
+<li><a href="svd_outlier_detection.ipynb">Outlier Detection based on Singular Value Decomposition</a></li>
+<li><a href="../intermediate/factor_analysis_outlier_detection.ipynb">Outlier Detection based on Factor Analysis</a></li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cell-12">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="Visualize-Model-Predictions-and-Residuals">Visualize Model Predictions and Residuals<a class="anchor-link" href="#Visualize-Model-Predictions-and-Residuals">¶</a></h3><p>Compare the prediction accuracy and residual patterns for different AR model orders.</p>
 </div>
 </div>
 </div>
@@ -8051,7 +7929,7 @@ a.anchor-link {
 
             
         <div class="footer">
-            <p>Generated on 2025-07-27 17:16:47 from <code>nonparametric_outlier_detection.ipynb</code></p>
+            <p>Generated on 2025-08-19 20:30:34 from <code>ar_model_order_selection.ipynb</code></p>
             <p>Part of the SHMTools Python Package - Structural Health Monitoring Toolkit</p>
         </div>
         

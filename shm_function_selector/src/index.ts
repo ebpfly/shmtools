@@ -2190,22 +2190,8 @@ class SHMFunctionSelector {
     // Add event listener with capture phase to catch events early
     document.addEventListener('keydown', this.dropdownKeyboardHandler, true);
 
-    // Update navigable items when search results change
-    const searchBox = dropdownContent.querySelector('input');
-    if (searchBox) {
-      const originalHandler = searchBox.getAttribute('data-search-handler');
-      if (!originalHandler) {
-        searchBox.setAttribute('data-search-handler', 'true');
-        const inputHandler = () => {
-          setTimeout(() => {
-            this.updateNavigableItems(dropdownContent);
-            this.selectedNavigationIndex = -1;
-            this.updateNavigationHighlight();
-          }, 10);
-        };
-        searchBox.addEventListener('input', inputHandler);
-      }
-    }
+    // Note: Navigation items are now updated directly in the main search input handler
+    // to avoid timing conflicts between filtering and navigation updates
   }
 
   private updateNavigableItems(dropdownContent: HTMLElement): void {
@@ -2886,26 +2872,14 @@ class SHMFunctionSelector {
     // Update search functionality
     searchBox.addEventListener('input', () => {
       const searchTerm = searchBox.value.toLowerCase();
-      const allSections = functionsContainer.querySelectorAll('.shm-category-section');
       
-      allSections.forEach(section => {
-        const items = section.querySelectorAll('.shm-function-item');
-        let hasVisibleItems = false;
-        
-        items.forEach(item => {
-          const text = item.textContent?.toLowerCase() || '';
-          if (text.includes(searchTerm)) {
-            (item as HTMLElement).style.display = 'flex';
-            hasVisibleItems = true;
-          } else {
-            (item as HTMLElement).style.display = 'none';
-          }
-        });
-        
-        // Show/hide entire section based on visible items
-        (section as HTMLElement).style.display = hasVisibleItems ? 'block' : 'none';
-      });
+      // Use the filterFunctions method which properly handles all filtering
       this.filterFunctions(functionsContainer, searchTerm);
+      
+      // Update keyboard navigation items after filtering
+      this.updateNavigableItems(functionsContainer);
+      this.selectedNavigationIndex = -1;
+      this.updateNavigationHighlight();
     });
 
     // Note: Click handlers are already attached to individual function items
