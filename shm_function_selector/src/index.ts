@@ -940,6 +940,13 @@ interface SHMFunction {
   }>;
 }
 
+interface CategoryNode {
+  name: string;
+  children: Map<string, CategoryNode>;
+  functions: SHMFunction[];
+  level: number;
+}
+
 
 class SHMFunctionSelector {
   private app: JupyterFrontEnd;
@@ -1341,34 +1348,67 @@ class SHMFunctionSelector {
       container.appendChild(recentSection.container);
     }
 
-    // Group functions by category
-    const categories = new Map<string, SHMFunction[]>();
-    this.functions.forEach(func => {
-      if (!categories.has(func.category)) {
-        categories.set(func.category, []);
-      }
-      categories.get(func.category)!.push(func);
+    // Group functions by nested category structure using "-" delimiter
+    const categoryTree = this.buildCategoryTree(this.functions);
+    this.renderCategoryTree(categoryTree, container);
+  }
+
+  private buildCategoryTree(functions: SHMFunction[]): CategoryNode {
+    const root: CategoryNode = { 
+      name: 'root', 
+      children: new Map(), 
+      functions: [],
+      level: 0
+    };
+
+    functions.forEach(func => {
+      const categoryParts = func.category.split(' - ').map(part => part.trim());
+      let currentNode = root;
+
+      // Navigate/create the tree structure
+      categoryParts.forEach((part, index) => {
+        if (!currentNode.children.has(part)) {
+          currentNode.children.set(part, {
+            name: part,
+            children: new Map(),
+            functions: [],
+            level: index + 1
+          });
+        }
+        currentNode = currentNode.children.get(part)!;
+      });
+
+      // Add function to the deepest level
+      currentNode.functions.push(func);
     });
 
-    // Add categorized sections
-    const sortedCategories = Array.from(categories.entries()).sort(([a], [b]) => a.localeCompare(b));
+    return root;
+  }
+
+  private renderCategoryTree(node: CategoryNode, container: HTMLElement, parentExpanded: boolean = true): void {
+    // Sort children by name
+    const sortedChildren = Array.from(node.children.entries()).sort(([a], [b]) => a.localeCompare(b));
     
-    sortedCategories.forEach(([category, funcs]) => {
-      const section = this.createFoldingSection(category, false);
+    sortedChildren.forEach(([categoryName, childNode]) => {
+      const section = this.createFoldingSection(categoryName, false, childNode.level);
       
-      // Sort functions within category
-      const sortedFuncs = funcs.sort((a, b) => a.displayName.localeCompare(b.displayName));
+      // Render child categories recursively
+      this.renderCategoryTree(childNode, section.content, false);
       
-      sortedFuncs.forEach(func => {
-        const item = this.createFunctionItem(func, false);
-        section.content.appendChild(item);
-      });
+      // Add functions at this level
+      if (childNode.functions.length > 0) {
+        const sortedFuncs = childNode.functions.sort((a, b) => a.displayName.localeCompare(b.displayName));
+        sortedFuncs.forEach(func => {
+          const item = this.createFunctionItem(func, false);
+          section.content.appendChild(item);
+        });
+      }
       
       container.appendChild(section.container);
     });
   }
 
-  private createFoldingSection(title: string, expanded: boolean = false): {
+  private createFoldingSection(title: string, expanded: boolean = false, level: number = 0): {
     container: HTMLElement;
     header: HTMLElement;
     content: HTMLElement;
@@ -1378,8 +1418,13 @@ class SHMFunctionSelector {
 
     const header = document.createElement('div');
     header.className = 'shm-category-header';
+    
+    // Calculate indentation based on level
+    const indent = level * 20; // 20px per level
+    
     header.style.cssText = `
       padding: 8px 12px;
+      padding-left: ${12 + indent}px;
       background: #f8f9fa;
       border-bottom: 1px solid #e9ecef;
       cursor: pointer;
@@ -1410,6 +1455,7 @@ class SHMFunctionSelector {
     content.style.cssText = `
       display: ${expanded ? 'block' : 'none'};
       border-bottom: 1px solid #e9ecef;
+      padding-left: ${indent}px;
     `;
 
     // Add click handler for folding
@@ -2065,6 +2111,9 @@ class SHMFunctionSelector {
   private filterFunctions(container: HTMLElement, searchTerm: string): void {
     const sections = container.querySelectorAll('.shm-category-section');
     
+    // First pass: filter function items and mark which sections have matches
+    const sectionsWithMatches = new Set<Element>();
+    
     sections.forEach(section => {
       const items = section.querySelectorAll('.shm-function-item');
       let hasVisibleItems = false;
@@ -2078,20 +2127,46 @@ class SHMFunctionSelector {
         const matches = name.includes(searchTerm) || desc.includes(searchTerm);
         (item as HTMLElement).style.display = matches ? 'flex' : 'none';
 
-        if (matches) hasVisibleItems = true;
+        if (matches) {
+          hasVisibleItems = true;
+          // Mark this section and all its parent sections as having matches
+          let currentSection = section;
+          while (currentSection) {
+            sectionsWithMatches.add(currentSection);
+            // Find parent section by going up the DOM tree
+            const parentContent = currentSection.parentElement;
+            if (parentContent && parentContent.classList.contains('shm-category-content')) {
+              currentSection = parentContent.parentElement;
+              if (currentSection && currentSection.classList.contains('shm-category-section')) {
+                sectionsWithMatches.add(currentSection);
+              } else {
+                break;
+              }
+            } else {
+              break;
+            }
+          }
+        }
       });
-
-      // Show or hide the entire section based on matches
+    });
+    
+    // Second pass: show/hide sections and expand those with matches
+    sections.forEach(section => {
+      const hasMatches = sectionsWithMatches.has(section);
       const sectionEl = section as HTMLElement;
-      sectionEl.style.display = hasVisibleItems ? 'block' : 'none';
+      sectionEl.style.display = hasMatches || searchTerm.length === 0 ? 'block' : 'none';
 
       // Expand or collapse the section content and arrow
       const content = section.querySelector('.shm-category-content') as HTMLElement;
       const arrow = section.querySelector('.shm-category-header span:last-child') as HTMLElement;
       if (content && arrow) {
-        if (hasVisibleItems && searchTerm.length > 0) {
+        if (hasMatches && searchTerm.length > 0) {
           content.style.display = 'block';
           arrow.textContent = '▼';
+        } else if (searchTerm.length === 0) {
+          // Reset to default collapsed state when no search term
+          content.style.display = 'none';
+          arrow.textContent = '▶';
         } else {
           content.style.display = 'none';
           arrow.textContent = '▶';
