@@ -117,11 +117,7 @@ from .sensor_diagnostics.sensor_diagnostics import (
 # Data import functions have been moved to examples.data
 # Use: from examples.data import load_3story_data, import_3story_structure_shm
 
-# Load introspection capabilities for Jupyter notebooks
-try:
-    from . import introspection
-except ImportError:
-    pass  # Introspection not available
+# Introspection capabilities moved to JupyterLab extension
 
 # JupyterLab extension is installed as a direct dependency
 
