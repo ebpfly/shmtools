@@ -610,15 +610,25 @@ def _extract_return_info(docstring):
         ]:
             break
 
-        # Parse return value - skip directive blocks like .. gui::
+        # Parse return value - skip directive blocks like .. gui:: and documentation lines
         if (in_returns and ":" in stripped and not stripped.startswith(" ") 
             and not stripped.startswith("..") and not stripped.startswith(":")):
-            if current_return:
-                returns.append(current_return)
-
+            
+            # Skip documentation/explanation lines that start with descriptive text
+            # These typically don't follow the "name : type" pattern
             parts = stripped.split(":", 1)
             name_type = parts[0].strip()
             description = parts[1].strip() if len(parts) > 1 else ""
+            
+            # Skip lines that look like documentation rather than return values
+            # e.g., "Direction codes: 1=X, 2=Y, ..." or "Format: ..."
+            if (name_type.lower().startswith(('direction codes', 'format', 'note', 'example', 
+                                           'possible values', 'values', 'options')) or 
+                '=' in description or description.startswith(('1', '0', 'see', 'e.g.'))):
+                continue
+            
+            if current_return:
+                returns.append(current_return)
 
             # Parse name and type (format: "name : type")
             if " : " in name_type:
