@@ -103,6 +103,15 @@ def fm0_shm(
     divided by the sum of the frequency amplitudes corresponding to its
     fundamental gearmesh frequencies.
 
+    .. meta::
+        :category: Feature Extraction - Condition Based Monitoring
+        :matlab_equivalent: fm0_shm
+        :complexity: Intermediate
+        :data_type: Time Series
+        :output_type: Features
+        :display_name: FM0 Feature
+        :verbose_call: [FM0 Feature Matrix] = FM0 Feature (Conditioned Raw Signal Ensemble, Fundamental Mesh Frequency, Harmonic Orders, FFT Bins, FFT Bin Search Width)
+
     Parameters
     ----------
     X : ndarray, shape (samples, channels, instances)
@@ -222,6 +231,15 @@ def fm4_shm(D: np.ndarray) -> np.ndarray:
     signal normalized by its variance squared. Specifically developed to detect
     surface damage on a limited number of gear teeth.
 
+    .. meta::
+        :category: Feature Extraction - Condition Based Monitoring
+        :matlab_equivalent: fm4_shm
+        :complexity: Intermediate
+        :data_type: Time Series
+        :output_type: Features
+        :display_name: FM4 Feature
+        :verbose_call: [FM4 Feature Matrix] = FM4 Feature (Difference Signal Matrix)
+
     Parameters
     ----------
     D : ndarray, shape (samples, channels, instances)
@@ -289,6 +307,7 @@ def peak_factor_shm(x: np.ndarray, axis: int = 0) -> np.ndarray:
         :matlab_equivalent: peakFactor_shm
         :complexity: Basic
         :sensitivity: Peak, Outlier
+        :verbose_call: [Peak Factor] = Peak Factor Feature (Signal)
 
     Parameters
     ----------
@@ -328,6 +347,7 @@ def impulse_factor_shm(x: np.ndarray, axis: int = 0) -> np.ndarray:
         :matlab_equivalent: impulseFactor_shm
         :complexity: Basic
         :sensitivity: Impulse, Outlier
+        :verbose_call: [Impulse Factor] = Impulse Factor Feature (Signal)
 
     Parameters
     ----------
@@ -367,6 +387,7 @@ def clearance_factor_shm(x: np.ndarray, axis: int = 0) -> np.ndarray:
         :matlab_equivalent: clearanceFactor_shm
         :complexity: Basic
         :sensitivity: Impulse, Outlier
+        :verbose_call: [Clearance Factor] = Clearance Factor Feature (Signal)
 
     Parameters
     ----------
@@ -406,6 +427,7 @@ def shape_factor_shm(x: np.ndarray, axis: int = 0) -> np.ndarray:
         :matlab_equivalent: shapeFactor_shm
         :complexity: Basic
         :sensitivity: Distribution Shape
+        :verbose_call: [Shape Factor] = Shape Factor Feature (Signal)
 
     Parameters
     ----------

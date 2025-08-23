@@ -448,22 +448,85 @@ def plot_spectrogram_shm(
 ) -> Axes:
     """
     Plot spectrogram with proper formatting.
+    
+    Python equivalent of MATLAB's plotTimeFreq_shm function. Creates a 
+    time-frequency plot from spectrogram data with proper axis labeling,
+    colorbar, and dB scaling for visualization.
+
+    .. meta::
+        :category: Auxiliary - Plotting
+        :matlab_equivalent: plotTimeFreq_shm
+        :complexity: Basic
+        :data_type: Time-Frequency Data
+        :output_type: Plot
+        :interactive_plot: True
+        :display_name: Plot Spectrogram
+        :verbose_call: [Axes Handle] = Plot Spectrogram (Frequency Vector, Time Vector, Spectrogram Matrix, Axes Handle)
 
     Parameters
     ----------
-    f : ndarray
-        Frequency vector.
-    t : ndarray
-        Time vector.
-    Sxx : ndarray
-        Spectrogram matrix.
-    ax : Axes, optional
-        Existing axes.
+    f : array_like, shape (n_freqs,)
+        Frequency vector in Hz.
+        
+        .. gui::
+            :widget: array_input
+            :description: Frequency vector
+            
+    t : array_like, shape (n_times,)
+        Time vector in seconds.
+        
+        .. gui::
+            :widget: array_input
+            :description: Time vector
+            
+    Sxx : array_like, shape (n_freqs, n_times)
+        Spectrogram matrix with power values.
+        
+        .. gui::
+            :widget: array_input
+            :description: Spectrogram data matrix
+            
+    ax : matplotlib.axes.Axes, optional
+        Existing axes for plotting. If None, creates new figure and axes.
+        
+        .. gui::
+            :widget: axes_input
+            :allow_none: True
+            :description: Matplotlib axes object
+
+    **kwargs : dict, optional
+        Additional keyword arguments passed to pcolormesh.
 
     Returns
     -------
-    ax : Axes
-        Axes object.
+    ax : matplotlib.axes.Axes
+        Axes object containing the spectrogram plot.
+        
+    Examples
+    --------
+    Basic spectrogram plotting:
+    
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from shmtools.plotting import plot_spectrogram_shm
+    >>> from shmtools.core import stft_shm
+    >>> 
+    >>> # Generate sample signal
+    >>> fs = 1000
+    >>> t_sig = np.linspace(0, 1, fs, endpoint=False)
+    >>> signal = np.sin(2*np.pi*50*t_sig) + 0.5*np.sin(2*np.pi*120*t_sig)
+    >>> 
+    >>> # Compute spectrogram
+    >>> f, t, Sxx = stft_shm(signal, fs=fs)
+    >>> 
+    >>> # Plot spectrogram
+    >>> ax = plot_spectrogram_shm(f, t, np.abs(Sxx)**2)
+    >>> plt.show()
+    
+    See Also
+    --------
+    stft_shm : Short-time Fourier transform
+    plot_time_freq_shm : Alternative time-frequency plotting
     """
     if ax is None:
         fig, ax = plt.subplots(figsize=(12, 6))
