@@ -140,7 +140,7 @@ class SHMFunctionHandler(APIHandler):
             
             # Try to use the built-in introspection system first
             try:
-                from shmtools.introspection import discover_functions_locally
+                from shm_function_selector.introspection import discover_functions_locally
                 
                 # Debug: log config details
                 modules_to_scan = config.get('function_discovery', {}).get('modules_to_scan', [])
@@ -512,26 +512,27 @@ class SHMFunctionHandler(APIHandler):
             if in_returns and stripped.lower() in ['notes', 'notes:', 'examples', 'examples:', 'see also', 'references']:
                 break
             
-            # Parse return value
-            if in_returns and ':' in stripped and not stripped.startswith(' '):
+            # Parse return value - check original line for indentation 
+            # Indented lines are descriptions, not new variables
+            if in_returns and ':' in stripped and not line.startswith(' ') and not line.startswith('\t'):
                 if current_return:
                     returns.append(current_return)
                 
-                parts = stripped.split(':', 1)
-                name_type = parts[0].strip()
-                description = parts[1].strip() if len(parts) > 1 else ""
-                
                 # Parse name and type (format: "name : type")
-                if ' : ' in name_type:
-                    name, type_str = name_type.split(' : ', 1)
+                if ' : ' in stripped:
+                    name, type_str = stripped.split(' : ', 1)
                     current_return = {
                         'name': name.strip(),
                         'type': type_str.strip(),
-                        'description': description
+                        'description': ""
                     }
                 else:
+                    # Single part, treat as name only
+                    parts = stripped.split(':', 1)
+                    name_part = parts[0].strip()
+                    description = parts[1].strip() if len(parts) > 1 else ""
                     current_return = {
-                        'name': name_type,
+                        'name': name_part,
                         'type': 'unknown',
                         'description': description
                     }
