@@ -2068,29 +2068,33 @@ class SHMFunctionSelector {
     sections.forEach(section => {
       const items = section.querySelectorAll('.shm-function-item');
       let hasVisibleItems = false;
-      
+
       items.forEach(item => {
         const nameElement = item.querySelector('div');
         const descElement = item.querySelector('div:last-child');
         const name = nameElement?.textContent?.toLowerCase() || '';
         const desc = descElement?.textContent?.toLowerCase() || '';
-        
+
         const matches = name.includes(searchTerm) || desc.includes(searchTerm);
-        (item as HTMLElement).style.display = matches ? 'block' : 'none';
-        
+        (item as HTMLElement).style.display = matches ? 'flex' : 'none';
+
         if (matches) hasVisibleItems = true;
       });
-      
-      // Show/hide entire section based on whether it has visible items
-      (section as HTMLElement).style.display = hasVisibleItems ? 'block' : 'none';
-      
-      // Expand sections that have matches
-      if (hasVisibleItems && searchTerm.length > 0) {
-        const content = section.querySelector('.shm-category-content') as HTMLElement;
-        const arrow = section.querySelector('.shm-category-header span:last-child') as HTMLElement;
-        if (content && arrow) {
+
+      // Show or hide the entire section based on matches
+      const sectionEl = section as HTMLElement;
+      sectionEl.style.display = hasVisibleItems ? 'block' : 'none';
+
+      // Expand or collapse the section content and arrow
+      const content = section.querySelector('.shm-category-content') as HTMLElement;
+      const arrow = section.querySelector('.shm-category-header span:last-child') as HTMLElement;
+      if (content && arrow) {
+        if (hasVisibleItems && searchTerm.length > 0) {
           content.style.display = 'block';
           arrow.textContent = '▼';
+        } else {
+          content.style.display = 'none';
+          arrow.textContent = '▶';
         }
       }
     });
@@ -2882,25 +2886,7 @@ class SHMFunctionSelector {
     // Update search functionality
     searchBox.addEventListener('input', () => {
       const searchTerm = searchBox.value.toLowerCase();
-      const allSections = functionsContainer.querySelectorAll('.shm-folding-section');
-      
-      allSections.forEach(section => {
-        const items = section.querySelectorAll('.shm-function-item');
-        let hasVisibleItems = false;
-        
-        items.forEach(item => {
-          const text = item.textContent?.toLowerCase() || '';
-          if (text.includes(searchTerm)) {
-            (item as HTMLElement).style.display = 'flex';
-            hasVisibleItems = true;
-          } else {
-            (item as HTMLElement).style.display = 'none';
-          }
-        });
-        
-        // Show/hide entire section based on visible items
-        (section as HTMLElement).style.display = hasVisibleItems ? 'block' : 'none';
-      });
+      this.filterFunctions(functionsContainer, searchTerm);
     });
 
     // Note: Click handlers are already attached to individual function items
