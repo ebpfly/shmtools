@@ -292,7 +292,7 @@ def fir1_shm(
         :complexity: Basic
         :data_type: Filter Coefficients
         :output_type: Filter
-        :verbose_call: [FIR Filter Taps] = Finite Impulse Response Filter Design (Number of Filter Taps, Frequency Range, Filter Type, Window)
+        :verbose_call: [FIR Filter Taps] = FIR Filter Design (Number of Filter Taps, Frequency Range, Filter Type, Window)
 
     Parameters
     ----------
