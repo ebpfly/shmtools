@@ -307,6 +307,7 @@ def plot_psd_shm(
             f = np.linspace(-0.5, 0.5, n_freqs)
 
     # Handle different input dimensions
+    use_colormap = True
     if psd_matrix.ndim == 3:
         # 3D: (n_freqs, n_channels, n_instances) - extract channel
         channel_idx = channel - 1
@@ -314,8 +315,6 @@ def plot_psd_shm(
     elif psd_matrix.ndim == 2:
         # 2D: (n_freqs, n_instances) - use directly, force colormap for multiple instances
         psd_data = psd_matrix
-        if psd_data.shape[1] > 1:
-            use_colormap = True
     else:
         # 1D: (n_freqs,) - reshape for consistency
         psd_data = psd_matrix[:, np.newaxis]
@@ -325,9 +324,9 @@ def plot_psd_shm(
 
     # Choose visualization based on data structure and user preference
     if use_colormap and psd_data.shape[1] > 1:
-        return _plot_psd_colormap(f, psd_db, use_subplots, ax, **kwargs)
+        return _plot_psd_colormap(f, psd_db, use_subplots, ax)
     else:
-        return _plot_psd_lines(f, psd_db, ax, **kwargs)
+        return _plot_psd_lines(f, psd_db, ax)
 
 
 def _plot_psd_colormap(
