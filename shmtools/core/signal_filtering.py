@@ -30,6 +30,7 @@ def residual_signal_shm(
         :matlab_equivalent: residualSignal_shm
         :complexity: Intermediate
         :sensitivity: Fault Detection
+        :verbose_call: [Residual Signal] = Extract Residual Signal (Input Signal, Sampling Frequency, Shaft Frequency, Number of Harmonics, Bandwidth)
 
     Parameters
     ----------
@@ -150,6 +151,7 @@ def difference_signal_shm(
         :matlab_equivalent: differenceSignal_shm
         :complexity: Basic
         :sensitivity: Condition Change
+        :verbose_call: [Difference Signal] = Compute Difference Signal (Baseline Signal, Test Signal, Normalize Flag)
 
     Parameters
     ----------
@@ -229,6 +231,7 @@ def bandpass_condition_signal_shm(
         :matlab_equivalent: bandpassCondition_shm
         :complexity: Basic
         :sensitivity: Frequency-specific Faults
+        :verbose_call: [Bandpass Filtered Signal] = Bandpass Filter Signal (Input Signal, Sampling Frequency, Frequency Range, Filter Order)
 
     Parameters
     ----------
@@ -332,6 +335,7 @@ def gear_mesh_filter_shm(
         :matlab_equivalent: gearMeshFilter_shm
         :complexity: Intermediate
         :sensitivity: Gear Faults
+        :verbose_call: [Gear Mesh Filtered Signal] = Extract Gear Mesh Components (Input Signal, Sampling Frequency, Gear Mesh Frequency, Sideband Range, Number of Harmonics)
 
     Parameters
     ----------
@@ -448,6 +452,7 @@ def envelope_signal_shm(
         :matlab_equivalent: envelopeSignal_shm
         :complexity: Basic
         :sensitivity: Amplitude Modulation
+        :verbose_call: [Enveloped Signal] = Compute Signal Envelope (Input Signal, Envelope Method, Smoothing Length)
 
     Parameters
     ----------

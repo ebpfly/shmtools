@@ -33,6 +33,7 @@ def ars_tach_shm(
         :data_type: Time Series
         :output_type: Angle Domain
         :rotating_machinery: True
+        :verbose_call: [Angular Resampled Signal, Angular Domain] = Angular Resampling from Tachometer (Signal Matrix, Tachometer Signal, Sampling Frequency, Pulses Per Revolution, Gear Ratio, Angular Resolution)
 
     Parameters
     ----------
@@ -291,6 +292,7 @@ def fir1_shm(
         :complexity: Basic
         :data_type: Filter Coefficients
         :output_type: Filter
+        :verbose_call: [FIR Filter Taps] = Finite Impulse Response Filter Design (Number of Filter Taps, Frequency Range, Filter Type, Window)
 
     Parameters
     ----------

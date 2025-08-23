@@ -166,6 +166,7 @@ def scale_min_max_shm(
         :complexity: Basic
         :data_type: Time Series
         :output_type: Time Series
+        :verbose_call: [Scaled Time Series Data] = Scale Minimum Maximum (Data Matrix, Dimension to Scale, Scale Range)
 
     Parameters
     ----------

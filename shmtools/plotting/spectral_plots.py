@@ -198,6 +198,7 @@ def plot_psd_shm(
         :data_type: Frequency Domain
         :output_type: Plot
         :interactive_plot: True
+        :verbose_call: [Plot Axes] = Plot Power Spectral Density (PSD Matrix, Channel Number, One-Sided Flag, Frequency Vector, Use Colormap, Use Subplots)
 
     Parameters
     ----------
@@ -567,6 +568,7 @@ def plotPSD_shm(
         :complexity: Basic
         :data_type: PSD Matrix
         :output_type: Plot
+        :verbose_call: [Plot Axes] = Plot Power Spectral Density MATLAB Style (PSD Matrix, Channel Index, One-Sided Flag, Frequency Vector, Use dB Scale, Plot Average)
 
     Parameters
     ----------

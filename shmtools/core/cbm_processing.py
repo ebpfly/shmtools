@@ -37,6 +37,7 @@ def ars_tach_shm(
         :complexity: Advanced
         :data_type: Time Series
         :output_type: Features
+        :verbose_call: [Angular Resampled Signal Matrix, Samples per Revolution] = Angular Resampling from Tachometer (Signal Matrix, Number of Filter Coefficients, Samples Per Revolution, Gear Ratio)
         
     Parameters
     ----------
