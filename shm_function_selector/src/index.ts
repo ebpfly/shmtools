@@ -2076,7 +2076,7 @@ class SHMFunctionSelector {
         const desc = descElement?.textContent?.toLowerCase() || '';
 
         const matches = name.includes(searchTerm) || desc.includes(searchTerm);
-        (item as HTMLElement).style.display = matches ? 'block' : 'none';
+        (item as HTMLElement).style.display = matches ? 'flex' : 'none';
 
         if (matches) hasVisibleItems = true;
       });
@@ -2905,6 +2905,7 @@ class SHMFunctionSelector {
         // Show/hide entire section based on visible items
         (section as HTMLElement).style.display = hasVisibleItems ? 'block' : 'none';
       });
+      this.filterFunctions(functionsContainer, searchTerm);
     });
 
     // Note: Click handlers are already attached to individual function items
