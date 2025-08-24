@@ -338,62 +338,14 @@ sudo apt-get remove -y libnode-dev || true
 sudo apt-get install -y nodejs
 echo "Node.js version: \$(node --version)"
 
-cd /srv/classrepo/shm_function_selector
-echo "Installing npm dependencies..."
-npm install
-echo "Building TypeScript library..."
-npm run build:lib
-echo "Building JupyterLab extension..."
-npm run build:labextension:dev
-
-# Install the extension into JupyterLab
-echo "Installing extension into JupyterLab..."
-cd /srv/classrepo
-
-# Install server extension properly in TLJH user environment
-echo "Installing server extension in TLJH user environment..."
-# First install the extension package in user environment
-sudo -E /opt/tljh/user/bin/pip install ./shm_function_selector/
-
-# Copy config.json to ensure it's available
-sudo cp shm_function_selector/config.json /opt/tljh/user/lib/python3.12/site-packages/
-
-# Enable the server extension in user environment
-sudo -E /opt/tljh/user/bin/jupyter server extension enable shm_function_selector
-
-# Install the labextension (frontend) in user environment
-sudo -E /opt/tljh/user/bin/jupyter labextension develop --overwrite shm_function_selector/
-
-# Create proper configuration directories
-echo "Configuring server extension..."
-sudo mkdir -p /opt/tljh/user/etc/jupyter
-sudo mkdir -p /opt/tljh/user/share/jupyter/jupyter_server_config.d
-
-# Create JSON config file for server extension
-sudo tee /opt/tljh/user/share/jupyter/jupyter_server_config.d/shm_function_selector.json << 'EOF'
-{
-  "ServerApp": {
-    "jpserver_extensions": {
-      "shm_function_selector": true
-    }
-  }
-}
-EOF
-
-# Also create Python config as backup
-sudo tee /opt/tljh/user/etc/jupyter/jupyter_server_config.py << 'EOF'
-# Server extension configuration
-c.ServerApp.jpserver_extensions = {
-    'shm_function_selector': True
-}
-# Allow the extension to run for all users
-c.ServerApp.allow_origin = '*'
-EOF
-
-# Rebuild JupyterLab in user environment
-echo "Rebuilding JupyterLab..."
-sudo -E /opt/tljh/user/bin/jupyter lab build
-echo "JupyterLab extension installed!"
+# Install JupyterLab extension using separate script
+echo "Running JupyterLab extension installation..."
+if [ -f "/srv/classrepo/jupyterhub/install_jupyterlab_extension.sh" ]; then
+    # Run the extension installation script
+    bash /srv/classrepo/jupyterhub/install_jupyterlab_extension.sh
+else
+    echo "⚠️  Extension installation script not found, skipping extension installation..."
+fi
 
 # Set proper ownership
 chown -R ${JUPYTER_ADMIN_USER}:${JUPYTER_ADMIN_USER} /srv/classrepo
@@ -412,33 +364,59 @@ echo "Claude Code installed and PATH configured!"
 ufw disable || true
 
 # HTTPS setup with TLJH built-in Let's Encrypt support
-if [ "true" = "true" ] && [ -n "jfuse.shmtools.com" ]; then
+if [ "\$ENABLE_SSL" = "true" ] && [ -n "\$USE_DOMAIN" ]; then
   echo "========================================="
   echo "Setting up HTTPS with TLJH Let's Encrypt"
   echo "========================================="
   
   # Configure HTTPS using TLJH's built-in support
   sudo tljh-config set https.enabled true
-  sudo tljh-config set https.letsencrypt.email ericbflynn@gmail.com
-  sudo tljh-config add-item https.letsencrypt.domains jfuse.shmtools.com
-  # Note: Only requesting certificate for main domain since www.jfuse.shmtools.com has no DNS record
+  sudo tljh-config set https.letsencrypt.email \$SSL_EMAIL
+  sudo tljh-config add-item https.letsencrypt.domains \$USE_DOMAIN
   
   # Show configuration for verification
   echo "TLJH HTTPS configuration:"
   sudo tljh-config show
   
-  # Reload the proxy to apply HTTPS settings
-  echo "Applying HTTPS configuration..."
-  sudo tljh-config reload proxy
+  # Force regeneration of Traefik configuration with HTTPS settings
+  echo "Regenerating Traefik configuration with HTTPS..."
+  sudo /opt/tljh/hub/bin/python -c 'from tljh import traefik; traefik.ensure_traefik_config("/opt/tljh/state")'
+  
+  # Restart Traefik to apply new configuration
+  echo "Restarting Traefik to apply HTTPS configuration..."
+  sudo systemctl restart traefik
+  
+  # Wait a moment for Traefik to start and potentially issue certificates
+  echo "Waiting for Traefik to initialize SSL certificates..."
+  sleep 10
   
   echo "HTTPS setup complete! Certificates will auto-renew every 3 months."
+  echo "Testing HTTPS connectivity..."
+  
+  # Test HTTPS connectivity (allow up to 30 seconds for certificate provisioning)
+  HTTPS_RETRY=0
+  HTTPS_MAX_RETRIES=6
+  while [ \$HTTPS_RETRY -lt \$HTTPS_MAX_RETRIES ]; do
+    if curl -k -s --connect-timeout 5 https://\$USE_DOMAIN >/dev/null 2>&1; then
+      echo "✔ HTTPS is responding at https://\$USE_DOMAIN"
+      break
+    fi
+    echo "⏳ Waiting for HTTPS... (attempt \$((HTTPS_RETRY + 1))/\$HTTPS_MAX_RETRIES)"
+    sleep 5
+    HTTPS_RETRY=\$((HTTPS_RETRY + 1))
+  done
+  
+  if [ \$HTTPS_RETRY -eq \$HTTPS_MAX_RETRIES ]; then
+    echo "⚠️  HTTPS not responding yet, but configuration is complete."
+    echo "   It may take a few more minutes for Let's Encrypt certificate provisioning."
+  fi
 fi
 
 echo "========================================="
 echo "SETUP COMPLETE at \$(date)"
 echo "========================================="
-if [ "true" = "true" ] && [ -n "jfuse.shmtools.com" ]; then
-  echo "JupyterHub is ready at https://jfuse.shmtools.com"
+if [ "\$ENABLE_SSL" = "true" ] && [ -n "\$USE_DOMAIN" ]; then
+  echo "JupyterHub is ready at https://\$USE_DOMAIN"
   echo "Backup access: http://\$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)"
 else
   echo "JupyterHub is ready at http://\$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)"
