@@ -312,7 +312,7 @@ def osp_fisher_info_eiv_shm(
     # Convert to 1-based indexing for MATLAB compatibility
     op_list = candidate_set + 1
     
-    return op_list, det_final
+    return op_list, np.array(det_history)
 
 
 def get_sensor_layout_shm(
