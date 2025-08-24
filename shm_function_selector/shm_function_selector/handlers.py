@@ -10,7 +10,7 @@ import math
 import os
 import fnmatch
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 from jupyter_server.base.handlers import APIHandler
 from jupyter_server.utils import url_path_join
@@ -673,6 +673,75 @@ class SHMImportsHandler(APIHandler):
 class SHMVariableHandler(APIHandler):
     """Handler for notebook variable parsing."""
     
+    _verbose_call_cache = None  # Class-level cache for function verbose_call mappings
+    
+    def _get_verbose_call_cache(self) -> Dict[str, str]:
+        """Get cached mapping of function_name -> verbose_call."""
+        if SHMVariableHandler._verbose_call_cache is None:
+            self.log.info("Building verbose_call cache from function metadata...")
+            
+            # Reuse the same function discovery logic as SHMFunctionHandler
+            # We can't instantiate the handler directly, so we'll call the introspection directly
+            from ..introspection import discover_functions_locally
+            
+            # Create a minimal config for function discovery
+            config = {
+                "function_discovery": {"enabled": True},
+                "modules_to_scan": []
+            }
+            
+            functions = discover_functions_locally(config)
+            
+            # Build lookup for verbose_call
+            SHMVariableHandler._verbose_call_cache = {}
+            for func in functions:
+                verbose_call = func.get('guiMetadata', {}).get('verbose_call', '')
+                if verbose_call:
+                    SHMVariableHandler._verbose_call_cache[func['name']] = verbose_call
+        
+        return SHMVariableHandler._verbose_call_cache
+    
+    def _extract_display_name_from_verbose_call(self, var_name: str, expression: str, var_position: int = 0) -> Optional[str]:
+        """Extract human-readable display name from verbose_call metadata."""
+        import re
+        
+        # Extract function name from expression (handle qualified names like shmtools.func_shm)
+        func_match = re.match(r'([\w\.]+)\s*\(', expression.strip())
+        if not func_match:
+            return None
+            
+        func_name = func_match.group(1)
+        
+        # If it's a qualified name like shmtools.classification.func_shm, extract just the function name
+        if '.' in func_name:
+            func_name = func_name.split('.')[-1]
+            
+        verbose_call_cache = self._get_verbose_call_cache()
+        verbose_call = verbose_call_cache.get(func_name, '')
+        
+        if not verbose_call or '=' not in verbose_call:
+            return None
+            
+        # Parse output part: "Data Subsets = Extract ..." or "[A, B, C] = Function ..."
+        output_part = verbose_call.split('=')[0].strip()
+        
+        # Handle bracketed multiple outputs: [A, B, C]
+        if output_part.startswith('[') and output_part.endswith(']'):
+            outputs = [out.strip() for out in output_part[1:-1].split(',')]
+            if 0 <= var_position < len(outputs):
+                return outputs[var_position]
+        
+        # Handle single output: "Data Subsets"
+        elif var_position == 0:
+            return output_part
+            
+        return None
+    
+    def _generate_fallback_display_name(self, var_name: str) -> str:
+        """Generate human-readable name from variable name."""
+        # Convert snake_case to Title Case
+        return ' '.join(word.capitalize() for word in var_name.replace('_', ' ').split())
+    
     @authenticated
     def post(self):
         """Parse notebook code to extract variable assignments."""
@@ -716,16 +785,24 @@ class SHMVariableHandler(APIHandler):
         variables = []
         lines = code.split('\n')
         
-        for line_index, line in enumerate(lines):
-            line = line.strip()
+        i = 0
+        while i < len(lines):
+            line = lines[i].strip()
             
             # Skip comments and empty lines
             if line.startswith('#') or not line:
+                i += 1
                 continue
             
-            # Assignment patterns
+            # Check if this line starts with a parameter assignment (inside function call)
+            # These are lines that don't start at the beginning of the line and have = followed by comma
+            if re.match(r'^\s+[a-zA-Z_][a-zA-Z0-9_]*\s*=.*,\s*(?:#.*)?$', lines[i]):
+                i += 1
+                continue
+                
+            # Check for variable assignments that start at the beginning of lines
             patterns = [
-                # Simple assignment: var = expression
+                # Simple assignment: var = expression  
                 r'^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)',
                 # Tuple unpacking: var1, var2 = expression
                 r'^([a-zA-Z_][a-zA-Z0-9_,\s]*)\s*=\s*(.+)',
@@ -733,37 +810,76 @@ class SHMVariableHandler(APIHandler):
                 r'^\(([a-zA-Z_][a-zA-Z0-9_,\s]*)\)\s*=\s*(.+)'
             ]
             
+            assignment_found = False
             for pattern in patterns:
                 match = re.match(pattern, line)
                 if match:
                     left_side = match.group(1).strip()
                     right_side = match.group(2).strip()
                     
+                    # If the assignment spans multiple lines (ends with open paren or comma), 
+                    # collect the full assignment
+                    if right_side.endswith('(') or (right_side.count('(') > right_side.count(')')):
+                        # Multi-line assignment - collect until closing paren
+                        full_right_side = right_side
+                        j = i + 1
+                        paren_count = right_side.count('(') - right_side.count(')')
+                        
+                        while j < len(lines) and paren_count > 0:
+                            next_line = lines[j].strip()
+                            if next_line:
+                                full_right_side += ' ' + next_line
+                                paren_count += next_line.count('(') - next_line.count(')')
+                            j += 1
+                        
+                        right_side = full_right_side
+                        i = j - 1  # Skip the lines we just processed
+                    
                     # Handle tuple unpacking
                     if ',' in left_side:
                         var_names = [v.strip().replace('(', '').replace(')', '') 
                                     for v in left_side.split(',')]
-                        for var_name in var_names:
+                        for var_position, var_name in enumerate(var_names):
                             if var_name:
+                                # Try to extract display name from verbose_call metadata
+                                display_name = self._extract_display_name_from_verbose_call(
+                                    var_name, right_side, var_position
+                                )
+                                if not display_name:
+                                    display_name = self._generate_fallback_display_name(var_name)
+                                
                                 variables.append({
                                     'name': var_name,
+                                    'displayName': display_name,
                                     'type': self._infer_type_from_expression(right_side),
                                     'source': f'Cell {cell_index + 1}',
                                     'cellIndex': cell_index,
-                                    'lineIndex': line_index,
+                                    'lineIndex': i,
                                     'expression': right_side
                                 })
                     else:
                         # Single variable assignment
+                        # Try to extract display name from verbose_call metadata
+                        display_name = self._extract_display_name_from_verbose_call(
+                            left_side, right_side, 0
+                        )
+                        if not display_name:
+                            display_name = self._generate_fallback_display_name(left_side)
+                        
                         variables.append({
                             'name': left_side,
+                            'displayName': display_name,
                             'type': self._infer_type_from_expression(right_side),
                             'source': f'Cell {cell_index + 1}',
                             'cellIndex': cell_index,
-                            'lineIndex': line_index,
+                            'lineIndex': i,
                             'expression': right_side
                         })
+                    
+                    assignment_found = True
                     break
+            
+            i += 1
         
         return variables
     

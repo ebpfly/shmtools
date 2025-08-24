@@ -1,1 +1,1 @@
-examples/notebooks/modal_analysis/data_normalization_modal_properties.ipynb
+# All notebooks passed!

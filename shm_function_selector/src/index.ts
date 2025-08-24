@@ -3634,6 +3634,7 @@ interface ParameterContext {
 
 interface Variable {
   name: string;
+  displayName?: string; // Human-readable name from verbose_call metadata
   type: string;
   value?: any;
   cellId: string;
@@ -4250,18 +4251,50 @@ class SHMContextMenuManager {
   /**
    * Extract variables from notebook cells
    */
-  extractVariablesFromCells(notebook: any): void {
+  async extractVariablesFromCells(notebook: any): Promise<void> {
     this.variables = [];
     
+    // Collect all notebook cells for backend processing
+    const cells = [];
     for (let i = 0; i < notebook.model.cells.length; i++) {
       const cell = notebook.model.cells.get(i);
       if (cell.type === 'code') {
-        // Use sharedModel.getSource() instead of value.text
-        const cellCode = cell.sharedModel.getSource();
-        const cellId = `cell-${i}`;
-        
-        // Simple variable extraction patterns
-        this.extractVariablesFromCode(cellCode, cellId);
+        cells.push({
+          cell_type: 'code',
+          source: cell.sharedModel.getSource()
+        });
+      }
+    }
+    
+    try {
+      // Use backend API for variable extraction with display names
+      const response = await requestAPI<any>('variables', {
+        method: 'POST',
+        body: JSON.stringify({ cells })
+      });
+      
+      // Convert backend response to frontend Variable format
+      const backendVariables = Array.isArray(response) ? response : [];
+      this.variables = backendVariables.map((v: any, index: number) => ({
+        name: v.name,
+        displayName: v.displayName,
+        type: v.type || 'unknown',
+        cellId: `cell-${v.cellIndex || index}`,
+        compatible: false, // Will be set later based on context
+        source: v.source
+      }));
+      
+    } catch (error) {
+      console.warn('Backend variable extraction failed, falling back to frontend parsing:', error);
+      
+      // Fallback to original frontend parsing
+      for (let i = 0; i < notebook.model.cells.length; i++) {
+        const cell = notebook.model.cells.get(i);
+        if (cell.type === 'code') {
+          const cellCode = cell.sharedModel.getSource();
+          const cellId = `cell-${i}`;
+          this.extractVariablesFromCode(cellCode, cellId);
+        }
       }
     }
   }
@@ -4391,17 +4424,17 @@ class SHMContextMenuManager {
   /**
    * Show context menu with available variables
    */
-  showContextMenu(
+  async showContextMenu(
     event: MouseEvent, 
     parameterContext: ParameterContext, 
     notebook: any,
     currentCellIndex: number = -1,
     enableValidation: boolean = false
-  ): void {
+  ): Promise<void> {
     this.hideContextMenu();
     
     // Extract variables from all cells
-    this.extractVariablesFromCells(notebook);
+    await this.extractVariablesFromCells(notebook);
     
     // Filter to only show variables from cells before the current one
     if (currentCellIndex >= 0) {
@@ -4410,6 +4443,13 @@ class SHMContextMenuManager {
         return cellNumber < currentCellIndex;
       });
     }
+    
+    // Extract input variable names from the current function call to exclude them
+    const inputVariableNames = this.extractInputVariableNames(parameterContext);
+    console.log(`🚫 Input variables to exclude: ${inputVariableNames.join(', ')}`);
+    
+    // Filter out variables that are currently being used as inputs
+    this.variables = this.variables.filter(v => !inputVariableNames.includes(v.name));
     
     console.log(`📊 Variables from cells before cell ${currentCellIndex}: ${this.variables.length}`);
     this.variables.forEach(v => {
@@ -4542,6 +4582,56 @@ class SHMContextMenuManager {
     }, 100);
   }
 
+  /**
+   * Extract variable names that are currently used as inputs in the function call
+   */
+  private extractInputVariableNames(parameterContext: ParameterContext): string[] {
+    const inputVariables: string[] = [];
+    
+    try {
+      // Get the current notebook cell to analyze the function call
+      const activeCell = document.querySelector('.jp-Cell.jp-mod-active .jp-InputArea .jp-Editor') as HTMLElement;
+      if (!activeCell) {
+        return inputVariables;
+      }
+      
+      // Get the CodeMirror instance to access the full code
+      const codeMirrorDiv = activeCell.querySelector('.CodeMirror') as any;
+      if (!codeMirrorDiv?.CodeMirror) {
+        return inputVariables;
+      }
+      
+      const code = codeMirrorDiv.CodeMirror.getValue();
+      
+      // Find the function call that contains the current parameter
+      const functionCallPattern = new RegExp(`${parameterContext.functionName}\\s*\\(([^)]+)\\)`, 'gs');
+      const match = functionCallPattern.exec(code);
+      
+      if (match && match[1]) {
+        const parametersText = match[1];
+        
+        // Parse parameter values and extract variable names
+        // Look for patterns like: param=variable_name or just variable_name
+        const paramValuePattern = /(?:^\s*|,\s*)(?:\w+\s*=\s*)?([a-zA-Z_][a-zA-Z0-9_]*)/g;
+        let valueMatch;
+        
+        while ((valueMatch = paramValuePattern.exec(parametersText)) !== null) {
+          const potentialVariable = valueMatch[1];
+          
+          // Skip common literals and keywords
+          if (!['None', 'True', 'False', 'int', 'float', 'str', 'list', 'dict'].includes(potentialVariable) &&
+              !potentialVariable.match(/^\d+$/)) {
+            inputVariables.push(potentialVariable);
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Error extracting input variable names:', error);
+    }
+    
+    return [...new Set(inputVariables)]; // Remove duplicates
+  }
+
   private addVariableMenuItem(
     variable: Variable, 
     parameterContext: ParameterContext, 
@@ -4565,10 +4655,10 @@ class SHMContextMenuManager {
 
     menuItem.innerHTML = `
       <div style="font-weight: bold; color: ${isRecommended ? '#2e7d2e' : '#333'};">
-        ${variable.name}
+        ${variable.displayName || variable.name}
       </div>
       <div style="font-size: 10px; color: #666;">
-        ${variable.source ? `from ${variable.source} • ` : ''}${variable.type} • ${variable.cellId}
+        ${variable.displayName && variable.displayName !== variable.name ? `${variable.name} • ` : ''}${variable.source ? `from ${variable.source} • ` : ''}${variable.type} • ${variable.cellId}
       </div>
     `;
 
