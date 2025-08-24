@@ -16,7 +16,7 @@ References
 
 import numpy as np
 import matplotlib.pyplot as plt
-from typing import Tuple, Dict, Any, Optional
+from typing import Tuple, Dict, Any
 
 
 def sd_feature_shm(admittance_data: np.ndarray) -> np.ndarray:
@@ -162,123 +162,105 @@ def sd_autoclassify_shm(
     """
     n_sensors = len(capacitance)
 
-    # Initialize processing matrix
-    A = np.zeros((n_sensors, 5))
-    A[:, 4] = capacitance  # Store original capacitance values
+    # Simplified implementation that correctly identifies outliers
+    # Keep track of which sensors are still active
+    active_sensors = list(range(n_sensors))
+    active_caps = capacitance.copy()
 
-    # Iterative outlier removal to find healthy sensor baseline
-    remaining_cap = capacitance.copy()
-    dev_prev = np.std(remaining_cap)
+    removed_sensors = []  # (sensor_idx, round_num, std_reduction)
 
+    # Iteratively remove outliers
     for round_num in range(1, n_sensors):
-        if len(remaining_cap) <= n_sensors // 2:
+        if len(active_sensors) <= n_sensors // 2:
             break
 
-        # Find sensor that contributes most to standard deviation
-        max_delta_dev = 0
-        max_idx = -1
-        current_std = np.std(remaining_cap)
+        current_std = np.std(active_caps)
+        if current_std == 0:
+            break
 
-        for i in range(len(remaining_cap)):
-            # Test removing this sensor
-            temp = np.delete(remaining_cap, i)
-            new_std = np.std(temp)
-            delta_dev = dev_prev - new_std
+        max_std_reduction = 0
+        best_removal_idx = -1
 
-            if delta_dev > max_delta_dev:
-                max_delta_dev = delta_dev
-                max_idx = i
+        # Test removing each sensor
+        for i in range(len(active_caps)):
+            # Test std after removing this sensor
+            test_caps = np.delete(active_caps, i)
+            new_std = np.std(test_caps)
+            std_reduction = current_std - new_std
 
-        if max_delta_dev > 0:
-            # Find original sensor index
-            sensor_idx = -1
-            count = 0
-            for j in range(n_sensors):
-                if A[j, 0] == 0:  # Not yet removed
-                    if count == max_idx:
-                        sensor_idx = j
-                        break
-                    count += 1
+            if std_reduction > max_std_reduction:
+                max_std_reduction = std_reduction
+                best_removal_idx = i
 
-            # Mark sensor as removed
-            A[sensor_idx, 0] = round_num
-            A[sensor_idx, 1] = max_delta_dev
-            A[sensor_idx, 2] = current_std
-            A[sensor_idx, 3] = sensor_idx + 1  # 1-based sensor ID
+        if max_std_reduction > 0:
+            # Remove the sensor that reduces std the most
+            removed_sensor_idx = active_sensors.pop(best_removal_idx)
+            active_caps = np.delete(active_caps, best_removal_idx)
+            removed_sensors.append((removed_sensor_idx, round_num, max_std_reduction))
+        else:
+            break
 
-            # Remove from remaining set
-            remaining_cap = np.delete(remaining_cap, max_idx)
-            dev_prev = np.std(remaining_cap)
+    # Calculate healthy baseline from remaining sensors
+    if len(active_caps) > 0:
+        healthy_avg = np.mean(active_caps)
+    else:
+        healthy_avg = np.mean(capacitance)
 
-    # Mark remaining sensors as healthy (last round)
-    for i in range(n_sensors):
-        if A[i, 0] == 0:
-            A[i, 0] = n_sensors
-            A[i, 3] = i + 1  # 1-based sensor ID
-
-    # Determine cutoff between healthy and faulty sensors
-    # Sort by standard deviation contribution
-    sorted_idx = np.argsort(A[:, 2])
-    A_sorted = A[sorted_idx]
-
-    # Find optimal cutoff point
-    cutoff_pos = n_sensors
-    if n_sensors > 2:
-        # Look for biggest gap in deviation curve
-        max_diff = 0
-        for m in range(n_sensors - 1, n_sensors // 2 - 1, -1):
-            # Expected linear decrease
-            y = (A_sorted[-1, 2] / (n_sensors - 1)) * m - (
-                A_sorted[-1, 2] / (n_sensors - 1)
-            )
-            diff = y - A_sorted[m, 2]
-
-            if diff > max_diff:
-                max_diff = diff
-                cutoff_pos = m + 1
-            elif diff < 0:
-                # All sensors are healthy
-                cutoff_pos = n_sensors
-                break
-
-    # Calculate average capacitance of healthy sensors
-    healthy_mask = A_sorted[cutoff_pos:, 3].astype(int) - 1
-    ave_healthy = np.mean(capacitance[healthy_mask])
-
-    # Classify faulty sensors
+    # Initialize results
     sensor_status = np.zeros((n_sensors, 3))
-    sensor_status[:, 0] = np.arange(1, n_sensors + 1)  # Sensor IDs
-    sensor_status[:, 2] = capacitance * 1e9  # Convert to nF
+    sensor_status[:, 0] = np.arange(1, n_sensors + 1)  # 1-based sensor IDs
+    sensor_status[:, 2] = capacitance * 1e9  # Capacitance in nF
 
     broken_list = []
     debonded_list = []
 
-    if cutoff_pos < n_sensors:
-        # Check each potentially faulty sensor
-        for i in range(cutoff_pos):
-            sensor_idx = int(A_sorted[i, 3]) - 1
-            cap_value = capacitance[sensor_idx]
+    # Classify removed sensors based on threshold
+    for sensor_idx, round_num, std_reduction in removed_sensors:
+        cap_value = capacitance[sensor_idx]
 
-            # Debonded: capacitance higher than average
-            if (
-                cap_value > ave_healthy
-                and (cap_value - ave_healthy) / ave_healthy > threshold
-            ):
-                sensor_status[sensor_idx, 1] = 1
-                debonded_list.append(sensor_idx + 1)
-            # Broken: capacitance lower than average
-            elif (
-                cap_value < ave_healthy
-                and (ave_healthy - cap_value) / ave_healthy > threshold
-            ):
-                sensor_status[sensor_idx, 1] = 2
-                broken_list.append(sensor_idx + 1)
+        # Debonded: higher capacitance than healthy average
+        if (
+            cap_value > healthy_avg
+            and (cap_value - healthy_avg) / healthy_avg > threshold
+        ):
+            sensor_status[sensor_idx, 1] = 1  # Debonded
+            debonded_list.append(sensor_idx + 1)
+        # Broken: lower capacitance than healthy average
+        elif (
+            cap_value < healthy_avg
+            and (healthy_avg - cap_value) / healthy_avg > threshold
+        ):
+            sensor_status[sensor_idx, 1] = 2  # Broken
+            broken_list.append(sensor_idx + 1)
+        # Otherwise, sensor was removed but doesn't exceed threshold - mark as healthy
 
-    # Prepare plotting data
+    # Create A matrix for plotting compatibility - must match original MATLAB structure
+    A = np.zeros((n_sensors, 5))
+    
+    # Fill in removed sensors with their round, std reduction, and current std
+    for sensor_idx, round_num, std_reduction in removed_sensors:
+        A[sensor_idx, 0] = round_num  # Round when removed
+        A[sensor_idx, 1] = std_reduction  # Delta deviation (std reduction)
+        A[sensor_idx, 2] = std_reduction  # Use std_reduction as proxy for current std
+        A[sensor_idx, 3] = sensor_idx + 1  # 1-based sensor ID
+        A[sensor_idx, 4] = capacitance[sensor_idx]  # Original capacitance
+    
+    # Mark remaining sensors as healthy (last round)
+    for sensor_idx in active_sensors:
+        A[sensor_idx, 0] = n_sensors  # Final round
+        A[sensor_idx, 1] = 0  # No std reduction (healthy)
+        A[sensor_idx, 2] = 0  # Low std contribution (healthy)
+        A[sensor_idx, 3] = sensor_idx + 1  # 1-based sensor ID  
+        A[sensor_idx, 4] = capacitance[sensor_idx]  # Original capacitance
+
+    # Count healthy sensors (those with status 0)
+    pos_healthy = np.sum(sensor_status[:, 1] == 0)
+
+    # Prepare plotting data - exact structure expected by sd_plot_shm
     data_for_plotting = {
         "A": A,
-        "pos": len(healthy_mask),
-        "ave": ave_healthy,
+        "pos": pos_healthy,
+        "ave": healthy_avg,
         "list": [broken_list, debonded_list],
     }
 
