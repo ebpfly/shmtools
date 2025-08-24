@@ -7,18 +7,8 @@ analysis results with publication-quality formatting.
 
 import numpy as np
 import matplotlib.pyplot as plt
-from typing import Optional, Union, List, Tuple, Any
+from typing import Optional, Union, List
 from matplotlib.axes import Axes
-from matplotlib.figure import Figure
-
-try:
-    from bokeh.plotting import figure, show
-    from bokeh.models import ColorBar, LinearColorMapper
-    from bokeh.palettes import Viridis256
-
-    HAS_BOKEH = True
-except ImportError:
-    HAS_BOKEH = False
 
 
 def plot_scores_shm(
@@ -358,7 +348,11 @@ def _plot_psd_colormap(
     f: np.ndarray, psd_db: np.ndarray, use_subplots: bool, ax: Optional[Axes], **kwargs
 ) -> List[Axes]:
     """
-    Create colormap visualization of PSD data.
+    Create colormap visualization of PSD data matching MATLAB plotPSD_shm behavior.
+
+    This creates a 1x3 subplot layout:
+    - Left panel (1/3 width): Average PSD plot (sideways, aligned with frequency)
+    - Right panel (2/3 width): PSD colormap matrix
 
     Parameters
     ----------
@@ -367,18 +361,21 @@ def _plot_psd_colormap(
     psd_db : ndarray
         PSD data in dB.
     use_subplots : bool
-        Whether to create multiple subplots.
+        Whether to create multiple subplots (MATLAB equivalent plotAverage=true).
     ax : Axes, optional
-        Existing axes.
+        Existing axes (if provided, use single plot).
 
     Returns
     -------
     axes : list of Axes
-        List of axes objects.
+        List of axes objects [main_colormap_ax, average_psd_ax] if use_subplots=True,
+        else [main_colormap_ax].
     """
     if use_subplots:
-        fig, axes = plt.subplots(2, 1, figsize=(10, 8))
-        ax1, ax2 = axes
+        # MATLAB layout: subplot(1,3,1) for average, subplot(1,3,2:3) for colormap
+        fig = plt.figure(figsize=(12, 6))
+        ax2 = plt.subplot(1, 3, 1)  # Average PSD (left, 1/3 width)
+        ax1 = plt.subplot(1, 3, (2, 3))  # Colormap (right, 2/3 width)
     else:
         if ax is None:
             fig, ax1 = plt.subplots(figsize=(10, 6))
@@ -386,39 +383,34 @@ def _plot_psd_colormap(
             ax1 = ax
         ax2 = None
 
-    # Main colormap plot
-    extent = [0, psd_db.shape[1], f[0], f[-1]]
+    # Main colormap plot (matches MATLAB imagesc behavior)
+    # Start instances at 1 (MATLAB indexing)
+    extent = [1, psd_db.shape[1], f[0], f[-1]]
     im = ax1.imshow(
         psd_db, aspect="auto", origin="lower", extent=extent, cmap="viridis", **kwargs
     )
 
-    ax1.set_xlabel("Instance Number")
-    ax1.set_ylabel("Frequency (Hz)")
-    ax1.set_title("PSD Matrix (dB)")
+    ax1.set_xlabel("Instances")
+    if not use_subplots:
+        ax1.set_ylabel("Frequency")
+    ax1.grid(True, alpha=0.3)
 
     # Add colorbar
-    plt.colorbar(im, ax=ax1, label="PSD (dB)")
+    cbar = plt.colorbar(im, ax=ax1)
+    cbar.set_label("Magnitude (dB)")
 
-    # Optional second subplot showing average PSD
+    # Average PSD subplot (sideways plot like MATLAB)
     if ax2 is not None:
         mean_psd = np.mean(psd_db, axis=1)
-        std_psd = np.std(psd_db, axis=1)
 
-        ax2.plot(f, mean_psd, "b-", linewidth=2, label="Mean")
-        ax2.fill_between(
-            f,
-            mean_psd - std_psd,
-            mean_psd + std_psd,
-            alpha=0.3,
-            color="blue",
-            label="±1 STD",
-        )
-
-        ax2.set_xlabel("Frequency (Hz)")
-        ax2.set_ylabel("PSD (dB)")
-        ax2.set_title("Average PSD with Standard Deviation")
-        ax2.legend()
+        # Plot sideways: PSD magnitude on x-axis, frequency on y-axis
+        # This matches MATLAB's plot(y, freqVector)
+        ax2.plot(mean_psd, f, "b-", linewidth=2)
+        ax2.set_xlabel("Mean Magnitude (dB)")
+        ax2.set_ylabel("Frequency")
         ax2.grid(True, alpha=0.3)
+        # Ensure frequency axis matches main plot
+        ax2.set_ylim([f[0], f[-1]])
 
     return [ax1, ax2] if ax2 is not None else [ax1]
 

@@ -269,8 +269,12 @@ def osp_fisher_info_eiv_shm(
         # Fisher Information Matrix with improved numerical stability
         q_matrix = phi_c.T @ phi_c
 
-        # Add stronger regularization for numerical stability
-        reg_term = 1e-8 * np.eye(n_modes)
+        # Compute matrix condition number to determine regularization
+        cond_num = np.linalg.cond(q_matrix)
+        reg_factor = max(1e-12, 1e-14 * cond_num)
+
+        # Add adaptive regularization for numerical stability
+        reg_term = reg_factor * np.eye(n_modes)
         q_regularized = q_matrix + reg_term
 
         # Store determinant
@@ -279,23 +283,32 @@ def osp_fisher_info_eiv_shm(
 
         # Effective independence distribution with better error handling
         try:
+            # Use regularized matrix for inversion
             q_inv = np.linalg.inv(q_regularized)
-            eid = np.diag(phi_c @ q_inv @ phi_c.T)
+
+            # Compute EID with numerical safeguards
+            phi_q_inv = phi_c @ q_inv
+            eid = np.zeros(len(candidate_set))
+            for i in range(len(candidate_set)):
+                eid[i] = np.dot(phi_q_inv[i, :], phi_c[i, :])
 
             # Check for numerical issues
-            if np.any(~np.isfinite(eid)):
-                raise np.linalg.LinAlgError("Non-finite values in EID calculation")
+            if np.any(~np.isfinite(eid)) or np.any(eid < 0):
+                raise np.linalg.LinAlgError("Invalid EID values detected")
 
         except np.linalg.LinAlgError:
             warnings.warn(
-                "Singular matrix encountered, using pseudo-inverse with regularization"
+                "Numerical issues in Fisher Information matrix, using pseudo-inverse"
             )
             # Use pseudo-inverse with stronger regularization
-            q_inv = np.linalg.pinv(q_matrix + 1e-6 * np.eye(n_modes))
-            eid = np.diag(phi_c @ q_inv @ phi_c.T)
+            q_inv = np.linalg.pinv(q_matrix, rcond=1e-10)
+            phi_q_inv = phi_c @ q_inv
+            eid = np.zeros(len(candidate_set))
+            for i in range(len(candidate_set)):
+                eid[i] = max(1e-12, np.dot(phi_q_inv[i, :], phi_c[i, :]))
 
-            # Replace any non-finite values with small positive values
-            eid = np.where(np.isfinite(eid), eid, 1e-12)
+            # Ensure all values are finite and positive
+            eid = np.where(np.isfinite(eid) & (eid > 0), eid, 1e-12)
 
         # Find DOF with minimum contribution
         min_idx = np.argmin(eid)
