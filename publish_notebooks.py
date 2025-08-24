@@ -53,10 +53,11 @@ class NotebookPublisher:
         
         # Create output directory structure
         self.output_dir.mkdir(exist_ok=True)
-        (self.output_dir / "basic").mkdir(exist_ok=True)
-        (self.output_dir / "intermediate").mkdir(exist_ok=True)
-        (self.output_dir / "advanced").mkdir(exist_ok=True)
-        (self.output_dir / "specialized").mkdir(exist_ok=True)
+        (self.output_dir / "active_sensing").mkdir(exist_ok=True)
+        (self.output_dir / "condition_based_monitoring").mkdir(exist_ok=True)
+        (self.output_dir / "modal_analysis").mkdir(exist_ok=True)
+        (self.output_dir / "outlier_detection").mkdir(exist_ok=True)
+        (self.output_dir / "integrating_examples").mkdir(exist_ok=True)
         (self.output_dir / "other").mkdir(exist_ok=True)
         (self.output_dir / "assets").mkdir(exist_ok=True)
         
@@ -124,6 +125,30 @@ class NotebookPublisher:
                 formatted_words.append(word.capitalize())
         
         return ' '.join(formatted_words)
+    
+    def format_category_name(self, category: str) -> str:
+        """
+        Convert category directory name to proper display name.
+        
+        Parameters
+        ----------
+        category : str
+            Category directory name
+            
+        Returns
+        -------
+        display_name : str
+            Properly formatted display name
+        """
+        category_display_names = {
+            'active_sensing': 'Active Sensing',
+            'condition_based_monitoring': 'Condition-Based Monitoring',
+            'modal_analysis': 'Modal Analysis',
+            'outlier_detection': 'Outlier Detection',
+            'integrating_examples': 'Integrating Examples',
+            'other': 'Other'
+        }
+        return category_display_names.get(category, category.title())
         
     def find_notebooks(
         self, 
@@ -168,19 +193,27 @@ class NotebookPublisher:
             if not exclude:
                 filtered_notebooks.append(notebook)
         
-        # Categorize by directory
+        # Categorize by directory - use actual directory names that match MATLAB structure
         categories = {
-            'basic': [],
-            'intermediate': [],
-            'advanced': [],
-            'specialized': [],
+            'active_sensing': [],
+            'condition_based_monitoring': [],
+            'modal_analysis': [],
+            'outlier_detection': [],
+            'integrating_examples': [],
             'other': []
         }
         
         for notebook in filtered_notebooks:
             parent_dir = notebook.parent.name.lower()
-            if parent_dir in categories:
+            # Handle notebooks in the root examples/notebooks directory
+            if parent_dir == 'notebooks':
+                categories['other'].append(notebook)
+            # Handle notebooks in subdirectories - check for both exact match and partial matches
+            elif parent_dir in categories:
                 categories[parent_dir].append(notebook)
+            # Handle nested directories (like outlier_detection subdirectories)
+            elif any(parent_dir.startswith(cat) for cat in ['non_parametric_detectors', 'parametric_detectors', 'semi_parametric_detectors']):
+                categories['outlier_detection'].append(notebook)
             else:
                 categories['other'].append(notebook)
         
@@ -445,12 +478,12 @@ class NotebookPublisher:
         
         # Create header
         title = self.format_display_name(notebook_path.stem)
-        category = notebook_path.parent.name.title()
+        category = self.format_category_name(notebook_path.parent.name.lower())
         
         header = f"""
         <div class="notebook-header">
             <h1 class="notebook-title">{title}</h1>
-            <p class="notebook-subtitle">SHMTools Example - {category} Level</p>
+            <p class="notebook-subtitle">SHMTools Example - {category}</p>
         </div>
         """
         
@@ -518,11 +551,12 @@ class NotebookPublisher:
         
         # Category descriptions
         category_descriptions = {
-            'basic': 'Fundamental outlier detection and time series analysis methods',
-            'intermediate': 'More complex analysis techniques and statistical methods',
-            'advanced': 'Specialized algorithms and computationally intensive methods',
-            'specialized': 'Domain-specific applications and advanced techniques',
-            'other': 'Utility notebooks and demonstrations'
+            'active_sensing': 'Active sensing techniques for structural health monitoring using guided waves',
+            'condition_based_monitoring': 'Condition-based monitoring for rotating machinery and bearings',
+            'modal_analysis': 'Modal analysis techniques for structural identification and sensor placement',
+            'outlier_detection': 'Statistical outlier detection methods for damage identification',
+            'integrating_examples': 'Examples integrating multiple SHM techniques and workflows',
+            'other': 'Utility notebooks and basic demonstrations'
         }
         
         # Create master HTML content
@@ -884,7 +918,7 @@ class NotebookPublisher:
                         <div class="nav-section">
                             <div class="nav-header" onclick="toggleSection('{category}')">
                                 <div>
-                                    <div>{category.title()} Level</div>
+                                    <div>{self.format_category_name(category)}</div>
                                     <div class="nav-description">{description}</div>
                                 </div>
                                 <span class="nav-toggle" id="toggle-{category}">▶</span>
@@ -909,7 +943,7 @@ class NotebookPublisher:
                     item_class = "nav-item failed"
                     relative_path = None
                 
-                onclick_action = f"loadNotebook('{notebook_id}', '{relative_path}', '{notebook_name}', '{category.title()}')" if relative_path else ""
+                onclick_action = f"loadNotebook('{notebook_id}', '{relative_path}', '{notebook_name}', '{self.format_category_name(category)}')" if relative_path else ""
                 
                 html_content += f"""
                                 <div class="{item_class}" id="nav-{notebook_id}" onclick="{onclick_action}">
@@ -1307,11 +1341,12 @@ class NotebookPublisher:
         
         # Category descriptions
         category_descriptions = {
-            'basic': 'Fundamental outlier detection and time series analysis methods',
-            'intermediate': 'More complex analysis techniques and statistical methods',
-            'advanced': 'Specialized algorithms and computationally intensive methods',
-            'specialized': 'Domain-specific applications and advanced techniques',
-            'other': 'Utility notebooks and demonstrations'
+            'active_sensing': 'Active sensing techniques for structural health monitoring using guided waves',
+            'condition_based_monitoring': 'Condition-based monitoring for rotating machinery and bearings',
+            'modal_analysis': 'Modal analysis techniques for structural identification and sensor placement',
+            'outlier_detection': 'Statistical outlier detection methods for damage identification',
+            'integrating_examples': 'Examples integrating multiple SHM techniques and workflows',
+            'other': 'Utility notebooks and basic demonstrations'
         }
         
         # Add each category
@@ -1324,7 +1359,7 @@ class NotebookPublisher:
             html_content += f"""
             <div class="category">
                 <div class="category-header">
-                    <h2 class="category-title">{category.title()} Level</h2>
+                    <h2 class="category-title">{self.format_category_name(category)}</h2>
                     <p class="category-description">{description}</p>
                 </div>
                 <div class="notebook-list">
@@ -1405,7 +1440,7 @@ class NotebookPublisher:
         
         for category, notebooks in categorized_notebooks.items():
             if notebooks:
-                print(f"   {category.title()}: {len(notebooks)} notebooks")
+                print(f"   {self.format_category_name(category)}: {len(notebooks)} notebooks")
         
         # Execute and publish each notebook
         print("\n2. Executing and publishing notebooks...")
@@ -1415,7 +1450,7 @@ class NotebookPublisher:
             if not notebooks:
                 continue
                 
-            print(f"\n  Processing {category.title()} notebooks:")
+            print(f"\n  Processing {self.format_category_name(category)} notebooks:")
             
             for notebook_path in notebooks:
                 result = {
