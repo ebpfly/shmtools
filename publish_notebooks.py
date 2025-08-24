@@ -22,6 +22,35 @@ from nbconvert.preprocessors import ExecutePreprocessor
 from nbconvert.preprocessors.execute import CellExecutionError
 
 
+class ProgressExecutePreprocessor(ExecutePreprocessor):
+    """
+    Custom ExecutePreprocessor that shows progress during execution.
+    """
+    
+    def preprocess_cell(self, cell, resources, cell_index):
+        """
+        Override to add progress reporting for each cell execution.
+        """
+        if cell.cell_type == 'code' and cell.source.strip():
+            # Show first few lines of code for context
+            first_line = cell.source.split('\n')[0][:50]
+            print(f"        Cell {cell_index + 1}: {first_line}...", end='', flush=True)
+            start_time = time.time()
+            
+        result = super().preprocess_cell(cell, resources, cell_index)
+        
+        if cell.cell_type == 'code' and cell.source.strip():
+            exec_time = time.time() - start_time
+            if exec_time > 2.0:  # Show time for slow cells
+                print(f" ✓ ({exec_time:.1f}s)", flush=True)
+            elif exec_time > 0.5:
+                print(f" ✓", flush=True)
+            else:
+                print("", end='')  # Don't clutter output for fast cells
+        
+        return result
+
+
 class NotebookPublisher:
     """
     Robust notebook execution and HTML publication system.
@@ -61,8 +90,8 @@ class NotebookPublisher:
         (self.output_dir / "other").mkdir(exist_ok=True)
         (self.output_dir / "assets").mkdir(exist_ok=True)
         
-        # Set up execution processor
-        self.executor = ExecutePreprocessor(
+        # Set up execution processor with progress reporting
+        self.executor = ProgressExecutePreprocessor(
             timeout=timeout,
             kernel_name=kernel_name,
             allow_errors=False
@@ -204,17 +233,28 @@ class NotebookPublisher:
         }
         
         for notebook in filtered_notebooks:
-            parent_dir = notebook.parent.name.lower()
-            # Handle notebooks in the root examples/notebooks directory
-            if parent_dir == 'notebooks':
-                categories['other'].append(notebook)
-            # Handle notebooks in subdirectories - check for both exact match and partial matches
-            elif parent_dir in categories:
-                categories[parent_dir].append(notebook)
-            # Handle nested directories (like outlier_detection subdirectories)
-            elif any(parent_dir.startswith(cat) for cat in ['non_parametric_detectors', 'parametric_detectors', 'semi_parametric_detectors']):
-                categories['outlier_detection'].append(notebook)
-            else:
+            # Get the path relative to examples/notebooks to determine category
+            try:
+                rel_path = notebook.relative_to(examples_dir)
+                path_parts = rel_path.parts
+                
+                # Handle notebooks in the root examples/notebooks directory
+                if len(path_parts) == 1:
+                    categories['other'].append(notebook)
+                else:
+                    # Get the first subdirectory as the category
+                    category_dir = path_parts[0].lower()
+                    
+                    # Handle nested directories (like outlier_detection subdirectories)
+                    if category_dir in ['non_parametric_detectors', 'parametric_detectors', 'semi_parametric_detectors']:
+                        categories['outlier_detection'].append(notebook)
+                    # Handle direct category matches
+                    elif category_dir in categories:
+                        categories[category_dir].append(notebook)
+                    else:
+                        categories['other'].append(notebook)
+            except ValueError:
+                # If we can't determine relative path, put in other
                 categories['other'].append(notebook)
         
         # Sort within each category
@@ -264,18 +304,21 @@ class NotebookPublisher:
         }
         
         try:
-            print(f"    Executing notebook: {notebook_path.name}")
-            
             # Read the notebook
+            print(f"      Reading notebook file...")
             with open(notebook_path, 'r', encoding='utf-8') as f:
                 notebook = nbformat.read(f, as_version=4)
                 
             metadata['total_cells'] = len(notebook.cells)
+            code_cells = sum(1 for cell in notebook.cells if cell.cell_type == 'code')
+            print(f"      Found {metadata['total_cells']} total cells ({code_cells} code cells)")
             
             # Set up execution environment
+            print(f"      Setting up execution environment in {working_dir}")
             self.executor.cwd = str(working_dir)
             
-            # Execute the notebook
+            # Execute the notebook with progress callback
+            print(f"      Starting execution (timeout: {self.timeout}s)...")
             executed_notebook, resources = self.executor.preprocess(
                 notebook, {'metadata': {'path': str(working_dir)}}
             )
@@ -301,7 +344,10 @@ class NotebookPublisher:
             metadata['execution_time'] = metadata['end_time'] - metadata['start_time']
             
             success = metadata['error_cells'] == 0
-            print(f"      OK Executed in {metadata['execution_time']:.1f}s ({metadata['executed_cells']} cells)")
+            if success:
+                print(f"      ✓ Execution completed in {metadata['execution_time']:.1f}s ({metadata['executed_cells']} cells)")
+            else:
+                print(f"      ! Execution completed with {metadata['error_cells']} errors in {metadata['execution_time']:.1f}s")
             
             return success, executed_notebook, metadata
             
@@ -314,7 +360,7 @@ class NotebookPublisher:
                 'error_value': str(e),
                 'traceback': getattr(e, 'traceback', [])
             })
-            print(f"      X Execution failed: {e}")
+            print(f"      ✗ Execution failed after {metadata['execution_time']:.1f}s: {str(e)[:100]}...")
             return False, notebook, metadata
             
         except Exception as e:
@@ -326,7 +372,7 @@ class NotebookPublisher:
                 'error_value': str(e),
                 'traceback': []
             })
-            print(f"      X Execution failed: {e}")
+            print(f"      ✗ Execution failed: {str(e)[:100]}...")
             return False, notebook, metadata
     
     def convert_to_html(
@@ -371,14 +417,15 @@ class NotebookPublisher:
             enhanced_html = self.enhance_html(body, notebook_path)
             
             # Write HTML file
+            print(f"      Writing HTML to {output_path.name}...")
             with open(output_path, 'w', encoding='utf-8') as f:
                 f.write(enhanced_html)
                 
-            print(f"      OK HTML saved to: {output_path}")
+            print(f"      ✓ HTML saved ({len(enhanced_html):,} bytes)")
             return True
             
         except Exception as e:
-            print(f"      X HTML conversion failed: {e}")
+            print(f"      ✗ HTML conversion failed: {str(e)[:100]}...")
             return False
     
     def enhance_html(self, html_body: str, notebook_path: Path) -> str:
@@ -1450,9 +1497,10 @@ class NotebookPublisher:
             if not notebooks:
                 continue
                 
-            print(f"\n  Processing {self.format_category_name(category)} notebooks:")
+            print(f"\n  Processing {self.format_category_name(category)} ({len(notebooks)} notebooks):")
             
-            for notebook_path in notebooks:
+            for i, notebook_path in enumerate(notebooks, 1):
+                print(f"\n    [{i}/{len(notebooks)}] {notebook_path.name}")
                 result = {
                     'category': category,
                     'execution_success': False,
@@ -1471,15 +1519,18 @@ class NotebookPublisher:
                     
                     # Convert to HTML (even if execution failed, if skip_execution_errors is True)
                     if exec_success or skip_execution_errors:
+                        print(f"      Converting to HTML...")
                         output_path = self.output_dir / category / f"{notebook_path.stem}.html"
                         html_success = self.convert_to_html(executed_notebook, output_path, notebook_path)
                         result['html_success'] = html_success
                         
                         if html_success:
                             result['output_path'] = str(output_path)
+                    else:
+                        print(f"      ⚠ Skipping HTML conversion due to execution failure")
                     
                 except Exception as e:
-                    print(f"      X Failed to process {notebook_path.name}: {e}")
+                    print(f"      ✗ Failed to process {notebook_path.name}: {str(e)[:100]}...")
                     result['errors'].append({
                         'type': 'ProcessingError',
                         'error_name': e.__class__.__name__,
@@ -1489,11 +1540,11 @@ class NotebookPublisher:
                 publication_results[str(notebook_path)] = result
         
         # Create index page
-        print("\n3. Creating index page...")
+        print(f"\n3. Creating index page...")
         self.create_index_page(categorized_notebooks, publication_results)
         
         # Create master HTML page with embedded navigation
-        print("4. Creating master HTML page...")
+        print(f"4. Creating master HTML page...")
         self.create_master_html(categorized_notebooks, publication_results)
         
         # Summary report
