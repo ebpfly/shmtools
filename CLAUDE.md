@@ -72,10 +72,17 @@ npm run build:labextension:dev        # 2. Build extension
 cd .. && jupyter lab build            # 3. Integrate into JupyterLab
 ```
 
+**Testing Extension Updates**:
+```bash
+./restart_jupyterlab.sh              # Automated: build + restart + open browser
+```
+*Use this script after every extension update for immediate testing*
+
 **Debugging**:
 - Clear cache if stuck: `rm -rf shm_function_selector/shm_function_selector/labextension/static/*.js`
 - Check compiled JS: `grep "debug_text" shm_function_selector/labextension/static/lib_index_js.*.js`
 - CSS issues often due to `.shm-enhanced-dropdown` container overriding element styles
+- Server log: `tail -f jupyterlab.log`
 
 ## AWS Cloud Deployment
 
