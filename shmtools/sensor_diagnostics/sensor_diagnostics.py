@@ -236,7 +236,7 @@ def sd_autoclassify_shm(
 
     # Create A matrix for plotting compatibility - must match original MATLAB structure
     A = np.zeros((n_sensors, 5))
-    
+
     # Fill in removed sensors with their round, std reduction, and current std
     for sensor_idx, round_num, std_reduction in removed_sensors:
         A[sensor_idx, 0] = round_num  # Round when removed
@@ -244,13 +244,13 @@ def sd_autoclassify_shm(
         A[sensor_idx, 2] = std_reduction  # Use std_reduction as proxy for current std
         A[sensor_idx, 3] = sensor_idx + 1  # 1-based sensor ID
         A[sensor_idx, 4] = capacitance[sensor_idx]  # Original capacitance
-    
+
     # Mark remaining sensors as healthy (last round)
     for sensor_idx in active_sensors:
         A[sensor_idx, 0] = n_sensors  # Final round
         A[sensor_idx, 1] = 0  # No std reduction (healthy)
         A[sensor_idx, 2] = 0  # Low std contribution (healthy)
-        A[sensor_idx, 3] = sensor_idx + 1  # 1-based sensor ID  
+        A[sensor_idx, 3] = sensor_idx + 1  # 1-based sensor ID
         A[sensor_idx, 4] = capacitance[sensor_idx]  # Original capacitance
 
     # Count healthy sensors (those with status 0)

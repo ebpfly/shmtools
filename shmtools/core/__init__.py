@@ -67,6 +67,6 @@ __all__ = [
     # Preprocessing
     "scale_min_max_shm",
     "demean_shm",
-    "filter_shm", 
+    "filter_shm",
     "window_shm",
 ]

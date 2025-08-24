@@ -73,7 +73,7 @@ __all__ = [
     "detect_outlier_shm",
     # Custom detector assembly
     "assemble_outlier_detector_shm",
-    "save_detector_assembly", 
+    "save_detector_assembly",
     "load_detector_assembly",
     "detector_registry",
     # Outlier detection functions

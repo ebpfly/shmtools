@@ -10,7 +10,7 @@ def simulate_function_discovery():
     """Simulate the /functions API endpoint."""
     try:
         # Import the introspection system directly (like the fixed backend does)
-        from shmtools.introspection import discover_functions_locally
+        from shm_function_selector.introspection import discover_functions_locally
         
         print("🔍 Simulating extension API call to /functions endpoint...")
         functions = discover_functions_locally()

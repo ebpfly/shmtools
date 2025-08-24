@@ -73,20 +73,24 @@ def ar_model_shm(
     >>> print(f"RMS residuals FV shape: {rms_fv.shape}")        # (3, 2)
     """
     X = np.asarray(X)
-    
+
     # Input validation
     if X.size == 0:
         raise ValueError("Input array X cannot be empty")
-    
+
     if X.ndim != 3:
-        raise ValueError(f"Input X must be 3-dimensional (TIME, CHANNELS, INSTANCES), got {X.ndim}D")
+        raise ValueError(
+            f"Input X must be 3-dimensional (TIME, CHANNELS, INSTANCES), got {X.ndim}D"
+        )
 
     # Set parameters following MATLAB exactly
     t, m, n = X.shape
-    
+
     # Additional validation
     if t <= ar_order:
-        raise ValueError(f"Time series length ({t}) must be greater than AR order ({ar_order})")
+        raise ValueError(
+            f"Time series length ({t}) must be greater than AR order ({ar_order})"
+        )
 
     ar_param = np.zeros((ar_order, m))
     ar_prediction = X.copy()
@@ -453,11 +457,11 @@ def arx_model_shm(
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, list]:
     """
     Estimate AutoRegressive model with eXogenous inputs (ARX) parameters.
-    
+
     This function estimates ARX model parameters using least squares for
     multi-output, single-input systems. The first channel is treated as
     the input (exogenous) signal, and remaining channels as outputs.
-    
+
     .. meta::
         :category: Feature Extraction - Time Series Models
         :matlab_equivalent: arxModel_shm
@@ -466,7 +470,7 @@ def arx_model_shm(
         :output_type: Features
         :display_name: ARX Model
         :verbose_call: [ARX Parameters Feature Vectors, RMS Residuals Feature Vectors, ARX Parameters, ARX Residuals, ARX Prediction, ARX Model Orders] = ARX Model (Time Series Data, ARX Model Orders)
-        
+
     Parameters
     ----------
     X : array_like
@@ -474,109 +478,113 @@ def arx_model_shm(
         The first channel is treated as the input (exogenous), remaining
         channels as outputs. Shape: (TIME, CHANNELS, INSTANCES) where
         CHANNELS = OUTPUT_CHANNELS + 1.
-        
+
         .. gui::
             :widget: file_upload
             :formats: [".csv", ".mat", ".npy"]
-            
+
     orders : list
         ARX model orders [a, b, tau] where:
-        - a: output autoregressive order 
+        - a: output autoregressive order
         - b: input order
         - tau: input delay (default 0 if not specified)
-        
+
         .. gui::
             :widget: array_input
             :size: 3
             :default: [10, 5, 0]
-            
+
     Returns
     -------
     arx_parameters_fv : ndarray
         Feature vectors of ARX parameters in concatenated format,
         shape (INSTANCES, FEATURES) where FEATURES = OUTPUT_CHANNELS*(a+b).
-        
+
     rms_residuals_fv : ndarray
         RMS residual errors for each output channel,
         shape (INSTANCES, OUTPUT_CHANNELS).
-        
+
     arx_parameters : ndarray
         ARX parameters where order = a+b,
         shape (ORDER, OUTPUT_CHANNELS, INSTANCES).
-        
+
     arx_residuals : ndarray
         ARX prediction residuals,
         shape (TIME, OUTPUT_CHANNELS, INSTANCES).
-        
+
     arx_prediction : ndarray
         ARX model predictions,
         shape (TIME, OUTPUT_CHANNELS, INSTANCES).
-        
+
     arx_orders : list
         Actual model orders used [a, b, tau].
-        
+
     Examples
     --------
     >>> import numpy as np
     >>> from shmtools.features import arx_model_shm
-    >>> 
+    >>>
     >>> # Create sample data: input + 3 outputs, 10 instances
     >>> np.random.seed(42)
     >>> data = np.random.randn(1000, 4, 10)
-    >>> 
+    >>>
     >>> # Estimate ARX(10,5,0) model
     >>> arx_params_fv, rms_fv, arx_params, residuals, prediction, orders = arx_model_shm(
     ...     data, [10, 5, 0]
     ... )
-    >>> 
+    >>>
     >>> print(f"ARX parameters shape: {arx_params_fv.shape}")
     >>> print(f"Expected features per instance: {3 * (10+5)} = {arx_params_fv.shape[1]}")
     """
     X = np.asarray(X)
-    
+
     if X.ndim != 3:
-        raise ValueError(f"Data must be 3D (TIME, CHANNELS, INSTANCES), got shape {X.shape}")
-        
+        raise ValueError(
+            f"Data must be 3D (TIME, CHANNELS, INSTANCES), got shape {X.shape}"
+        )
+
     if len(orders) < 2:
         raise ValueError("ARX orders must specify at least [a, b]")
     elif len(orders) == 2:
         orders = orders + [0]  # Default tau = 0
     elif len(orders) > 3:
         orders = orders[:3]  # Use only first 3 elements
-        
+
     # Extract ARX model orders
     a = orders[0]  # Output AR order
-    b = orders[1]  # Input order 
+    b = orders[1]  # Input order
     tau = orders[2]  # Input delay
-    
+
     # Calculate starting point for regression
     c = max(a + 1, b + tau)
-    
+
     # Separate input (first channel) and outputs (remaining channels)
     Y = X[:, 0:1, :]  # Input signal, keep as (TIME, 1, INSTANCES)
     X_out = X[:, 1:, :]  # Output signals, (TIME, OUTPUT_CHANNELS, INSTANCES)
-    
+
     t, m, n = X_out.shape  # time points, output channels, instances
-    
+
     if t <= c:
-        raise ValueError(f"Time series too short ({t}) for ARX model order requirements ({c})")
-        
+        raise ValueError(
+            f"Time series too short ({t}) for ARX model order requirements ({c})"
+        )
+
     N = t - c + 1  # Number of regression points
-    
+
     # Pre-allocate output arrays
     arx_parameters = np.zeros((a + b, m, n))
     arx_prediction = np.copy(X_out)
     arx_residuals = np.zeros((t, m, n))
     rms_residuals_fv = np.zeros((n, m))
     arx_parameters_fv = np.zeros((n, (a + b) * m))
-    
+
     # Regression matrices
     Aa = np.zeros((N, a))  # Output autoregressive terms
     Ab = np.zeros((N, b))  # Input terms
-    
+
     # Estimate ARX model for each instance
     for j in range(n):
-        
+
         # Build input regression matrix Ab
         # Following MATLAB logic exactly: cnt=c-tau; Ab(:,k)=Y(cnt:t-k-tau+1,1,j); cnt=cnt-1;
         cnt = c - tau
@@ -586,10 +594,10 @@ def arx_model_shm(
             end_idx = t - matlab_k - tau + 1  # MATLAB end index
             Ab[:, k] = Y[start_idx:end_idx, 0, j]
             cnt = cnt - 1
-            
+
         # Estimate parameters for each output channel
         for i in range(m):
-            
+
             # Build output autoregressive matrix Aa
             # Following MATLAB: Aa(:,k)=X(c-k:t-k,i,j); for k=1:a
             for k in range(a):
@@ -597,13 +605,13 @@ def arx_model_shm(
                 start_idx = c - matlab_k - 1  # Convert to 0-based
                 end_idx = t - matlab_k  # MATLAB end index
                 Aa[:, k] = X_out[start_idx:end_idx, i, j]
-            
+
             # Combine regression matrices
             A = np.hstack([Aa, Ab])
-            
+
             # Output vector: MATLAB B = X(c:t,i,j) -> Python B = X_out[c-1:t, i, j]
-            B = X_out[c-1:t, i, j]
-            
+            B = X_out[c - 1 : t, i, j]
+
             # Solve least squares problem: A * theta = B
             try:
                 # Use pseudoinverse for robustness (matches MATLAB pinv)
@@ -611,36 +619,40 @@ def arx_model_shm(
             except np.linalg.LinAlgError:
                 # Fallback to regularized solution
                 arx_param = np.linalg.lstsq(A, B, rcond=None)[0]
-                
+
             arx_parameters[:, i, j] = arx_param
-            
+
             # Predict using ARX model: MATLAB arxPrediction(c:t,i,j) = A*arxParam(:,i)
-            arx_prediction[c-1:t, i, j] = A @ arx_param
-            
+            arx_prediction[c - 1 : t, i, j] = A @ arx_param
+
             # Calculate residuals (prediction error)
             arx_residuals[:, i, j] = arx_prediction[:, i, j] - X_out[:, i, j]
-            
+
         # Calculate RMS residuals for this instance
-        rms_residuals_fv[j, :] = np.sqrt(np.mean(arx_residuals[:, :, j]**2, axis=0))
-        
+        rms_residuals_fv[j, :] = np.sqrt(np.mean(arx_residuals[:, :, j] ** 2, axis=0))
+
         # Concatenate parameters as feature vector
         arx_parameters_fv[j, :] = arx_parameters[:, :, j].flatten()
-        
-    return (arx_parameters_fv, rms_residuals_fv, arx_parameters, 
-            arx_residuals, arx_prediction, orders)
+
+    return (
+        arx_parameters_fv,
+        rms_residuals_fv,
+        arx_parameters,
+        arx_residuals,
+        arx_prediction,
+        orders,
+    )
 
 
 def eval_arx_model_shm(
-    X_test: np.ndarray, 
-    arx_parameters: np.ndarray,
-    orders: list
+    X_test: np.ndarray, arx_parameters: np.ndarray, orders: list
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Evaluate ARX model using pre-trained parameters.
-    
+
     Apply pre-trained ARX model parameters to new data for prediction
     and residual calculation.
-    
+
     .. meta::
         :category: Feature Extraction - Time Series Models
         :matlab_equivalent: evalARXmodel_shm
@@ -649,100 +661,100 @@ def eval_arx_model_shm(
         :output_type: Prediction
         :display_name: Evaluate ARX Model
         :verbose_call: [ARX Prediction, ARX Residuals] = Evaluate ARX Model (Test Data, ARX Parameters, ARX Orders)
-        
+
     Parameters
     ----------
     X_test : array_like
         Test input-output time series data, shape (TIME, CHANNELS, INSTANCES).
         First channel is input, remaining are outputs.
-        
+
         .. gui::
             :widget: file_upload
             :formats: [".csv", ".mat", ".npy"]
-            
+
     arx_parameters : array_like
         Pre-trained ARX parameters, shape (ORDER, OUTPUT_CHANNELS, INSTANCES).
-        
+
     orders : list
         ARX model orders [a, b, tau].
-        
+
         .. gui::
             :widget: array_input
             :size: 3
             :default: [10, 5, 0]
-            
+
     Returns
     -------
     arx_prediction : ndarray
         ARX model predictions, shape (TIME, OUTPUT_CHANNELS, INSTANCES).
-        
+
     arx_residuals : ndarray
         Prediction residuals, shape (TIME, OUTPUT_CHANNELS, INSTANCES).
-        
+
     Examples
     --------
     >>> # Train ARX model on training data
     >>> _, _, arx_params, _, _, orders = arx_model_shm(train_data, [10, 5, 0])
-    >>> 
+    >>>
     >>> # Apply to test data
     >>> test_pred, test_residuals = eval_arx_model_shm(test_data, arx_params, orders)
     """
     X_test = np.asarray(X_test)
     arx_parameters = np.asarray(arx_parameters)
-    
+
     if len(orders) < 3:
         orders = orders + [0] * (3 - len(orders))
-        
+
     a, b, tau = orders
     c = max(a + 1, b + tau)
-    
+
     # Separate input and outputs
     Y = X_test[:, 0:1, :]
     X_out = X_test[:, 1:, :]
-    
+
     t, m, n = X_out.shape
-    
+
     # Initialize outputs
     arx_prediction = np.copy(X_out)
     arx_residuals = np.zeros((t, m, n))
-    
+
     # Apply model to each instance
     for j in range(n):
         for i in range(m):
-            
+
             # Build regression matrix for prediction
             A = np.zeros((t - c + 1, a + b))
-            
+
             # Output AR terms
             for k in range(a):
-                A[:, k] = X_out[c-k-1:t-k-1, i, j]
-                    
+                A[:, k] = X_out[c - k - 1 : t - k - 1, i, j]
+
             # Input terms
             for k in range(b):
-                A[:, a + k] = Y[c-tau-k:t-k-tau, 0, j]
-            
+                A[:, a + k] = Y[c - tau - k : t - k - tau, 0, j]
+
             # Predict
             arx_prediction[c:t, i, j] = A @ arx_parameters[:, i, j]
-            
+
             # Calculate residuals
             arx_residuals[:, i, j] = arx_prediction[:, i, j] - X_out[:, i, j]
-            
+
     return arx_prediction, arx_residuals
 
 
 def split_features_shm(
-    features: np.ndarray, 
-    training_indices: Optional[np.ndarray] = None, 
-    scoring_indices: Optional[np.ndarray] = None, 
-    features_to_use: Optional[np.ndarray] = None
+    features: np.ndarray,
+    training_indices: Optional[np.ndarray] = None,
+    scoring_indices: Optional[np.ndarray] = None,
+    features_to_use: Optional[np.ndarray] = None,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Split feature vectors into training and scoring sets.
-    
+
     Split feature vectors into two sets along first dimension to create
     learning and scoring feature vectors. Optionally select only a subset
     of features.
-    
+
     .. meta::
         :category: Auxiliary - Utilities
         :matlab_equivalent: splitFeatures_shm
@@ -751,51 +763,51 @@ def split_features_shm(
         :output_type: Features
         :display_name: Split Features Into Training and Scoring
         :verbose_call: [Training Features, Scoring Features, All Features] = Split Features Into Training and Scoring (Features, Training Indices, Scoring Indices, Feature Indices to Use)
-        
+
     Parameters
     ----------
     features : array_like
         Feature vectors to be split, shape (INSTANCES, FEATURES).
-        
+
         .. gui::
             :widget: file_upload
             :formats: [".csv", ".mat", ".npy"]
-            
+
     training_indices : array_like, optional
         List of indices or logical indexing vector for training instances.
         If None, uses all instances.
-        
+
         .. gui::
             :widget: array_input
             :description: Training instance indices
-            
+
     scoring_indices : array_like, optional
         List of indices or logical indexing vector for scoring instances.
         If None, uses all instances.
-        
+
         .. gui::
             :widget: array_input
             :description: Scoring instance indices
-            
+
     features_to_use : array_like, optional
         List of indices for subset of features to use.
         If None, uses all features.
-        
+
         .. gui::
             :widget: array_input
             :description: Feature column indices to use
-        
+
     Returns
     -------
     training_features : ndarray
         Training instances of features, shape (TRAIN_INST, FEATURES_CHOSEN).
-        
+
     scoring_features : ndarray
         Scoring instances of features, shape (SCORE_INST, FEATURES_CHOSEN).
-        
+
     all_features : ndarray
         All instances of features, shape (INSTANCES, FEATURES_CHOSEN).
-        
+
     Examples
     --------
     >>> # Example 1: Split by logical indices
@@ -808,28 +820,28 @@ def split_features_shm(
     (80, 15)
     >>> test_feats.shape
     (20, 15)
-    
+
     >>> # Example 2: Use specific feature subset
     >>> selected_features = [0, 2, 4, 6]  # Use only these feature columns
     >>> train_feats, test_feats, all_feats = split_features_shm(
     ...     features, train_mask, test_mask, selected_features)
     >>> train_feats.shape
     (80, 4)
-    
+
     >>> # Example 3: Training only (common in outlier detection)
     >>> baseline_mask = states < 10  # Undamaged conditions only
     >>> train_feats, _, all_feats = split_features_shm(
     ...     features, baseline_mask, None, None)
     """
     features = np.asarray(features)
-    
+
     # Handle feature selection
     if features_to_use is None:
         all_features = features
     else:
         features_to_use = np.asarray(features_to_use)
         all_features = features[:, features_to_use]
-    
+
     # Handle training indices
     if training_indices is None:
         training_features = all_features
@@ -841,7 +853,7 @@ def split_features_shm(
         else:
             # Index array
             training_features = all_features[training_indices, :]
-    
+
     # Handle scoring indices
     if scoring_indices is None:
         scoring_features = all_features
@@ -853,13 +865,13 @@ def split_features_shm(
         else:
             # Index array
             scoring_features = all_features[scoring_indices, :]
-    
+
     return training_features, scoring_features, all_features
 
 
 __all__ = [
     "ar_model_shm",
-    "ar_model_order_shm", 
+    "ar_model_order_shm",
     "arx_model_shm",
     "eval_arx_model_shm",
     "split_features_shm",

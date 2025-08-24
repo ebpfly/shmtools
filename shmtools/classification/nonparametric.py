@@ -946,7 +946,9 @@ def score_fast_metric_kernel_density_shm(
         raise ValueError("Input Y must be 2-dimensional")
 
     if "kde" not in model:
-        raise ValueError("Model must contain 'kde' field from learn_fast_metric_kernel_density_shm")
+        raise ValueError(
+            "Model must contain 'kde' field from learn_fast_metric_kernel_density_shm"
+        )
 
     # Use scikit-learn's KernelDensity score_samples method
     # Returns log-density for each sample

@@ -21,16 +21,18 @@ except ImportError:
     HAS_BOKEH = False
 
 
-def plot_scores_shm(scores: np.ndarray,
-                   detected_states: np.ndarray,
-                   state_names: List[str],
-                   threshold: float,
-                   use_bar_chart: bool = True,
-                   show_legend: bool = True,
-                   ax: Optional[Axes] = None) -> Axes:
+def plot_scores_shm(
+    scores: np.ndarray,
+    detected_states: np.ndarray,
+    state_names: List[str],
+    threshold: float,
+    use_bar_chart: bool = True,
+    show_legend: bool = True,
+    ax: Optional[Axes] = None,
+) -> Axes:
     """
     Plot damage detection scores with threshold and classification results.
-    
+
     .. meta::
         :category: Auxiliary - Plotting
         :matlab_equivalent: plotScores_shm
@@ -40,137 +42,159 @@ def plot_scores_shm(scores: np.ndarray,
         :interactive_plot: True
         :display_name: Plot Detection Scores
         :verbose_call: [Axes Handle] = Plot Detection Scores (Scores, Detected States, State Names, Threshold, Use Bar Chart, Show Legend, Axes Handle)
-    
+
     Parameters
     ----------
     scores : array_like, shape (n_tests,)
         Detection scores for each test case.
-        
+
         .. gui::
             :widget: array_input
             :description: Detection scores array
-            
+
     detected_states : array_like, shape (n_tests,)
         Binary detection results (0=healthy, 1=damaged).
-        
+
         .. gui::
             :widget: array_input
             :description: Detection results (0/1)
-            
+
     state_names : list of str
         Names for the detection states ['Healthy', 'Damaged'].
-        
+
         .. gui::
             :widget: text_list
             :default: ["Healthy", "Damaged"]
-            
+
     threshold : float
         Detection threshold value.
-        
+
         .. gui::
             :widget: number_input
             :min: 0.0
             :default: 1.0
-            
+
     use_bar_chart : bool, optional
         If True, use bar chart. If False, use line plot. Default is True.
-        
+
         .. gui::
             :widget: checkbox
             :default: true
-            
+
     show_legend : bool, optional
         Whether to show legend. Default is True.
-        
+
         .. gui::
             :widget: checkbox
             :default: true
-            
+
     ax : matplotlib.axes.Axes, optional
         Axes to plot on. If None, creates new figure.
-    
+
     Returns
     -------
     ax : matplotlib.axes.Axes
         Axes handle for the plot.
-    
+
     Examples
     --------
     >>> import numpy as np
     >>> from shmtools.plotting import plot_scores_shm
-    >>> 
+    >>>
     >>> # Generate example data
     >>> scores = np.array([1.2, 1.5, 1.3, 2.8, 3.2, 4.1])
     >>> detected = np.array([0, 0, 0, 1, 1, 1])
     >>> threshold = 2.0
-    >>> 
+    >>>
     >>> # Plot results
     >>> ax = plot_scores_shm(scores, detected, ['Healthy', 'Damaged'], threshold)
     >>> plt.show()
     """
     if ax is None:
         fig, ax = plt.subplots(figsize=(10, 6))
-    
+
     n_tests = len(scores)
     test_indices = np.arange(n_tests)
-    
+
     # Color mapping
-    colors = ['green' if state == 0 else 'red' for state in detected_states]
-    
+    colors = ["green" if state == 0 else "red" for state in detected_states]
+
     if use_bar_chart:
         # Bar chart
-        bars = ax.bar(test_indices, scores, color=colors, alpha=0.7, edgecolor='black')
-        
+        bars = ax.bar(test_indices, scores, color=colors, alpha=0.7, edgecolor="black")
+
         # Add value labels on bars
         for i, (bar, score) in enumerate(zip(bars, scores)):
             height = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width()/2., height + 0.05*max(scores),
-                   f'{score:.2f}', ha='center', va='bottom')
+            ax.text(
+                bar.get_x() + bar.get_width() / 2.0,
+                height + 0.05 * max(scores),
+                f"{score:.2f}",
+                ha="center",
+                va="bottom",
+            )
     else:
         # Line plot with markers
-        ax.plot(test_indices, scores, 'o-', markersize=8, linewidth=2)
+        ax.plot(test_indices, scores, "o-", markersize=8, linewidth=2)
         for i, (score, state) in enumerate(zip(scores, detected_states)):
-            color = 'green' if state == 0 else 'red'
-            ax.plot(i, score, 'o', color=color, markersize=10, alpha=0.7)
-    
+            color = "green" if state == 0 else "red"
+            ax.plot(i, score, "o", color=color, markersize=10, alpha=0.7)
+
     # Add threshold line
-    ax.axhline(y=threshold, color='red', linestyle='--', linewidth=2, 
-               label=f'Threshold = {threshold:.2f}')
-    
+    ax.axhline(
+        y=threshold,
+        color="red",
+        linestyle="--",
+        linewidth=2,
+        label=f"Threshold = {threshold:.2f}",
+    )
+
     # Formatting
-    ax.set_xlabel('Test Case')
-    ax.set_ylabel('Detection Score')
-    ax.set_title('Damage Detection Results')
+    ax.set_xlabel("Test Case")
+    ax.set_ylabel("Detection Score")
+    ax.set_title("Damage Detection Results")
     ax.grid(True, alpha=0.3)
-    
+
     # Set x-axis ticks
     ax.set_xticks(test_indices)
-    ax.set_xticklabels([f'Test {i+1}' for i in test_indices])
-    
+    ax.set_xticklabels([f"Test {i+1}" for i in test_indices])
+
     # Add legend if requested
     if show_legend:
         # Create custom legend elements
         from matplotlib.patches import Patch
+
         legend_elements = [
-            Patch(facecolor='green', alpha=0.7, label=state_names[0]),
-            Patch(facecolor='red', alpha=0.7, label=state_names[1]),
-            plt.Line2D([0], [0], color='red', linestyle='--', 
-                      label=f'Threshold = {threshold:.2f}')
+            Patch(facecolor="green", alpha=0.7, label=state_names[0]),
+            Patch(facecolor="red", alpha=0.7, label=state_names[1]),
+            plt.Line2D(
+                [0],
+                [0],
+                color="red",
+                linestyle="--",
+                label=f"Threshold = {threshold:.2f}",
+            ),
         ]
-        ax.legend(handles=legend_elements, loc='upper left')
-    
+        ax.legend(handles=legend_elements, loc="upper left")
+
     # Add statistics text box
     n_healthy = np.sum(detected_states == 0)
     n_damaged = np.sum(detected_states == 1)
-    
+
     stats_text = f"""Statistics:
 {state_names[0]}: {n_healthy}/{n_tests} ({n_healthy/n_tests*100:.0f}%)
 {state_names[1]}: {n_damaged}/{n_tests} ({n_damaged/n_tests*100:.0f}%)"""
-    
-    ax.text(0.98, 0.98, stats_text, transform=ax.transAxes,
-            verticalalignment='top', horizontalalignment='right',
-            bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
-    
+
+    ax.text(
+        0.98,
+        0.98,
+        stats_text,
+        transform=ax.transAxes,
+        verticalalignment="top",
+        horizontalalignment="right",
+        bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
+    )
+
     plt.tight_layout()
     return ax
 
@@ -449,8 +473,8 @@ def plot_spectrogram_shm(
 ) -> Axes:
     """
     Plot spectrogram with proper formatting.
-    
-    Python equivalent of MATLAB's plotTimeFreq_shm function. Creates a 
+
+    Python equivalent of MATLAB's plotTimeFreq_shm function. Creates a
     time-frequency plot from spectrogram data with proper axis labeling,
     colorbar, and dB scaling for visualization.
 
@@ -468,28 +492,28 @@ def plot_spectrogram_shm(
     ----------
     f : array_like, shape (n_freqs,)
         Frequency vector in Hz.
-        
+
         .. gui::
             :widget: array_input
             :description: Frequency vector
-            
+
     t : array_like, shape (n_times,)
         Time vector in seconds.
-        
+
         .. gui::
             :widget: array_input
             :description: Time vector
-            
+
     Sxx : array_like, shape (n_freqs, n_times)
         Spectrogram matrix with power values.
-        
+
         .. gui::
             :widget: array_input
             :description: Spectrogram data matrix
-            
+
     ax : matplotlib.axes.Axes, optional
         Existing axes for plotting. If None, creates new figure and axes.
-        
+
         .. gui::
             :widget: axes_input
             :allow_none: True
@@ -502,28 +526,28 @@ def plot_spectrogram_shm(
     -------
     ax : matplotlib.axes.Axes
         Axes object containing the spectrogram plot.
-        
+
     Examples
     --------
     Basic spectrogram plotting:
-    
+
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from shmtools.plotting import plot_spectrogram_shm
     >>> from shmtools.core import stft_shm
-    >>> 
+    >>>
     >>> # Generate sample signal
     >>> fs = 1000
     >>> t_sig = np.linspace(0, 1, fs, endpoint=False)
     >>> signal = np.sin(2*np.pi*50*t_sig) + 0.5*np.sin(2*np.pi*120*t_sig)
-    >>> 
+    >>>
     >>> # Compute spectrogram
     >>> f, t, Sxx = stft_shm(signal, fs=fs)
-    >>> 
+    >>>
     >>> # Plot spectrogram
     >>> ax = plot_spectrogram_shm(f, t, np.abs(Sxx)**2)
     >>> plt.show()
-    
+
     See Also
     --------
     stft_shm : Short-time Fourier transform
@@ -561,7 +585,7 @@ def plotPSD_shm(
     MATLAB-compatible PSD plotting function.
 
     Plot power spectral density matrix using MATLAB-style interface.
-    
+
     .. meta::
         :category: Plotting - Spectral Analysis
         :matlab_equivalent: plotPSD_shm
@@ -596,19 +620,21 @@ def plotPSD_shm(
         fig, ax = plt.subplots(figsize=(10, 6))
     else:
         ax = axes_handle
-    
+
     # Convert to 0-based indexing
     channel_idx = channel_index - 1
-    
+
     if channel_idx >= psd_matrix.shape[1]:
-        raise ValueError(f"Channel index {channel_index} exceeds available channels ({psd_matrix.shape[1]})")
-    
+        raise ValueError(
+            f"Channel index {channel_index} exceeds available channels ({psd_matrix.shape[1]})"
+        )
+
     # Get channel data
     if psd_matrix.ndim == 3:
         channel_data = psd_matrix[:, channel_idx, :]
     else:
-        channel_data = psd_matrix[:, channel_idx:channel_idx+1]
-    
+        channel_data = psd_matrix[:, channel_idx : channel_idx + 1]
+
     if plot_average and channel_data.ndim == 2:
         # Average over instances
         psd_plot = np.mean(channel_data, axis=1)
@@ -618,14 +644,14 @@ def plotPSD_shm(
             psd_plot = channel_data
         else:
             psd_plot = channel_data
-    
+
     # Convert to dB if requested
     if use_db_scale:
         psd_plot = 10 * np.log10(np.maximum(psd_plot, 1e-12))
         ylabel = "Power (dB)"
     else:
         ylabel = "Power"
-    
+
     # Plot
     if psd_plot.ndim == 1:
         ax.plot(freq_vector, psd_plot)
@@ -633,84 +659,20 @@ def plotPSD_shm(
         # Plot multiple instances
         for i in range(psd_plot.shape[1]):
             ax.plot(freq_vector, psd_plot[:, i], alpha=0.7)
-    
+
     ax.set_xlabel("Frequency (Hz)")
     ax.set_ylabel(ylabel)
     ax.grid(True)
-    
-    return ax
-
-
-def plot_time_freq(
-    tf_matrix: np.ndarray,
-    f: Optional[np.ndarray] = None,
-    t: Optional[np.ndarray] = None,
-    ax: Optional[Axes] = None,
-    title: str = "Time-Frequency Analysis",
-    **kwargs,
-) -> Axes:
-    """
-    General time-frequency plotting function.
-
-    Python equivalent of MATLAB's plotTimeFreq_shm function.
-
-    Parameters
-    ----------
-    tf_matrix : ndarray
-        Time-frequency matrix.
-    f : ndarray, optional
-        Frequency vector.
-    t : ndarray, optional
-        Time vector.
-    ax : Axes, optional
-        Existing axes.
-    title : str
-        Plot title.
-
-    Returns
-    -------
-    ax : Axes
-        Axes object.
-    """
-    if ax is None:
-        fig, ax = plt.subplots(figsize=(12, 6))
-
-    # Handle default frequency and time vectors
-    if f is None:
-        f = np.arange(tf_matrix.shape[0])
-    if t is None:
-        t = np.arange(tf_matrix.shape[1])
-
-    # Convert to dB if values are large
-    if np.max(tf_matrix) > 100:
-        tf_db = 10 * np.log10(np.maximum(np.abs(tf_matrix), 1e-12))
-        label = "Power (dB)"
-    else:
-        tf_db = np.abs(tf_matrix)
-        label = "Magnitude"
-
-    # Create plot
-    im = ax.pcolormesh(t, f, tf_db, cmap="viridis", **kwargs)
-
-    ax.set_xlabel("Time (s)")
-    ax.set_ylabel("Frequency (Hz)")
-    ax.set_title(title)
-
-    # Add colorbar
-    plt.colorbar(im, ax=ax, label=label)
 
     return ax
 
 
 def plot_roc_shm(
-    tpr: np.ndarray,
-    fpr: np.ndarray,
-    scaling: str = 'linear',
-    ax: Optional[Axes] = None
+    tpr: np.ndarray, fpr: np.ndarray, scaling: str = "linear", ax: Optional[Axes] = None
 ) -> Axes:
     """
     Plot receiver operating characteristic curve.
-    
+
     .. meta::
         :category: Plotting - Classification
         :matlab_equivalent: plotROC_shm
@@ -719,56 +681,56 @@ def plot_roc_shm(
         :output_type: Plot
         :display_name: ROC Curve Plot
         :verbose_call: [Axes Handle] = Plot Receiver Operating Characteristic Curve (True Positive Rate, False Positive Rate, Scaling, Axes Handle)
-        
+
     Plot receiver operating characteristic curve(s). A curve is plotted
     for each column of TPR and FPR.
-    
+
     Parameters
     ----------
     tpr : ndarray, shape (points, curves)
         Matrix composed of true positive rates between 0 and 1.
-        
+
         .. gui::
             :widget: data_input
             :description: True positive rates for ROC curve
-            
+
     fpr : ndarray, shape (points, curves)
         Matrix composed of false positive rates between 0 and 1.
-        
+
         .. gui::
             :widget: data_input
             :description: False positive rates for ROC curve
-            
+
     scaling : str, optional
         Axis scaling. Options: 'linear', 'logx', 'logy', 'logxy', 'normal'
         Default is 'linear'.
-        
+
         .. gui::
             :widget: select
             :options: ["linear", "logx", "logy", "logxy", "normal"]
             :default: "linear"
             :description: Axis scaling type
-            
+
     ax : matplotlib.axes.Axes, optional
         Matplotlib axes handle. If None, creates new figure and axes.
-    
+
     Returns
     -------
     ax : matplotlib.axes.Axes
         Axes handle for the plot.
-        
+
         .. gui::
             :plot_type: "line"
             :x_axis: "fpr"
             :y_axis: "tpr"
             :xlabel: "False Positive Rate"
             :ylabel: "True Positive Rate"
-            
+
     Examples
     --------
     >>> import numpy as np
     >>> from shmtools.plotting.spectral_plots import plot_roc_shm
-    >>> 
+    >>>
     >>> # Generate example ROC data
     >>> n_points = 100
     >>> fpr = np.linspace(0, 1, n_points)
@@ -778,59 +740,59 @@ def plot_roc_shm(
     >>> tpr_random = fpr
     >>> # Good classifier
     >>> tpr_good = np.sqrt(fpr)
-    >>> 
+    >>>
     >>> # Combine into matrix
     >>> tpr_matrix = np.column_stack([tpr_perfect, tpr_random, tpr_good])
     >>> fpr_matrix = np.column_stack([fpr, fpr, fpr])
-    >>> 
+    >>>
     >>> # Plot ROC curves
     >>> ax = plot_roc_shm(tpr_matrix, fpr_matrix)
     >>> ax.legend(['Perfect', 'Random', 'Good'])
-    
+
     References
     ----------
-    [1] Fawcett, T. (2006). An introduction to ROC analysis. Pattern 
+    [1] Fawcett, T. (2006). An introduction to ROC analysis. Pattern
     recognition letters, 27(8), 861-874.
     """
     if ax is None:
         fig, ax = plt.subplots(figsize=(8, 8))
-    
+
     # Ensure arrays are 2D
     if tpr.ndim == 1:
         tpr = tpr.reshape(-1, 1)
     if fpr.ndim == 1:
         fpr = fpr.reshape(-1, 1)
-    
+
     # Plot each curve
     n_curves = tpr.shape[1]
     colors = plt.cm.tab10(np.linspace(0, 1, n_curves))
-    
+
     for i in range(n_curves):
         ax.plot(fpr[:, i], tpr[:, i], color=colors[i], linewidth=2)
-    
+
     # Add diagonal reference line (random classifier)
-    ax.plot([0, 1], [0, 1], 'k--', alpha=0.5, label='Random')
-    
+    ax.plot([0, 1], [0, 1], "k--", alpha=0.5, label="Random")
+
     # Set scaling
-    if scaling == 'logx':
-        ax.set_xscale('log')
-    elif scaling == 'logy':
-        ax.set_yscale('log')  
-    elif scaling == 'logxy':
-        ax.set_xscale('log')
-        ax.set_yscale('log')
-    elif scaling == 'normal':
+    if scaling == "logx":
+        ax.set_xscale("log")
+    elif scaling == "logy":
+        ax.set_yscale("log")
+    elif scaling == "logxy":
+        ax.set_xscale("log")
+        ax.set_yscale("log")
+    elif scaling == "normal":
         # Normal probability paper scale - approximation
-        ax.set_xscale('logit')
-        ax.set_yscale('logit')
-    
-    ax.set_xlabel('False Positive Rate')
-    ax.set_ylabel('True Positive Rate')
-    ax.set_title('Receiver Operating Characteristic')
+        ax.set_xscale("logit")
+        ax.set_yscale("logit")
+
+    ax.set_xlabel("False Positive Rate")
+    ax.set_ylabel("True Positive Rate")
+    ax.set_title("Receiver Operating Characteristic")
     ax.grid(True, alpha=0.3)
     ax.set_xlim([0, 1])
     ax.set_ylim([0, 1])
-    
+
     return ax
 
 
@@ -841,11 +803,11 @@ def plot_time_freq_shm(
     time_vector: Optional[np.ndarray] = None,
     freq_vector: Optional[np.ndarray] = None,
     use_db_scale: Optional[bool] = None,
-    ax: Optional[Axes] = None
+    ax: Optional[Axes] = None,
 ) -> Axes:
     """
     Create a time-frequency plot.
-    
+
     .. meta::
         :category: Plotting - Spectral
         :matlab_equivalent: plotTimeFreq_shm
@@ -854,92 +816,92 @@ def plot_time_freq_shm(
         :output_type: Plot
         :display_name: Time-Frequency Plot
         :verbose_call: [Axes Handle] = Plot Time-Frequency (Time-Frequency Data, Channel Index, Instance Index, Time Vector, Frequency Vector, Use dB Magnitude, Axes Handle)
-        
+
     Create a time-frequency plot from output of lpcSpectrogram_shm,
     stft_shm or dwvd_shm.
-    
+
     Parameters
     ----------
     time_freq_matrix : ndarray, shape (freq, time, channels, instances)
         Time-frequency data matrix.
-        
+
         .. gui::
             :widget: data_input
             :description: Time-frequency matrix from spectral analysis
-            
+
     channel_index : int, optional
         Channel to plot (1-based indexing). Default is 1.
-        
+
         .. gui::
             :widget: number_input
             :min: 1
             :description: Channel index to plot
-            
+
     instance : int, optional
         Instance to plot (1-based indexing). Default is 1.
-        
+
         .. gui::
             :widget: number_input
             :min: 1
             :description: Instance index to plot
-            
+
     time_vector : ndarray, optional
         Sampling times corresponding to time_freq_matrix.
         If None, uses sample indices.
-        
+
         .. gui::
             :widget: array_input
             :description: Time vector (seconds)
-            
+
     freq_vector : ndarray, optional
         Frequency values corresponding to time_freq_matrix.
         If None, uses normalized frequency.
-        
+
         .. gui::
             :widget: array_input
             :description: Frequency vector (Hz)
-            
+
     use_db_scale : bool, optional
         Use dB for magnitude scale instead of linear. Default is True.
-        
+
         .. gui::
             :widget: checkbox
             :default: True
             :description: Use dB scale for magnitude
-            
+
     ax : matplotlib.axes.Axes, optional
         Handle for plotting axes. If None, creates new figure and axes.
-    
+
     Returns
     -------
     ax : matplotlib.axes.Axes
         Axes handle for the plot.
-        
+
         .. gui::
             :plot_type: "heatmap"
             :x_axis: "time_vector"
             :y_axis: "freq_vector"
             :xlabel: "Time (s)"
             :ylabel: "Frequency (Hz)"
-            
+
     Examples
     --------
     >>> import numpy as np
     >>> from shmtools.core.spectral import dwvd_shm
     >>> from shmtools.plotting.spectral_plots import plot_time_freq_shm
-    >>> 
+    >>>
     >>> # Generate chirp signal
     >>> fs = 1000
     >>> t = np.linspace(0, 1, fs)
     >>> signal = np.sin(2*np.pi*(50 + 50*t)*t)  # 50-100 Hz chirp
     >>> X = signal.reshape(-1, 1, 1)
-    >>> 
+    >>>
     >>> # Compute time-frequency representation
     >>> tf_matrix, f, t = dwvd_shm(X, fs=fs)
-    >>> 
+    >>>
     >>> # Plot time-frequency
     >>> ax = plot_time_freq_shm(tf_matrix, time_vector=t, freq_vector=f)
-    
+
     See Also
     --------
     dwvd_shm : Discrete Wigner-Ville Distribution
@@ -953,60 +915,68 @@ def plot_time_freq_shm(
         instance = 1
     if use_db_scale is None:
         use_db_scale = True
-    
+
     # Convert to 0-based indexing
     channel_idx = channel_index - 1
     instance_idx = instance - 1
-    
+
     # Extract data for specified channel and instance
     if time_freq_matrix.ndim == 4:
         data = time_freq_matrix[:, :, channel_idx, instance_idx]
     elif time_freq_matrix.ndim == 3:
-        data = time_freq_matrix[:, :, min(channel_idx, time_freq_matrix.shape[2]-1)]
+        data = time_freq_matrix[:, :, min(channel_idx, time_freq_matrix.shape[2] - 1)]
     else:
         data = time_freq_matrix
-    
+
     # Handle time and frequency vectors
     use_samples = False
     if time_vector is None:
         time_vector = np.arange(data.shape[1])
         use_samples = True
-        
+
     if freq_vector is None:
         freq_vector = np.linspace(0, 0.5, data.shape[0])  # Normalized frequency
-        freq_label = 'Normalized Frequency'
+        freq_label = "Normalized Frequency"
     else:
-        freq_label = 'Frequency (Hz)'
-    
+        freq_label = "Frequency (Hz)"
+
     # Convert to magnitude and apply scaling
     magnitude = np.abs(data)
     if use_db_scale:
         plot_data = 10 * np.log10(np.maximum(magnitude, 1e-12))
-        cbar_label = 'Magnitude (dB)'
+        cbar_label = "Magnitude (dB)"
     else:
         plot_data = magnitude
-        cbar_label = 'Magnitude'
-    
+        cbar_label = "Magnitude"
+
     # Create plot
     if ax is None:
         fig, ax = plt.subplots(figsize=(12, 8))
-    
+
     # Create time-frequency plot using imshow for better compatibility
     extent = [time_vector[0], time_vector[-1], freq_vector[0], freq_vector[-1]]
-    im = ax.imshow(plot_data, aspect='auto', origin='lower', extent=extent, 
-                   cmap='viridis', interpolation='nearest')
-    
+    im = ax.imshow(
+        plot_data,
+        aspect="auto",
+        origin="lower",
+        extent=extent,
+        cmap="viridis",
+        interpolation="nearest",
+    )
+
     # Set labels
     if use_samples:
-        ax.set_xlabel('Time (samples)')
+        ax.set_xlabel("Time (samples)")
     else:
-        ax.set_xlabel('Time (s)')
+        ax.set_xlabel("Time (s)")
     ax.set_ylabel(freq_label)
-    ax.set_title(f'Time-Frequency Analysis - Channel {channel_index}, Instance {instance}')
-    
+    ax.set_title(
+        f"Time-Frequency Analysis - Channel {channel_index}, Instance {instance}"
+    )
+
     # Add colorbar
     plt.colorbar(im, ax=ax, label=cbar_label)
-    
+
     return ax
 
 
@@ -1016,11 +986,11 @@ def plot_scalogram_shm(
     instance: Optional[int] = None,
     time_vector: Optional[np.ndarray] = None,
     freq_vector: Optional[np.ndarray] = None,
-    ax: Optional[Axes] = None
+    ax: Optional[Axes] = None,
 ) -> Axes:
     """
     Create a scalogram plot.
-    
+
     .. meta::
         :category: Plotting - Spectral
         :matlab_equivalent: plotScalogram_shm
@@ -1029,84 +999,84 @@ def plot_scalogram_shm(
         :output_type: Plot
         :display_name: Scalogram Plot
         :verbose_call: [Axes Handle] = Plot Scalogram (Scalogram Data, Channel Index, Instance Index, Time Vector, Frequency Vector, Axes Handle)
-        
+
     Create a time-frequency plot from output of cwt_scalogram_shm.
-    
+
     Parameters
     ----------
     scalo_matrix : ndarray, shape (n_scale, time, channels, instances)
         Scalogram data matrix.
-        
+
         .. gui::
             :widget: data_input
             :description: Scalogram matrix from CWT analysis
-            
+
     channel_index : int, optional
         Channel to plot (1-based indexing). Default is 1.
-        
+
         .. gui::
             :widget: number_input
             :min: 1
             :description: Channel index to plot
-            
+
     instance : int, optional
         Instance to plot (1-based indexing). Default is 1.
-        
+
         .. gui::
             :widget: number_input
             :min: 1
             :description: Instance index to plot
-            
+
     time_vector : ndarray, optional
         Sampling times corresponding to scalo_matrix.
         If None, uses sample indices.
-        
+
         .. gui::
             :widget: array_input
             :description: Time vector (seconds)
-            
+
     freq_vector : ndarray, optional
         Frequency vector corresponding to scales in scalo_matrix.
         If None, uses scale indices.
-        
+
         .. gui::
             :widget: array_input
             :description: Frequency vector (Hz)
-            
+
     ax : matplotlib.axes.Axes, optional
         Handle for plotting axes. If None, creates new figure and axes.
-    
+
     Returns
     -------
     ax : matplotlib.axes.Axes
         Axes handle for the plot.
-        
+
         .. gui::
             :plot_type: "heatmap"
             :x_axis: "time_vector"
             :y_axis: "freq_vector"
             :xlabel: "Time (s)"
             :ylabel: "Frequency (Hz)"
-            
+
     Examples
     --------
     >>> import numpy as np
     >>> from shmtools.core.spectral import cwt_scalogram_shm
     >>> from shmtools.plotting.spectral_plots import plot_scalogram_shm
-    >>> 
+    >>>
     >>> # Generate test signal with frequency variation
     >>> fs = 1000
     >>> t = np.linspace(0, 2, 2*fs)
     >>> # Chirp signal from 10 to 100 Hz
     >>> signal = np.sin(2*np.pi*(10 + 45*t)*t)
     >>> X = signal.reshape(-1, 1, 1)
-    >>> 
+    >>>
     >>> # Compute scalogram
     >>> scalo, f, t_scalo = cwt_scalogram_shm(X, fs=fs, f_min=5, f_max=150, n_scale=64)
-    >>> 
+    >>>
     >>> # Plot scalogram
     >>> ax = plot_scalogram_shm(scalo, time_vector=t_scalo, freq_vector=f)
-    
+
     See Also
     --------
     cwt_scalogram_shm : Continuous Wavelet Transform scalogram
@@ -1116,66 +1086,74 @@ def plot_scalogram_shm(
         channel_index = 1
     if instance is None:
         instance = 1
-    
+
     # Convert to 0-based indexing
     channel_idx = channel_index - 1
     instance_idx = instance - 1
-    
+
     # Extract data for specified channel and instance
     if scalo_matrix.ndim == 4:
         data = scalo_matrix[:, :, channel_idx, instance_idx]
     elif scalo_matrix.ndim == 3:
-        data = scalo_matrix[:, :, min(channel_idx, scalo_matrix.shape[2]-1)]
+        data = scalo_matrix[:, :, min(channel_idx, scalo_matrix.shape[2] - 1)]
     else:
         data = scalo_matrix
-    
+
     # Handle time and frequency vectors
     if time_vector is None:
         time_vector = np.arange(data.shape[1])
-        time_label = 'Time (samples)'
+        time_label = "Time (samples)"
     else:
-        time_label = 'Time (s)'
-        
+        time_label = "Time (s)"
+
     if freq_vector is None:
         freq_vector = np.arange(data.shape[0])
-        freq_label = 'Scale'
+        freq_label = "Scale"
     else:
-        freq_label = 'Frequency (Hz)'
-    
+        freq_label = "Frequency (Hz)"
+
     # Convert to dB scale
     plot_data = 10 * np.log10(np.maximum(data, 1e-12))
-    
+
     # Create plot
     if ax is None:
         fig, ax = plt.subplots(figsize=(12, 8))
-    
+
     # Create scalogram plot using imshow for better compatibility
     extent = [time_vector[0], time_vector[-1], freq_vector[0], freq_vector[-1]]
-    im = ax.imshow(plot_data, aspect='auto', origin='lower', extent=extent, 
-                   cmap='viridis', interpolation='nearest')
-    
+    im = ax.imshow(
+        plot_data,
+        aspect="auto",
+        origin="lower",
+        extent=extent,
+        cmap="viridis",
+        interpolation="nearest",
+    )
+
     # Set labels and title
     ax.set_xlabel(time_label)
     ax.set_ylabel(freq_label)
-    ax.set_title(f'Scalogram - Channel {channel_index}, Instance {instance}')
-    
+    ax.set_title(f"Scalogram - Channel {channel_index}, Instance {instance}")
+
     # Add colorbar
-    plt.colorbar(im, ax=ax, label='Power (dB)')
-    
+    plt.colorbar(im, ax=ax, label="Power (dB)")
+
     return ax
 
 
-def plot_score_distributions_shm(scores: np.ndarray,
-                                 states: np.ndarray,
-                                 state_names: Optional[List[str]] = None,
-                                 thresholds: Optional[np.ndarray] = None,
-                                 flip_signs: bool = False,
-                                 use_log_scores: bool = False,
-                                 smoothing: Optional[float] = None,
-                                 axes: Optional[plt.Axes] = None) -> plt.Axes:
+def plot_score_distributions_shm(
+    scores: np.ndarray,
+    states: np.ndarray,
+    state_names: Optional[List[str]] = None,
+    thresholds: Optional[np.ndarray] = None,
+    flip_signs: bool = False,
+    use_log_scores: bool = False,
+    smoothing: Optional[float] = None,
+    axes: Optional[plt.Axes] = None,
+) -> plt.Axes:
     """
     Plot distribution of scores using kernel density estimation (KDE).
-    
+
     .. meta::
         :category: Plotting - Score Analysis
         :matlab_equivalent: plotScoreDistributions_shm
@@ -1184,94 +1162,94 @@ def plot_score_distributions_shm(scores: np.ndarray,
         :output_type: Plot
         :display_name: Plot Score Distributions
         :verbose_call: Axes Handle = Plot Score Distributions (Scores, Damage States, State Names, Thresholds, Flip Signs, Use Log Scores, Kernel Smoothing Parameter, Axes Handle)
-        
+
     Parameters
     ----------
     scores : array_like, shape (instances, 1) or (instances,)
         Vector of scores from scoring process corresponding to each measured instance.
-        
+
         .. gui::
             :widget: array_input
             :description: Anomaly scores for each test instance
-            
+
     states : array_like, shape (instances, 1) or (instances,)
-        Integers ranging from zero to N specifying the known state damage level 
+        Integers ranging from zero to N specifying the known state damage level
         corresponding to each measured instance.
-        
+
         .. gui::
             :widget: array_input
             :description: State labels (0=undamaged, 1=damaged, etc.)
-            
+
     state_names : list of str, optional
         Cell array of strings corresponding to each possible state.
-        
+
         .. gui::
             :widget: text_input
             :description: Names for each state (e.g., ['Undamaged', 'Damaged'])
             :default: ['State 0', 'State 1', ...]
-            
+
     thresholds : array_like, optional
         Vector of thresholds corresponding to each possible state.
-        
+
         .. gui::
             :widget: array_input
             :description: Detection thresholds (will be shown as vertical lines)
-            
+
     flip_signs : bool, default False
         Whether signs of scores and thresholds should be flipped.
-        
+
         .. gui::
             :widget: checkbox
             :description: Flip score signs (higher becomes more anomalous)
             :default: false
-            
+
     use_log_scores : bool, default False
         Whether log scores should be used for visualization.
-        
+
         .. gui::
-            :widget: checkbox  
+            :widget: checkbox
             :description: Use logarithmic scale for scores
             :default: false
-            
+
     smoothing : float, optional
         Kernel density function smoothing parameter (bandwidth).
-        
+
         .. gui::
             :widget: number_input
             :description: KDE bandwidth parameter
             :min: 0.01
             :max: 2.0
             :default: auto (std of first state)
-            
+
     axes : matplotlib.axes.Axes, optional
         Matplotlib axes handle for plotting.
-        
+
     Returns
     -------
     axes : matplotlib.axes.Axes
         Matplotlib axes handle containing the plot.
-        
+
     Notes
     -----
-    This function plots probability density distributions of scores for different 
-    damage states using Gaussian kernel density estimation. Each unique state is 
-    plotted with a different color. Optional thresholds are shown as vertical 
+    This function plots probability density distributions of scores for different
+    damage states using Gaussian kernel density estimation. Each unique state is
+    plotted with a different color. Optional thresholds are shown as vertical
     dashed lines.
-    
+
     The kernel density estimation uses a Gaussian kernel:
-    
+
     .. math::
         \\hat{f}(x) = \\frac{1}{nh} \\sum_{i=1}^{n} K\\left(\\frac{x - x_i}{h}\\right)
-    
+
     where K is the Gaussian kernel and h is the bandwidth (smoothing parameter).
-    
+
     Examples
     --------
     Basic usage with Mahalanobis scores:
-    
+
     >>> import numpy as np
     >>> from shmtools.plotting import plot_score_distributions_shm
-    >>> 
+    >>>
     >>> # Simulated scores and states
     >>> scores = np.concatenate([
     ...     np.random.normal(2, 0.5, 50),    # Undamaged
@@ -1279,9 +1257,9 @@ def plot_score_distributions_shm(scores: np.ndarray,
     ... ])
     >>> states = np.concatenate([
     ...     np.zeros(50),                     # Undamaged
-    ...     np.ones(30)                       # Damaged  
+    ...     np.ones(30)                       # Damaged
     ... ])
-    >>> 
+    >>>
     >>> # Plot score distributions
     >>> ax = plot_score_distributions_shm(
     ...     scores, states,
@@ -1290,9 +1268,9 @@ def plot_score_distributions_shm(scores: np.ndarray,
     ...     smoothing=0.3
     ... )
     >>> ax.set_title('Score Distributions by Damage State')
-    
+
     With logarithmic scores and thresholds:
-    
+
     >>> # Plot with log scores and detection threshold
     >>> threshold = np.array([3.5])
     >>> ax = plot_score_distributions_shm(
@@ -1302,7 +1280,7 @@ def plot_score_distributions_shm(scores: np.ndarray,
     ...     use_log_scores=True,
     ...     flip_signs=False
     ... )
-    
+
     References
     ----------
     .. [1] Silverman, B.W. (1986). "Density Estimation for Statistics and Data Analysis"
@@ -1311,28 +1289,28 @@ def plot_score_distributions_shm(scores: np.ndarray,
     # Handle input arrays
     scores = np.asarray(scores).flatten()
     states = np.asarray(states).flatten()
-    
+
     if len(scores) != len(states):
         raise ValueError("scores and states must have the same length")
-    
+
     # Set default state names
     if states is None:
         states = np.ones(len(scores), dtype=int)
-    
+
     # Apply sign flip if requested
     if flip_signs:
         scores = -scores
         if thresholds is not None:
             thresholds = -np.asarray(thresholds)
-    
+
     # Create axes if not provided
     if axes is None:
         fig, axes = plt.subplots(figsize=(10, 6))
-    
+
     # Handle state indexing (MATLAB uses 1-based, convert 0-based to 1-based for consistency)
     if np.min(states) == 0:
         states = states + 1
-    
+
     # Apply log transformation if requested
     if use_log_scores:
         if np.min(scores) > 0 and (thresholds is None or np.min(thresholds) > 0):
@@ -1344,72 +1322,88 @@ def plot_score_distributions_shm(scores: np.ndarray,
             if thresholds is not None:
                 thresholds = -np.log10(-thresholds)
         else:
-            raise ValueError('Log axis cannot be used with scores and thresholds containing positive and negative values.')
-    
+            raise ValueError(
+                "Log axis cannot be used with scores and thresholds containing positive and negative values."
+            )
+
     # Get unique states
     unique_states = np.unique(states)
-    
+
     # Set default state names
     if state_names is None:
-        state_names = [f'State {int(state)}' for state in unique_states]
-    
+        state_names = [f"State {int(state)}" for state in unique_states]
+
     # Define colors for different states
-    colors = ['b', 'r', 'k', 'm', 'c', 'y', 'g']
-    
+    colors = ["b", "r", "k", "m", "c", "y", "g"]
+
     # Set up x-axis range for KDE
     points = 2000
-    
+
     # Calculate KDE for each state
     for i, state in enumerate(unique_states):
         state_mask = states == state
         plot_scores = scores[state_mask]
-        
+
         if len(plot_scores) == 0:
             continue
-        
+
         # Set smoothing parameter if not provided (use std of first state)
         if i == 0 and smoothing is None:
             smoothing = np.std(plot_scores)
             if smoothing == 0:  # Handle constant values
                 smoothing = 0.1
-        
+
         # Create x-axis for KDE
         x_min = np.min(scores) - smoothing
         x_max = np.max(scores) + 4 * smoothing
         x = np.linspace(x_min, x_max, points)
-        
+
         # Calculate Gaussian KDE
         n = len(plot_scores)
         kde = np.zeros(points)
-        
+
         # Gaussian kernel function
         for score in plot_scores:
-            kernel = (1 / np.sqrt(2 * np.pi)) * np.exp(-(x - score)**2 / (2 * smoothing**2))
+            kernel = (1 / np.sqrt(2 * np.pi)) * np.exp(
+                -((x - score) ** 2) / (2 * smoothing**2)
+            )
             kde += kernel / (n * smoothing)
-        
+
         # Plot the KDE
         color = colors[i % len(colors)]
-        axes.plot(x, kde, color, linewidth=2, label=state_names[int(state)-1] if int(state)-1 < len(state_names) else f'State {int(state)}')
-    
+        axes.plot(
+            x,
+            kde,
+            color,
+            linewidth=2,
+            label=(
+                state_names[int(state) - 1]
+                if int(state) - 1 < len(state_names)
+                else f"State {int(state)}"
+            ),
+        )
+
     # Add legend
-    axes.legend(loc='upper right')
-    
+    axes.legend(loc="upper right")
+
     # Plot thresholds if provided
     if thresholds is not None:
         y_limits = axes.get_ylim()
         for threshold in np.asarray(thresholds).flatten():
-            axes.plot([threshold, threshold], y_limits, 'g--', linewidth=2, label='Threshold')
-    
+            axes.plot(
+                [threshold, threshold], y_limits, "g--", linewidth=2, label="Threshold"
+            )
+
     # Set labels
-    axes.set_ylabel('Frequency')
+    axes.set_ylabel("Frequency")
     if use_log_scores:
-        axes.set_xlabel('Log Score')
+        axes.set_xlabel("Log Score")
     else:
-        axes.set_xlabel('Score')
-    
+        axes.set_xlabel("Score")
+
     # Add grid for better readability
     axes.grid(True, alpha=0.3)
-    
+
     return axes
 
 
@@ -1419,11 +1413,11 @@ def plot_features_shm(
     feature_indices: Optional[np.ndarray] = None,
     subplot_titles: Optional[List[str]] = None,
     subplot_ylabels: Optional[List[str]] = None,
-    axes_handle=None
+    axes_handle=None,
 ):
     """
     Plot feature vectors as subplots for each feature.
-    
+
     .. meta::
         :category: Plotting - Feature Visualization
         :matlab_equivalent: plotFeatures_shm
@@ -1432,114 +1426,114 @@ def plot_features_shm(
         :output_type: Figure
         :display_name: Plot Features
         :verbose_call: [Axes Handle] = Plot Features (Feature Vectors, Instances to Plot, Features to Plot, Titles for Subplots, Y-Axis Labels for Subplots, Axes Handle)
-        
+
     Plot feature vectors or a set of samples from feature vectors. Each
     feature uses its own subplot. This is useful for visualizing the
     distribution and characteristics of damage-sensitive features across
     different structural states or conditions.
-    
+
     Parameters
     ----------
     feature_vectors : ndarray, shape (instances, features)
         Feature matrix where each row is a feature vector from one instance.
-        
+
         .. gui::
             :widget: file_upload
             :formats: [".csv", ".mat", ".npy"]
             :description: Feature vectors to visualize
-            
+
     instance_indices : ndarray, optional
         List of indices of instances to be plotted. If None, all instances
         are plotted.
-        
+
         .. gui::
             :widget: array_input
             :description: Subset of instances to plot
-            
-    feature_indices : ndarray, optional  
+
+    feature_indices : ndarray, optional
         List of indices of features to be plotted. If None, all features
         are plotted. Maximum of 20 features recommended for readability.
-        
+
         .. gui::
             :widget: array_input
             :description: Subset of features to plot
-            
+
     subplot_titles : list of str, optional
         Titles for each subplot. Should match the order of feature_indices.
         If None, defaults to "Feature #".
-        
+
         .. gui::
             :widget: text_array
             :description: Custom titles for each feature subplot
-            
+
     subplot_ylabels : list of str, optional
         Y-axis labels for each subplot. Should match the order of feature_indices.
-        
+
         .. gui::
             :widget: text_array
             :description: Custom y-axis labels for each feature subplot
-            
+
     axes_handle : matplotlib axes, optional
         Existing axes to plot on. If None, creates new figure.
-    
+
     Returns
     -------
     axes_handle : matplotlib axes
         Handle to the created or modified axes.
-        
+
     Examples
     --------
     >>> import numpy as np
     >>> from shmtools.plotting.spectral_plots import plot_features_shm
-    >>> 
+    >>>
     >>> # Generate sample feature vectors
     >>> np.random.seed(42)
     >>> baseline_features = np.random.normal(0, 1, (50, 4))  # 50 baseline instances, 4 features
     >>> damage_features = np.random.normal(1, 1.2, (20, 4))  # 20 damage instances, 4 features
     >>> features = np.vstack([baseline_features, damage_features])
-    >>> 
+    >>>
     >>> # Plot all features
     >>> feature_names = ['RMS', 'Kurtosis', 'Crest Factor', 'Peak Factor']
     >>> plot_features_shm(features, subplot_titles=feature_names)
-    >>> 
+    >>>
     >>> # Plot subset of features for specific instances
-    >>> plot_features_shm(features, 
+    >>> plot_features_shm(features,
     >>>                   instance_indices=np.arange(0, 70, 5),  # Every 5th instance
     >>>                   feature_indices=[0, 2],  # Only RMS and Crest Factor
     >>>                   subplot_titles=['RMS', 'Crest Factor'])
-    
+
     References
     ----------
     This function replicates the plotting behavior of plotFeatures_shm.m
     from the MATLAB SHMTools library for visualizing feature distributions.
     """
     import matplotlib.pyplot as plt
-    
+
     # Handle default parameters
     n_instances, n_features = feature_vectors.shape
-    
+
     if instance_indices is None:
         instance_indices = np.arange(n_instances)
-    
-    if feature_indices is None:  
+
+    if feature_indices is None:
         feature_indices = np.arange(min(n_features, 20))  # Limit to 20 features max
-    
+
     n_selected_features = len(feature_indices)
-    
+
     if subplot_titles is None:
-        subplot_titles = [f'Feature {i+1}' for i in feature_indices]
-    
+        subplot_titles = [f"Feature {i+1}" for i in feature_indices]
+
     if subplot_ylabels is None:
         subplot_ylabels = [None] * n_selected_features
-    
+
     # Create figure if no axes provided
     if axes_handle is None:
         # Determine subplot layout
         n_cols = min(4, n_selected_features)  # Max 4 columns
         n_rows = int(np.ceil(n_selected_features / n_cols))
-        
-        fig, axes = plt.subplots(n_rows, n_cols, figsize=(4*n_cols, 3*n_rows))
-        
+
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(4 * n_cols, 3 * n_rows))
+
         # Handle single subplot case
         if n_selected_features == 1:
             axes = [axes]
@@ -1549,42 +1543,43 @@ def plot_features_shm(
             axes = axes.flatten()
     else:
         axes = [axes_handle]
-    
+
     # Plot each selected feature
     for i, feat_idx in enumerate(feature_indices):
         if i >= len(axes):
             break
-            
+
         ax = axes[i] if len(axes) > 1 else axes[0]
-        
+
         # Extract feature values for selected instances
         feature_values = feature_vectors[instance_indices, feat_idx]
-        
+
         # Create simple line plot
-        ax.plot(instance_indices, feature_values, 'b.-', markersize=4, linewidth=1)
+        ax.plot(instance_indices, feature_values, "b.-", markersize=4, linewidth=1)
         ax.grid(True, alpha=0.3)
-        
+
         # Set labels and title
-        ax.set_xlabel('Instance Index')
+        ax.set_xlabel("Instance Index")
         if subplot_ylabels[i] is not None:
             ax.set_ylabel(subplot_ylabels[i])
         else:
-            ax.set_ylabel('Feature Value')
-        
+            ax.set_ylabel("Feature Value")
+
         ax.set_title(subplot_titles[i])
-        
+
         # Auto-scale with some padding
         y_range = np.ptp(feature_values)
         if y_range > 0:
             y_margin = y_range * 0.1
-            ax.set_ylim(np.min(feature_values) - y_margin, 
-                       np.max(feature_values) + y_margin)
-    
+            ax.set_ylim(
+                np.min(feature_values) - y_margin, np.max(feature_values) + y_margin
+            )
+
     # Hide unused subplots
     if axes_handle is None and n_selected_features < len(axes):
         for j in range(n_selected_features, len(axes)):
             axes[j].set_visible(False)
-    
+
     plt.tight_layout()
-    
+
     return axes if len(axes) > 1 else axes[0]

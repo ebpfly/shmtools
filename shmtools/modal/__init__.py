@@ -22,7 +22,7 @@ __all__ = [
     "rpfit_shm",
     # Optimal sensor placement
     "response_interp_shm",
-    "add_resp_2_geom_shm", 
+    "add_resp_2_geom_shm",
     "osp_fisher_info_eiv_shm",
     "get_sensor_layout_shm",
     "osp_max_norm_shm",

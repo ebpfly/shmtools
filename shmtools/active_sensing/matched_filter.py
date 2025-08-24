@@ -87,7 +87,7 @@ def coherent_matched_filter_shm(
 
     # Extract template (MATLAB: matched_waveform is single column template)
     if matched_waveform.shape[1] > 1:
-        # Use first column as template  
+        # Use first column as template
         template = matched_waveform[:, 0]
     else:
         template = matched_waveform.flatten()
@@ -204,7 +204,7 @@ def incoherent_matched_filter_shm(
         waveform = waveform[:, np.newaxis]
     if matched_waveform.ndim == 1:
         matched_waveform = matched_waveform[:, np.newaxis]
-    
+
     # Extract the template (should be single column)
     if matched_waveform.shape[1] > 1:
         # Use first column as template
@@ -232,20 +232,20 @@ def incoherent_matched_filter_shm(
         # Apply filter through convolution (MATLAB behavior)
         filter_result = np.zeros_like(waveform)
         L = template_length
-        
+
         for i in range(n_channels):
             channel_signal = waveform[:, i]
-            
+
             # Convolution with template and 90-degree version
-            conv1 = np.convolve(channel_signal, template, mode='full')
-            conv2 = np.convolve(channel_signal, template_90, mode='full')
-            
+            conv1 = np.convolve(channel_signal, template, mode="full")
+            conv2 = np.convolve(channel_signal, template_90, mode="full")
+
             # Combined magnitude
             conv_combined = np.sqrt(conv1**2 + conv2**2)
-            
+
             # Truncate ends (MATLAB: filtTemp(round(L/2):round(end-L/2)))
-            start_idx = round(L/2)
-            end_idx = len(conv_combined) - round(L/2)
+            start_idx = round(L / 2)
+            end_idx = len(conv_combined) - round(L / 2)
             filter_result[:, i] = conv_combined[start_idx:end_idx]
 
     return filter_result
@@ -254,29 +254,29 @@ def incoherent_matched_filter_shm(
 def _shift_90_degrees(waveform: np.ndarray) -> np.ndarray:
     """
     Shift waveform by 90 degrees (quadrature phase).
-    
+
     Replicates the MATLAB shift90 function behavior using FFT-based approach.
     """
     waveform = waveform.flatten()
     L = len(waveform)
-    
+
     # Zero-pad to next power of 2 (MATLAB behavior)
     power2L = 2 ** int(np.ceil(np.log2(L)))
-    
+
     # Create frequency domain multiplier for 90-degree shift
     fh = np.zeros(power2L, dtype=complex)
-    fh[:power2L//2] = 1j  # +j for positive frequencies
-    fh[power2L//2+1:] = -1j  # -j for negative frequencies
-    
+    fh[: power2L // 2] = 1j  # +j for positive frequencies
+    fh[power2L // 2 + 1 :] = -1j  # -j for negative frequencies
+
     # Zero-pad waveform
     waveform_padded = np.concatenate([waveform, np.zeros(power2L - L)])
-    
+
     # Apply 90-degree phase shift in frequency domain
     waveform_fft = np.fft.fft(waveform_padded)
     shifted_fft = waveform_fft * fh
     shifted_padded = np.fft.ifft(shifted_fft)
-    
+
     # Extract original length and take real part
     waveform_90 = np.real(shifted_padded[:L])
-    
+
     return waveform_90

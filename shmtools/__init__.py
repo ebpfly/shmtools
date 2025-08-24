@@ -114,111 +114,25 @@ from .sensor_diagnostics.sensor_diagnostics import (
     sd_plot_shm,
 )
 
-# Data import functions have been moved to examples.data
-# Use: from examples.data import load_3story_data, import_3story_structure_shm
+# Data import functions
+from examples.data.data_imports import (
+    import_3story_structure_shm,
+    import_cbm_data_shm,
+    import_active_sense1_shm,
+    import_sensor_diagnostic_shm,
+    import_modal_osp_shm,
+)
+
+# MATLAB-compatible aliases for data import functions
+import_ModalOSP_shm = import_modal_osp_shm
+import_3StoryStructure_shm = import_3story_structure_shm
+import_CBMData_shm = import_cbm_data_shm
+import_ActiveSense1_shm = import_active_sense1_shm
+import_SensorDiagnostic_shm = import_sensor_diagnostic_shm
 
 # Introspection capabilities moved to JupyterLab extension
 
 # JupyterLab extension is installed as a direct dependency
-
-
-def gui():
-    """Load SHM Function Selector GUI for Jupyter notebooks."""
-    try:
-        from IPython.display import Javascript, display
-
-        js = """
-document.querySelectorAll('[id*="shm-dropdown"]').forEach(el => el.remove());
-
-const funcs = {
-    'Spectral Analysis': [
-        {name: 'PSD Welch', code: 'psd_matrix, frequencies, one_sided = shmtools.psd_welch_shm(X=data, fs=fs)'},
-        {name: 'STFT', code: 'f, t, Zxx = shmtools.stft_shm(x=signal, fs=fs)'},
-        {name: 'CWT Analysis', code: 'coeffs, freqs = shmtools.cwt_analysis_shm(x=signal, scales=scales)'}
-    ],
-    'Time Series Modeling': [
-        {name: 'AR Model', code: 'ar_params_fv, rms_fv, ar_params, residuals, prediction = shmtools.ar_model_shm(X=data, ar_order=15)'},
-        {name: 'AR Model Order', code: 'mean_order, orders, model = shmtools.ar_model_order_shm(X=data, method="PAF")'}
-    ],
-    'Outlier Detection': [
-        {name: 'Learn PCA', code: 'model = shmtools.learn_pca_shm(X=features, per_var=0.95)'},
-        {name: 'Score PCA', code: 'scores, residuals = shmtools.score_pca_shm(Y=test_features, model=model)'},
-        {name: 'Learn Mahalanobis', code: 'model = shmtools.learn_mahalanobis_shm(X=features)'},
-        {name: 'Score Mahalanobis', code: 'scores = shmtools.score_mahalanobis_shm(Y=test_features, model=model)'}
-    ],
-    'Signal Filtering': [
-        {name: 'Residual Signal', code: 'residual = shmtools.residual_signal_shm(x=signal, fs=fs, shaft_freq=freq)'},
-        {name: 'Envelope Signal', code: 'envelope = shmtools.envelope_signal_shm(x=signal)'}
-    ],
-    'Statistics': [
-        {name: 'Peak Factor', code: 'pf = shmtools.peak_factor_shm(x=signal)'},
-        {name: 'Crest Factor', code: 'cf = shmtools.crest_factor_shm(x=signal)'}
-    ]
-};
-
-const panel = document.createElement('div');
-panel.id = 'shm-dropdown-panel';
-panel.style.cssText = 'position:fixed; top:60px; right:20px; background:white; border:2px solid #007bff; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,0.15); z-index:1000; width:320px; font-family:Arial,sans-serif;';
-
-const header = document.createElement('div');
-header.innerHTML = '🔧 SHMTools Functions';
-header.style.cssText = 'background:#007bff; color:white; padding:12px 16px; font-weight:bold; font-size:14px; border-radius:6px 6px 0 0; cursor:move;';
-
-let isDragging = false, dragOffset = {x:0, y:0};
-header.onmousedown = e => {
-    isDragging = true;
-    dragOffset.x = e.clientX - panel.offsetLeft;
-    dragOffset.y = e.clientY - panel.offsetTop;
-};
-document.onmousemove = e => {
-    if (isDragging) {
-        panel.style.left = (e.clientX - dragOffset.x) + 'px';
-        panel.style.top = (e.clientY - dragOffset.y) + 'px';
-        panel.style.right = 'auto';
-    }
-};
-document.onmouseup = () => isDragging = false;
-
-panel.appendChild(header);
-
-const content = document.createElement('div');
-content.style.cssText = 'max-height:400px; overflow-y:auto;';
-
-Object.keys(funcs).forEach(category => {
-    const catHeader = document.createElement('div');
-    catHeader.textContent = category;
-    catHeader.style.cssText = 'padding:10px 16px; background:#f8f9fa; font-weight:bold; color:#495057; font-size:12px; border-bottom:1px solid #dee2e6;';
-    content.appendChild(catHeader);
-    
-    funcs[category].forEach(func => {
-        const item = document.createElement('div');
-        item.textContent = func.name;
-        item.style.cssText = 'padding:10px 16px; cursor:pointer; border-bottom:1px solid #f1f3f4; transition:background-color 0.2s;';
-        
-        item.onmouseover = () => item.style.backgroundColor = '#e3f2fd';
-        item.onmouseout = () => item.style.backgroundColor = 'transparent';
-        item.onclick = () => {
-            navigator.clipboard.writeText(func.code);
-            console.log('Copied to clipboard:', func.code);
-        };
-        
-        content.appendChild(item);
-    });
-});
-
-panel.appendChild(content);
-document.body.appendChild(panel);
-console.log('✅ SHMTools Extension loaded - click functions to copy code');
-        """
-
-        display(Javascript(js))
-        print(
-            "🔧 SHMTools Function Selector loaded! Look for blue panel in top-right corner."
-        )
-        print("💡 Click any function to copy code to clipboard, then paste into cell.")
-
-    except ImportError:
-        print("❌ Jupyter GUI only available in Jupyter notebooks")
 
 
 __all__ = [
@@ -305,11 +219,17 @@ __all__ = [
     "sd_autoclassify_shm",
     "sd_plot_shm",
     # Data import
+    "import_3story_structure_shm",
+    "import_cbm_data_shm",
+    "import_active_sense1_shm",
+    "import_sensor_diagnostic_shm",
+    "import_modal_osp_shm",
+    # MATLAB-compatible aliases
+    "import_ModalOSP_shm",
     "import_3StoryStructure_shm",
     "import_CBMData_shm",
     "import_ActiveSense1_shm",
     "import_SensorDiagnostic_shm",
-    "import_ModalOSP_shm",
     # Utilities
     "gui",
 ]
