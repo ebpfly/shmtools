@@ -103,6 +103,22 @@ INSTANCE_TYPE="t3.medium"  # ~$30/month
 GITHUB_OWNER="your-username"
 ```
 
+### Update Deployed Instance
+**From your local machine** (easiest):
+```bash
+cd jupyterhub/
+./remote_update.sh 3.130.148.209        # Update specific IP
+./remote_update.sh                       # Auto-detect running instance
+./remote_update.sh --verbose <IP>        # Verbose output
+```
+
+**Directly on server**:
+```bash
+ssh -i ~/.ssh/class-key-ssh-rsa ubuntu@<IP>
+cd /srv/classrepo
+./jupyterhub/update_deployment.sh       # Full update workflow
+```
+
 ### Debug & Management
 ```bash
 # Debug existing instance
