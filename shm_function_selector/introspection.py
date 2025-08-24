@@ -177,11 +177,15 @@ def parse_variables_locally(cells):
                         ]
                         for var_name in var_names:
                             if var_name:
+                                # Extract function name from expression, fallback to cell reference
+                                print(f"DEBUG TUPLE: Processing variable '{var_name}' with expression '{right_side[:50]}'")
+                                function_source = _extract_function_name_from_expression(right_side)
+                                print(f"DEBUG TUPLE: Got source '{function_source}' for variable '{var_name}'")
                                 variables.append(
                                     {
                                         "name": var_name,
                                         "type": _infer_type_from_expression(right_side),
-                                        "source": f"Cell {cell_index + 1}",
+                                        "source": function_source,
                                         "cell_index": cell_index,
                                         "line_index": line_index,
                                         "expression": right_side,
@@ -189,11 +193,15 @@ def parse_variables_locally(cells):
                                 )
                     else:
                         # Single variable assignment
+                        # Extract function name from expression, fallback to cell reference
+                        print(f"DEBUG SINGLE: Processing variable '{left_side}' with expression '{right_side[:50]}'")
+                        function_source = _extract_function_name_from_expression(right_side)
+                        print(f"DEBUG SINGLE: Got source '{function_source}' for variable '{left_side}'")
                         variables.append(
                             {
                                 "name": left_side,
                                 "type": _infer_type_from_expression(right_side),
-                                "source": f"Cell {cell_index + 1}",
+                                "source": function_source,
                                 "cell_index": cell_index,
                                 "line_index": line_index,
                                 "expression": right_side,
@@ -202,6 +210,28 @@ def parse_variables_locally(cells):
                     break
 
     return variables
+
+
+def _extract_function_name_from_expression(expression):
+    """Extract function name from expression, similar to TypeScript parser."""
+    import re
+    
+    # Remove comments and clean whitespace
+    clean_expression = re.sub(r'#[^\n]*', '', expression).strip()
+    clean_expression = re.sub(r'\s+', ' ', clean_expression)
+    
+    # Try to match function call patterns like: func(), module.func(), obj.method()
+    func_match = re.match(r'^([a-zA-Z_][a-zA-Z0-9_.]*)\s*\(', clean_expression)
+    
+    if func_match:
+        result = func_match.group(1) + '()'
+        print(f"DEBUG: Extracted function name '{result}' from expression '{clean_expression[:50]}'")
+        return result
+    
+    # If no function pattern found, return shortened expression
+    fallback = clean_expression[:30] + ('...' if len(clean_expression) > 30 else '')
+    print(f"DEBUG: No function found in expression '{clean_expression[:50]}', using fallback '{fallback}'")
+    return fallback
 
 
 def _infer_type_from_expression(expression):

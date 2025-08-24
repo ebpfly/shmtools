@@ -4300,55 +4300,43 @@ class SHMContextMenuManager {
   }
 
   private extractVariablesFromCode(code: string, cellId: string): void {
-    // Pattern 1: Simple assignment: variable = expression
-    const simpleAssignPattern = /^(\w+)\s*=\s*(.+)$/gm;
+    // Clean code by removing comments but preserve structure
+    const cleanCode = code.replace(/#[^\n]*/g, '');
+    
+    // Match variable assignments that start at the beginning of lines (no indentation or minimal indentation)
+    // This avoids matching function parameters like "    X=dataset" inside function calls
+    const assignmentPattern = /^([a-zA-Z_]\w*(?:\s*,\s*[a-zA-Z_]\w*)*)\s*=\s*([^=].*?)(?=^[a-zA-Z_]\w*(?:\s*,\s*[a-zA-Z_]\w*)*\s*=|^#|\n\n|$)/gms;
+    
     let match;
-    
-    while ((match = simpleAssignPattern.exec(code)) !== null) {
-      const varName = match[1];
+    while ((match = assignmentPattern.exec(cleanCode)) !== null) {
+      const varsString = match[1].trim();
       const expression = match[2].trim();
       
-      // Skip common non-data variables
-      if (['i', 'j', 'k', 'n', 'len', 'idx'].includes(varName)) {
-        continue;
-      }
-
-      // Extract function name if it's a function call
-      const funcMatch = expression.match(/^(\w+)\s*\(/);
-      const source = funcMatch ? funcMatch[1] + '()' : expression.substring(0, 30) + (expression.length > 30 ? '...' : '');
-
-      const variable: Variable = {
-        name: varName,
-        type: this.inferVariableType(code, varName),
-        cellId: cellId,
-        compatible: false, // Will be set based on parameter context
-        source: source
-      };
-
-      this.variables.push(variable);
-    }
-    
-    // Pattern 2: Tuple unpacking: a, b = func() or a,b,c = values
-    const tuplePattern = /^([a-zA-Z_]\w*(?:\s*,\s*[a-zA-Z_]\w*)+)\s*=\s*(.+)$/gm;
-    
-    while ((match = tuplePattern.exec(code)) !== null) {
-      const varsString = match[1];
-      const expression = match[2].trim();
-      const varNames = varsString.split(',').map(v => v.trim());
+      // Parse variable names (handle both single and tuple assignments)
+      const varNames = varsString.includes(',') 
+        ? varsString.split(',').map(v => v.trim())
+        : [varsString];
       
-      // Extract function name if it's a function call
-      const funcMatch = expression.match(/^(\w+)\s*\(/);
-      const source = funcMatch ? funcMatch[1] + '()' : expression.substring(0, 30) + (expression.length > 30 ? '...' : '');
+      // Extract function name from potentially multi-line expression
+      const source = this.extractFunctionNameFromExpression(expression);
       
       for (const varName of varNames) {
+        // Skip common non-data variables
         if (varName && !['i', 'j', 'k', 'n', 'len', 'idx'].includes(varName)) {
           const variable: Variable = {
             name: varName,
-            type: 'unknown', // Hard to infer type from tuple unpacking
+            type: this.inferVariableType(cleanCode, varName),
             cellId: cellId,
-            compatible: false,
+            compatible: false, // Will be set based on parameter context
             source: source
           };
+          
+          console.log(`🔍 DEBUG: Extracted variable '${varName}' from ${cellId}:`, {
+            name: variable.name,
+            type: variable.type,
+            source: variable.source,
+            cellId: variable.cellId
+          });
           
           this.variables.push(variable);
         }
@@ -4394,6 +4382,24 @@ class SHMContextMenuManager {
   }
 
   /**
+   * Extract function name from a potentially multi-line expression
+   */
+  private extractFunctionNameFromExpression(expression: string): string {
+    // Remove all whitespace and newlines for easier parsing
+    const cleanExpression = expression.replace(/\s+/g, ' ').trim();
+    
+    // Try to match function call patterns - now supports multi-line
+    const funcMatch = cleanExpression.match(/^([a-zA-Z_][a-zA-Z0-9_.]*)\s*\(/);
+    
+    if (funcMatch) {
+      return funcMatch[1] + '()';
+    }
+    
+    // If no function pattern found, return shortened expression
+    return cleanExpression.substring(0, 30) + (cleanExpression.length > 30 ? '...' : '');
+  }
+
+  /**
    * Determine variable compatibility with parameter
    */
   isVariableCompatible(variable: Variable, parameterContext: ParameterContext): boolean {
@@ -4435,6 +4441,8 @@ class SHMContextMenuManager {
     
     // Extract variables from all cells
     await this.extractVariablesFromCells(notebook);
+    console.log(`🔍 DEBUG: Total variables extracted: ${this.variables.length}`);
+    this.variables.forEach(v => console.log(`  - ${v.name} (${v.type}) from ${v.source} in ${v.cellId}`));
     
     // Filter to only show variables from cells before the current one
     if (currentCellIndex >= 0) {
@@ -4442,6 +4450,7 @@ class SHMContextMenuManager {
         const cellNumber = parseInt(v.cellId.replace('cell-', ''));
         return cellNumber < currentCellIndex;
       });
+      console.log(`🔍 DEBUG: After filtering for cells before ${currentCellIndex}: ${this.variables.length} variables`);
     }
     
     // Extract input variable names from the current function call to exclude them
@@ -4658,7 +4667,7 @@ class SHMContextMenuManager {
         ${variable.displayName || variable.name}
       </div>
       <div style="font-size: 10px; color: #666;">
-        ${variable.displayName && variable.displayName !== variable.name ? `${variable.name} • ` : ''}${variable.source ? `from ${variable.source} • ` : ''}${variable.type} • ${variable.cellId}
+        ${variable.displayName && variable.displayName !== variable.name ? `${variable.name} • ` : ''}${variable.source && !variable.source.startsWith('Cell ') ? `${variable.source} • ` : ''}${variable.cellId.replace('cell-', 'Cell ')}
       </div>
     `;
 

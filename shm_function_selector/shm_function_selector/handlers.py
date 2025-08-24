@@ -742,6 +742,32 @@ class SHMVariableHandler(APIHandler):
         # Convert snake_case to Title Case
         return ' '.join(word.capitalize() for word in var_name.replace('_', ' ').split())
     
+    def _extract_function_name_from_expression(self, expression: str) -> str:
+        """Extract function name from expression, similar to TypeScript parser."""
+        import re
+        
+        print(f"DEBUG: Extracting function from expression: {expression[:50]}...")
+        
+        # Remove comments and clean whitespace
+        clean_expression = re.sub(r'#[^\n]*', '', expression).strip()
+        clean_expression = re.sub(r'\s+', ' ', clean_expression)
+        
+        # Try to match function call patterns like: func(), module.func(), obj.method()
+        func_match = re.match(r'^([a-zA-Z_][a-zA-Z0-9_.]*)\s*\(', clean_expression)
+        
+        if func_match:
+            full_function_name = func_match.group(1)
+            # Extract just the function name without module path
+            function_name_only = full_function_name.split('.')[-1]
+            result = function_name_only + '()'
+            print(f"DEBUG: Extracted function name '{result}' from full name '{full_function_name}'")
+            return result
+        
+        # If no function pattern found, return shortened expression
+        fallback = clean_expression[:30] + ('...' if len(clean_expression) > 30 else '')
+        print(f"DEBUG: No function found in expression '{clean_expression[:50]}', using fallback '{fallback}'")
+        return fallback
+    
     @authenticated
     def post(self):
         """Parse notebook code to extract variable assignments."""
@@ -852,7 +878,7 @@ class SHMVariableHandler(APIHandler):
                                     'name': var_name,
                                     'displayName': display_name,
                                     'type': self._infer_type_from_expression(right_side),
-                                    'source': f'Cell {cell_index + 1}',
+                                    'source': self._extract_function_name_from_expression(right_side),
                                     'cellIndex': cell_index,
                                     'lineIndex': i,
                                     'expression': right_side
@@ -870,7 +896,7 @@ class SHMVariableHandler(APIHandler):
                             'name': left_side,
                             'displayName': display_name,
                             'type': self._infer_type_from_expression(right_side),
-                            'source': f'Cell {cell_index + 1}',
+                            'source': self._extract_function_name_from_expression(right_side),
                             'cellIndex': cell_index,
                             'lineIndex': i,
                             'expression': right_side
