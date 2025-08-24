@@ -2508,6 +2508,11 @@ class SHMFunctionSelector {
     // Generate function call with enhanced output handling
     let code = this.generateFunctionHeader(func);
     
+    // Add verbose_call comment if available
+    if (func.guiMetadata && func.guiMetadata.verbose_call) {
+      code += `# ${func.guiMetadata.verbose_call}\n`;
+    }
+    
     // Determine output variables based on return info
     const outputVar = this.suggestOutputVariables(func);
     
