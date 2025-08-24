@@ -70,12 +70,7 @@ success "✅ Git repository updated successfully"
 # Step 2: Update Python dependencies
 log "📦 Updating Python dependencies..."
 
-# Update requirements in both Python environments
-log "Installing requirements.txt in local Python..."
-if ! /usr/local/bin/python3 -m pip install --quiet --upgrade -r requirements.txt; then
-    warning "Failed to update local Python requirements"
-fi
-
+# Update requirements in TLJH user environment only (this is what matters)
 log "Installing requirements.txt in TLJH user environment..."
 if ! sudo /opt/tljh/user/bin/pip install --quiet --upgrade -r requirements.txt; then
     warning "Failed to update TLJH user environment requirements"
@@ -91,14 +86,7 @@ success "✅ Python dependencies updated"
 # Step 3: Reinstall shmtools package
 log "🔧 Reinstalling shmtools package..."
 
-# Reinstall in local environment (development mode)
-log "Installing shmtools in local Python (development mode)..."
-if ! /usr/local/bin/python3 -m pip install --quiet -e .; then
-    error "Failed to install shmtools in local Python"
-    exit 1
-fi
-
-# Reinstall in TLJH user environment (development mode)
+# Reinstall in TLJH user environment (development mode) - this is the main environment
 log "Installing shmtools in TLJH user environment (development mode)..."
 if ! sudo /opt/tljh/user/bin/pip install --quiet -e .; then
     error "Failed to install shmtools in TLJH user environment"
@@ -180,11 +168,11 @@ fi
 log "🔍 Verifying installation..."
 
 # Check shmtools installation
-SHMTOOLS_VERSION=$(/opt/tljh/user/bin/python -c "import shmtools; print(shmtools.__version__)" 2>/dev/null || echo "unknown")
+SHMTOOLS_VERSION=$(sudo /opt/tljh/user/bin/python -c "import shmtools; print(shmtools.__version__)" 2>/dev/null || echo "unknown")
 log "SHMTools version: $SHMTOOLS_VERSION"
 
 # Check extension installation
-EXTENSION_STATUS=$(/opt/tljh/user/bin/jupyter labextension list 2>/dev/null | grep "shm-function-selector" || echo "not found")
+EXTENSION_STATUS=$(sudo /opt/tljh/user/bin/jupyter labextension list 2>/dev/null | grep "shm-function-selector" || echo "not found")
 if [[ "$EXTENSION_STATUS" == "not found" ]]; then
     warning "JupyterLab extension not detected in list"
 else
