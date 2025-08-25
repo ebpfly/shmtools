@@ -428,19 +428,19 @@ SSL_EMAIL="${SSL_EMAIL}"
 
 # Logging functions
 log_step() {
-    echo "[SSL-SETUP \$(date '+%Y-%m-%d %H:%M:%S')] \${1}"
+    echo "[SSL-SETUP \$(date '+%Y-%m-%d %H:%M:%S')] \$1"
 }
 
 log_success() {
-    echo "[SSL-SUCCESS \$(date '+%Y-%m-%d %H:%M:%S')] ✅ \${1}"
+    echo "[SSL-SUCCESS \$(date '+%Y-%m-%d %H:%M:%S')] ✅ \$1"
 }
 
 log_error() {
-    echo "[SSL-ERROR \$(date '+%Y-%m-%d %H:%M:%S')] ❌ \${1}"
+    echo "[SSL-ERROR \$(date '+%Y-%m-%d %H:%M:%S')] ❌ \$1"
 }
 
 log_warning() {
-    echo "[SSL-WARNING \$(date '+%Y-%m-%d %H:%M:%S')] ⚠️ \${1}"
+    echo "[SSL-WARNING \$(date '+%Y-%m-%d %H:%M:%S')] ⚠️ \$1"
 }
 
 echo "========================================="
