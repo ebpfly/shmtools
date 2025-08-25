@@ -248,31 +248,52 @@ exec 1> >(logger -s -t user-data -p local6.info)
 exec 2>&1
 
 echo "========================================="
-echo "Starting JupyterHub setup at \$(date)"
+echo "🚀 Starting JupyterHub setup at \$(date)"
 echo "========================================="
 
-export DEBIAN_FRONTEND=noninteractive
-echo "Installing base packages..."
-apt-get update -y
-apt-get install -y python3 curl git awscli dos2unix
+# Enhanced logging function for user-data script
+log_step() {
+    echo "[SETUP-LOG \$(date '+%Y-%m-%d %H:%M:%S')] \$1"
+}
 
-echo "Installing TLJH (The Littlest JupyterHub)..."
-curl -L https://tljh.jupyter.org/bootstrap.py | sudo python3 - --admin ${JUPYTER_ADMIN_USER}
-echo "TLJH installation complete!"
+log_error() {
+    echo "[SETUP-ERROR \$(date '+%Y-%m-%d %H:%M:%S')] ❌ \$1"
+}
+
+log_success() {
+    echo "[SETUP-SUCCESS \$(date '+%Y-%m-%d %H:%M:%S')] ✅ \$1"
+}
+
+log_warning() {
+    echo "[SETUP-WARNING \$(date '+%Y-%m-%d %H:%M:%S')] ⚠️ \$1"
+}
+
+export DEBIAN_FRONTEND=noninteractive
+log_step "📦 Installing base packages..."
+apt-get update -y 2>&1 | sed 's/^/[APT-UPDATE] /'
+apt-get install -y python3 curl git awscli dos2unix 2>&1 | sed 's/^/[APT-INSTALL] /'
+log_success "Base packages installed"
+
+log_step "🎯 Installing TLJH (The Littlest JupyterHub)..."
+curl -L https://tljh.jupyter.org/bootstrap.py 2>&1 | sed 's/^/[TLJH-DOWNLOAD] /' | sudo python3 - --admin ${JUPYTER_ADMIN_USER} 2>&1 | sed 's/^/[TLJH-INSTALL] /'
+log_success "TLJH installation complete!"
 
 # Configure FirstUse Authenticator for self-service account creation
-echo "Installing and configuring FirstUse Authenticator..."
-sudo -E pip install jupyterhub-firstuseauthenticator
-sudo tljh-config set auth.type firstuseauthenticator.FirstUseAuthenticator
-sudo tljh-config set auth.FirstUseAuthenticator.create_users true
-sudo tljh-config reload
-echo "FirstUse Authenticator configured!"
+log_step "👥 Installing and configuring FirstUse Authenticator..."
+sudo -E pip install jupyterhub-firstuseauthenticator 2>&1 | sed 's/^/[FIRSTUSE-INSTALL] /'
+sudo tljh-config set auth.type firstuseauthenticator.FirstUseAuthenticator 2>&1 | sed 's/^/[AUTH-CONFIG] /'
+sudo tljh-config set auth.FirstUseAuthenticator.create_users true 2>&1 | sed 's/^/[AUTH-CONFIG] /'
+sudo tljh-config reload 2>&1 | sed 's/^/[CONFIG-RELOAD] /'
+log_success "FirstUse Authenticator configured!"
 
 # Repo dir
+log_step "📁 Creating repository directory..."
 mkdir -p /srv/classrepo
 chown ${JUPYTER_ADMIN_USER}:${JUPYTER_ADMIN_USER} /srv/classrepo
+log_success "Repository directory created: /srv/classrepo"
 
 # Git credential helper that fetches PAT from SSM on demand
+log_step "🔐 Creating Git credential helper..."
 cat >/usr/local/bin/gh-cred-helper <<'HLP'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -292,146 +313,179 @@ fi
 exit 0
 HLP
 chmod +x /usr/local/bin/gh-cred-helper
+log_success "Git credential helper created"
 
 # Git identity + helper
-su - ${JUPYTER_ADMIN_USER} -c "git config --global user.name '${GIT_USER_NAME}'"
-su - ${JUPYTER_ADMIN_USER} -c "git config --global user.email '${GIT_USER_EMAIL}'"
-su - ${JUPYTER_ADMIN_USER} -c "git config --global credential.helper '/usr/local/bin/gh-cred-helper'"
+log_step "🎛️ Configuring Git identity and credential helper..."
+su - ${JUPYTER_ADMIN_USER} -c "git config --global user.name '${GIT_USER_NAME}'" 2>&1 | sed 's/^/[GIT-CONFIG] /'
+su - ${JUPYTER_ADMIN_USER} -c "git config --global user.email '${GIT_USER_EMAIL}'" 2>&1 | sed 's/^/[GIT-CONFIG] /'
+su - ${JUPYTER_ADMIN_USER} -c "git config --global credential.helper '/usr/local/bin/gh-cred-helper'" 2>&1 | sed 's/^/[GIT-CONFIG] /'
+log_success "Git configuration complete"
 
 # Clone repo and checkout branch
+log_step "📥 Cloning repository from GitHub..."
 echo "========================================="
-echo "Cloning repository from GitHub..."
+echo "📥 CLONING REPOSITORY"
 echo "========================================="
-su - ${JUPYTER_ADMIN_USER} -c "cd /srv && git clone https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}.git classrepo || true"
-su - ${JUPYTER_ADMIN_USER} -c "cd /srv/classrepo && git fetch && git checkout ${GITHUB_BRANCH} || true"
-echo "Repository cloned successfully!"
+su - ${JUPYTER_ADMIN_USER} -c "cd /srv && git clone https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}.git classrepo || true" 2>&1 | sed 's/^/[GIT-CLONE] /'
+su - ${JUPYTER_ADMIN_USER} -c "cd /srv/classrepo && git fetch && git checkout ${GITHUB_BRANCH} || true" 2>&1 | sed 's/^/[GIT-CHECKOUT] /'
+log_success "Repository cloned successfully!"
 
 # Install shmtools package and dependencies
+log_step "📦 Installing shmtools package and dependencies..."
 echo "========================================="
-echo "Installing shmtools package..."
+echo "📦 INSTALLING SHMTOOLS PACKAGE"
 echo "========================================="
 cd /srv/classrepo
 if [ -f requirements.txt ]; then
-  echo "Installing requirements.txt..."
-  sudo -E pip3 install -r requirements.txt
+  log_step "📋 Installing requirements.txt..."
+  sudo -E pip3 install -r requirements.txt 2>&1 | sed 's/^/[PIP-REQUIREMENTS] /' || log_error "Failed to install requirements.txt"
 fi
 if [ -f requirements-dev.txt ]; then
-  echo "Installing requirements-dev.txt..."
-  sudo -E pip3 install -r requirements-dev.txt
+  log_step "🛠️ Installing requirements-dev.txt..."
+  sudo -E pip3 install -r requirements-dev.txt 2>&1 | sed 's/^/[PIP-DEV-REQUIREMENTS] /' || log_error "Failed to install requirements-dev.txt"
 fi
 # Install shmtools in development mode
-echo "Installing shmtools package in development mode..."
-sudo -E pip3 install -e .
+log_step "🔧 Installing shmtools package in development mode..."
+sudo -E pip3 install -e . 2>&1 | sed 's/^/[PIP-SHMTOOLS-SYS] /' || log_error "Failed to install shmtools in system environment"
 # Also install in TLJH user environment for server extension access
-sudo -E /opt/tljh/user/bin/pip install -e .
-echo "shmtools package installed!"
+log_step "🔧 Installing shmtools in TLJH user environment..."
+sudo -E /opt/tljh/user/bin/pip install -e . 2>&1 | sed 's/^/[PIP-SHMTOOLS-USER] /' || log_error "Failed to install shmtools in TLJH user environment"
+log_success "shmtools package installed!"
 
 # Install JupyterLab extension
+log_step "🧩 Building JupyterLab extension..."
 echo "========================================="
-echo "Building JupyterLab extension..."
+echo "🧩 BUILDING JUPYTERLAB EXTENSION"
 echo "========================================="
 # Install Node.js 20.x (required for JupyterLab 4.4+)
-echo "Installing Node.js 20.x..."
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+log_step "📋 Installing Node.js 20.x..."
+curl -fsSL https://deb.nodesource.com/setup_20.x 2>&1 | sed 's/^/[NODEJS-SETUP] /' | sudo -E bash - 2>&1 | sed 's/^/[NODEJS-INSTALL] /'
 # Remove conflicting packages before installing nodejs 20.x
-sudo apt-get remove -y libnode-dev || true
-sudo apt-get install -y nodejs
-echo "Node.js version: \$(node --version)"
+sudo apt-get remove -y libnode-dev 2>&1 | sed 's/^/[NODEJS-CLEANUP] /' || log_warning "No conflicting Node.js packages to remove"
+sudo apt-get install -y nodejs 2>&1 | sed 's/^/[NODEJS-INSTALL] /'
+NODE_VERSION=\$(node --version)
+log_success "Node.js installed: \$NODE_VERSION"
 
 # Install JupyterLab extension using separate script
-echo "Running JupyterLab extension installation..."
+log_step "🔧 Running JupyterLab extension installation script..."
 if [ -f "/srv/classrepo/jupyterhub/install_jupyterlab_extension.sh" ]; then
+    log_step "🛠️ Fixing script line endings (DOS/Unix compatibility)..."
     # Fix line endings in case of DOS format (defensive programming)
     if command -v dos2unix >/dev/null 2>&1; then
-        dos2unix /srv/classrepo/jupyterhub/install_jupyterlab_extension.sh
+        dos2unix /srv/classrepo/jupyterhub/install_jupyterlab_extension.sh 2>&1 | sed 's/^/[DOS2UNIX] /'
     else
         # Fallback: remove carriage returns
         tr -d '\r' < /srv/classrepo/jupyterhub/install_jupyterlab_extension.sh > /tmp/install_jupyterlab_extension_fixed.sh
         mv /tmp/install_jupyterlab_extension_fixed.sh /srv/classrepo/jupyterhub/install_jupyterlab_extension.sh
         chmod +x /srv/classrepo/jupyterhub/install_jupyterlab_extension.sh
+        log_step "Line endings fixed with fallback method"
     fi
-    # Run the extension installation script
-    bash /srv/classrepo/jupyterhub/install_jupyterlab_extension.sh
+    # Run the extension installation script with enhanced logging
+    log_step "🚀 Executing extension installation script..."
+    bash /srv/classrepo/jupyterhub/install_jupyterlab_extension.sh 2>&1 | sed 's/^/[EXTENSION-INSTALL] /' || log_error "Extension installation script failed"
+    log_success "Extension installation script completed"
 else
-    echo "⚠️  Extension installation script not found, skipping extension installation..."
+    log_error "Extension installation script not found at /srv/classrepo/jupyterhub/install_jupyterlab_extension.sh"
+    log_warning "Skipping JupyterLab extension installation..."
 fi
 
 # Set proper ownership
-chown -R ${JUPYTER_ADMIN_USER}:${JUPYTER_ADMIN_USER} /srv/classrepo
+log_step "🔧 Setting proper file ownership..."
+chown -R ${JUPYTER_ADMIN_USER}:${JUPYTER_ADMIN_USER} /srv/classrepo 2>&1 | sed 's/^/[CHOWN] /'
+log_success "File ownership configured"
 
 # Claude Code (native installer). You will authenticate after SSH login.
+log_step "🤖 Installing Claude Code CLI..."
 echo "========================================="
-echo "Installing Claude Code CLI..."
+echo "🤖 INSTALLING CLAUDE CODE CLI"
 echo "========================================="
-su - ${JUPYTER_ADMIN_USER} -c "curl -fsSL https://claude.ai/install.sh | bash || true"
+su - ${JUPYTER_ADMIN_USER} -c "curl -fsSL https://claude.ai/install.sh | bash || true" 2>&1 | sed 's/^/[CLAUDE-INSTALL] /' || log_warning "Claude Code installation failed, continuing..."
 # Add Claude to PATH for all users
 echo 'export PATH="\$HOME/.local/bin:\$PATH"' >> /home/${JUPYTER_ADMIN_USER}/.bashrc
 echo 'export PATH="\$HOME/.local/bin:\$PATH"' >> /etc/skel/.bashrc
-echo "Claude Code installed and PATH configured!"
+log_success "Claude Code installed and PATH configured!"
 
 # Keep port 80 open if ufw is present
-ufw disable || true
+log_step "🔥 Disabling UFW firewall if present..."
+ufw disable 2>&1 | sed 's/^/[UFW] /' || log_step "UFW not installed or already disabled"
 
 # HTTPS setup with TLJH built-in Let's Encrypt support
 if [ "\$ENABLE_SSL" = "true" ] && [ -n "\$USE_DOMAIN" ]; then
+  log_step "🔒 Setting up HTTPS with TLJH Let's Encrypt..."
   echo "========================================="
-  echo "Setting up HTTPS with TLJH Let's Encrypt"
+  echo "🔒 SETTING UP HTTPS WITH TLJH LET'S ENCRYPT"
   echo "========================================="
   
   # Configure HTTPS using TLJH's built-in support
-  sudo tljh-config set https.enabled true
-  sudo tljh-config set https.letsencrypt.email \$SSL_EMAIL
-  sudo tljh-config add-item https.letsencrypt.domains \$USE_DOMAIN
+  log_step "🔧 Configuring HTTPS settings..."
+  sudo tljh-config set https.enabled true 2>&1 | sed 's/^/[HTTPS-CONFIG] /'
+  sudo tljh-config set https.letsencrypt.email \$SSL_EMAIL 2>&1 | sed 's/^/[HTTPS-CONFIG] /'
+  sudo tljh-config add-item https.letsencrypt.domains \$USE_DOMAIN 2>&1 | sed 's/^/[HTTPS-CONFIG] /'
   
   # Show configuration for verification
-  echo "TLJH HTTPS configuration:"
-  sudo tljh-config show
+  log_step "📋 Displaying TLJH HTTPS configuration for verification..."
+  sudo tljh-config show 2>&1 | sed 's/^/[HTTPS-SHOW-CONFIG] /'
   
   # Force regeneration of Traefik configuration with HTTPS settings
-  echo "Regenerating Traefik configuration with HTTPS..."
-  sudo /opt/tljh/hub/bin/python -c 'from tljh import traefik; traefik.ensure_traefik_config("/opt/tljh/state")'
+  log_step "🔄 Regenerating Traefik configuration with HTTPS..."
+  sudo /opt/tljh/hub/bin/python -c 'from tljh import traefik; traefik.ensure_traefik_config("/opt/tljh/state")' 2>&1 | sed 's/^/[TRAEFIK-CONFIG] /'
   
   # Restart Traefik to apply new configuration
-  echo "Restarting Traefik to apply HTTPS configuration..."
-  sudo systemctl restart traefik
+  log_step "🔄 Restarting Traefik to apply HTTPS configuration..."
+  sudo systemctl restart traefik 2>&1 | sed 's/^/[TRAEFIK-RESTART] /'
   
   # Wait a moment for Traefik to start and potentially issue certificates
-  echo "Waiting for Traefik to initialize SSL certificates..."
+  log_step "⏳ Waiting for Traefik to initialize SSL certificates..."
   sleep 10
   
-  echo "HTTPS setup complete! Certificates will auto-renew every 3 months."
-  echo "Testing HTTPS connectivity..."
+  log_success "HTTPS setup complete! Certificates will auto-renew every 3 months."
+  log_step "🧪 Testing HTTPS connectivity..."
   
   # Test HTTPS connectivity (allow up to 30 seconds for certificate provisioning)
   HTTPS_RETRY=0
   HTTPS_MAX_RETRIES=6
   while [ \$HTTPS_RETRY -lt \$HTTPS_MAX_RETRIES ]; do
     if curl -k -s --connect-timeout 5 https://\$USE_DOMAIN >/dev/null 2>&1; then
-      echo "✔ HTTPS is responding at https://\$USE_DOMAIN"
+      log_success "HTTPS is responding at https://\$USE_DOMAIN"
       break
     fi
-    echo "⏳ Waiting for HTTPS... (attempt \$((HTTPS_RETRY + 1))/\$HTTPS_MAX_RETRIES)"
+    log_step "⏳ Waiting for HTTPS... (attempt \$((HTTPS_RETRY + 1))/\$HTTPS_MAX_RETRIES)"
     sleep 5
     HTTPS_RETRY=\$((HTTPS_RETRY + 1))
   done
   
   if [ \$HTTPS_RETRY -eq \$HTTPS_MAX_RETRIES ]; then
-    echo "⚠️  HTTPS not responding yet, but configuration is complete."
-    echo "   It may take a few more minutes for Let's Encrypt certificate provisioning."
+    log_warning "HTTPS not responding yet, but configuration is complete."
+    log_step "It may take a few more minutes for Let's Encrypt certificate provisioning."
   fi
 fi
 
 echo "========================================="
-echo "SETUP COMPLETE at \$(date)"
+log_success "🎉 SETUP COMPLETE at \$(date)"
 echo "========================================="
+PUBLIC_IP=\$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
 if [ "\$ENABLE_SSL" = "true" ] && [ -n "\$USE_DOMAIN" ]; then
-  echo "JupyterHub is ready at https://\$USE_DOMAIN"
-  echo "Backup access: http://\$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)"
+  log_success "🌐 JupyterHub is ready at https://\$USE_DOMAIN"
+  log_step "🔄 Backup access: http://\$PUBLIC_IP"
 else
-  echo "JupyterHub is ready at http://\$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)"
+  log_success "🌐 JupyterHub is ready at http://\$PUBLIC_IP"
 fi
-echo "Admin login with username: ${JUPYTER_ADMIN_USER} (set password on first login)"
-echo "Users can create accounts by choosing any username and password"
+log_step "👤 Admin login with username: ${JUPYTER_ADMIN_USER} (set password on first login)"
+log_step "👥 Users can create accounts by choosing any username and password"
+echo "========================================="
+log_step "📊 FINAL SUMMARY:"
+log_step "• JupyterHub URL: http://\$PUBLIC_IP"
+if [ "\$ENABLE_SSL" = "true" ] && [ -n "\$USE_DOMAIN" ]; then
+  log_step "• HTTPS URL: https://\$USE_DOMAIN"
+fi
+log_step "• Repository: /srv/classrepo"
+log_step "• Admin user: ${JUPYTER_ADMIN_USER}"
+log_step "• SHMTools package: Installed in development mode"
+log_step "• JupyterLab extension: Installed and configured"
+log_step "• Claude Code CLI: Available after SSH login"
+log_success "🚀 Ready for use!"
+echo "========================================="
 USERDATA
 
 echo "📝 User data written to $USERDATA_FILE"
