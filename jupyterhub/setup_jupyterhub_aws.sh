@@ -253,19 +253,19 @@ echo "========================================="
 
 # Enhanced logging function for user-data script
 log_step() {
-    echo "[SETUP-LOG \$(date '+%Y-%m-%d %H:%M:%S')] \$1"
+    echo "[SETUP-LOG \$(date '+%Y-%m-%d %H:%M:%S')] \${1}"
 }
 
 log_error() {
-    echo "[SETUP-ERROR \$(date '+%Y-%m-%d %H:%M:%S')] ❌ \$1"
+    echo "[SETUP-ERROR \$(date '+%Y-%m-%d %H:%M:%S')] ❌ \${1}"
 }
 
 log_success() {
-    echo "[SETUP-SUCCESS \$(date '+%Y-%m-%d %H:%M:%S')] ✅ \$1"
+    echo "[SETUP-SUCCESS \$(date '+%Y-%m-%d %H:%M:%S')] ✅ \${1}"
 }
 
 log_warning() {
-    echo "[SETUP-WARNING \$(date '+%Y-%m-%d %H:%M:%S')] ⚠️ \$1"
+    echo "[SETUP-WARNING \$(date '+%Y-%m-%d %H:%M:%S')] ⚠️ \${1}"
 }
 
 export DEBIAN_FRONTEND=noninteractive
@@ -415,7 +415,7 @@ if [ "${ENABLE_SSL}" = "true" ] && [ -n "${USE_DOMAIN}" ]; then
   log_step "🔒 Setting up HTTPS with dedicated SSL script..."
   
   # Create SSL setup script on the server
-  cat > /tmp/setup_ssl.sh << 'EOF_SSL_SCRIPT'
+  cat > /tmp/setup_ssl.sh <<EOF_SSL_SCRIPT
 #!/bin/bash
 # Standalone SSL setup script for JupyterHub with TLJH and Let's Encrypt
 # This script can be run independently to set up SSL on an existing TLJH instance
@@ -428,36 +428,36 @@ SSL_EMAIL="${SSL_EMAIL}"
 
 # Logging functions
 log_step() {
-    echo "[SSL-SETUP $(date '+%Y-%m-%d %H:%M:%S')] $1"
+    echo "[SSL-SETUP \$(date '+%Y-%m-%d %H:%M:%S')] \${1}"
 }
 
 log_success() {
-    echo "[SSL-SUCCESS $(date '+%Y-%m-%d %H:%M:%S')] ✅ $1"
+    echo "[SSL-SUCCESS \$(date '+%Y-%m-%d %H:%M:%S')] ✅ \${1}"
 }
 
 log_error() {
-    echo "[SSL-ERROR $(date '+%Y-%m-%d %H:%M:%S')] ❌ $1"
+    echo "[SSL-ERROR \$(date '+%Y-%m-%d %H:%M:%S')] ❌ \${1}"
 }
 
 log_warning() {
-    echo "[SSL-WARNING $(date '+%Y-%m-%d %H:%M:%S')] ⚠️ $1"
+    echo "[SSL-WARNING \$(date '+%Y-%m-%d %H:%M:%S')] ⚠️ \${1}"
 }
 
 echo "========================================="
 echo "🔒 SSL/HTTPS SETUP FOR JUPYTERHUB"
 echo "========================================="
-log_step "Domain: $USE_DOMAIN"
-log_step "Email: $SSL_EMAIL"
+log_step "Domain: \$USE_DOMAIN"
+log_step "Email: \$SSL_EMAIL"
 echo "========================================="
 
 # Configure HTTPS using TLJH's built-in support
 log_step "🔧 Configuring HTTPS settings..."
 tljh-config set https.enabled true
-tljh-config set https.letsencrypt.email "$SSL_EMAIL"
+tljh-config set https.letsencrypt.email "\$SSL_EMAIL"
 
 # Clear any existing domains first
 tljh-config unset https.letsencrypt.domains 2>/dev/null || true
-tljh-config add-item https.letsencrypt.domains "$USE_DOMAIN"
+tljh-config add-item https.letsencrypt.domains "\$USE_DOMAIN"
 
 # Apply configuration changes
 log_step "🔄 Applying TLJH configuration changes..."
@@ -484,29 +484,29 @@ log_step "🧪 Testing HTTPS connectivity..."
 HTTPS_RETRY=0
 HTTPS_MAX_RETRIES=24
 
-while [ $HTTPS_RETRY -lt $HTTPS_MAX_RETRIES ]; do
-    if curl -s --connect-timeout 10 --max-time 15 "https://$USE_DOMAIN" >/dev/null 2>&1; then
-        log_success "HTTPS is responding at https://$USE_DOMAIN"
+while [ \$HTTPS_RETRY -lt \$HTTPS_MAX_RETRIES ]; do
+    if curl -s --connect-timeout 10 --max-time 15 "https://\$USE_DOMAIN" >/dev/null 2>&1; then
+        log_success "HTTPS is responding at https://\$USE_DOMAIN"
         log_success "🎉 SSL SETUP COMPLETE!"
         echo "========================================="
-        log_success "🌐 JupyterHub is now accessible at: https://$USE_DOMAIN"
+        log_success "🌐 JupyterHub is now accessible at: https://\$USE_DOMAIN"
         echo "========================================="
         exit 0
     fi
     
-    log_step "⏳ Waiting for HTTPS... (attempt $((HTTPS_RETRY + 1))/$HTTPS_MAX_RETRIES)"
+    log_step "⏳ Waiting for HTTPS... (attempt \$((HTTPS_RETRY + 1))/\$HTTPS_MAX_RETRIES)"
     
     # Show debug info every few attempts
-    if [ $((HTTPS_RETRY % 6)) -eq 5 ]; then
+    if [ \$((\$HTTPS_RETRY % 6)) -eq 5 ]; then
         log_step "Debug - checking service status..."
         systemctl is-active traefik jupyterhub || true
     fi
     
     sleep 5
-    HTTPS_RETRY=$((HTTPS_RETRY + 1))
+    HTTPS_RETRY=\$((\$HTTPS_RETRY + 1))
 done
 
-log_error "HTTPS setup failed after $HTTPS_MAX_RETRIES attempts"
+log_error "HTTPS setup failed after \$HTTPS_MAX_RETRIES attempts"
 exit 1
 EOF_SSL_SCRIPT
 
