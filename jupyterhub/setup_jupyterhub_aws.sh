@@ -50,100 +50,100 @@ need() { command -v "$1" >/dev/null 2>&1 || { echo "Missing: $1"; exit 1; }; }
 echo "🔎 Checking local deps…"
 need aws; need jq; need curl; need ssh-keygen
 
-echo "🔐 Checking AWS identity for profile: $AWS_PROFILE"
-aws sts get-caller-identity --profile "$AWS_PROFILE"
+echo "🔐 Checking AWS identity for profile: ${AWS_PROFILE}"
+aws sts get-caller-identity --profile "${AWS_PROFILE}"
 
-ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text --profile "$AWS_PROFILE")
-echo "✔ Account: $ACCOUNT_ID"
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text --profile "${AWS_PROFILE}")
+echo "✔ Account: ${ACCOUNT_ID}"
 
 MY_IP=$(curl -fsSL https://checkip.amazonaws.com)
 YOUR_IP_CIDR="${MY_IP}/32"
-echo "🌍 Your IP (for SSH allowlist): $YOUR_IP_CIDR"
+echo "🌍 Your IP (for SSH allowlist): ${YOUR_IP_CIDR}"
 
-echo "🔧 Ensuring default VPC exists in $AWS_REGION …"
-VPC_ID=$(aws ec2 describe-vpcs --region "$AWS_REGION" --profile "$AWS_PROFILE" \
+echo "🔧 Ensuring default VPC exists in ${AWS_REGION} …"
+VPC_ID=$(aws ec2 describe-vpcs --region "${AWS_REGION}" --profile "${AWS_PROFILE}" \
   --query 'Vpcs[?IsDefault==`true`].VpcId | [0]' --output text)
-[ -n "$VPC_ID" ] && [ "$VPC_ID" != "None" ] || { echo "No default VPC in $AWS_REGION"; exit 1; }
+[ -n "${VPC_ID}" ] && [ "${VPC_ID}" != "None" ] || { echo "No default VPC in ${AWS_REGION}"; exit 1; }
 
-SUBNET_ID=$(aws ec2 describe-subnets --region "$AWS_REGION" --profile "$AWS_PROFILE" \
-  --filters "Name=vpc-id,Values=$VPC_ID" --query 'Subnets[0].SubnetId' --output text)
-echo "✔ Using VPC: $VPC_ID  Subnet: $SUBNET_ID"
+SUBNET_ID=$(aws ec2 describe-subnets --region "${AWS_REGION}" --profile "${AWS_PROFILE}" \
+  --filters "Name=vpc-id,Values=${VPC_ID}" --query 'Subnets[0].SubnetId' --output text)
+echo "✔ Using VPC: ${VPC_ID}  Subnet: ${SUBNET_ID}"
 
 # --- SSH keypair handling (RSA only for EC2) ---
 echo "🔑 Preparing EC2 key pair (RSA only)…"
 # Resolve an absolute path if you provided one
 PUB_PATH=""
 # Expand tilde to home directory
-SSH_PUBLIC_KEY_PATH="${SSH_PUBLIC_KEY_PATH/#\~/$HOME}"
-if [ -n "$SSH_PUBLIC_KEY_PATH" ] && [ -f "$SSH_PUBLIC_KEY_PATH" ]; then
-  PUB_PATH="$(cd "$(dirname "$SSH_PUBLIC_KEY_PATH")" && pwd)/$(basename "$SSH_PUBLIC_KEY_PATH")"
+SSH_PUBLIC_KEY_PATH="${SSH_PUBLIC_KEY_PATH/#\~/${HOME}}"
+if [ -n "${SSH_PUBLIC_KEY_PATH}" ] && [ -f "${SSH_PUBLIC_KEY_PATH}" ]; then
+  PUB_PATH="$(cd "$(dirname "${SSH_PUBLIC_KEY_PATH}")" && pwd)/$(basename "${SSH_PUBLIC_KEY_PATH}")"
   # Ensure it's RSA; EC2 key pairs must be ssh-rsa
-  if ! head -1 "$PUB_PATH" | grep -q '^ssh-rsa '; then
-    echo "⚠ The public key at $PUB_PATH is not RSA. EC2 requires an ssh-rsa key."
+  if ! head -1 "${PUB_PATH}" | grep -q '^ssh-rsa '; then
+    echo "⚠ The public key at ${PUB_PATH} is not RSA. EC2 requires an ssh-rsa key."
     echo "→ Generating a new RSA key in ~/.ssh/${KEY_PAIR_NAME}{,.pub}…"
     mkdir -p ~/.ssh
-    if [ -e "$HOME/.ssh/${KEY_PAIR_NAME}" ]; then
+    if [ -e "${HOME}/.ssh/${KEY_PAIR_NAME}" ]; then
       read -r -p "File ~/.ssh/${KEY_PAIR_NAME} exists. Overwrite? [y/N] " ans
       [[ "$ans" =~ ^[Yy]$ ]] || { echo "Aborting to avoid overwrite."; exit 1; }
     fi
-    ssh-keygen -t rsa -b 2048 -C "tljh-$ACCOUNT_ID" -N "" -f "$HOME/.ssh/${KEY_PAIR_NAME}"
-    PUB_PATH="$HOME/.ssh/${KEY_PAIR_NAME}.pub"
+    ssh-keygen -t rsa -b 2048 -C "tljh-${ACCOUNT_ID}" -N "" -f "${HOME}/.ssh/${KEY_PAIR_NAME}"
+    PUB_PATH="${HOME}/.ssh/${KEY_PAIR_NAME}.pub"
   fi
 else
   echo "ℹ No usable public key found at \$SSH_PUBLIC_KEY_PATH; generating RSA key in ~/.ssh/${KEY_PAIR_NAME}{,.pub}…"
   mkdir -p ~/.ssh
-  if [ -e "$HOME/.ssh/${KEY_PAIR_NAME}" ]; then
+  if [ -e "${HOME}/.ssh/${KEY_PAIR_NAME}" ]; then
     read -r -p "File ~/.ssh/${KEY_PAIR_NAME} exists. Overwrite? [y/N] " ans
     [[ "$ans" =~ ^[Yy]$ ]] || { echo "Aborting to avoid overwrite."; exit 1; }
   fi
-  ssh-keygen -t rsa -b 2048 -C "tljh-$ACCOUNT_ID" -N "" -f "$HOME/.ssh/${KEY_PAIR_NAME}"
-  PUB_PATH="$HOME/.ssh/${KEY_PAIR_NAME}.pub"
+  ssh-keygen -t rsa -b 2048 -C "tljh-${ACCOUNT_ID}" -N "" -f "${HOME}/.ssh/${KEY_PAIR_NAME}"
+  PUB_PATH="${HOME}/.ssh/${KEY_PAIR_NAME}.pub"
 fi
 
 # Import (or reuse) the EC2 key pair
-echo "🔗 Ensuring AWS EC2 key pair '$KEY_PAIR_NAME' exists…"
-if aws ec2 describe-key-pairs --key-names "$KEY_PAIR_NAME" --region "$AWS_REGION" --profile "$AWS_PROFILE" >/dev/null 2>&1; then
-  echo "✔ Key pair '$KEY_PAIR_NAME' already exists in AWS; reusing."
+echo "🔗 Ensuring AWS EC2 key pair '${KEY_PAIR_NAME}' exists…"
+if aws ec2 describe-key-pairs --key-names "${KEY_PAIR_NAME}" --region "${AWS_REGION}" --profile "${AWS_PROFILE}" >/dev/null 2>&1; then
+  echo "✔ Key pair '${KEY_PAIR_NAME}' already exists in AWS; reusing."
 else
   aws ec2 import-key-pair \
-    --key-name "$KEY_PAIR_NAME" \
-    --public-key-material "fileb://$PUB_PATH" \
-    --region "$AWS_REGION" --profile "$AWS_PROFILE"
-  echo "✔ Imported key pair '$KEY_PAIR_NAME' from $PUB_PATH"
+    --key-name "${KEY_PAIR_NAME}" \
+    --public-key-material "fileb://${PUB_PATH}" \
+    --region "${AWS_REGION}" --profile "${AWS_PROFILE}"
+  echo "✔ Imported key pair '${KEY_PAIR_NAME}' from ${PUB_PATH}"
 fi
 
 # Figure out the local private key path for the SSH instructions at the end
-if [[ "$PUB_PATH" == *"/.ssh/${KEY_PAIR_NAME}.pub" ]]; then
-  LOCAL_PRIVATE_KEY="$HOME/.ssh/${KEY_PAIR_NAME}"
+if [[ "${PUB_PATH}" == *"/.ssh/${KEY_PAIR_NAME}.pub" ]]; then
+  LOCAL_PRIVATE_KEY="${HOME}/.ssh/${KEY_PAIR_NAME}"
 else
   LOCAL_PRIVATE_KEY="${PUB_PATH%.pub}"
 fi
 
 
 # --- Security group (SSH from your IP; HTTP open) ---
-echo "🛡 Creating/reusing security group: $SECURITY_GROUP_NAME"
-SG_ID=$(aws ec2 describe-security-groups --region "$AWS_REGION" --profile "$AWS_PROFILE" \
-  --filters "Name=group-name,Values=$SECURITY_GROUP_NAME" \
+echo "🛡 Creating/reusing security group: ${SECURITY_GROUP_NAME}"
+SG_ID=$(aws ec2 describe-security-groups --region "${AWS_REGION}" --profile "${AWS_PROFILE}" \
+  --filters "Name=group-name,Values=${SECURITY_GROUP_NAME}" \
   --query 'SecurityGroups[0].GroupId' --output text 2>/dev/null || true)
-if [ -z "$SG_ID" ] || [ "$SG_ID" = "None" ]; then
-  SG_ID=$(aws ec2 create-security-group --group-name "$SECURITY_GROUP_NAME" \
-    --description "TLJH security group" --vpc-id "$VPC_ID" \
+if [ -z "${SG_ID}" ] || [ "${SG_ID}" = "None" ]; then
+  SG_ID=$(aws ec2 create-security-group --group-name "${SECURITY_GROUP_NAME}" \
+    --description "TLJH security group" --vpc-id "${VPC_ID}" \
     --region "$AWS_REGION" --profile "$AWS_PROFILE" \
     --query 'GroupId' --output text)
-  echo "✔ Created SG $SG_ID"
+  echo "✔ Created SG ${SG_ID}"
 else
-  echo "✔ Reusing SG $SG_ID"
+  echo "✔ Reusing SG ${SG_ID}"
 fi
 echo "➡ Authorizing ingress rules (idempotent)…"
-aws ec2 authorize-security-group-ingress --group-id "$SG_ID" \
+aws ec2 authorize-security-group-ingress --group-id "${SG_ID}" \
   --ip-permissions "IpProtocol=tcp,FromPort=22,ToPort=22,IpRanges=[{CidrIp=$YOUR_IP_CIDR,Description='Your IP'}]" \
   --region "$AWS_REGION" --profile "$AWS_PROFILE" || echo "ℹ SSH rule already present"
-aws ec2 authorize-security-group-ingress --group-id "$SG_ID" \
+aws ec2 authorize-security-group-ingress --group-id "${SG_ID}" \
   --ip-permissions "IpProtocol=tcp,FromPort=80,ToPort=80,IpRanges=[{CidrIp=0.0.0.0/0,Description='HTTP'}]" \
   --region "$AWS_REGION" --profile "$AWS_PROFILE" || echo "ℹ HTTP rule already present"
 
-if [ "$ENABLE_SSL" = "true" ]; then
-  aws ec2 authorize-security-group-ingress --group-id "$SG_ID" \
+if [ "${ENABLE_SSL}" = "true" ]; then
+  aws ec2 authorize-security-group-ingress --group-id "${SG_ID}" \
     --ip-permissions "IpProtocol=tcp,FromPort=443,ToPort=443,IpRanges=[{CidrIp=0.0.0.0/0,Description='HTTPS'}]" \
     --region "$AWS_REGION" --profile "$AWS_PROFILE" || echo "ℹ HTTPS rule already present"
 fi
@@ -275,7 +275,7 @@ apt-get install -y python3 curl git awscli dos2unix 2>&1 | sed 's/^/[APT-INSTALL
 log_success "Base packages installed"
 
 log_step "🎯 Installing TLJH (The Littlest JupyterHub)..."
-curl -L https://tljh.jupyter.org/bootstrap.py 2>&1 | sed 's/^/[TLJH-DOWNLOAD] /' | sudo python3 - --admin ${JUPYTER_ADMIN_USER} 2>&1 | sed 's/^/[TLJH-INSTALL] /'
+curl -L https://tljh.jupyter.org/bootstrap.py | sudo python3 - --admin ${JUPYTER_ADMIN_USER} 2>&1 | sed 's/^/[TLJH-INSTALL] /'
 log_success "TLJH installation complete!"
 
 # Configure FirstUse Authenticator for self-service account creation
@@ -360,7 +360,7 @@ echo "🧩 BUILDING JUPYTERLAB EXTENSION"
 echo "========================================="
 # Install Node.js 20.x (required for JupyterLab 4.4+)
 log_step "📋 Installing Node.js 20.x..."
-curl -fsSL https://deb.nodesource.com/setup_20.x 2>&1 | sed 's/^/[NODEJS-SETUP] /' | sudo -E bash - 2>&1 | sed 's/^/[NODEJS-INSTALL] /'
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - 2>&1 | sed 's/^/[NODEJS-INSTALL] /'
 # Remove conflicting packages before installing nodejs 20.x
 sudo apt-get remove -y libnode-dev 2>&1 | sed 's/^/[NODEJS-CLEANUP] /' || log_warning "No conflicting Node.js packages to remove"
 sudo apt-get install -y nodejs 2>&1 | sed 's/^/[NODEJS-INSTALL] /'
@@ -410,63 +410,121 @@ log_success "Claude Code installed and PATH configured!"
 log_step "🔥 Disabling UFW firewall if present..."
 ufw disable 2>&1 | sed 's/^/[UFW] /' || log_step "UFW not installed or already disabled"
 
-# HTTPS setup with TLJH built-in Let's Encrypt support
-if [ "\$ENABLE_SSL" = "true" ] && [ -n "\$USE_DOMAIN" ]; then
-  log_step "🔒 Setting up HTTPS with TLJH Let's Encrypt..."
-  echo "========================================="
-  echo "🔒 SETTING UP HTTPS WITH TLJH LET'S ENCRYPT"
-  echo "========================================="
+# HTTPS setup with dedicated SSL script
+if [ "${ENABLE_SSL}" = "true" ] && [ -n "${USE_DOMAIN}" ]; then
+  log_step "🔒 Setting up HTTPS with dedicated SSL script..."
   
-  # Configure HTTPS using TLJH's built-in support
-  log_step "🔧 Configuring HTTPS settings..."
-  sudo tljh-config set https.enabled true 2>&1 | sed 's/^/[HTTPS-CONFIG] /'
-  sudo tljh-config set https.letsencrypt.email \$SSL_EMAIL 2>&1 | sed 's/^/[HTTPS-CONFIG] /'
-  sudo tljh-config add-item https.letsencrypt.domains \$USE_DOMAIN 2>&1 | sed 's/^/[HTTPS-CONFIG] /'
-  
-  # Show configuration for verification
-  log_step "📋 Displaying TLJH HTTPS configuration for verification..."
-  sudo tljh-config show 2>&1 | sed 's/^/[HTTPS-SHOW-CONFIG] /'
-  
-  # Force regeneration of Traefik configuration with HTTPS settings
-  log_step "🔄 Regenerating Traefik configuration with HTTPS..."
-  sudo /opt/tljh/hub/bin/python -c 'from tljh import traefik; traefik.ensure_traefik_config("/opt/tljh/state")' 2>&1 | sed 's/^/[TRAEFIK-CONFIG] /'
-  
-  # Restart Traefik to apply new configuration
-  log_step "🔄 Restarting Traefik to apply HTTPS configuration..."
-  sudo systemctl restart traefik 2>&1 | sed 's/^/[TRAEFIK-RESTART] /'
-  
-  # Wait a moment for Traefik to start and potentially issue certificates
-  log_step "⏳ Waiting for Traefik to initialize SSL certificates..."
-  sleep 10
-  
-  log_success "HTTPS setup complete! Certificates will auto-renew every 3 months."
-  log_step "🧪 Testing HTTPS connectivity..."
-  
-  # Test HTTPS connectivity (allow up to 30 seconds for certificate provisioning)
-  HTTPS_RETRY=0
-  HTTPS_MAX_RETRIES=6
-  while [ \$HTTPS_RETRY -lt \$HTTPS_MAX_RETRIES ]; do
-    if curl -k -s --connect-timeout 5 https://\$USE_DOMAIN >/dev/null 2>&1; then
-      log_success "HTTPS is responding at https://\$USE_DOMAIN"
-      break
-    fi
-    log_step "⏳ Waiting for HTTPS... (attempt \$((HTTPS_RETRY + 1))/\$HTTPS_MAX_RETRIES)"
+  # Create SSL setup script on the server
+  cat > /tmp/setup_ssl.sh << 'EOF_SSL_SCRIPT'
+#!/bin/bash
+# Standalone SSL setup script for JupyterHub with TLJH and Let's Encrypt
+# This script can be run independently to set up SSL on an existing TLJH instance
+
+set -euo pipefail
+
+# Configuration from environment variables
+USE_DOMAIN="${USE_DOMAIN}"
+SSL_EMAIL="${SSL_EMAIL}"
+
+# Logging functions
+log_step() {
+    echo "[SSL-SETUP $(date '+%Y-%m-%d %H:%M:%S')] $1"
+}
+
+log_success() {
+    echo "[SSL-SUCCESS $(date '+%Y-%m-%d %H:%M:%S')] ✅ $1"
+}
+
+log_error() {
+    echo "[SSL-ERROR $(date '+%Y-%m-%d %H:%M:%S')] ❌ $1"
+}
+
+log_warning() {
+    echo "[SSL-WARNING $(date '+%Y-%m-%d %H:%M:%S')] ⚠️ $1"
+}
+
+echo "========================================="
+echo "🔒 SSL/HTTPS SETUP FOR JUPYTERHUB"
+echo "========================================="
+log_step "Domain: $USE_DOMAIN"
+log_step "Email: $SSL_EMAIL"
+echo "========================================="
+
+# Configure HTTPS using TLJH's built-in support
+log_step "🔧 Configuring HTTPS settings..."
+tljh-config set https.enabled true
+tljh-config set https.letsencrypt.email "$SSL_EMAIL"
+
+# Clear any existing domains first
+tljh-config unset https.letsencrypt.domains 2>/dev/null || true
+tljh-config add-item https.letsencrypt.domains "$USE_DOMAIN"
+
+# Apply configuration changes
+log_step "🔄 Applying TLJH configuration changes..."
+tljh-config reload
+
+# Wait for services to start
+log_step "⏳ Waiting for services to start..."
+sleep 20
+
+# Force regeneration of traefik config if HTTPS entrypoint is missing
+log_step "🔍 Verifying Traefik configuration includes HTTPS..."
+if ! grep -q "https" /opt/tljh/state/traefik.toml; then
+    log_warning "HTTPS entrypoint not found. Forcing regeneration..."
+    /opt/tljh/hub/bin/python -c "from tljh import traefik; traefik.ensure_traefik_config('/opt/tljh/state')"
     sleep 5
-    HTTPS_RETRY=\$((HTTPS_RETRY + 1))
-  done
+    systemctl restart traefik
+    sleep 10
+    systemctl restart jupyterhub
+    sleep 10
+fi
+
+# Test HTTPS connectivity
+log_step "🧪 Testing HTTPS connectivity..."
+HTTPS_RETRY=0
+HTTPS_MAX_RETRIES=24
+
+while [ $HTTPS_RETRY -lt $HTTPS_MAX_RETRIES ]; do
+    if curl -s --connect-timeout 10 --max-time 15 "https://$USE_DOMAIN" >/dev/null 2>&1; then
+        log_success "HTTPS is responding at https://$USE_DOMAIN"
+        log_success "🎉 SSL SETUP COMPLETE!"
+        echo "========================================="
+        log_success "🌐 JupyterHub is now accessible at: https://$USE_DOMAIN"
+        echo "========================================="
+        exit 0
+    fi
+    
+    log_step "⏳ Waiting for HTTPS... (attempt $((HTTPS_RETRY + 1))/$HTTPS_MAX_RETRIES)"
+    
+    # Show debug info every few attempts
+    if [ $((HTTPS_RETRY % 6)) -eq 5 ]; then
+        log_step "Debug - checking service status..."
+        systemctl is-active traefik jupyterhub || true
+    fi
+    
+    sleep 5
+    HTTPS_RETRY=$((HTTPS_RETRY + 1))
+done
+
+log_error "HTTPS setup failed after $HTTPS_MAX_RETRIES attempts"
+exit 1
+EOF_SSL_SCRIPT
+
+  # Make the SSL script executable and run it
+  chmod +x /tmp/setup_ssl.sh
+  log_step "🚀 Running SSL setup script..."
+  USE_DOMAIN="${USE_DOMAIN}" SSL_EMAIL="${SSL_EMAIL}" bash /tmp/setup_ssl.sh 2>&1 | sed 's/^/[SSL] /'
   
-  if [ \$HTTPS_RETRY -eq \$HTTPS_MAX_RETRIES ]; then
-    log_warning "HTTPS not responding yet, but configuration is complete."
-    log_step "It may take a few more minutes for Let's Encrypt certificate provisioning."
-  fi
+  # Clean up the temporary script
+  rm -f /tmp/setup_ssl.sh
 fi
 
 echo "========================================="
 log_success "🎉 SETUP COMPLETE at \$(date)"
 echo "========================================="
 PUBLIC_IP=\$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
-if [ "\$ENABLE_SSL" = "true" ] && [ -n "\$USE_DOMAIN" ]; then
-  log_success "🌐 JupyterHub is ready at https://\$USE_DOMAIN"
+if [ "${ENABLE_SSL}" = "true" ] && [ -n "${USE_DOMAIN}" ]; then
+  log_success "🌐 JupyterHub is ready at https://${USE_DOMAIN}"
   log_step "🔄 Backup access: http://\$PUBLIC_IP"
 else
   log_success "🌐 JupyterHub is ready at http://\$PUBLIC_IP"
@@ -476,8 +534,8 @@ log_step "👥 Users can create accounts by choosing any username and password"
 echo "========================================="
 log_step "📊 FINAL SUMMARY:"
 log_step "• JupyterHub URL: http://\$PUBLIC_IP"
-if [ "\$ENABLE_SSL" = "true" ] && [ -n "\$USE_DOMAIN" ]; then
-  log_step "• HTTPS URL: https://\$USE_DOMAIN"
+if [ "${ENABLE_SSL}" = "true" ] && [ -n "${USE_DOMAIN}" ]; then
+  log_step "• HTTPS URL: https://${USE_DOMAIN}"
 fi
 log_step "• Repository: /srv/classrepo"
 log_step "• Admin user: ${JUPYTER_ADMIN_USER}"
@@ -558,7 +616,7 @@ Instance launched successfully!
 ====================================================================
 Instance ID: ${INSTANCE_ID}
 Public IP: ${PUBLIC_IP}
-JupyterHub URL: http://${PUBLIC_IP} (ready in ~5-10 minutes)$(if [ -n "$USE_DOMAIN" ] && [ -n "$ELASTIC_IP" ]; then echo "\nDomain URL: http://jfuse.shmtools.com (configure DNS A record)$(if [ "$ENABLE_SSL" = "true" ]; then echo "\nHTTPS URL: https://jfuse.shmtools.com (with SSL certificate)"; fi)"; fi)
+JupyterHub URL: http://${PUBLIC_IP} (ready in ~5-10 minutes)$(if [ -n "${USE_DOMAIN}" ] && [ -n "$ELASTIC_IP" ]; then echo "\nDomain URL: http://jfuse.shmtools.com (configure DNS A record)$(if [ "${ENABLE_SSL}" = "true" ]; then echo "\nHTTPS URL: https://jfuse.shmtools.com (with SSL certificate)"; fi)"; fi)
 
 Waiting for SSH to become available...
 ====================================================================
@@ -595,7 +653,7 @@ echo "Connecting to cloud-init logs..."
 echo "Press Ctrl+C to exit monitoring (installation will continue)"
 echo ""
 echo "Quick reference while monitoring:"
-echo "  - JupyterHub URL: http://${PUBLIC_IP}$(if [ -n "$USE_DOMAIN" ] && [ "$PUBLIC_IP" = "$ELASTIC_IP" ]; then echo "\n  - Domain URL: http://jfuse.shmtools.com$(if [ "$ENABLE_SSL" = "true" ]; then echo "\n  - Secure URL: https://jfuse.shmtools.com"; fi)"; fi)"
+echo "  - JupyterHub URL: http://${PUBLIC_IP}$(if [ -n "${USE_DOMAIN}" ] && [ "$PUBLIC_IP" = "$ELASTIC_IP" ]; then echo "\n  - Domain URL: http://jfuse.shmtools.com$(if [ "${ENABLE_SSL}" = "true" ]; then echo "\n  - Secure URL: https://jfuse.shmtools.com"; fi)"; fi)"
 echo "  - Admin username: ${JUPYTER_ADMIN_USER}"
 echo "  - Users can create their own accounts (any username + password)"
 echo "  - Repo location: /srv/classrepo"
