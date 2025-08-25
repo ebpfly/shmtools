@@ -254,7 +254,7 @@ echo "========================================="
 export DEBIAN_FRONTEND=noninteractive
 echo "Installing base packages..."
 apt-get update -y
-apt-get install -y python3 curl git awscli
+apt-get install -y python3 curl git awscli dos2unix
 
 echo "Installing TLJH (The Littlest JupyterHub)..."
 curl -L https://tljh.jupyter.org/bootstrap.py | sudo python3 - --admin ${JUPYTER_ADMIN_USER}
@@ -341,6 +341,15 @@ echo "Node.js version: \$(node --version)"
 # Install JupyterLab extension using separate script
 echo "Running JupyterLab extension installation..."
 if [ -f "/srv/classrepo/jupyterhub/install_jupyterlab_extension.sh" ]; then
+    # Fix line endings in case of DOS format (defensive programming)
+    if command -v dos2unix >/dev/null 2>&1; then
+        dos2unix /srv/classrepo/jupyterhub/install_jupyterlab_extension.sh
+    else
+        # Fallback: remove carriage returns
+        tr -d '\r' < /srv/classrepo/jupyterhub/install_jupyterlab_extension.sh > /tmp/install_jupyterlab_extension_fixed.sh
+        mv /tmp/install_jupyterlab_extension_fixed.sh /srv/classrepo/jupyterhub/install_jupyterlab_extension.sh
+        chmod +x /srv/classrepo/jupyterhub/install_jupyterlab_extension.sh
+    fi
     # Run the extension installation script
     bash /srv/classrepo/jupyterhub/install_jupyterlab_extension.sh
 else
