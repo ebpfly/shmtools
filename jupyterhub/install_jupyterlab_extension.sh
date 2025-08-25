@@ -46,9 +46,13 @@ if [ ! -d "./shm_function_selector/shm_function_selector/labextension" ]; then
     cd /srv/classrepo
 fi
 
-# Enable the server extension in TLJH user environment
-echo "Enabling server extension..."
-sudo -E /opt/tljh/user/bin/jupyter server extension enable shm_function_selector --sys-prefix
+# Fix import paths in handlers.py for relocated introspection module
+echo "Fixing import paths in extension..."
+sed -i 's/from shm_function_selector\.introspection/from ..introspection/g' /srv/classrepo/shm_function_selector/shm_function_selector/handlers.py 2>/dev/null || true
+
+# Create missing directories/files that pip might expect
+sudo mkdir -p /opt/tljh/user/share/jupyter/labextensions/shm-function-selector
+sudo touch /opt/tljh/user/share/jupyter/labextensions/shm-function-selector/build_log.json 2>/dev/null || true
 
 # The labextension should already be installed via pip editable install
 echo "Verifying labextension installation..."
@@ -59,6 +63,36 @@ else
     # Use develop mode for development installs
     sudo -E /opt/tljh/user/bin/jupyter labextension develop ./shm_function_selector/ --overwrite
 fi
+
+# Add custom server extension loader to config
+echo "Configuring server extension..."
+cat > /tmp/shm_extension_config.py << 'EOF'
+
+# Load SHM Function Selector extension
+import sys
+sys.path.insert(0, '/srv/classrepo')
+
+def load_shm_extension(server_app):
+    try:
+        from shm_function_selector.shm_function_selector.handlers import setup_handlers
+        web_app = server_app.web_app
+        setup_handlers(web_app)
+        server_app.log.info("SHM Function Selector server extension loaded via custom config")
+    except Exception as e:
+        server_app.log.error(f"Failed to load SHM extension: {e}")
+
+c.ServerApp.callable_extensions = [load_shm_extension]
+EOF
+
+# Append to config if not already present
+if ! grep -q "load_shm_extension" /opt/tljh/user/etc/jupyter/jupyter_server_config.py 2>/dev/null; then
+    cat /tmp/shm_extension_config.py | sudo tee -a /opt/tljh/user/etc/jupyter/jupyter_server_config.py > /dev/null
+    echo "Server extension configuration added"
+else
+    echo "Server extension configuration already present"
+fi
+
+rm -f /tmp/shm_extension_config.py
 
 # Rebuild JupyterLab to integrate the extension
 echo "Building JupyterLab with extension..."

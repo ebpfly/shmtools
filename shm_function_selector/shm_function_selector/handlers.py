@@ -140,7 +140,7 @@ class SHMFunctionHandler(APIHandler):
             
             # Try to use the built-in introspection system first
             try:
-                from shm_function_selector.introspection import discover_functions_locally
+                from ..introspection import discover_functions_locally
                 
                 # Debug: log config details
                 modules_to_scan = config.get('function_discovery', {}).get('modules_to_scan', [])
