@@ -257,19 +257,19 @@ echo "========================================="
 
 # Enhanced logging function for user-data script
 log_step() {
-    echo "[SETUP-LOG \$(date '+%Y-%m-%d %H:%M:%S')] \${1}"
+    echo "[SETUP-LOG \$(date '+%Y-%m-%d %H:%M:%S')] \${1:-}"
 }
 
 log_error() {
-    echo "[SETUP-ERROR \$(date '+%Y-%m-%d %H:%M:%S')] ❌ \${1}"
+    echo "[SETUP-ERROR \$(date '+%Y-%m-%d %H:%M:%S')] ❌ \${1:-}"
 }
 
 log_success() {
-    echo "[SETUP-SUCCESS \$(date '+%Y-%m-%d %H:%M:%S')] ✅ \${1}"
+    echo "[SETUP-SUCCESS \$(date '+%Y-%m-%d %H:%M:%S')] ✅ \${1:-}"
 }
 
 log_warning() {
-    echo "[SETUP-WARNING \$(date '+%Y-%m-%d %H:%M:%S')] ⚠️ \${1}"
+    echo "[SETUP-WARNING \$(date '+%Y-%m-%d %H:%M:%S')] ⚠️ \${1:-}"
 }
 
 export DEBIAN_FRONTEND=noninteractive
@@ -433,19 +433,19 @@ SSL_EMAIL="${SSL_EMAIL}"
 
 # Logging functions
 log_step() {
-    echo "[SSL-SETUP \$(date '+%Y-%m-%d %H:%M:%S')] \$1"
+    echo "[SSL-SETUP \$(date '+%Y-%m-%d %H:%M:%S')] \${1:-}"
 }
 
 log_success() {
-    echo "[SSL-SUCCESS \$(date '+%Y-%m-%d %H:%M:%S')] ✅ \$1"
+    echo "[SSL-SUCCESS \$(date '+%Y-%m-%d %H:%M:%S')] ✅ \${1:-}"
 }
 
 log_error() {
-    echo "[SSL-ERROR \$(date '+%Y-%m-%d %H:%M:%S')] ❌ \$1"
+    echo "[SSL-ERROR \$(date '+%Y-%m-%d %H:%M:%S')] ❌ \${1:-}"
 }
 
 log_warning() {
-    echo "[SSL-WARNING \$(date '+%Y-%m-%d %H:%M:%S')] ⚠️ \$1"
+    echo "[SSL-WARNING \$(date '+%Y-%m-%d %H:%M:%S')] ⚠️ \${1:-}"
 }
 
 echo "========================================="
@@ -474,9 +474,15 @@ sleep 20
 
 # Always force regeneration of traefik config to ensure HTTPS is properly configured
 log_step "🔍 Ensuring Traefik configuration includes HTTPS..."
-log_step "Regenerating Traefik configuration..."
-/opt/tljh/hub/bin/python -c "from tljh import traefik; traefik.ensure_traefik_config('/opt/tljh/state')" || log_warning "Failed to regenerate Traefik config"
-sleep 5
+log_step "Force regenerating Traefik configuration to include HTTPS entrypoint..."
+/opt/tljh/hub/bin/python -c "from tljh import traefik; traefik.ensure_traefik_config('/opt/tljh/state')"
+if [ \$? -ne 0 ]; then
+    log_warning "Initial Traefik config regeneration failed, retrying..."
+    sleep 5
+    /opt/tljh/hub/bin/python -c "from tljh import traefik; traefik.ensure_traefik_config('/opt/tljh/state')" || log_error "Failed to regenerate Traefik config"
+fi
+
+log_step "🔄 Restarting services to apply HTTPS configuration..."
 systemctl restart traefik || log_warning "Failed to restart Traefik"
 sleep 10
 systemctl restart jupyterhub || log_warning "Failed to restart JupyterHub"
