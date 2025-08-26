@@ -224,3 +224,5 @@ gh pr merge --squash --delete-branch
 # Hotfix: git checkout -b hotfix/critical main → fix → gh pr create/merge
 # Rollback: git revert COMMIT_HASH → gh pr create
 ```
+
+- When running scripts through ssh, always run them in a background process and then check in on them so that if your ssh connection times out, the script keeps running
