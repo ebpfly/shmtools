@@ -37,11 +37,15 @@ INSTANCE_NAME_TAG="tljh-class-server"
 
 # Elastic IP configuration
 ELASTIC_IP_NAME="shmtools-static-ip"  # Name tag for the Elastic IP
-USE_DOMAIN="jfuse.shmtools.com"       # Domain name (optional, for display only)
+USE_DOMAIN="jfuse.shmtools.com"       # Domain name (leave empty to disable SSL)
 
 # SSL/HTTPS configuration
+# IMPORTANT: SSL will only work if:
+# 1. USE_DOMAIN is set to a valid domain you own
+# 2. The domain's DNS A record points to the EC2 instance's IP address
+# 3. Port 80 and 443 are accessible from the internet
 ENABLE_SSL=true                       # Set to false to disable SSL setup
-SSL_EMAIL="ericbflynn@gmail.com"       # Email for Let's Encrypt certificates
+SSL_EMAIL="ericbflynn@gmail.com"      # Email for Let's Encrypt certificates
 ############################################
 
 # --- helpers ---
@@ -395,16 +399,17 @@ log_step "🔧 Setting proper file ownership..."
 chown -R ${JUPYTER_ADMIN_USER}:${JUPYTER_ADMIN_USER} /srv/classrepo 2>&1 | sed 's/^/[CHOWN] /'
 log_success "File ownership configured"
 
-# Claude Code (native installer). You will authenticate after SSH login.
+# Claude Code (native installer) - Non-interactive installation
 log_step "🤖 Installing Claude Code CLI..."
 echo "========================================="
 echo "🤖 INSTALLING CLAUDE CODE CLI"
 echo "========================================="
-su - ${JUPYTER_ADMIN_USER} -c "curl -fsSL https://claude.ai/install.sh | bash || true" 2>&1 | sed 's/^/[CLAUDE-INSTALL] /' || log_warning "Claude Code installation failed, continuing..."
+# Run as ubuntu user without login shell to avoid TTY issues
+sudo -u ${JUPYTER_ADMIN_USER} bash -c "curl -fsSL https://claude.ai/install.sh | bash" 2>&1 | sed 's/^/[CLAUDE-INSTALL] /' || log_warning "Claude Code installation failed (expected - requires manual auth), continuing..."
 # Add Claude to PATH for all users
 echo 'export PATH="\$HOME/.local/bin:\$PATH"' >> /home/${JUPYTER_ADMIN_USER}/.bashrc
 echo 'export PATH="\$HOME/.local/bin:\$PATH"' >> /etc/skel/.bashrc
-log_success "Claude Code installed and PATH configured!"
+log_success "Claude Code installer run - users will need to authenticate on first use"
 
 # Keep port 80 open if ufw is present
 log_step "🔥 Disabling UFW firewall if present..."
@@ -467,16 +472,21 @@ tljh-config reload
 log_step "⏳ Waiting for services to start..."
 sleep 20
 
-# Force regeneration of traefik config if HTTPS entrypoint is missing
-log_step "🔍 Verifying Traefik configuration includes HTTPS..."
-if ! grep -q "https" /opt/tljh/state/traefik.toml; then
-    log_warning "HTTPS entrypoint not found. Forcing regeneration..."
-    /opt/tljh/hub/bin/python -c "from tljh import traefik; traefik.ensure_traefik_config('/opt/tljh/state')"
-    sleep 5
-    systemctl restart traefik
-    sleep 10
-    systemctl restart jupyterhub
-    sleep 10
+# Always force regeneration of traefik config to ensure HTTPS is properly configured
+log_step "🔍 Ensuring Traefik configuration includes HTTPS..."
+log_step "Regenerating Traefik configuration..."
+/opt/tljh/hub/bin/python -c "from tljh import traefik; traefik.ensure_traefik_config('/opt/tljh/state')" || log_warning "Failed to regenerate Traefik config"
+sleep 5
+systemctl restart traefik || log_warning "Failed to restart Traefik"
+sleep 10
+systemctl restart jupyterhub || log_warning "Failed to restart JupyterHub"
+sleep 10
+
+# Verify HTTPS configuration
+if grep -q "entryPoints.https" /opt/tljh/state/traefik.toml; then
+    log_success "HTTPS entry point configured in Traefik"
+else
+    log_error "HTTPS entry point NOT found in Traefik config!"
 fi
 
 # Test HTTPS connectivity

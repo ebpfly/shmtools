@@ -124,45 +124,43 @@ else
     sudo -E /opt/tljh/user/bin/jupyter labextension develop ./shm_function_selector/ --overwrite 2>&1 | sed 's/^/[LABEXT-DEVELOP] /' || log_error "Labextension development install failed"
 fi
 
-# Add custom server extension loader to config
+# Configure server extension properly using Jupyter's config.d directory
 log_step "⚙️ Configuring server extension..."
-CONFIG_FILE="/opt/tljh/user/etc/jupyter/jupyter_server_config.py"
-log_step "📄 Server config file: $CONFIG_FILE"
+CONFIG_DIR="/opt/tljh/user/etc/jupyter/jupyter_server_config.d"
+CONFIG_FILE="$CONFIG_DIR/shm_function_selector.json"
 
-cat > /tmp/shm_extension_config.py << 'EOF'
+# Create config directory if it doesn't exist
+sudo mkdir -p "$CONFIG_DIR"
+log_step "📄 Server extension config file: $CONFIG_FILE"
 
-# Load SHM Function Selector extension
-import sys
-sys.path.insert(0, '/srv/classrepo')
-
-def load_shm_extension(server_app):
-    try:
-        from shm_function_selector.shm_function_selector.handlers import setup_handlers
-        web_app = server_app.web_app
-        setup_handlers(web_app)
-        server_app.log.info("SHM Function Selector server extension loaded via custom config")
-    except Exception as e:
-        server_app.log.error(f"Failed to load SHM extension: {e}")
-        import traceback
-        server_app.log.error(f"Extension traceback: {traceback.format_exc()}")
-
-c.ServerApp.callable_extensions = [load_shm_extension]
+# Create proper JSON configuration for the server extension
+cat > /tmp/shm_extension_config.json << 'EOF'
+{
+  "ServerApp": {
+    "jpserver_extensions": {
+      "shm_function_selector": true
+    }
+  }
+}
 EOF
 
-# Append to config if not already present
-log_step "🔍 Checking if server extension config already exists..."
-if ! grep -q "load_shm_extension" "$CONFIG_FILE" 2>/dev/null; then
-    log_step "📝 Adding server extension configuration..."
-    cat /tmp/shm_extension_config.py | sudo tee -a "$CONFIG_FILE" > /dev/null 2>&1 | sed 's/^/[CONFIG-APPEND] /'
-    log_success "Server extension configuration added"
-else
-    log_success "Server extension configuration already present"
+# Install the configuration
+log_step "📝 Installing server extension configuration..."
+sudo cp /tmp/shm_extension_config.json "$CONFIG_FILE"
+log_success "Server extension configuration installed at $CONFIG_FILE"
+
+# Also ensure the Python path includes our repo (using jupyter_server_config.py)
+PYCONFIG_FILE="/opt/tljh/user/etc/jupyter/jupyter_server_config.py"
+if ! grep -q "/srv/classrepo" "$PYCONFIG_FILE" 2>/dev/null; then
+    log_step "📝 Adding Python path to server config..."
+    echo "" | sudo tee -a "$PYCONFIG_FILE" > /dev/null
+    echo "# Add SHMTools to Python path" | sudo tee -a "$PYCONFIG_FILE" > /dev/null
+    echo "import sys" | sudo tee -a "$PYCONFIG_FILE" > /dev/null
+    echo "sys.path.insert(0, '/srv/classrepo')" | sudo tee -a "$PYCONFIG_FILE" > /dev/null
+    log_success "Python path configuration added"
 fi
 
-log_step "📋 Current server config (last 15 lines):"
-tail -15 "$CONFIG_FILE" 2>/dev/null | sed 's/^/[SERVER-CONFIG] /' || log_warning "Could not read server config"
-
-rm -f /tmp/shm_extension_config.py
+rm -f /tmp/shm_extension_config.json
 
 # Rebuild JupyterLab to integrate the extension
 log_step "🔨 Building JupyterLab with extension..."
