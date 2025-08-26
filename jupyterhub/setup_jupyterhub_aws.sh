@@ -415,124 +415,87 @@ log_success "Claude Code installer run - users will need to authenticate on firs
 log_step "🔥 Disabling UFW firewall if present..."
 ufw disable 2>&1 | sed 's/^/[UFW] /' || log_step "UFW not installed or already disabled"
 
-# HTTPS setup with dedicated SSL script
+# HTTPS setup 
 if [ "${ENABLE_SSL}" = "true" ] && [ -n "${USE_DOMAIN}" ]; then
-  log_step "🔒 Setting up HTTPS with dedicated SSL script..."
+  log_step "🔒 Setting up HTTPS/SSL..."
   
-  # Create SSL setup script on the server
-  cat > /tmp/setup_ssl.sh <<EOF_SSL_SCRIPT
-#!/bin/bash
-# Standalone SSL setup script for JupyterHub with TLJH and Let's Encrypt
-# This script can be run independently to set up SSL on an existing TLJH instance
-
-set -euo pipefail
-
-# Configuration from environment variables
-USE_DOMAIN="${USE_DOMAIN}"
-SSL_EMAIL="${SSL_EMAIL}"
-
-# Logging functions
-log_step() {
-    echo "[SSL-SETUP \$(date '+%Y-%m-%d %H:%M:%S')] \${1:-}"
-}
-
-log_success() {
-    echo "[SSL-SUCCESS \$(date '+%Y-%m-%d %H:%M:%S')] ✅ \${1:-}"
-}
-
-log_error() {
-    echo "[SSL-ERROR \$(date '+%Y-%m-%d %H:%M:%S')] ❌ \${1:-}"
-}
-
-log_warning() {
-    echo "[SSL-WARNING \$(date '+%Y-%m-%d %H:%M:%S')] ⚠️ \${1:-}"
-}
-
-echo "========================================="
-echo "🔒 SSL/HTTPS SETUP FOR JUPYTERHUB"
-echo "========================================="
-log_step "Domain: \$USE_DOMAIN"
-log_step "Email: \$SSL_EMAIL"
-echo "========================================="
-
-# Configure HTTPS using TLJH's built-in support
-log_step "🔧 Configuring HTTPS settings..."
-tljh-config set https.enabled true
-tljh-config set https.letsencrypt.email "\$SSL_EMAIL"
-
-# Clear any existing domains first
-tljh-config unset https.letsencrypt.domains 2>/dev/null || true
-tljh-config add-item https.letsencrypt.domains "\$USE_DOMAIN"
-
-# Apply configuration changes
-log_step "🔄 Applying TLJH configuration changes..."
-tljh-config reload
-
-# Wait for services to start
-log_step "⏳ Waiting for services to start..."
-sleep 20
-
-# Always force regeneration of traefik config to ensure HTTPS is properly configured
-log_step "🔍 Ensuring Traefik configuration includes HTTPS..."
-log_step "Force regenerating Traefik configuration to include HTTPS entrypoint..."
-/opt/tljh/hub/bin/python -c "from tljh import traefik; traefik.ensure_traefik_config('/opt/tljh/state')"
-if [ \$? -ne 0 ]; then
-    log_warning "Initial Traefik config regeneration failed, retrying..."
-    sleep 5
-    /opt/tljh/hub/bin/python -c "from tljh import traefik; traefik.ensure_traefik_config('/opt/tljh/state')" || log_error "Failed to regenerate Traefik config"
-fi
-
-log_step "🔄 Restarting services to apply HTTPS configuration..."
-systemctl restart traefik || log_warning "Failed to restart Traefik"
-sleep 10
-systemctl restart jupyterhub || log_warning "Failed to restart JupyterHub"
-sleep 10
-
-# Verify HTTPS configuration
-if grep -q "entryPoints.https" /opt/tljh/state/traefik.toml; then
-    log_success "HTTPS entry point configured in Traefik"
-else
-    log_error "HTTPS entry point NOT found in Traefik config!"
-fi
-
-# Test HTTPS connectivity
-log_step "🧪 Testing HTTPS connectivity..."
-HTTPS_RETRY=0
-HTTPS_MAX_RETRIES=24
-
-while [ \$HTTPS_RETRY -lt \$HTTPS_MAX_RETRIES ]; do
-    if curl -s --connect-timeout 10 --max-time 15 "https://\$USE_DOMAIN" >/dev/null 2>&1; then
-        log_success "HTTPS is responding at https://\$USE_DOMAIN"
-        log_success "🎉 SSL SETUP COMPLETE!"
-        echo "========================================="
-        log_success "🌐 JupyterHub is now accessible at: https://\$USE_DOMAIN"
-        echo "========================================="
-        exit 0
-    fi
-    
-    log_step "⏳ Waiting for HTTPS... (attempt \$((HTTPS_RETRY + 1))/\$HTTPS_MAX_RETRIES)"
-    
-    # Show debug info every few attempts
-    if [ \$((\$HTTPS_RETRY % 6)) -eq 5 ]; then
-        log_step "Debug - checking service status..."
-        systemctl is-active traefik jupyterhub || true
-    fi
-    
-    sleep 5
-    HTTPS_RETRY=\$((\$HTTPS_RETRY + 1))
-done
-
-log_error "HTTPS setup failed after \$HTTPS_MAX_RETRIES attempts"
-exit 1
-EOF_SSL_SCRIPT
-
-  # Make the SSL script executable and run it
-  chmod +x /tmp/setup_ssl.sh
-  log_step "🚀 Running SSL setup script..."
-  USE_DOMAIN="${USE_DOMAIN}" SSL_EMAIL="${SSL_EMAIL}" bash /tmp/setup_ssl.sh 2>&1 | sed 's/^/[SSL] /'
+  echo "========================================="
+  echo "🔒 SSL/HTTPS SETUP FOR JUPYTERHUB"
+  echo "========================================="
+  log_step "Domain: ${USE_DOMAIN}"
+  log_step "Email: ${SSL_EMAIL}"
+  echo "========================================="
   
-  # Clean up the temporary script
-  rm -f /tmp/setup_ssl.sh
+  # Configure HTTPS using TLJH's built-in support
+  log_step "🔧 Configuring HTTPS settings..."
+  tljh-config set https.enabled true
+  tljh-config set https.letsencrypt.email "${SSL_EMAIL}"
+  
+  # Clear any existing domains first
+  tljh-config unset https.letsencrypt.domains 2>/dev/null || true
+  tljh-config add-item https.letsencrypt.domains "${USE_DOMAIN}"
+  
+  # Apply configuration changes
+  log_step "🔄 Applying TLJH configuration changes..."
+  tljh-config reload
+  
+  # Wait for services to start
+  log_step "⏳ Waiting for services to start..."
+  sleep 20
+  
+  # Always force regeneration of traefik config to ensure HTTPS is properly configured
+  log_step "🔍 Ensuring Traefik configuration includes HTTPS..."
+  log_step "Force regenerating Traefik configuration to include HTTPS entrypoint..."
+  /opt/tljh/hub/bin/python -c "from tljh import traefik; traefik.ensure_traefik_config('/opt/tljh/state')"
+  if [ \$? -ne 0 ]; then
+      log_warning "Initial Traefik config regeneration failed, retrying..."
+      sleep 5
+      /opt/tljh/hub/bin/python -c "from tljh import traefik; traefik.ensure_traefik_config('/opt/tljh/state')" || log_error "Failed to regenerate Traefik config"
+  fi
+  
+  log_step "🔄 Restarting services to apply HTTPS configuration..."
+  systemctl restart traefik || log_warning "Failed to restart Traefik"
+  sleep 10
+  systemctl restart jupyterhub || log_warning "Failed to restart JupyterHub"
+  sleep 10
+  
+  # Verify HTTPS configuration  
+  if grep -q "entryPoints.https" /opt/tljh/state/traefik.toml; then
+      log_success "HTTPS entry point configured in Traefik"
+  else
+      log_error "HTTPS entry point NOT found in Traefik config!"
+  fi
+  
+  # Test HTTPS connectivity
+  log_step "🧪 Testing HTTPS connectivity..."
+  HTTPS_RETRY=0
+  HTTPS_MAX_RETRIES=24
+  
+  while [ \$HTTPS_RETRY -lt \$HTTPS_MAX_RETRIES ]; do
+      if curl -s --connect-timeout 10 --max-time 15 "https://${USE_DOMAIN}" >/dev/null 2>&1; then
+          log_success "HTTPS is responding at https://${USE_DOMAIN}"
+          log_success "🎉 SSL SETUP COMPLETE!"
+          echo "========================================="
+          log_success "🌐 JupyterHub is now accessible at: https://${USE_DOMAIN}"
+          echo "========================================="
+          break
+      fi
+      
+      log_step "⏳ Waiting for HTTPS... (attempt \$((HTTPS_RETRY + 1))/\$HTTPS_MAX_RETRIES)"
+      
+      # Show debug info every few attempts
+      if [ \$((\$HTTPS_RETRY % 6)) -eq 5 ]; then
+          log_step "Debug - checking service status..."
+          systemctl is-active traefik jupyterhub || true
+      fi
+      
+      sleep 5
+      HTTPS_RETRY=\$((\$HTTPS_RETRY + 1))
+  done
+  
+  if [ \$HTTPS_RETRY -eq \$HTTPS_MAX_RETRIES ]; then
+      log_warning "HTTPS setup may need more time to complete"
+  fi
 fi
 
 echo "========================================="
