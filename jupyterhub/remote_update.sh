@@ -99,7 +99,7 @@ detect_instance_ip() {
     fi
     
     if [[ -n "$instance_ip" && "$instance_ip" != "None" ]]; then
-        echo "$instance_ip" | tr -d '\n'
+        echo "$instance_ip" | tr -d '\n\r' | sed 's/[^0-9.]//g'
         return 0
     else
         return 1
@@ -139,6 +139,56 @@ check_remote_script() {
     return 0
 }
 
+# Function to copy data files to remote
+copy_data_files() {
+    local ip="$1"
+    local local_data_dir="$REPO_ROOT/examples/data/data_files"
+    
+    log "Checking for local data files..."
+    
+    if [[ ! -d "$local_data_dir" ]]; then
+        warning "Local data files directory not found: $local_data_dir"
+        warning "Skipping data file copy"
+        return 0
+    fi
+    
+    # Check if .mat files exist locally
+    local mat_files=$(find "$local_data_dir" -name "*.mat" 2>/dev/null | wc -l)
+    if [[ $mat_files -eq 0 ]]; then
+        warning "No .mat files found in $local_data_dir"
+        warning "Skipping data file copy"
+        return 0
+    fi
+    
+    info "Found $mat_files .mat files locally"
+    log "Copying data files to remote instance..."
+    
+    # Create remote directory if it doesn't exist
+    ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$SSH_USER@$ip" \
+        "mkdir -p $REMOTE_REPO_DIR/examples/data/data_files" || {
+        error "Failed to create remote data directory"
+        return 1
+    }
+    
+    # Copy the .mat files
+    if scp -i "$SSH_KEY" -o StrictHostKeyChecking=no "$local_data_dir"/*.mat "$SSH_USER@$ip:$REMOTE_REPO_DIR/examples/data/data_files/"; then
+        success "Data files copied successfully!"
+        
+        # Set proper ownership on remote
+        ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$SSH_USER@$ip" \
+            "sudo chown -R $SSH_USER:$SSH_USER $REMOTE_REPO_DIR/examples/data/data_files/" || {
+            warning "Failed to set ownership on data files"
+        }
+        
+        # Remove the setup marker file if it exists
+        ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$SSH_USER@$ip" \
+            "rm -f $REMOTE_REPO_DIR/examples/data/data_files/DATA_SETUP_REQUIRED.txt" 2>/dev/null || true
+    else
+        error "Failed to copy data files"
+        return 1
+    fi
+}
+
 # Function to run remote update
 run_remote_update() {
     local ip="$1"
@@ -151,6 +201,9 @@ run_remote_update() {
     info "Starting remote update on $ip..."
     info "This will take several minutes. Please wait..."
     echo "======================================================================"
+    
+    # Copy data files first
+    copy_data_files "$ip" || warning "Data file copy failed, continuing with update..."
     
     # Execute the update script on remote instance
     if ssh $ssh_opts -t "$SSH_USER@$ip" "cd $REMOTE_REPO_DIR && ./jupyterhub/update_deployment.sh"; then
@@ -250,6 +303,7 @@ check_remote_script "$IP_ADDRESS" || exit 1
 echo ""
 info "Ready to update SHM deployment on $IP_ADDRESS"
 info "This will:"
+info "  • Copy local data files (.mat) to remote instance"
 info "  • Pull latest changes from Git"
 info "  • Update Python dependencies"
 info "  • Reinstall SHMTools package"  

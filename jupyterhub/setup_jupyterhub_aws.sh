@@ -398,6 +398,40 @@ else
     log_warning "Skipping JupyterLab extension installation..."
 fi
 
+# Copy data files from local development machine to EC2 instance
+log_step "📂 Setting up data files directory..."
+mkdir -p /srv/classrepo/examples/data/data_files
+chown -R ${JUPYTER_ADMIN_USER}:${JUPYTER_ADMIN_USER} /srv/classrepo/examples/data/data_files
+
+log_step "📥 Downloading required data files..."
+echo "========================================="
+echo "📥 DOWNLOADING DATA FILES"
+echo "========================================="
+
+# Define data files to download (these would need to be hosted somewhere accessible)
+# For now, create placeholder message since we need a way to get the files to EC2
+DATA_FILES_DIR="/srv/classrepo/examples/data/data_files"
+
+# Create a marker file indicating data setup is needed
+cat > "\$DATA_FILES_DIR/DATA_SETUP_REQUIRED.txt" <<'DATASETUP'
+IMPORTANT: Data files are required for SHMTools examples to work properly.
+
+Required files (~161MB total):
+- data3SS.mat (25MB) - 3-story structure, 8192×5×170
+- dataSensorDiagnostic.mat (63KB) - Sensor health
+- data_CBM.mat (54MB) - Condition monitoring  
+- data_example_ActiveSense.mat (32MB) - Active sensing
+- data_OSPExampleModal.mat (50KB) - Modal analysis
+
+To complete setup, copy these files from your local machine:
+scp -i ~/.ssh/class-key-ssh-rsa /path/to/local/examples/data/data_files/*.mat ubuntu@PUBLIC_IP:/srv/classrepo/examples/data/data_files/
+
+Or use the remote_update.sh script which will copy them automatically.
+DATASETUP
+
+log_warning "Data files not automatically copied - see DATA_SETUP_REQUIRED.txt for instructions"
+log_step "💡 Use remote_update.sh script to copy data files automatically"
+
 # Set proper ownership
 log_step "🔧 Setting proper file ownership..."
 chown -R ${JUPYTER_ADMIN_USER}:${JUPYTER_ADMIN_USER} /srv/classrepo 2>&1 | sed 's/^/[CHOWN] /'
@@ -596,6 +630,7 @@ log_step "• Repository: /srv/classrepo"
 log_step "• Admin user: ${JUPYTER_ADMIN_USER}"
 log_step "• SHMTools package: Installed in development mode"
 log_step "• JupyterLab extension: Installed and configured"
+log_step "• Data files: Available in /srv/classrepo/examples/data/data_files/"
 log_step "• Claude Code CLI: Available after SSH login"
 log_success "🚀 Ready for use!"
 echo "========================================="
