@@ -46,6 +46,10 @@ USE_DOMAIN="jfuse.shmtools.com"       # Domain name (leave empty to disable SSL)
 # 3. Port 80 and 443 are accessible from the internet
 ENABLE_SSL=true                       # Set to false to disable SSL setup
 SSL_EMAIL="ericbflynn@gmail.com"      # Email for Let's Encrypt certificates
+
+# Certificate backup configuration
+CERT_BACKUP_BUCKET="shmtools-deployment-bucket"  # S3 bucket for certificate backups
+CERT_BACKUP_KEY="certificates/acme.json"         # S3 key for certificate backup
 ############################################
 
 # --- helpers ---
@@ -415,6 +419,35 @@ log_success "Claude Code installer run - users will need to authenticate on firs
 log_step "🔥 Disabling UFW firewall if present..."
 ufw disable 2>&1 | sed 's/^/[UFW] /' || log_step "UFW not installed or already disabled"
 
+# Certificate restore from backup (before SSL setup)
+if [ "${ENABLE_SSL}" = "true" ] && [ -n "${USE_DOMAIN}" ]; then
+  log_step "🔐 Checking for certificate backup to restore..."
+  
+  # Try to restore existing certificate from S3
+  if aws s3 cp "s3://${CERT_BACKUP_BUCKET}/${CERT_BACKUP_KEY}" /tmp/acme-restore.json 2>/dev/null; then
+    log_success "Found certificate backup, restoring..."
+    
+    # Create the TLJH state directory if it doesn't exist
+    mkdir -p /opt/tljh/state
+    
+    # Copy the certificate file to the correct location
+    cp /tmp/acme-restore.json /opt/tljh/state/acme.json
+    chmod 600 /opt/tljh/state/acme.json
+    chown root:root /opt/tljh/state/acme.json
+    
+    # Also create the traefik acme directory structure that TLJH expects
+    mkdir -p /opt/tljh/state/traefik/acme
+    cp /tmp/acme-restore.json /opt/tljh/state/traefik/acme/acme.json
+    chmod 600 /opt/tljh/state/traefik/acme/acme.json
+    chown root:root /opt/tljh/state/traefik/acme/acme.json
+    
+    rm -f /tmp/acme-restore.json
+    log_success "Certificate backup restored"
+  else
+    log_step "No certificate backup found, will generate new certificates"
+  fi
+fi
+
 # HTTPS setup 
 if [ "${ENABLE_SSL}" = "true" ] && [ -n "${USE_DOMAIN}" ]; then
   log_step "🔒 Setting up HTTPS/SSL..."
@@ -495,6 +528,26 @@ if [ "${ENABLE_SSL}" = "true" ] && [ -n "${USE_DOMAIN}" ]; then
   
   if [ \$HTTPS_RETRY -eq \$HTTPS_MAX_RETRIES ]; then
       log_warning "HTTPS setup may need more time to complete"
+  fi
+  
+  # Backup certificates after SSL setup (successful or not)
+  log_step "💾 Backing up SSL certificates..."
+  if [ -f "/opt/tljh/state/acme.json" ]; then
+    # Backup to S3 for future deployments
+    if aws s3 cp /opt/tljh/state/acme.json "s3://${CERT_BACKUP_BUCKET}/${CERT_BACKUP_KEY}" 2>/dev/null; then
+      log_success "Certificate backup saved to S3"
+    else
+      log_warning "Failed to backup certificate to S3"
+    fi
+  elif [ -f "/opt/tljh/state/traefik/acme/acme.json" ]; then
+    # Alternative location
+    if aws s3 cp /opt/tljh/state/traefik/acme/acme.json "s3://${CERT_BACKUP_BUCKET}/${CERT_BACKUP_KEY}" 2>/dev/null; then
+      log_success "Certificate backup saved to S3"
+    else
+      log_warning "Failed to backup certificate to S3"  
+    fi
+  else
+    log_step "No certificate file found to backup"
   fi
 fi
 

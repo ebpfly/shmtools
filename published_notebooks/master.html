@@ -326,146 +326,246 @@
                     <div class="stats">
                         <div class="stats-item">
                             <span>Total Notebooks:</span>
-                            <span>23</span>
+                            <span>30</span>
                         </div>
                         <div class="stats-item">
                             <span>Successfully Published:</span>
-                            <span>23</span>
+                            <span>29</span>
                         </div>
                         <div class="stats-item">
                             <span>Categories:</span>
-                            <span>1</span>
+                            <span>6</span>
                         </div>
                         <div class="stats-item">
                             <span>Generated:</span>
-                            <span>2025-08-23</span>
+                            <span>2025-08-24</span>
                         </div>
                     </div>
                     
                     <div class="navigation">
         
                         <div class="nav-section">
+                            <div class="nav-header" onclick="toggleSection('active_sensing')">
+                                <div>
+                                    <div>Active Sensing</div>
+                                    <div class="nav-description">Active sensing techniques for structural health monitoring using guided waves</div>
+                                </div>
+                                <span class="nav-toggle" id="toggle-active_sensing">▶</span>
+                            </div>
+                            <div class="nav-items" id="items-active_sensing">
+            
+                                <div class="nav-item" id="nav-active_sensing_active_sensing_feature_extraction" onclick="loadNotebook('active_sensing_active_sensing_feature_extraction', 'active_sensing/active_sensing_feature_extraction.html', 'Active Sensing Feature Extraction', 'Active Sensing')">
+                                    <span>Active Sensing Feature Extraction</span>
+                                    <span class="nav-status status-success">OK</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-active_sensing_ni_ultrasonic_daq" onclick="loadNotebook('active_sensing_ni_ultrasonic_daq', 'active_sensing/ni_ultrasonic_daq.html', 'Ni Ultrasonic Daq', 'Active Sensing')">
+                                    <span>Ni Ultrasonic Daq</span>
+                                    <span class="nav-status status-success">OK</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-active_sensing_sensor_diagnostics" onclick="loadNotebook('active_sensing_sensor_diagnostics', 'active_sensing/sensor_diagnostics.html', 'Sensor Diagnostics', 'Active Sensing')">
+                                    <span>Sensor Diagnostics</span>
+                                    <span class="nav-status status-success">OK</span>
+                                </div>
+                
+                            </div>
+                        </div>
+            
+                        <div class="nav-section">
+                            <div class="nav-header" onclick="toggleSection('condition_based_monitoring')">
+                                <div>
+                                    <div>Condition-Based Monitoring</div>
+                                    <div class="nav-description">Condition-based monitoring for rotating machinery and bearings</div>
+                                </div>
+                                <span class="nav-toggle" id="toggle-condition_based_monitoring">▶</span>
+                            </div>
+                            <div class="nav-items" id="items-condition_based_monitoring">
+            
+                                <div class="nav-item failed" id="nav-condition_based_monitoring_ball_bearing_fault_analysis" onclick="">
+                                    <span>Ball Bearing Fault Analysis</span>
+                                    <span class="nav-status status-failed">X</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-condition_based_monitoring_gearbox_fault_analysis" onclick="loadNotebook('condition_based_monitoring_gearbox_fault_analysis', 'condition_based_monitoring/gearbox_fault_analysis.html', 'Gearbox Fault Analysis', 'Condition-Based Monitoring')">
+                                    <span>Gearbox Fault Analysis</span>
+                                    <span class="nav-status status-success">OK</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-condition_based_monitoring_gearbox_fault_analysis_executed" onclick="loadNotebook('condition_based_monitoring_gearbox_fault_analysis_executed', 'condition_based_monitoring/gearbox_fault_analysis_executed.html', 'Gearbox Fault Analysis Executed', 'Condition-Based Monitoring')">
+                                    <span>Gearbox Fault Analysis Executed</span>
+                                    <span class="nav-status status-success">OK</span>
+                                </div>
+                
+                            </div>
+                        </div>
+            
+                        <div class="nav-section">
+                            <div class="nav-header" onclick="toggleSection('modal_analysis')">
+                                <div>
+                                    <div>Modal Analysis</div>
+                                    <div class="nav-description">Modal analysis techniques for structural identification and sensor placement</div>
+                                </div>
+                                <span class="nav-toggle" id="toggle-modal_analysis">▶</span>
+                            </div>
+                            <div class="nav-items" id="items-modal_analysis">
+            
+                                <div class="nav-item" id="nav-modal_analysis_data_normalization_modal_properties" onclick="loadNotebook('modal_analysis_data_normalization_modal_properties', 'modal_analysis/data_normalization_modal_properties.html', 'Data Normalization Modal Properties', 'Modal Analysis')">
+                                    <span>Data Normalization Modal Properties</span>
+                                    <span class="nav-status status-success">OK</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-modal_analysis_final_validation" onclick="loadNotebook('modal_analysis_final_validation', 'modal_analysis/final_validation.html', 'Final Validation', 'Modal Analysis')">
+                                    <span>Final Validation</span>
+                                    <span class="nav-status status-success">OK</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-modal_analysis_optimal_sensor_placement" onclick="loadNotebook('modal_analysis_optimal_sensor_placement', 'modal_analysis/optimal_sensor_placement.html', 'Optimal Sensor Placement', 'Modal Analysis')">
+                                    <span>Optimal Sensor Placement</span>
+                                    <span class="nav-status status-success">OK</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-modal_analysis_optimal_sensor_placement_executed" onclick="loadNotebook('modal_analysis_optimal_sensor_placement_executed', 'modal_analysis/optimal_sensor_placement_executed.html', 'Optimal Sensor Placement Executed', 'Modal Analysis')">
+                                    <span>Optimal Sensor Placement Executed</span>
+                                    <span class="nav-status status-success">OK</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-modal_analysis_optimal_sensor_placement_fixed" onclick="loadNotebook('modal_analysis_optimal_sensor_placement_fixed', 'modal_analysis/optimal_sensor_placement_fixed.html', 'Optimal Sensor Placement Fixed', 'Modal Analysis')">
+                                    <span>Optimal Sensor Placement Fixed</span>
+                                    <span class="nav-status status-success">OK</span>
+                                </div>
+                
+                            </div>
+                        </div>
+            
+                        <div class="nav-section">
+                            <div class="nav-header" onclick="toggleSection('outlier_detection')">
+                                <div>
+                                    <div>Outlier Detection</div>
+                                    <div class="nav-description">Statistical outlier detection methods for damage identification</div>
+                                </div>
+                                <span class="nav-toggle" id="toggle-outlier_detection">▶</span>
+                            </div>
+                            <div class="nav-items" id="items-outlier_detection">
+            
+                                <div class="nav-item" id="nav-outlier_detection_custom_detector_assembly" onclick="loadNotebook('outlier_detection_custom_detector_assembly', 'outlier_detection/custom_detector_assembly.html', 'Custom Detector Assembly', 'Outlier Detection')">
+                                    <span>Custom Detector Assembly</span>
+                                    <span class="nav-status status-success">OK</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-outlier_detection_how_to_use_default_detectors" onclick="loadNotebook('outlier_detection_how_to_use_default_detectors', 'outlier_detection/how_to_use_default_detectors.html', 'How To Use Default Detectors', 'Outlier Detection')">
+                                    <span>How To Use Default Detectors</span>
+                                    <span class="nav-status status-success">OK</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-outlier_detection_direct_use_nonparametric" onclick="loadNotebook('outlier_detection_direct_use_nonparametric', 'outlier_detection/direct_use_nonparametric.html', 'Direct Use Nonparametric', 'Outlier Detection')">
+                                    <span>Direct Use Nonparametric</span>
+                                    <span class="nav-status status-success">OK</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-outlier_detection_fast_metric_kernel_density" onclick="loadNotebook('outlier_detection_fast_metric_kernel_density', 'outlier_detection/fast_metric_kernel_density.html', 'Fast Metric Kernel Density', 'Outlier Detection')">
+                                    <span>Fast Metric Kernel Density</span>
+                                    <span class="nav-status status-success">OK</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-outlier_detection_factor_analysis_final_validated" onclick="loadNotebook('outlier_detection_factor_analysis_final_validated', 'outlier_detection/factor_analysis_final_validated.html', 'Factor Analysis Final Validated', 'Outlier Detection')">
+                                    <span>Factor Analysis Final Validated</span>
+                                    <span class="nav-status status-success">OK</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-outlier_detection_factor_analysis_outlier_detection" onclick="loadNotebook('outlier_detection_factor_analysis_outlier_detection', 'outlier_detection/factor_analysis_outlier_detection.html', 'Factor Analysis Outlier Detection', 'Outlier Detection')">
+                                    <span>Factor Analysis Outlier Detection</span>
+                                    <span class="nav-status status-success">OK</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-outlier_detection_mahalanobis_outlier_detection" onclick="loadNotebook('outlier_detection_mahalanobis_outlier_detection', 'outlier_detection/mahalanobis_outlier_detection.html', 'Mahalanobis Outlier Detection', 'Outlier Detection')">
+                                    <span>Mahalanobis Outlier Detection</span>
+                                    <span class="nav-status status-success">OK</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-outlier_detection_nlpca_outlier_detection" onclick="loadNotebook('outlier_detection_nlpca_outlier_detection', 'outlier_detection/nlpca_outlier_detection.html', 'NLPCA Outlier Detection', 'Outlier Detection')">
+                                    <span>NLPCA Outlier Detection</span>
+                                    <span class="nav-status status-success">OK</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-outlier_detection_pca_outlier_detection" onclick="loadNotebook('outlier_detection_pca_outlier_detection', 'outlier_detection/pca_outlier_detection.html', 'PCA Outlier Detection', 'Outlier Detection')">
+                                    <span>PCA Outlier Detection</span>
+                                    <span class="nav-status status-success">OK</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-outlier_detection_svd_outlier_detection" onclick="loadNotebook('outlier_detection_svd_outlier_detection', 'outlier_detection/svd_outlier_detection.html', 'SVD Outlier Detection', 'Outlier Detection')">
+                                    <span>SVD Outlier Detection</span>
+                                    <span class="nav-status status-success">OK</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-outlier_detection_direct_use_semiparametric" onclick="loadNotebook('outlier_detection_direct_use_semiparametric', 'outlier_detection/direct_use_semiparametric.html', 'Direct Use Semiparametric', 'Outlier Detection')">
+                                    <span>Direct Use Semiparametric</span>
+                                    <span class="nav-status status-success">OK</span>
+                                </div>
+                
+                            </div>
+                        </div>
+            
+                        <div class="nav-section">
+                            <div class="nav-header" onclick="toggleSection('integrating_examples')">
+                                <div>
+                                    <div>Integrating Examples</div>
+                                    <div class="nav-description">Examples integrating multiple SHM techniques and workflows</div>
+                                </div>
+                                <span class="nav-toggle" id="toggle-integrating_examples">▶</span>
+                            </div>
+                            <div class="nav-items" id="items-integrating_examples">
+            
+                                <div class="nav-item" id="nav-integrating_examples_ar_model_order_selection" onclick="loadNotebook('integrating_examples_ar_model_order_selection', 'integrating_examples/ar_model_order_selection.html', 'AR Model Order Selection', 'Integrating Examples')">
+                                    <span>AR Model Order Selection</span>
+                                    <span class="nav-status status-success">OK</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-integrating_examples_chi_square_outlier_detection" onclick="loadNotebook('integrating_examples_chi_square_outlier_detection', 'integrating_examples/chi_square_outlier_detection.html', 'Chi Square Outlier Detection', 'Integrating Examples')">
+                                    <span>Chi Square Outlier Detection</span>
+                                    <span class="nav-status status-success">OK</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-integrating_examples_damage_localization_ar_arx" onclick="loadNotebook('integrating_examples_damage_localization_ar_arx', 'integrating_examples/damage_localization_ar_arx.html', 'Damage Localization AR Arx', 'Integrating Examples')">
+                                    <span>Damage Localization AR Arx</span>
+                                    <span class="nav-status status-success">OK</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-integrating_examples_damage_localization_ar_arx_executed" onclick="loadNotebook('integrating_examples_damage_localization_ar_arx_executed', 'integrating_examples/damage_localization_ar_arx_executed.html', 'Damage Localization AR Arx Executed', 'Integrating Examples')">
+                                    <span>Damage Localization AR Arx Executed</span>
+                                    <span class="nav-status status-success">OK</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-integrating_examples_damage_localization_ar_arx_fixed" onclick="loadNotebook('integrating_examples_damage_localization_ar_arx_fixed', 'integrating_examples/damage_localization_ar_arx_fixed.html', 'Damage Localization AR Arx Fixed', 'Integrating Examples')">
+                                    <span>Damage Localization AR Arx Fixed</span>
+                                    <span class="nav-status status-success">OK</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-integrating_examples_daq_ar_mahalanobis_integration" onclick="loadNotebook('integrating_examples_daq_ar_mahalanobis_integration', 'integrating_examples/daq_ar_mahalanobis_integration.html', 'Daq AR Mahalanobis Integration', 'Integrating Examples')">
+                                    <span>Daq AR Mahalanobis Integration</span>
+                                    <span class="nav-status status-success">OK</span>
+                                </div>
+                
+                                <div class="nav-item" id="nav-integrating_examples_time_synchronous_averaging_demo" onclick="loadNotebook('integrating_examples_time_synchronous_averaging_demo', 'integrating_examples/time_synchronous_averaging_demo.html', 'Time Synchronous Averaging Demo', 'Integrating Examples')">
+                                    <span>Time Synchronous Averaging Demo</span>
+                                    <span class="nav-status status-success">OK</span>
+                                </div>
+                
+                            </div>
+                        </div>
+            
+                        <div class="nav-section">
                             <div class="nav-header" onclick="toggleSection('other')">
                                 <div>
-                                    <div>Other Level</div>
-                                    <div class="nav-description">Utility notebooks and demonstrations</div>
+                                    <div>Other</div>
+                                    <div class="nav-description">Utility notebooks and basic demonstrations</div>
                                 </div>
                                 <span class="nav-toggle" id="toggle-other">▶</span>
                             </div>
                             <div class="nav-items" id="items-other">
             
-                                <div class="nav-item" id="nav-other_active_sensing_feature_extraction" onclick="loadNotebook('other_active_sensing_feature_extraction', 'other/active_sensing_feature_extraction.html', 'Active Sensing Feature Extraction', 'Other')">
-                                    <span>Active Sensing Feature Extraction</span>
-                                    <span class="nav-status status-success">OK</span>
-                                </div>
-                
-                                <div class="nav-item" id="nav-other_ni_ultrasonic_daq" onclick="loadNotebook('other_ni_ultrasonic_daq', 'other/ni_ultrasonic_daq.html', 'Ni Ultrasonic Daq', 'Other')">
-                                    <span>Ni Ultrasonic Daq</span>
-                                    <span class="nav-status status-success">OK</span>
-                                </div>
-                
-                                <div class="nav-item" id="nav-other_sensor_diagnostics" onclick="loadNotebook('other_sensor_diagnostics', 'other/sensor_diagnostics.html', 'Sensor Diagnostics', 'Other')">
-                                    <span>Sensor Diagnostics</span>
-                                    <span class="nav-status status-success">OK</span>
-                                </div>
-                
-                                <div class="nav-item" id="nav-other_ball_bearing_fault_analysis" onclick="loadNotebook('other_ball_bearing_fault_analysis', 'other/ball_bearing_fault_analysis.html', 'Ball Bearing Fault Analysis', 'Other')">
-                                    <span>Ball Bearing Fault Analysis</span>
-                                    <span class="nav-status status-success">OK</span>
-                                </div>
-                
-                                <div class="nav-item" id="nav-other_gearbox_fault_analysis" onclick="loadNotebook('other_gearbox_fault_analysis', 'other/gearbox_fault_analysis.html', 'Gearbox Fault Analysis', 'Other')">
-                                    <span>Gearbox Fault Analysis</span>
-                                    <span class="nav-status status-success">OK</span>
-                                </div>
-                
                                 <div class="nav-item" id="nav-other_dataloader_demo" onclick="loadNotebook('other_dataloader_demo', 'other/dataloader_demo.html', 'Dataloader Demo', 'Other')">
                                     <span>Dataloader Demo</span>
-                                    <span class="nav-status status-success">OK</span>
-                                </div>
-                
-                                <div class="nav-item" id="nav-other_ar_model_order_selection" onclick="loadNotebook('other_ar_model_order_selection', 'other/ar_model_order_selection.html', 'AR Model Order Selection', 'Other')">
-                                    <span>AR Model Order Selection</span>
-                                    <span class="nav-status status-success">OK</span>
-                                </div>
-                
-                                <div class="nav-item" id="nav-other_chi_square_outlier_detection" onclick="loadNotebook('other_chi_square_outlier_detection', 'other/chi_square_outlier_detection.html', 'Chi Square Outlier Detection', 'Other')">
-                                    <span>Chi Square Outlier Detection</span>
-                                    <span class="nav-status status-success">OK</span>
-                                </div>
-                
-                                <div class="nav-item" id="nav-other_damage_localization_ar_arx" onclick="loadNotebook('other_damage_localization_ar_arx', 'other/damage_localization_ar_arx.html', 'Damage Localization AR Arx', 'Other')">
-                                    <span>Damage Localization AR Arx</span>
-                                    <span class="nav-status status-success">OK</span>
-                                </div>
-                
-                                <div class="nav-item" id="nav-other_daq_ar_mahalanobis_integration" onclick="loadNotebook('other_daq_ar_mahalanobis_integration', 'other/daq_ar_mahalanobis_integration.html', 'Daq AR Mahalanobis Integration', 'Other')">
-                                    <span>Daq AR Mahalanobis Integration</span>
-                                    <span class="nav-status status-success">OK</span>
-                                </div>
-                
-                                <div class="nav-item" id="nav-other_time_synchronous_averaging_demo" onclick="loadNotebook('other_time_synchronous_averaging_demo', 'other/time_synchronous_averaging_demo.html', 'Time Synchronous Averaging Demo', 'Other')">
-                                    <span>Time Synchronous Averaging Demo</span>
-                                    <span class="nav-status status-success">OK</span>
-                                </div>
-                
-                                <div class="nav-item" id="nav-other_data_normalization_modal_properties" onclick="loadNotebook('other_data_normalization_modal_properties', 'other/data_normalization_modal_properties.html', 'Data Normalization Modal Properties', 'Other')">
-                                    <span>Data Normalization Modal Properties</span>
-                                    <span class="nav-status status-success">OK</span>
-                                </div>
-                
-                                <div class="nav-item" id="nav-other_optimal_sensor_placement" onclick="loadNotebook('other_optimal_sensor_placement', 'other/optimal_sensor_placement.html', 'Optimal Sensor Placement', 'Other')">
-                                    <span>Optimal Sensor Placement</span>
-                                    <span class="nav-status status-success">OK</span>
-                                </div>
-                
-                                <div class="nav-item" id="nav-other_custom_detector_assembly" onclick="loadNotebook('other_custom_detector_assembly', 'other/custom_detector_assembly.html', 'Custom Detector Assembly', 'Other')">
-                                    <span>Custom Detector Assembly</span>
-                                    <span class="nav-status status-success">OK</span>
-                                </div>
-                
-                                <div class="nav-item" id="nav-other_how_to_use_default_detectors" onclick="loadNotebook('other_how_to_use_default_detectors', 'other/how_to_use_default_detectors.html', 'How To Use Default Detectors', 'Other')">
-                                    <span>How To Use Default Detectors</span>
-                                    <span class="nav-status status-success">OK</span>
-                                </div>
-                
-                                <div class="nav-item" id="nav-other_direct_use_nonparametric" onclick="loadNotebook('other_direct_use_nonparametric', 'other/direct_use_nonparametric.html', 'Direct Use Nonparametric', 'Other')">
-                                    <span>Direct Use Nonparametric</span>
-                                    <span class="nav-status status-success">OK</span>
-                                </div>
-                
-                                <div class="nav-item" id="nav-other_fast_metric_kernel_density" onclick="loadNotebook('other_fast_metric_kernel_density', 'other/fast_metric_kernel_density.html', 'Fast Metric Kernel Density', 'Other')">
-                                    <span>Fast Metric Kernel Density</span>
-                                    <span class="nav-status status-success">OK</span>
-                                </div>
-                
-                                <div class="nav-item" id="nav-other_factor_analysis_outlier_detection" onclick="loadNotebook('other_factor_analysis_outlier_detection', 'other/factor_analysis_outlier_detection.html', 'Factor Analysis Outlier Detection', 'Other')">
-                                    <span>Factor Analysis Outlier Detection</span>
-                                    <span class="nav-status status-success">OK</span>
-                                </div>
-                
-                                <div class="nav-item" id="nav-other_mahalanobis_outlier_detection" onclick="loadNotebook('other_mahalanobis_outlier_detection', 'other/mahalanobis_outlier_detection.html', 'Mahalanobis Outlier Detection', 'Other')">
-                                    <span>Mahalanobis Outlier Detection</span>
-                                    <span class="nav-status status-success">OK</span>
-                                </div>
-                
-                                <div class="nav-item" id="nav-other_nlpca_outlier_detection" onclick="loadNotebook('other_nlpca_outlier_detection', 'other/nlpca_outlier_detection.html', 'NLPCA Outlier Detection', 'Other')">
-                                    <span>NLPCA Outlier Detection</span>
-                                    <span class="nav-status status-success">OK</span>
-                                </div>
-                
-                                <div class="nav-item" id="nav-other_pca_outlier_detection" onclick="loadNotebook('other_pca_outlier_detection', 'other/pca_outlier_detection.html', 'PCA Outlier Detection', 'Other')">
-                                    <span>PCA Outlier Detection</span>
-                                    <span class="nav-status status-success">OK</span>
-                                </div>
-                
-                                <div class="nav-item" id="nav-other_svd_outlier_detection" onclick="loadNotebook('other_svd_outlier_detection', 'other/svd_outlier_detection.html', 'SVD Outlier Detection', 'Other')">
-                                    <span>SVD Outlier Detection</span>
-                                    <span class="nav-status status-success">OK</span>
-                                </div>
-                
-                                <div class="nav-item" id="nav-other_direct_use_semiparametric" onclick="loadNotebook('other_direct_use_semiparametric', 'other/direct_use_semiparametric.html', 'Direct Use Semiparametric', 'Other')">
-                                    <span>Direct Use Semiparametric</span>
                                     <span class="nav-status status-success">OK</span>
                                 </div>
                 
