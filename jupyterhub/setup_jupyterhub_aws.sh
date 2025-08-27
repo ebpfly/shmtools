@@ -425,24 +425,37 @@ if [ "${ENABLE_SSL}" = "true" ] && [ -n "${USE_DOMAIN}" ]; then
   
   # Try to restore existing certificate from S3
   if aws s3 cp "s3://${CERT_BACKUP_BUCKET}/${CERT_BACKUP_KEY}" /tmp/acme-restore.json 2>/dev/null; then
-    log_success "Found certificate backup, restoring..."
+    log_step "Found certificate backup, validating..."
     
-    # Create the TLJH state directory if it doesn't exist
-    mkdir -p /opt/tljh/state
-    
-    # Copy the certificate file to the correct location
-    cp /tmp/acme-restore.json /opt/tljh/state/acme.json
-    chmod 600 /opt/tljh/state/acme.json
-    chown root:root /opt/tljh/state/acme.json
-    
-    # Also create the traefik acme directory structure that TLJH expects
-    mkdir -p /opt/tljh/state/traefik/acme
-    cp /tmp/acme-restore.json /opt/tljh/state/traefik/acme/acme.json
-    chmod 600 /opt/tljh/state/traefik/acme/acme.json
-    chown root:root /opt/tljh/state/traefik/acme/acme.json
+    # Validate that the backup contains valid Let's Encrypt certificates
+    if jq -e '.letsencrypt.Certificates != null and (.letsencrypt.Certificates | length) > 0' /tmp/acme-restore.json >/dev/null 2>&1; then
+      log_success "Certificate backup contains valid Let's Encrypt certificates, restoring..."
+      
+      # Show certificate details
+      CERT_DOMAIN=$(jq -r '.letsencrypt.Certificates[0].domain.main // "unknown"' /tmp/acme-restore.json 2>/dev/null)
+      log_success "Restoring certificate for domain: $CERT_DOMAIN"
+      
+      # Create the TLJH state directory if it doesn't exist
+      mkdir -p /opt/tljh/state
+      
+      # Copy the certificate file to the correct location
+      cp /tmp/acme-restore.json /opt/tljh/state/acme.json
+      chmod 600 /opt/tljh/state/acme.json
+      chown root:root /opt/tljh/state/acme.json
+      
+      # Also create the traefik acme directory structure that TLJH expects
+      mkdir -p /opt/tljh/state/traefik/acme
+      cp /tmp/acme-restore.json /opt/tljh/state/traefik/acme/acme.json
+      chmod 600 /opt/tljh/state/traefik/acme/acme.json
+      chown root:root /opt/tljh/state/traefik/acme/acme.json
+      
+      log_success "Valid Let's Encrypt certificate backup restored"
+    else
+      log_step "Certificate backup exists but contains no valid certificates"
+      log_step "Will generate new certificates (backup likely from rate-limited attempt)"
+    fi
     
     rm -f /tmp/acme-restore.json
-    log_success "Certificate backup restored"
   else
     log_step "No certificate backup found, will generate new certificates"
   fi
@@ -530,21 +543,31 @@ if [ "${ENABLE_SSL}" = "true" ] && [ -n "${USE_DOMAIN}" ]; then
       log_warning "HTTPS setup may need more time to complete"
   fi
   
-  # Backup certificates after SSL setup (successful or not)
-  log_step "💾 Backing up SSL certificates..."
+  # Backup certificates after SSL setup (only if valid Let's Encrypt certificates exist)
+  log_step "💾 Checking for valid Let's Encrypt certificates to backup..."
+  CERT_FILE=""
   if [ -f "/opt/tljh/state/acme.json" ]; then
-    # Backup to S3 for future deployments
-    if aws s3 cp /opt/tljh/state/acme.json "s3://${CERT_BACKUP_BUCKET}/${CERT_BACKUP_KEY}" 2>/dev/null; then
-      log_success "Certificate backup saved to S3"
-    else
-      log_warning "Failed to backup certificate to S3"
-    fi
+    CERT_FILE="/opt/tljh/state/acme.json"
   elif [ -f "/opt/tljh/state/traefik/acme/acme.json" ]; then
-    # Alternative location
-    if aws s3 cp /opt/tljh/state/traefik/acme/acme.json "s3://${CERT_BACKUP_BUCKET}/${CERT_BACKUP_KEY}" 2>/dev/null; then
-      log_success "Certificate backup saved to S3"
+    CERT_FILE="/opt/tljh/state/traefik/acme/acme.json"
+  fi
+  
+  if [ -n "$CERT_FILE" ]; then
+    # Check if the file contains actual certificates (not just account info)
+    if jq -e '.letsencrypt.Certificates != null and (.letsencrypt.Certificates | length) > 0' "$CERT_FILE" >/dev/null 2>&1; then
+      log_step "Found valid Let's Encrypt certificates, backing up..."
+      if aws s3 cp "$CERT_FILE" "s3://${CERT_BACKUP_BUCKET}/${CERT_BACKUP_KEY}" 2>/dev/null; then
+        log_success "Let's Encrypt certificate backup saved to S3"
+        
+        # Show certificate details
+        CERT_DOMAIN=$(jq -r '.letsencrypt.Certificates[0].domain.main // "unknown"' "$CERT_FILE" 2>/dev/null)
+        log_success "Backed up certificate for domain: $CERT_DOMAIN"
+      else
+        log_warning "Failed to backup certificate to S3"
+      fi
     else
-      log_warning "Failed to backup certificate to S3"  
+      log_step "Certificate file exists but contains no valid Let's Encrypt certificates (likely due to rate limiting)"
+      log_step "Skipping backup of incomplete certificate data"
     fi
   else
     log_step "No certificate file found to backup"

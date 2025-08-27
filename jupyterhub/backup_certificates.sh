@@ -41,15 +41,26 @@ if ssh -i "$SSH_KEY" ubuntu@"$INSTANCE_IP" "sudo test -f /opt/tljh/state/acme.js
     # Download to local temp file
     scp -i "$SSH_KEY" ubuntu@"$INSTANCE_IP":/tmp/acme.json /tmp/acme-backup.json
     
-    # Upload to S3
-    if aws s3 cp /tmp/acme-backup.json "s3://$CERT_BACKUP_BUCKET/$CERT_BACKUP_KEY"; then
-        echo "✅ Certificate backup saved to S3: s3://$CERT_BACKUP_BUCKET/$CERT_BACKUP_KEY"
+    # Validate that the backup contains valid Let's Encrypt certificates
+    if jq -e '.letsencrypt.Certificates != null and (.letsencrypt.Certificates | length) > 0' /tmp/acme-backup.json >/dev/null 2>&1; then
+        echo "✅ Found valid Let's Encrypt certificates, backing up..."
         
-        # Show certificate info
-        echo "📋 Certificate details:"
-        jq -r '.Certificates[0].domain.main // "No domain found"' /tmp/acme-backup.json 2>/dev/null || echo "Could not parse certificate details"
+        # Upload to S3
+        if aws s3 cp /tmp/acme-backup.json "s3://$CERT_BACKUP_BUCKET/$CERT_BACKUP_KEY"; then
+            echo "✅ Certificate backup saved to S3: s3://$CERT_BACKUP_BUCKET/$CERT_BACKUP_KEY"
+            
+            # Show certificate info
+            echo "📋 Certificate details:"
+            CERT_DOMAIN=$(jq -r '.letsencrypt.Certificates[0].domain.main // "unknown"' /tmp/acme-backup.json 2>/dev/null)
+            echo "Domain: $CERT_DOMAIN"
+        else
+            echo "❌ Failed to upload certificate backup to S3"
+            exit 1
+        fi
     else
-        echo "❌ Failed to upload certificate backup to S3"
+        echo "⚠️ Certificate file exists but contains no valid Let's Encrypt certificates"
+        echo "This likely means the certificates failed due to rate limiting"
+        echo "Skipping backup of incomplete certificate data"
         exit 1
     fi
     
