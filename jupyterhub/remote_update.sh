@@ -299,9 +299,9 @@ echo "======================================================================"
 validate_ssh "$IP_ADDRESS" || exit 1
 check_remote_script "$IP_ADDRESS" || exit 1
 
-# Ask for confirmation
+# Show what will be done
 echo ""
-info "Ready to update SHM deployment on $IP_ADDRESS"
+info "Starting SHM deployment update on $IP_ADDRESS"
 info "This will:"
 info "  • Copy local data files (.mat) to remote instance"
 info "  • Pull latest changes from Git"
@@ -310,13 +310,6 @@ info "  • Reinstall SHMTools package"
 info "  • Rebuild JupyterLab extension"
 info "  • Restart JupyterHub service"
 echo ""
-read -p "Continue with update? (y/N): " -n 1 -r
-echo ""
-
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    info "Update cancelled by user"
-    exit 0
-fi
 
 # Execute remote update
 echo ""
