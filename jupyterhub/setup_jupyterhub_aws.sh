@@ -46,6 +46,10 @@ USE_DOMAIN="jfuse.shmtools.com"       # Domain name (leave empty to disable SSL)
 # 3. Port 80 and 443 are accessible from the internet
 ENABLE_SSL=true                       # Set to false to disable SSL setup
 SSL_EMAIL="ericbflynn@gmail.com"      # Email for Let's Encrypt certificates
+
+# Certificate backup configuration
+CERT_BACKUP_BUCKET="shmtools-deployment-bucket"  # S3 bucket for certificate backups
+CERT_BACKUP_KEY="certificates/acme.json"         # S3 key for certificate backup
 ############################################
 
 # --- helpers ---
@@ -394,6 +398,40 @@ else
     log_warning "Skipping JupyterLab extension installation..."
 fi
 
+# Copy data files from local development machine to EC2 instance
+log_step "📂 Setting up data files directory..."
+mkdir -p /srv/classrepo/examples/data/data_files
+chown -R ${JUPYTER_ADMIN_USER}:${JUPYTER_ADMIN_USER} /srv/classrepo/examples/data/data_files
+
+log_step "📥 Downloading required data files..."
+echo "========================================="
+echo "📥 DOWNLOADING DATA FILES"
+echo "========================================="
+
+# Define data files to download (these would need to be hosted somewhere accessible)
+# For now, create placeholder message since we need a way to get the files to EC2
+DATA_FILES_DIR="/srv/classrepo/examples/data/data_files"
+
+# Create a marker file indicating data setup is needed
+cat > "\$DATA_FILES_DIR/DATA_SETUP_REQUIRED.txt" <<'DATASETUP'
+IMPORTANT: Data files are required for SHMTools examples to work properly.
+
+Required files (~161MB total):
+- data3SS.mat (25MB) - 3-story structure, 8192×5×170
+- dataSensorDiagnostic.mat (63KB) - Sensor health
+- data_CBM.mat (54MB) - Condition monitoring  
+- data_example_ActiveSense.mat (32MB) - Active sensing
+- data_OSPExampleModal.mat (50KB) - Modal analysis
+
+To complete setup, copy these files from your local machine:
+scp -i ~/.ssh/class-key-ssh-rsa /path/to/local/examples/data/data_files/*.mat ubuntu@PUBLIC_IP:/srv/classrepo/examples/data/data_files/
+
+Or use the remote_update.sh script which will copy them automatically.
+DATASETUP
+
+log_warning "Data files not automatically copied - see DATA_SETUP_REQUIRED.txt for instructions"
+log_step "💡 Use remote_update.sh script to copy data files automatically"
+
 # Set proper ownership
 log_step "🔧 Setting proper file ownership..."
 chown -R ${JUPYTER_ADMIN_USER}:${JUPYTER_ADMIN_USER} /srv/classrepo 2>&1 | sed 's/^/[CHOWN] /'
@@ -414,6 +452,48 @@ log_success "Claude Code installer run - users will need to authenticate on firs
 # Keep port 80 open if ufw is present
 log_step "🔥 Disabling UFW firewall if present..."
 ufw disable 2>&1 | sed 's/^/[UFW] /' || log_step "UFW not installed or already disabled"
+
+# Certificate restore from backup (before SSL setup)
+if [ "${ENABLE_SSL}" = "true" ] && [ -n "${USE_DOMAIN}" ]; then
+  log_step "🔐 Checking for certificate backup to restore..."
+  
+  # Try to restore existing certificate from S3
+  if aws s3 cp "s3://${CERT_BACKUP_BUCKET}/${CERT_BACKUP_KEY}" /tmp/acme-restore.json 2>/dev/null; then
+    log_step "Found certificate backup, validating..."
+    
+    # Validate that the backup contains valid Let's Encrypt certificates
+    if jq -e '.letsencrypt.Certificates != null and (.letsencrypt.Certificates | length) > 0' /tmp/acme-restore.json >/dev/null 2>&1; then
+      log_success "Certificate backup contains valid Let's Encrypt certificates, restoring..."
+      
+      # Show certificate details
+      CERT_DOMAIN=$(jq -r '.letsencrypt.Certificates[0].domain.main // "unknown"' /tmp/acme-restore.json 2>/dev/null)
+      log_success "Restoring certificate for domain: $CERT_DOMAIN"
+      
+      # Create the TLJH state directory if it doesn't exist
+      mkdir -p /opt/tljh/state
+      
+      # Copy the certificate file to the correct location
+      cp /tmp/acme-restore.json /opt/tljh/state/acme.json
+      chmod 600 /opt/tljh/state/acme.json
+      chown root:root /opt/tljh/state/acme.json
+      
+      # Also create the traefik acme directory structure that TLJH expects
+      mkdir -p /opt/tljh/state/traefik/acme
+      cp /tmp/acme-restore.json /opt/tljh/state/traefik/acme/acme.json
+      chmod 600 /opt/tljh/state/traefik/acme/acme.json
+      chown root:root /opt/tljh/state/traefik/acme/acme.json
+      
+      log_success "Valid Let's Encrypt certificate backup restored"
+    else
+      log_step "Certificate backup exists but contains no valid certificates"
+      log_step "Will generate new certificates (backup likely from rate-limited attempt)"
+    fi
+    
+    rm -f /tmp/acme-restore.json
+  else
+    log_step "No certificate backup found, will generate new certificates"
+  fi
+fi
 
 # HTTPS setup 
 if [ "${ENABLE_SSL}" = "true" ] && [ -n "${USE_DOMAIN}" ]; then
@@ -496,6 +576,36 @@ if [ "${ENABLE_SSL}" = "true" ] && [ -n "${USE_DOMAIN}" ]; then
   if [ \$HTTPS_RETRY -eq \$HTTPS_MAX_RETRIES ]; then
       log_warning "HTTPS setup may need more time to complete"
   fi
+  
+  # Backup certificates after SSL setup (only if valid Let's Encrypt certificates exist)
+  log_step "💾 Checking for valid Let's Encrypt certificates to backup..."
+  CERT_FILE=""
+  if [ -f "/opt/tljh/state/acme.json" ]; then
+    CERT_FILE="/opt/tljh/state/acme.json"
+  elif [ -f "/opt/tljh/state/traefik/acme/acme.json" ]; then
+    CERT_FILE="/opt/tljh/state/traefik/acme/acme.json"
+  fi
+  
+  if [ -n "$CERT_FILE" ]; then
+    # Check if the file contains actual certificates (not just account info)
+    if jq -e '.letsencrypt.Certificates != null and (.letsencrypt.Certificates | length) > 0' "$CERT_FILE" >/dev/null 2>&1; then
+      log_step "Found valid Let's Encrypt certificates, backing up..."
+      if aws s3 cp "$CERT_FILE" "s3://${CERT_BACKUP_BUCKET}/${CERT_BACKUP_KEY}" 2>/dev/null; then
+        log_success "Let's Encrypt certificate backup saved to S3"
+        
+        # Show certificate details
+        CERT_DOMAIN=$(jq -r '.letsencrypt.Certificates[0].domain.main // "unknown"' "$CERT_FILE" 2>/dev/null)
+        log_success "Backed up certificate for domain: $CERT_DOMAIN"
+      else
+        log_warning "Failed to backup certificate to S3"
+      fi
+    else
+      log_step "Certificate file exists but contains no valid Let's Encrypt certificates (likely due to rate limiting)"
+      log_step "Skipping backup of incomplete certificate data"
+    fi
+  else
+    log_step "No certificate file found to backup"
+  fi
 fi
 
 echo "========================================="
@@ -520,6 +630,7 @@ log_step "• Repository: /srv/classrepo"
 log_step "• Admin user: ${JUPYTER_ADMIN_USER}"
 log_step "• SHMTools package: Installed in development mode"
 log_step "• JupyterLab extension: Installed and configured"
+log_step "• Data files: Available in /srv/classrepo/examples/data/data_files/"
 log_step "• Claude Code CLI: Available after SSH login"
 log_success "🚀 Ready for use!"
 echo "========================================="
