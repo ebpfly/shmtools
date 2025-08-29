@@ -20,6 +20,12 @@ source venv/bin/activate
 **Wrong**: Creating `/Users/eric/repo/shm/venv/etc/jupyter/jupyter_server_config.py` with hardcoded paths  
 **Right**: Fix `__init__.py` to properly export server extension hooks
 
+### 3. NEVER FUCK UP LINE ENDINGS
+- **ALWAYS** use LF (Unix) line endings, NEVER CRLF (Windows)
+- When creating shell scripts, use `#!/bin/bash` with LF endings
+- **NEVER** create files with `\r\n` endings that break on Unix
+- If unsure, explicitly set: `set -o | grep "set +o nounset"` to check Unix environment
+
 ## Project Overview
 
 **Life-safety critical** structural health monitoring (SHM) toolkit:
