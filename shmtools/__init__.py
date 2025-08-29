@@ -105,7 +105,7 @@ from .active_sensing.geometry import (
 )
 
 # Plotting functions
-from .plotting.spectral_plots import plot_psd_shm, plot_spectrogram_shm, plotPSD_shm
+from .plotting.spectral_plots import plot_psd_shm, plot_spectrogram_shm
 
 # Sensor diagnostics functions
 from .sensor_diagnostics.sensor_diagnostics import (
@@ -213,7 +213,6 @@ __all__ = [
     # Plotting
     "plot_psd_shm",
     "plot_spectrogram_shm",
-    "plotPSD_shm",
     # Sensor diagnostics
     "sd_feature_shm",
     "sd_autoclassify_shm",
