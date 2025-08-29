@@ -1,0 +1,13 @@
+IMPORTANT: Data files are required for SHMTools examples to work properly.
+
+Required files (~161MB total):
+- data3SS.mat (25MB) - 3-story structure, 8192×5×170
+- dataSensorDiagnostic.mat (63KB) - Sensor health
+- data_CBM.mat (54MB) - Condition monitoring  
+- data_example_ActiveSense.mat (32MB) - Active sensing
+- data_OSPExampleModal.mat (50KB) - Modal analysis
+
+To complete setup, copy these files from your local machine:
+scp -i ~/.ssh/class-key-ssh-rsa /path/to/local/examples/data/data_files/*.mat ubuntu@PUBLIC_IP:/srv/classrepo/examples/data/data_files/
+
+Or use the remote_update.sh script which will copy them automatically.
