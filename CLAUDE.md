@@ -232,3 +232,4 @@ gh pr merge --squash --delete-branch
 ```
 
 - When running scripts through ssh, always run them in a background process and then check in on them so that if your ssh connection times out, the script keeps running
+- Deployment is never successful if HTTPS is not functional. Never ever declare success if HTTPS is not functional. Never allow deployment without HTTPS enabled.
