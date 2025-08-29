@@ -47,6 +47,11 @@ echo "====================================================================="
 # Set error handling for extension installation - don't let it stop the entire script
 set +e  # Don't exit on errors in this section
 
+# Fix attrs package conflict before installation
+log_step "🔧 Fixing attrs package conflict..."
+sudo -E pip3 install --upgrade attrs 2>&1 | sed 's/^/[ATTRS-FIX-SYS] /' || log_warning "Could not upgrade attrs in system"
+sudo -E /opt/tljh/user/bin/pip install --upgrade attrs 2>&1 | sed 's/^/[ATTRS-FIX-USER] /' || log_warning "Could not upgrade attrs in user env"
+
 # Install in development mode in both environments to ensure all files are available
 log_step "📦 Installing extension in system environment..."
 sudo -E pip3 install -e ./shm_function_selector/ 2>&1 | sed 's/^/[PIP-SYS] /' || log_warning "System environment installation had issues"
@@ -67,23 +72,23 @@ if [ ! -d "$LABEXT_DIR" ]; then
     node --version 2>&1 | sed 's/^/[NODE-VERSION] /' || log_error "Node.js not available"
     npm --version 2>&1 | sed 's/^/[NPM-VERSION] /' || log_error "NPM not available"
     
-    # Install Node.js dependencies using jlpm (JupyterLab's package manager)
-    log_step "📥 Installing dependencies with jlpm..."
-    if ! sudo -E /opt/tljh/user/bin/jlpm install 2>&1 | sed 's/^/[JLPM-INSTALL] /'; then
-        log_warning "jlpm install failed, trying npm install..."
-        npm install 2>&1 | sed 's/^/[NPM-INSTALL-FALLBACK] /' || log_error "Both jlpm and npm install failed"
+    # Ensure proper ownership before npm operations
+    log_step "🔧 Setting proper ownership for npm operations..."
+    sudo chown -R ubuntu:ubuntu /srv/classrepo/shm_function_selector
+    
+    # Install Node.js dependencies using npm with sudo
+    log_step "📥 Installing dependencies with npm..."
+    if ! sudo npm install 2>&1 | sed 's/^/[NPM-INSTALL] /'; then
+        log_error "npm install failed"
     fi
     
-    # Build using jlpm commands
-    log_step "🔨 Building extension with jlpm..."
-    if ! sudo -E /opt/tljh/user/bin/jlpm run build:prod 2>&1 | sed 's/^/[JLPM-BUILD] /'; then
-        log_warning "jlpm build:prod failed, trying npm build commands..."
-        if ! npm run build:lib 2>&1 | sed 's/^/[NPM-BUILD-LIB] /'; then
-            log_error "npm run build:lib failed"
-        fi
-        if ! npm run build:labextension 2>&1 | sed 's/^/[NPM-BUILD-EXT] /'; then
-            log_error "npm run build:labextension failed"
-        fi
+    # Build using npm commands with sudo
+    log_step "🔨 Building extension with npm..."
+    if ! sudo npm run build:lib 2>&1 | sed 's/^/[NPM-BUILD-LIB] /'; then
+        log_error "npm run build:lib failed"
+    fi
+    if ! sudo npm run build:labextension:dev 2>&1 | sed 's/^/[NPM-BUILD-EXT] /'; then
+        log_error "npm run build:labextension:dev failed"
     fi
     
     cd /srv/classrepo
@@ -108,6 +113,8 @@ log_step "📁 Creating required directories and files..."
 EXT_DIR="/opt/tljh/user/share/jupyter/labextensions/shm-function-selector"
 sudo mkdir -p "$EXT_DIR" 2>&1 | sed 's/^/[MKDIR] /' || log_error "Failed to create extension directory"
 sudo touch "$EXT_DIR/build_log.json" 2>&1 | sed 's/^/[TOUCH] /' || log_warning "Could not create build_log.json"
+# Set proper ownership for the extension directory
+sudo chown -R root:root "$EXT_DIR"
 log_success "Required directories created"
 
 # The labextension should already be installed via pip editable install

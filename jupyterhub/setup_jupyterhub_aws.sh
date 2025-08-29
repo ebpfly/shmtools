@@ -312,9 +312,12 @@ su - ubuntu -c "cd /srv/classrepo && git checkout GITHUB_BRANCH_VALUE"
 # Fix line endings if needed
 if [ -f "/srv/classrepo/jupyterhub/install_on_ec2.sh" ]; then
     echo "[BOOTSTRAP] Fixing line endings in installation script..."
-    dos2unix /srv/classrepo/jupyterhub/install_on_ec2.sh 2>/dev/null || \
-        tr -d '\r' < /srv/classrepo/jupyterhub/install_on_ec2.sh > /tmp/install_fixed.sh && \
+    # Try dos2unix first, if it fails use tr
+    if ! dos2unix /srv/classrepo/jupyterhub/install_on_ec2.sh 2>/dev/null; then
+        echo "[BOOTSTRAP] dos2unix not available, using tr to fix line endings..."
+        tr -d '\r' < /srv/classrepo/jupyterhub/install_on_ec2.sh > /tmp/install_fixed.sh
         mv /tmp/install_fixed.sh /srv/classrepo/jupyterhub/install_on_ec2.sh
+    fi
     chmod +x /srv/classrepo/jupyterhub/install_on_ec2.sh
 fi
 

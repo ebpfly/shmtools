@@ -236,27 +236,40 @@ if [ "${ENABLE_SSL}" = "true" ] && [ -n "${USE_DOMAIN}" ]; then
   tljh-config unset https.letsencrypt.domains 2>/dev/null || true
   tljh-config add-item https.letsencrypt.domains "${USE_DOMAIN}"
   
-  # Apply configuration changes
+  # Apply configuration changes - first general reload, then proxy specifically
   log_step "🔄 Applying TLJH configuration changes..."
   tljh-config reload
   
-  # Wait for services to start
-  log_step "⏳ Waiting for services to start..."
-  sleep 20
+  # Wait for initial configuration to settle
+  log_step "⏳ Waiting for initial configuration to settle..."
+  sleep 10
   
-  # Always force regeneration of traefik config to ensure HTTPS is properly configured
-  log_step "🔍 Ensuring Traefik configuration includes HTTPS..."
-  log_step "Force regenerating Traefik configuration to include HTTPS entrypoint..."
-  /opt/tljh/hub/bin/python -c "from tljh import traefik; traefik.ensure_traefik_config('/opt/tljh/state')"
-  if [ $? -ne 0 ]; then
-      log_warning "Initial Traefik config regeneration failed, retrying..."
-      sleep 5
-      /opt/tljh/hub/bin/python -c "from tljh import traefik; traefik.ensure_traefik_config('/opt/tljh/state')" || log_error "Failed to regenerate Traefik config"
+  # Now reload the proxy specifically to ensure HTTPS is enabled
+  log_step "🔄 Reloading proxy with HTTPS configuration..."
+  tljh-config reload proxy
+  
+  # Wait for proxy reload to complete
+  log_step "⏳ Waiting for proxy reload to complete..."
+  sleep 15
+  
+  # Verify HTTPS is configured, if not force regeneration
+  if ! grep -q ":443" /opt/tljh/state/traefik.toml 2>/dev/null; then
+      log_warning "HTTPS not configured in traefik, forcing regeneration..."
+      
+      # Run the installer to ensure proper configuration
+      log_step "Running TLJH installer to ensure proper configuration..."
+      /opt/tljh/hub/bin/python3 -m tljh.installer --admin ${JUPYTER_ADMIN_USER}
+      
+      # Reload proxy again
+      log_step "Reloading proxy after installer..."
+      tljh-config reload proxy
+      sleep 10
   fi
   
-  log_step "🔄 Restarting services to apply HTTPS configuration..."
+  # Final restart to ensure everything is working
+  log_step "🔄 Final restart of services..."
   systemctl restart traefik || log_warning "Failed to restart Traefik"
-  sleep 10
+  sleep 5
   systemctl restart jupyterhub || log_warning "Failed to restart JupyterHub"
   sleep 10
   
