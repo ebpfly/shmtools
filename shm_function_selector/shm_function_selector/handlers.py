@@ -20,12 +20,12 @@ from tornado.web import authenticated
 
 class InfinityJSONEncoder(json.JSONEncoder):
     """Custom JSON encoder that handles infinity values."""
-    
+
     def encode(self, obj):
         # Replace infinity values in the object before encoding
         cleaned_obj = self._clean_infinity(obj)
         return super().encode(cleaned_obj)
-    
+
     def _clean_infinity(self, obj):
         """Recursively replace infinity values with a large number."""
         if isinstance(obj, dict):
@@ -45,16 +45,16 @@ class InfinityJSONEncoder(json.JSONEncoder):
 
 class SHMFunctionHandler(APIHandler):
     """Handler for SHM function discovery and metadata."""
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._config = None
-    
+
     def _load_config(self) -> Dict[str, Any]:
         """Load configuration from config.json file."""
         if self._config is not None:
             return self._config
-            
+
         # Try multiple locations for config file
         possible_paths = [
             # 1. In the parent directory (for installed package)
@@ -66,16 +66,16 @@ class SHMFunctionHandler(APIHandler):
             # 4. In site-packages root (for pip installed)
             Path(__file__).parent.parent.parent / "config.json",
         ]
-        
+
         config_path = None
         for path in possible_paths:
             if path.exists():
                 config_path = path
                 break
-        
+
         try:
             if config_path and config_path.exists():
-                with open(config_path, 'r') as f:
+                with open(config_path, "r") as f:
                     self._config = json.load(f)
                 self.log.info(f"Loaded configuration from {config_path}")
             else:
@@ -85,9 +85,9 @@ class SHMFunctionHandler(APIHandler):
         except Exception as e:
             self.log.warning(f"Error loading config: {e}, using defaults")
             self._config = self._get_default_config()
-            
+
         return self._config
-    
+
     def _get_default_config(self) -> Dict[str, Any]:
         """Return default configuration."""
         return {
@@ -97,21 +97,21 @@ class SHMFunctionHandler(APIHandler):
                 "modules_to_scan": [],
                 "include_patterns": ["*_shm", "learn_*", "apply_*", "compute_*"],
                 "exclude_patterns": ["_*", "__*", "*_internal", "*_helper"],
-                "custom_categories": {}
+                "custom_categories": {},
             },
             "variable_discovery": {
                 "enabled": True,
                 "include_notebook_variables": True,
-                "include_kernel_variables": False
+                "include_kernel_variables": False,
             },
             "gui_integration": {
                 "show_parameter_hints": True,
                 "show_function_descriptions": True,
                 "group_by_category": True,
-                "max_functions_per_category": 50
-            }
+                "max_functions_per_category": 50,
+            },
         }
-    
+
     @authenticated
     def get(self):
         """Get list of available SHM functions with metadata."""
@@ -123,191 +123,269 @@ class SHMFunctionHandler(APIHandler):
             self.log.error(f"Error discovering SHM functions: {e}")
             self.set_status(500)
             self.finish({"error": str(e)})
-    
+
     def _discover_shm_functions(self) -> List[Dict[str, Any]]:
         """Discover SHM functions from shmtools package."""
         config = self._load_config()
         functions = []
-        
+
         # Check if function discovery is enabled
         if not config.get("function_discovery", {}).get("enabled", True):
             self.log.info("Function discovery disabled in configuration")
             return []
-        
+
         try:
             # Import main shmtools package and use its introspection system
             import shmtools
-            
+
             # Try to use the built-in introspection system first
             try:
                 from ..introspection import discover_functions_locally
-                
+
                 # Debug: log config details
-                modules_to_scan = config.get('function_discovery', {}).get('modules_to_scan', [])
-                examples_modules = [m for m in modules_to_scan if 'examples' in m]
-                self.log.info(f"Config has {len(modules_to_scan)} modules, examples: {examples_modules}")
-                
+                modules_to_scan = config.get("function_discovery", {}).get(
+                    "modules_to_scan", []
+                )
+                examples_modules = [m for m in modules_to_scan if "examples" in m]
+                self.log.info(
+                    f"Config has {len(modules_to_scan)} modules, examples: {examples_modules}"
+                )
+
                 discovered_functions = discover_functions_locally(config)
-                
+
                 # Filter functions based on configuration
-                filtered_functions = self._filter_functions_by_config(discovered_functions, config)
-                
-                self.log.info(f"Found {len(filtered_functions)} functions using introspection system")
-                
+                filtered_functions = self._filter_functions_by_config(
+                    discovered_functions, config
+                )
+
+                self.log.info(
+                    f"Found {len(filtered_functions)} functions using introspection system"
+                )
+
+                # Generate function discovery report
+                self._generate_function_report(filtered_functions)
+
                 # The introspection system returns functions in our format already
                 return filtered_functions
-                        
+
             except ImportError:
-                self.log.info("Introspection system not available, using manual discovery")
+                self.log.info(
+                    "Introspection system not available, using manual discovery"
+                )
                 # Fallback to manual scanning
                 functions = self._manual_function_discovery()
                 # Filter functions based on configuration
                 functions = self._filter_functions_by_config(functions, config)
-                        
+                # Generate function discovery report
+                self._generate_function_report(functions)
+
         except ImportError as e:
             self.log.warning(f"SHMTools not available: {e}")
             # Return some dummy functions for testing
             functions = self._get_dummy_functions()
-            
+            # Generate function discovery report even for dummy functions
+            self._generate_function_report(functions)
+
         return functions
-    
+
     def _manual_function_discovery(self) -> List[Dict[str, Any]]:
         """Manual function discovery as fallback."""
         config = self._load_config()
         functions = []
-        
+
         # Get modules to scan from configuration
-        modules_to_scan = config.get("function_discovery", {}).get("modules_to_scan", [])
-        
+        modules_to_scan = config.get("function_discovery", {}).get(
+            "modules_to_scan", []
+        )
+
         for module_name in modules_to_scan:
             try:
                 module = importlib.import_module(module_name)
                 category = self._get_category_from_module_name(module_name)
-                
+
                 # Check if module has __all__ attribute
-                if hasattr(module, '__all__'):
+                if hasattr(module, "__all__"):
                     function_names = module.__all__
                 else:
                     # Find functions in the module
-                    function_names = [name for name in dir(module) 
-                                    if not name.startswith('_')]
-                
+                    function_names = [
+                        name for name in dir(module) if not name.startswith("_")
+                    ]
+
                 for name in function_names:
                     try:
                         obj = getattr(module, name)
-                        
+
                         # Check if it's a callable function and passes filtering
-                        if (callable(obj) and 
-                            inspect.isfunction(obj) and
-                            self._should_include_function(name, config)):
-                            
-                            func_info = self._extract_function_info(obj, name, category, module_name)
+                        if (
+                            callable(obj)
+                            and inspect.isfunction(obj)
+                            and self._should_include_function(name, config)
+                        ):
+
+                            func_info = self._extract_function_info(
+                                obj, name, category, module_name
+                            )
                             if func_info:
                                 functions.append(func_info)
                     except Exception as e:
-                        self.log.warning(f"Could not process {name} in {module_name}: {e}")
+                        self.log.warning(
+                            f"Could not process {name} in {module_name}: {e}"
+                        )
                         continue
-                            
+
             except ImportError as e:
                 self.log.warning(f"Could not import {module_name}: {e}")
                 continue
-        
+
         return functions
-    
+
     def _get_dummy_functions(self) -> List[Dict[str, Any]]:
         """Return dummy functions for testing when shmtools is not available."""
         return [
             {
-                'name': 'psd_welch',
-                'displayName': 'Welch Power Spectral Density',
-                'category': 'Core - Spectral Analysis',
-                'module': 'shmtools.core.spectral',
-                'signature': 'psd_welch(data, fs=1000, nperseg=256)',
-                'description': 'Compute power spectral density using Welch method',
-                'docstring': 'Estimates power spectral density using Welch method.',
-                'parameters': [
-                    {'name': 'data', 'type': 'numpy.ndarray', 'optional': False, 'default': None, 'description': 'Input signal data'},
-                    {'name': 'fs', 'type': 'float', 'optional': True, 'default': '1000', 'description': 'Sampling frequency'},
-                    {'name': 'nperseg', 'type': 'int', 'optional': True, 'default': '256', 'description': 'Length of each segment'}
-                ]
+                "name": "psd_welch",
+                "displayName": "Welch Power Spectral Density",
+                "category": "Core - Spectral Analysis",
+                "module": "shmtools.core.spectral",
+                "signature": "psd_welch(data, fs=1000, nperseg=256)",
+                "description": "Compute power spectral density using Welch method",
+                "docstring": "Estimates power spectral density using Welch method.",
+                "parameters": [
+                    {
+                        "name": "data",
+                        "type": "numpy.ndarray",
+                        "optional": False,
+                        "default": None,
+                        "description": "Input signal data",
+                    },
+                    {
+                        "name": "fs",
+                        "type": "float",
+                        "optional": True,
+                        "default": "1000",
+                        "description": "Sampling frequency",
+                    },
+                    {
+                        "name": "nperseg",
+                        "type": "int",
+                        "optional": True,
+                        "default": "256",
+                        "description": "Length of each segment",
+                    },
+                ],
             },
             {
-                'name': 'ar_model',
-                'displayName': 'AR Model Parameters',
-                'category': 'Features - Time Series Models',
-                'module': 'shmtools.features.time_series',
-                'signature': 'ar_model(data, order=10)',
-                'description': 'Estimate autoregressive model parameters',
-                'docstring': 'Fits an autoregressive model to time series data.',
-                'parameters': [
-                    {'name': 'data', 'type': 'numpy.ndarray', 'optional': False, 'default': None, 'description': 'Input time series'},
-                    {'name': 'order', 'type': 'int', 'optional': True, 'default': '10', 'description': 'AR model order'}
-                ]
+                "name": "ar_model",
+                "displayName": "AR Model Parameters",
+                "category": "Features - Time Series Models",
+                "module": "shmtools.features.time_series",
+                "signature": "ar_model(data, order=10)",
+                "description": "Estimate autoregressive model parameters",
+                "docstring": "Fits an autoregressive model to time series data.",
+                "parameters": [
+                    {
+                        "name": "data",
+                        "type": "numpy.ndarray",
+                        "optional": False,
+                        "default": None,
+                        "description": "Input time series",
+                    },
+                    {
+                        "name": "order",
+                        "type": "int",
+                        "optional": True,
+                        "default": "10",
+                        "description": "AR model order",
+                    },
+                ],
             },
             {
-                'name': 'learn_pca',
-                'displayName': 'Learn PCA Model',
-                'category': 'Classification - Outlier Detection',
-                'module': 'shmtools.classification.outlier_detection',
-                'signature': 'learn_pca(features, n_components=5)',
-                'description': 'Learn PCA model for outlier detection',
-                'docstring': 'Learns a PCA model from feature data.',
-                'parameters': [
-                    {'name': 'features', 'type': 'numpy.ndarray', 'optional': False, 'default': None, 'description': 'Feature matrix'},
-                    {'name': 'n_components', 'type': 'int', 'optional': True, 'default': '5', 'description': 'Number of PCA components'}
-                ]
-            }
+                "name": "learn_pca",
+                "displayName": "Learn PCA Model",
+                "category": "Classification - Outlier Detection",
+                "module": "shmtools.classification.outlier_detection",
+                "signature": "learn_pca(features, n_components=5)",
+                "description": "Learn PCA model for outlier detection",
+                "docstring": "Learns a PCA model from feature data.",
+                "parameters": [
+                    {
+                        "name": "features",
+                        "type": "numpy.ndarray",
+                        "optional": False,
+                        "default": None,
+                        "description": "Feature matrix",
+                    },
+                    {
+                        "name": "n_components",
+                        "type": "int",
+                        "optional": True,
+                        "default": "5",
+                        "description": "Number of PCA components",
+                    },
+                ],
+            },
         ]
-    
+
     def _get_category_from_module_name(self, module_name: str) -> str:
         """Map module names to human-readable categories using config only."""
         config = self._load_config()
-        custom_categories = config.get("function_discovery", {}).get("custom_categories", {})
-        
+        custom_categories = config.get("function_discovery", {}).get(
+            "custom_categories", {}
+        )
+
         # Check custom categories first - exact match
         if module_name in custom_categories:
             return custom_categories[module_name]
-            
+
         # Check for prefix matches
         for module_pattern, category in custom_categories.items():
             if module_name.startswith(module_pattern):
                 return category
-        
+
         # No hardcoded defaults - generate generic category from module name
-        parts = module_name.split('.')
+        parts = module_name.split(".")
         if len(parts) >= 2:
             return f"{parts[0].title()} - {parts[-1].replace('_', ' ').title()}"
         else:
             return parts[0].title() if parts else "Other"
-    
-    def _should_include_function(self, function_name: str, config: Dict[str, Any]) -> bool:
+
+    def _should_include_function(
+        self, function_name: str, config: Dict[str, Any]
+    ) -> bool:
         """Check if a function should be included based on configuration filters."""
         function_config = config.get("function_discovery", {})
-        
+
         # Check include patterns
         include_patterns = function_config.get("include_patterns", [])
         if include_patterns:
-            included = any(fnmatch.fnmatch(function_name, pattern) for pattern in include_patterns)
+            included = any(
+                fnmatch.fnmatch(function_name, pattern) for pattern in include_patterns
+            )
             if not included:
                 return False
-        
+
         # Check exclude patterns
         exclude_patterns = function_config.get("exclude_patterns", [])
         if exclude_patterns:
-            excluded = any(fnmatch.fnmatch(function_name, pattern) for pattern in exclude_patterns)
+            excluded = any(
+                fnmatch.fnmatch(function_name, pattern) for pattern in exclude_patterns
+            )
             if excluded:
                 return False
-        
+
         return True
-    
-    def _filter_functions_by_config(self, functions: List[Dict[str, Any]], config: Dict[str, Any]) -> List[Dict[str, Any]]:
+
+    def _filter_functions_by_config(
+        self, functions: List[Dict[str, Any]], config: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
         """Filter discovered functions based on configuration."""
         gui_config = config.get("gui_integration", {})
         max_per_category = gui_config.get("max_functions_per_category", 50)
-        
+
         if max_per_category <= 0:
             return functions
-        
+
         # Group functions by category
         by_category = {}
         for func in functions:
@@ -315,326 +393,480 @@ class SHMFunctionHandler(APIHandler):
             if category not in by_category:
                 by_category[category] = []
             by_category[category].append(func)
-        
+
         # Limit functions per category
         filtered_functions = []
         for category, funcs in by_category.items():
             if len(funcs) > max_per_category:
                 # Sort by name and take first N
-                funcs = sorted(funcs, key=lambda f: f.get("name", ""))[:max_per_category]
+                funcs = sorted(funcs, key=lambda f: f.get("name", ""))[
+                    :max_per_category
+                ]
                 self.log.info(f"Limited {category} to {max_per_category} functions")
             filtered_functions.extend(funcs)
-        
+
         return filtered_functions
-    
-    def _extract_function_info(self, func, name: str, category: str, module_name: str) -> Dict[str, Any]:
+
+    def _extract_function_info(
+        self, func, name: str, category: str, module_name: str
+    ) -> Dict[str, Any]:
         """Extract function information from docstring and signature."""
         try:
             # Get function signature
             sig = inspect.signature(func)
-            
+
             # Parse docstring for metadata
             docstring = inspect.getdoc(func) or ""
-            
+
             # Extract basic info
             func_info = {
-                'name': name,
-                'displayName': self._extract_display_name(docstring, name),
-                'category': category,
-                'module': module_name,
-                'signature': str(sig),
-                'description': self._extract_description(docstring),
-                'docstring': docstring,
-                'parameters': [],
-                'guiMetadata': self._extract_gui_metadata(docstring),
-                'returns': self._extract_return_info(docstring)
+                "name": name,
+                "displayName": self._extract_display_name(docstring, name),
+                "category": category,
+                "module": module_name,
+                "signature": str(sig),
+                "description": self._extract_description(docstring),
+                "docstring": docstring,
+                "parameters": [],
+                "guiMetadata": self._extract_gui_metadata(docstring),
+                "returns": self._extract_return_info(docstring),
             }
-            
+
             # Extract parameter information
             for param_name, param in sig.parameters.items():
                 param_info = {
-                    'name': param_name,
-                    'type': str(param.annotation) if param.annotation != param.empty else 'Any',
-                    'optional': param.default != param.empty,
-                    'default': str(param.default) if param.default != param.empty else None
+                    "name": param_name,
+                    "type": (
+                        str(param.annotation)
+                        if param.annotation != param.empty
+                        else "Any"
+                    ),
+                    "optional": param.default != param.empty,
+                    "default": (
+                        str(param.default) if param.default != param.empty else None
+                    ),
                 }
-                
+
                 # Extract parameter description from docstring
-                param_description = self._extract_parameter_description(docstring, param_name)
+                param_description = self._extract_parameter_description(
+                    docstring, param_name
+                )
                 if param_description:
-                    param_info['description'] = param_description
-                
+                    param_info["description"] = param_description
+
                 # Extract GUI widget metadata for the parameter
                 gui_widget = self._extract_parameter_gui_widget(docstring, param_name)
                 if gui_widget:
-                    param_info['widget'] = gui_widget
-                
+                    param_info["widget"] = gui_widget
+
                 # Extract validation rules
                 validation = self._extract_parameter_validation(docstring, param_name)
                 if validation:
-                    param_info['validation'] = validation
-                
-                func_info['parameters'].append(param_info)
-            
+                    param_info["validation"] = validation
+
+                func_info["parameters"].append(param_info)
+
             return func_info
-            
+
         except Exception as e:
             self.log.warning(f"Could not extract info for function {name}: {e}")
             return None
-    
+
     def _extract_display_name(self, docstring: str, fallback_name: str) -> str:
         """Extract human-readable display name from docstring."""
         # Look for display_name in meta section
-        lines = docstring.split('\n')
+        lines = docstring.split("\n")
         for line in lines:
-            if ':display_name:' in line:
-                return line.split(':display_name:')[1].strip()
-        
+            if ":display_name:" in line:
+                return line.split(":display_name:")[1].strip()
+
         # Fallback: convert function name to readable format
-        display_name = fallback_name.replace('_shm', '').replace('_', ' ')
-        return ' '.join(word.capitalize() for word in display_name.split())
-    
+        display_name = fallback_name.replace("_shm", "").replace("_", " ")
+        return " ".join(word.capitalize() for word in display_name.split())
+
     def _extract_description(self, docstring: str) -> str:
         """Extract first line of docstring as description."""
         if not docstring:
             return ""
-        
+
         # Get first non-empty line that's not a directive
-        lines = docstring.split('\n')
+        lines = docstring.split("\n")
         for line in lines:
             line = line.strip()
-            if line and not line.startswith('..') and not line.startswith(':'):
+            if line and not line.startswith("..") and not line.startswith(":"):
                 return line
-        
+
         return ""
-    
+
     def _extract_parameter_description(self, docstring: str, param_name: str) -> str:
         """Extract parameter description from docstring."""
         if not docstring:
             return ""
-        
-        lines = docstring.split('\n')
+
+        lines = docstring.split("\n")
         in_parameters = False
-        
+
         for i, line in enumerate(lines):
             stripped = line.strip()
-            
+
             # Look for Parameters section
-            if stripped.lower() in ['parameters', 'parameters:', '----------']:
+            if stripped.lower() in ["parameters", "parameters:", "----------"]:
                 in_parameters = True
                 continue
-            
+
             # Stop at next major section
-            if in_parameters and stripped.lower() in ['returns', 'returns:', 'notes', 'notes:', 'examples', 'examples:']:
+            if in_parameters and stripped.lower() in [
+                "returns",
+                "returns:",
+                "notes",
+                "notes:",
+                "examples",
+                "examples:",
+            ]:
                 break
-                
+
             # Look for parameter definition
-            if in_parameters and param_name in stripped and ':' in stripped:
+            if in_parameters and param_name in stripped and ":" in stripped:
                 # Try to get description from same line or next lines
                 desc_parts = []
-                if ':' in stripped:
-                    after_colon = stripped.split(':', 1)[1].strip()
+                if ":" in stripped:
+                    after_colon = stripped.split(":", 1)[1].strip()
                     if after_colon:
                         desc_parts.append(after_colon)
-                
+
                 # Look at following lines for continuation
                 for j in range(i + 1, min(i + 3, len(lines))):
                     next_line = lines[j].strip()
-                    if next_line and not next_line.startswith(param_name) and ':' not in next_line:
+                    if (
+                        next_line
+                        and not next_line.startswith(param_name)
+                        and ":" not in next_line
+                    ):
                         desc_parts.append(next_line)
                     else:
                         break
-                
+
                 if desc_parts:
-                    return ' '.join(desc_parts)
-        
+                    return " ".join(desc_parts)
+
         return ""
-    
+
     def _extract_gui_metadata(self, docstring: str) -> Dict[str, Any]:
         """Extract GUI metadata from function docstring."""
         metadata = {}
-        
+
         if not docstring:
             return metadata
-        
-        lines = docstring.split('\n')
+
+        lines = docstring.split("\n")
         in_meta = False
-        
+
         for line in lines:
             stripped = line.strip()
-            
+
             # Look for meta section
-            if stripped.startswith('.. meta::'):
+            if stripped.startswith(".. meta::"):
                 in_meta = True
                 continue
-            
+
             # Stop at next major section
-            if in_meta and stripped and not stripped.startswith(':') and not stripped.startswith(' '):
+            if (
+                in_meta
+                and stripped
+                and not stripped.startswith(":")
+                and not stripped.startswith(" ")
+            ):
                 break
-            
+
             # Extract meta properties
-            if in_meta and ':' in stripped:
-                if stripped.startswith(':category:'):
-                    metadata['category'] = stripped.split(':', 2)[2].strip()
-                elif stripped.startswith(':complexity:'):
-                    metadata['complexity'] = stripped.split(':', 2)[2].strip()
-                elif stripped.startswith(':data_type:'):
-                    metadata['data_type'] = stripped.split(':', 2)[2].strip()
-                elif stripped.startswith(':output_type:'):
-                    metadata['output_type'] = stripped.split(':', 2)[2].strip()
-                elif stripped.startswith(':matlab_equivalent:'):
-                    metadata['matlab_equivalent'] = stripped.split(':', 2)[2].strip()
-                elif stripped.startswith(':verbose_call:'):
-                    metadata['verbose_call'] = stripped.split(':', 2)[2].strip()
-        
+            if in_meta and ":" in stripped:
+                if stripped.startswith(":category:"):
+                    metadata["category"] = stripped.split(":", 2)[2].strip()
+                elif stripped.startswith(":complexity:"):
+                    metadata["complexity"] = stripped.split(":", 2)[2].strip()
+                elif stripped.startswith(":data_type:"):
+                    metadata["data_type"] = stripped.split(":", 2)[2].strip()
+                elif stripped.startswith(":output_type:"):
+                    metadata["output_type"] = stripped.split(":", 2)[2].strip()
+                elif stripped.startswith(":matlab_equivalent:"):
+                    metadata["matlab_equivalent"] = stripped.split(":", 2)[2].strip()
+                elif stripped.startswith(":verbose_call:"):
+                    metadata["verbose_call"] = stripped.split(":", 2)[2].strip()
+
         return metadata
-    
+
     def _extract_return_info(self, docstring: str) -> List[Dict[str, Any]]:
         """Extract return value information from docstring."""
         returns = []
-        
+
         if not docstring:
             return returns
-        
-        lines = docstring.split('\n')
+
+        lines = docstring.split("\n")
         in_returns = False
         current_return = None
-        
+
         for line in lines:
             stripped = line.strip()
-            
+
             # Look for Returns section
-            if stripped.lower() in ['returns', 'returns:', '-------']:
+            if stripped.lower() in ["returns", "returns:", "-------"]:
                 in_returns = True
                 continue
-            
+
             # Stop at next major section
-            if in_returns and stripped.lower() in ['notes', 'notes:', 'examples', 'examples:', 'see also', 'references']:
+            if in_returns and stripped.lower() in [
+                "notes",
+                "notes:",
+                "examples",
+                "examples:",
+                "see also",
+                "references",
+            ]:
                 break
-            
-            # Parse return value - check original line for indentation 
+
+            # Parse return value - check original line for indentation
             # Indented lines are descriptions, not new variables
-            if in_returns and ':' in stripped and not line.startswith(' ') and not line.startswith('\t'):
+            if (
+                in_returns
+                and ":" in stripped
+                and not line.startswith(" ")
+                and not line.startswith("\t")
+            ):
                 if current_return:
                     returns.append(current_return)
-                
+
                 # Parse name and type (format: "name : type")
-                if ' : ' in stripped:
-                    name, type_str = stripped.split(' : ', 1)
+                if " : " in stripped:
+                    name, type_str = stripped.split(" : ", 1)
                     current_return = {
-                        'name': name.strip(),
-                        'type': type_str.strip(),
-                        'description': ""
+                        "name": name.strip(),
+                        "type": type_str.strip(),
+                        "description": "",
                     }
                 else:
                     # Single part, treat as name only
-                    parts = stripped.split(':', 1)
+                    parts = stripped.split(":", 1)
                     name_part = parts[0].strip()
                     description = parts[1].strip() if len(parts) > 1 else ""
                     current_return = {
-                        'name': name_part,
-                        'type': 'unknown',
-                        'description': description
+                        "name": name_part,
+                        "type": "unknown",
+                        "description": description,
                     }
             elif in_returns and current_return and stripped:
                 # Continuation of description
-                current_return['description'] += ' ' + stripped
-        
+                current_return["description"] += " " + stripped
+
         if current_return:
             returns.append(current_return)
-        
+
         return returns
-    
-    def _extract_parameter_gui_widget(self, docstring: str, param_name: str) -> Dict[str, Any]:
+
+    def _extract_parameter_gui_widget(
+        self, docstring: str, param_name: str
+    ) -> Dict[str, Any]:
         """Extract GUI widget metadata for a parameter."""
         widget = {}
-        
+
         if not docstring:
             return widget
-        
-        lines = docstring.split('\n')
+
+        lines = docstring.split("\n")
         in_param_section = False
         in_gui_section = False
-        
+
         for i, line in enumerate(lines):
             stripped = line.strip()
-            
+
             # Look for the specific parameter
-            if param_name in stripped and ':' in stripped:
+            if param_name in stripped and ":" in stripped:
                 in_param_section = True
                 continue
-            
+
             # Reset if we hit another parameter
-            if in_param_section and ':' in stripped and any(p in stripped for p in ['array_like', 'int', 'float', 'str', 'bool']) and param_name not in stripped:
+            if (
+                in_param_section
+                and ":" in stripped
+                and any(
+                    p in stripped for p in ["array_like", "int", "float", "str", "bool"]
+                )
+                and param_name not in stripped
+            ):
                 in_param_section = False
                 continue
-            
+
             # Look for GUI section within parameter
-            if in_param_section and stripped.startswith('.. gui::'):
+            if in_param_section and stripped.startswith(".. gui::"):
                 in_gui_section = True
                 continue
-            
+
             # Stop GUI section at next directive or parameter
-            if in_gui_section and (stripped.startswith('..') or (stripped and not stripped.startswith(':'))):
+            if in_gui_section and (
+                stripped.startswith("..") or (stripped and not stripped.startswith(":"))
+            ):
                 in_gui_section = False
-            
+
             # Extract GUI properties
-            if in_gui_section and ':' in stripped:
-                if stripped.startswith(':widget:'):
-                    widget['widget'] = stripped.split(':', 2)[2].strip()
-                elif stripped.startswith(':min:'):
-                    widget['min'] = float(stripped.split(':', 2)[2].strip())
-                elif stripped.startswith(':max:'):
-                    widget['max'] = float(stripped.split(':', 2)[2].strip())
-                elif stripped.startswith(':default:'):
-                    widget['default'] = stripped.split(':', 2)[2].strip()
-                elif stripped.startswith(':options:'):
+            if in_gui_section and ":" in stripped:
+                if stripped.startswith(":widget:"):
+                    widget["widget"] = stripped.split(":", 2)[2].strip()
+                elif stripped.startswith(":min:"):
+                    widget["min"] = float(stripped.split(":", 2)[2].strip())
+                elif stripped.startswith(":max:"):
+                    widget["max"] = float(stripped.split(":", 2)[2].strip())
+                elif stripped.startswith(":default:"):
+                    widget["default"] = stripped.split(":", 2)[2].strip()
+                elif stripped.startswith(":options:"):
                     # Parse list format [option1, option2, ...]
-                    options_str = stripped.split(':', 2)[2].strip()
-                    if options_str.startswith('[') and options_str.endswith(']'):
-                        options = [opt.strip(' "\'') for opt in options_str[1:-1].split(',')]
-                        widget['options'] = options
-                elif stripped.startswith(':formats:'):
+                    options_str = stripped.split(":", 2)[2].strip()
+                    if options_str.startswith("[") and options_str.endswith("]"):
+                        options = [
+                            opt.strip(" \"'") for opt in options_str[1:-1].split(",")
+                        ]
+                        widget["options"] = options
+                elif stripped.startswith(":formats:"):
                     # Parse formats for file uploads
-                    formats_str = stripped.split(':', 2)[2].strip()
-                    if formats_str.startswith('[') and formats_str.endswith(']'):
-                        formats = [fmt.strip(' "\'') for fmt in formats_str[1:-1].split(',')]
-                        widget['formats'] = formats
-        
+                    formats_str = stripped.split(":", 2)[2].strip()
+                    if formats_str.startswith("[") and formats_str.endswith("]"):
+                        formats = [
+                            fmt.strip(" \"'") for fmt in formats_str[1:-1].split(",")
+                        ]
+                        widget["formats"] = formats
+
         return widget
-    
-    def _extract_parameter_validation(self, docstring: str, param_name: str) -> List[Dict[str, Any]]:
+
+    def _extract_parameter_validation(
+        self, docstring: str, param_name: str
+    ) -> List[Dict[str, Any]]:
         """Extract validation rules for a parameter."""
         validation = []
-        
+
         # For now, infer basic validation from GUI widget info
         widget = self._extract_parameter_gui_widget(docstring, param_name)
-        
-        if 'min' in widget:
-            validation.append({
-                'type': 'range',
-                'min': widget['min'],
-                'max': widget.get('max', float('inf'))
-            })
-        
-        if 'options' in widget:
-            validation.append({
-                'type': 'choice',
-                'options': widget['options']
-            })
-        
-        if 'formats' in widget:
-            validation.append({
-                'type': 'file_format',
-                'formats': widget['formats']
-            })
-        
+
+        if "min" in widget:
+            validation.append(
+                {
+                    "type": "range",
+                    "min": widget["min"],
+                    "max": widget.get("max", float("inf")),
+                }
+            )
+
+        if "options" in widget:
+            validation.append({"type": "choice", "options": widget["options"]})
+
+        if "formats" in widget:
+            validation.append({"type": "file_format", "formats": widget["formats"]})
+
         return validation
+
+    def _generate_function_report(self, functions: List[Dict[str, Any]]) -> None:
+        """Generate and save a comprehensive function discovery report."""
+        try:
+            import inspect
+            from datetime import datetime
+            from pathlib import Path
+
+            # Group functions by category
+            by_category = {}
+            for func in functions:
+                category = func.get("category", "Unknown")
+                if category not in by_category:
+                    by_category[category] = []
+                by_category[category].append(func)
+
+            # Generate report content
+            report_lines = [
+                "# SHM Function Discovery Report",
+                f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                "",
+                "This report shows all functions discovered by the JupyterLab extension's introspection system.",
+                "",
+            ]
+
+            # Add category sections
+            for category, funcs in sorted(by_category.items()):
+                report_lines.extend([f"## {category} ({len(funcs)} functions)", ""])
+
+                for func in sorted(funcs, key=lambda f: f.get("name", "")):
+                    name = func.get("name", "Unknown")
+                    display_name = func.get("displayName", name)
+                    description = func.get("description", "No description available")
+                    module = func.get("module", "Unknown module")
+                    params = func.get("parameters", [])
+
+                    # Get file path from function metadata
+                    file_path = func.get("filePath", f"Part of module: {module}")
+
+                    report_lines.extend(
+                        [
+                            f"- `{name}()` - {description}",
+                            f"  - Display Name: {display_name}",
+                            f"  - Module: `{module}`",
+                            f"  - Parameters: {len(params)}",
+                            f"  - File: {file_path}",
+                            "",
+                        ]
+                    )
+
+            # Add summary
+            total_functions = len(functions)
+            total_categories = len(by_category)
+            config = self._load_config()
+            modules_to_scan = config.get("function_discovery", {}).get(
+                "modules_to_scan", []
+            )
+
+            report_lines.extend(
+                [
+                    "## Summary",
+                    "",
+                    f"- **Total functions discovered:** {total_functions}",
+                    f"- **Total categories:** {total_categories}",
+                    f"- **Modules scanned:** {len(modules_to_scan)} ({', '.join(modules_to_scan)})",
+                    "",
+                    "### Functions by Category",
+                    "",
+                ]
+            )
+
+            # Add category summary
+            for category, funcs in sorted(
+                by_category.items(), key=lambda x: len(x[1]), reverse=True
+            ):
+                report_lines.append(f"- **{category}:** {len(funcs)} functions")
+
+            report_lines.extend(
+                [
+                    "",
+                    "---",
+                    "*Report generated automatically by SHM JupyterLab Extension*",
+                ]
+            )
+
+            # Write report to file
+            report_content = "\n".join(report_lines)
+            repo_root = Path(__file__).parent.parent.parent  # Go up to repo root
+            report_path = repo_root / "function_discovery_report.md"
+
+            with open(report_path, "w", encoding="utf-8") as f:
+                f.write(report_content)
+
+            self.log.info(f"Function discovery report saved to {report_path}")
+            self.log.info(
+                f"Report contains {total_functions} functions in {total_categories} categories"
+            )
+
+        except Exception as e:
+            self.log.warning(f"Failed to generate function report: {e}")
+            # Don't raise the exception - report generation should not break the extension
 
 
 class SHMImportsHandler(APIHandler):
     """Handler for generating required imports based on available functions."""
-    
+
     @authenticated
     def get(self):
         """Get list of required imports organized by module."""
@@ -645,244 +877,267 @@ class SHMImportsHandler(APIHandler):
             self.log.error(f"Error analyzing imports: {e}")
             self.set_status(500)
             self.finish({"error": str(e)})
-    
+
     def _analyze_required_imports(self) -> List[str]:
         """Get list of high-level module imports."""
         # Get available functions from the main handler
         function_handler = SHMFunctionHandler(self.application, self.request)
         function_handler._config = None  # Reset config cache
         functions = function_handler._discover_shm_functions()
-        
+
         # Find all top-level modules
         top_level_modules = set()
-        
+
         for func in functions:
-            module = func.get('module', '')
+            module = func.get("module", "")
             if not module:
                 continue
-                
+
             # Extract top-level module (e.g., 'shmtools' from 'shmtools.core.spectral')
-            module_parts = module.split('.')
+            module_parts = module.split(".")
             if module_parts:
                 top_level_modules.add(module_parts[0])
-        
+
         # Return sorted list of import statements
         return sorted([f"import {module}" for module in top_level_modules])
 
 
 class SHMVariableHandler(APIHandler):
     """Handler for notebook variable parsing."""
-    
+
     _verbose_call_cache = None  # Class-level cache for function verbose_call mappings
-    
+
     def _get_verbose_call_cache(self) -> Dict[str, str]:
         """Get cached mapping of function_name -> verbose_call."""
         if SHMVariableHandler._verbose_call_cache is None:
             self.log.info("Building verbose_call cache from function metadata...")
-            
+
             # Reuse the same function discovery logic as SHMFunctionHandler
             # We can't instantiate the handler directly, so we'll call the introspection directly
             from ..introspection import discover_functions_locally
-            
+
             # Create a minimal config for function discovery
-            config = {
-                "function_discovery": {"enabled": True},
-                "modules_to_scan": []
-            }
-            
+            config = {"function_discovery": {"enabled": True}, "modules_to_scan": []}
+
             functions = discover_functions_locally(config)
-            
+
             # Build lookup for verbose_call
             SHMVariableHandler._verbose_call_cache = {}
             for func in functions:
-                verbose_call = func.get('guiMetadata', {}).get('verbose_call', '')
+                verbose_call = func.get("guiMetadata", {}).get("verbose_call", "")
                 if verbose_call:
-                    SHMVariableHandler._verbose_call_cache[func['name']] = verbose_call
-        
+                    SHMVariableHandler._verbose_call_cache[func["name"]] = verbose_call
+
         return SHMVariableHandler._verbose_call_cache
-    
-    def _extract_display_name_from_verbose_call(self, var_name: str, expression: str, var_position: int = 0) -> Optional[str]:
+
+    def _extract_display_name_from_verbose_call(
+        self, var_name: str, expression: str, var_position: int = 0
+    ) -> Optional[str]:
         """Extract human-readable display name from verbose_call metadata."""
         import re
-        
+
         # Extract function name from expression (handle qualified names like shmtools.func_shm)
-        func_match = re.match(r'([\w\.]+)\s*\(', expression.strip())
+        func_match = re.match(r"([\w\.]+)\s*\(", expression.strip())
         if not func_match:
             return None
-            
+
         func_name = func_match.group(1)
-        
+
         # If it's a qualified name like shmtools.classification.func_shm, extract just the function name
-        if '.' in func_name:
-            func_name = func_name.split('.')[-1]
-            
+        if "." in func_name:
+            func_name = func_name.split(".")[-1]
+
         verbose_call_cache = self._get_verbose_call_cache()
-        verbose_call = verbose_call_cache.get(func_name, '')
-        
-        if not verbose_call or '=' not in verbose_call:
+        verbose_call = verbose_call_cache.get(func_name, "")
+
+        if not verbose_call or "=" not in verbose_call:
             return None
-            
+
         # Parse output part: "Data Subsets = Extract ..." or "[A, B, C] = Function ..."
-        output_part = verbose_call.split('=')[0].strip()
-        
+        output_part = verbose_call.split("=")[0].strip()
+
         # Handle bracketed multiple outputs: [A, B, C]
-        if output_part.startswith('[') and output_part.endswith(']'):
-            outputs = [out.strip() for out in output_part[1:-1].split(',')]
+        if output_part.startswith("[") and output_part.endswith("]"):
+            outputs = [out.strip() for out in output_part[1:-1].split(",")]
             if 0 <= var_position < len(outputs):
                 return outputs[var_position]
-        
+
         # Handle single output: "Data Subsets"
         elif var_position == 0:
             return output_part
-            
+
         return None
-    
+
     def _generate_fallback_display_name(self, var_name: str) -> str:
         """Generate human-readable name from variable name."""
         # Convert snake_case to Title Case
-        return ' '.join(word.capitalize() for word in var_name.replace('_', ' ').split())
-    
+        return " ".join(
+            word.capitalize() for word in var_name.replace("_", " ").split()
+        )
+
     def _extract_function_name_from_expression(self, expression: str) -> str:
         """Extract function name from expression, similar to TypeScript parser."""
         import re
-        
+
         print(f"DEBUG: Extracting function from expression: {expression[:50]}...")
-        
+
         # Remove comments and clean whitespace
-        clean_expression = re.sub(r'#[^\n]*', '', expression).strip()
-        clean_expression = re.sub(r'\s+', ' ', clean_expression)
-        
+        clean_expression = re.sub(r"#[^\n]*", "", expression).strip()
+        clean_expression = re.sub(r"\s+", " ", clean_expression)
+
         # Try to match function call patterns like: func(), module.func(), obj.method()
-        func_match = re.match(r'^([a-zA-Z_][a-zA-Z0-9_.]*)\s*\(', clean_expression)
-        
+        func_match = re.match(r"^([a-zA-Z_][a-zA-Z0-9_.]*)\s*\(", clean_expression)
+
         if func_match:
             full_function_name = func_match.group(1)
             # Extract just the function name without module path
-            function_name_only = full_function_name.split('.')[-1]
-            result = function_name_only + '()'
-            print(f"DEBUG: Extracted function name '{result}' from full name '{full_function_name}'")
+            function_name_only = full_function_name.split(".")[-1]
+            result = function_name_only + "()"
+            print(
+                f"DEBUG: Extracted function name '{result}' from full name '{full_function_name}'"
+            )
             return result
-        
+
         # If no function pattern found, return shortened expression
-        fallback = clean_expression[:30] + ('...' if len(clean_expression) > 30 else '')
-        print(f"DEBUG: No function found in expression '{clean_expression[:50]}', using fallback '{fallback}'")
+        fallback = clean_expression[:30] + ("..." if len(clean_expression) > 30 else "")
+        print(
+            f"DEBUG: No function found in expression '{clean_expression[:50]}', using fallback '{fallback}'"
+        )
         return fallback
-    
+
     @authenticated
     def post(self):
         """Parse notebook code to extract variable assignments."""
         try:
             # Get request data
-            data = json.loads(self.request.body.decode('utf-8'))
-            notebook_cells = data.get('cells', [])
-            
+            data = json.loads(self.request.body.decode("utf-8"))
+            notebook_cells = data.get("cells", [])
+
             # Parse variables from all code cells
             variables = self._parse_notebook_variables(notebook_cells)
             self.finish(json.dumps(variables, cls=InfinityJSONEncoder))
-            
+
         except Exception as e:
             self.log.error(f"Error parsing variables: {e}")
             self.set_status(500)
             self.finish({"error": str(e)})
-    
+
     def _parse_notebook_variables(self, cells: List[Dict]) -> List[Dict[str, Any]]:
         """Parse variable assignments from notebook cells."""
         import re
-        
+
         variables = []
-        
+
         for cell_index, cell in enumerate(cells):
-            if cell.get('cell_type') != 'code':
+            if cell.get("cell_type") != "code":
                 continue
-                
-            code = cell.get('source', '')
+
+            code = cell.get("source", "")
             if isinstance(code, list):
-                code = '\n'.join(code)
-            
+                code = "\n".join(code)
+
             cell_variables = self._extract_variables_from_code(code, cell_index)
             variables.extend(cell_variables)
-        
+
         return variables
-    
-    def _extract_variables_from_code(self, code: str, cell_index: int) -> List[Dict[str, Any]]:
+
+    def _extract_variables_from_code(
+        self, code: str, cell_index: int
+    ) -> List[Dict[str, Any]]:
         """Extract variable assignments from code text."""
         import re
-        
+
         variables = []
-        lines = code.split('\n')
-        
+        lines = code.split("\n")
+
         i = 0
         while i < len(lines):
             line = lines[i].strip()
-            
+
             # Skip comments and empty lines
-            if line.startswith('#') or not line:
+            if line.startswith("#") or not line:
                 i += 1
                 continue
-            
+
             # Check if this line starts with a parameter assignment (inside function call)
             # These are lines that don't start at the beginning of the line and have = followed by comma
-            if re.match(r'^\s+[a-zA-Z_][a-zA-Z0-9_]*\s*=.*,\s*(?:#.*)?$', lines[i]):
+            if re.match(r"^\s+[a-zA-Z_][a-zA-Z0-9_]*\s*=.*,\s*(?:#.*)?$", lines[i]):
                 i += 1
                 continue
-                
+
             # Check for variable assignments that start at the beginning of lines
             patterns = [
-                # Simple assignment: var = expression  
-                r'^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)',
+                # Simple assignment: var = expression
+                r"^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)",
                 # Tuple unpacking: var1, var2 = expression
-                r'^([a-zA-Z_][a-zA-Z0-9_,\s]*)\s*=\s*(.+)',
+                r"^([a-zA-Z_][a-zA-Z0-9_,\s]*)\s*=\s*(.+)",
                 # Parenthesized tuple: (var1, var2) = expression
-                r'^\(([a-zA-Z_][a-zA-Z0-9_,\s]*)\)\s*=\s*(.+)'
+                r"^\(([a-zA-Z_][a-zA-Z0-9_,\s]*)\)\s*=\s*(.+)",
             ]
-            
+
             assignment_found = False
             for pattern in patterns:
                 match = re.match(pattern, line)
                 if match:
                     left_side = match.group(1).strip()
                     right_side = match.group(2).strip()
-                    
-                    # If the assignment spans multiple lines (ends with open paren or comma), 
+
+                    # If the assignment spans multiple lines (ends with open paren or comma),
                     # collect the full assignment
-                    if right_side.endswith('(') or (right_side.count('(') > right_side.count(')')):
+                    if right_side.endswith("(") or (
+                        right_side.count("(") > right_side.count(")")
+                    ):
                         # Multi-line assignment - collect until closing paren
                         full_right_side = right_side
                         j = i + 1
-                        paren_count = right_side.count('(') - right_side.count(')')
-                        
+                        paren_count = right_side.count("(") - right_side.count(")")
+
                         while j < len(lines) and paren_count > 0:
                             next_line = lines[j].strip()
                             if next_line:
-                                full_right_side += ' ' + next_line
-                                paren_count += next_line.count('(') - next_line.count(')')
+                                full_right_side += " " + next_line
+                                paren_count += next_line.count("(") - next_line.count(
+                                    ")"
+                                )
                             j += 1
-                        
+
                         right_side = full_right_side
                         i = j - 1  # Skip the lines we just processed
-                    
+
                     # Handle tuple unpacking
-                    if ',' in left_side:
-                        var_names = [v.strip().replace('(', '').replace(')', '') 
-                                    for v in left_side.split(',')]
+                    if "," in left_side:
+                        var_names = [
+                            v.strip().replace("(", "").replace(")", "")
+                            for v in left_side.split(",")
+                        ]
                         for var_position, var_name in enumerate(var_names):
                             if var_name:
                                 # Try to extract display name from verbose_call metadata
-                                display_name = self._extract_display_name_from_verbose_call(
-                                    var_name, right_side, var_position
+                                display_name = (
+                                    self._extract_display_name_from_verbose_call(
+                                        var_name, right_side, var_position
+                                    )
                                 )
                                 if not display_name:
-                                    display_name = self._generate_fallback_display_name(var_name)
-                                
-                                variables.append({
-                                    'name': var_name,
-                                    'displayName': display_name,
-                                    'type': self._infer_type_from_expression(right_side),
-                                    'source': self._extract_function_name_from_expression(right_side),
-                                    'cellIndex': cell_index,
-                                    'lineIndex': i,
-                                    'expression': right_side
-                                })
+                                    display_name = self._generate_fallback_display_name(
+                                        var_name
+                                    )
+
+                                variables.append(
+                                    {
+                                        "name": var_name,
+                                        "displayName": display_name,
+                                        "type": self._infer_type_from_expression(
+                                            right_side
+                                        ),
+                                        "source": self._extract_function_name_from_expression(
+                                            right_side
+                                        ),
+                                        "cellIndex": cell_index,
+                                        "lineIndex": i,
+                                        "expression": right_side,
+                                    }
+                                )
                     else:
                         # Single variable assignment
                         # Try to extract display name from verbose_call metadata
@@ -890,74 +1145,92 @@ class SHMVariableHandler(APIHandler):
                             left_side, right_side, 0
                         )
                         if not display_name:
-                            display_name = self._generate_fallback_display_name(left_side)
-                        
-                        variables.append({
-                            'name': left_side,
-                            'displayName': display_name,
-                            'type': self._infer_type_from_expression(right_side),
-                            'source': self._extract_function_name_from_expression(right_side),
-                            'cellIndex': cell_index,
-                            'lineIndex': i,
-                            'expression': right_side
-                        })
-                    
+                            display_name = self._generate_fallback_display_name(
+                                left_side
+                            )
+
+                        variables.append(
+                            {
+                                "name": left_side,
+                                "displayName": display_name,
+                                "type": self._infer_type_from_expression(right_side),
+                                "source": self._extract_function_name_from_expression(
+                                    right_side
+                                ),
+                                "cellIndex": cell_index,
+                                "lineIndex": i,
+                                "expression": right_side,
+                            }
+                        )
+
                     assignment_found = True
                     break
-            
+
             i += 1
-        
+
         return variables
-    
+
     def _infer_type_from_expression(self, expression: str) -> str:
         """Infer variable type from expression."""
         import re
-        
+
         # Remove comments
-        expression = expression.split('#')[0].strip()
-        
+        expression = expression.split("#")[0].strip()
+
         # SHM function patterns
-        if 'shmtools.' in expression:
-            if any(func in expression for func in ['ar_model', 'pca', 'mahalanobis']):
-                return 'tuple'
-            if any(func in expression for func in ['load_', 'import_']):
-                return 'numpy.ndarray'
-        
+        if "shmtools." in expression:
+            if any(func in expression for func in ["ar_model", "pca", "mahalanobis"]):
+                return "tuple"
+            if any(func in expression for func in ["load_", "import_"]):
+                return "numpy.ndarray"
+
         # NumPy patterns
-        if 'np.' in expression or 'numpy.' in expression:
-            if any(func in expression for func in ['.array', '.zeros', '.ones', '.randn', '.random']):
-                return 'numpy.ndarray'
-            if any(func in expression for func in ['.mean', '.std', '.sum']):
-                return 'float'
-        
+        if "np." in expression or "numpy." in expression:
+            if any(
+                func in expression
+                for func in [".array", ".zeros", ".ones", ".randn", ".random"]
+            ):
+                return "numpy.ndarray"
+            if any(func in expression for func in [".mean", ".std", ".sum"]):
+                return "float"
+
         # Literal patterns
-        if re.match(r'^\d+$', expression):
-            return 'int'
-        if re.match(r'^\d+\.\d+$', expression):
-            return 'float'
+        if re.match(r"^\d+$", expression):
+            return "int"
+        if re.match(r"^\d+\.\d+$", expression):
+            return "float"
         if expression.startswith('"') or expression.startswith("'"):
-            return 'str'
-        if expression.startswith('[') and expression.endswith(']'):
-            return 'list'
-        if expression.startswith('(') and expression.endswith(')'):
-            return 'tuple'
-        if expression.startswith('{') and expression.endswith('}'):
-            return 'dict'
-        
-        return 'unknown'
+            return "str"
+        if expression.startswith("[") and expression.endswith("]"):
+            return "list"
+        if expression.startswith("(") and expression.endswith(")"):
+            return "tuple"
+        if expression.startswith("{") and expression.endswith("}"):
+            return "dict"
+
+        return "unknown"
 
 
 def setup_handlers(web_app):
     """Setup the server extension handlers."""
     host_pattern = ".*$"
-    
+
     base_url = web_app.settings["base_url"]
-    route_pattern = url_path_join(base_url, "shm-function-selector", "(.*)") 
-    
+    route_pattern = url_path_join(base_url, "shm-function-selector", "(.*)")
+
     handlers = [
-        (url_path_join(base_url, "shm-function-selector", "functions"), SHMFunctionHandler),
-        (url_path_join(base_url, "shm-function-selector", "imports"), SHMImportsHandler),
-        (url_path_join(base_url, "shm-function-selector", "variables"), SHMVariableHandler),
+        (
+            url_path_join(base_url, "shm-function-selector", "functions"),
+            SHMFunctionHandler,
+        ),
+        (
+            url_path_join(base_url, "shm-function-selector", "imports"),
+            SHMImportsHandler,
+        ),
+        (
+            url_path_join(base_url, "shm-function-selector", "variables"),
+            SHMVariableHandler,
+        ),
     ]
-    
+
     web_app.add_handlers(host_pattern, handlers)

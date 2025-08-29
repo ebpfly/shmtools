@@ -178,9 +178,15 @@ def parse_variables_locally(cells):
                         for var_name in var_names:
                             if var_name:
                                 # Extract function name from expression, fallback to cell reference
-                                print(f"DEBUG TUPLE: Processing variable '{var_name}' with expression '{right_side[:50]}'")
-                                function_source = _extract_function_name_from_expression(right_side)
-                                print(f"DEBUG TUPLE: Got source '{function_source}' for variable '{var_name}'")
+                                print(
+                                    f"DEBUG TUPLE: Processing variable '{var_name}' with expression '{right_side[:50]}'"
+                                )
+                                function_source = (
+                                    _extract_function_name_from_expression(right_side)
+                                )
+                                print(
+                                    f"DEBUG TUPLE: Got source '{function_source}' for variable '{var_name}'"
+                                )
                                 variables.append(
                                     {
                                         "name": var_name,
@@ -194,9 +200,15 @@ def parse_variables_locally(cells):
                     else:
                         # Single variable assignment
                         # Extract function name from expression, fallback to cell reference
-                        print(f"DEBUG SINGLE: Processing variable '{left_side}' with expression '{right_side[:50]}'")
-                        function_source = _extract_function_name_from_expression(right_side)
-                        print(f"DEBUG SINGLE: Got source '{function_source}' for variable '{left_side}'")
+                        print(
+                            f"DEBUG SINGLE: Processing variable '{left_side}' with expression '{right_side[:50]}'"
+                        )
+                        function_source = _extract_function_name_from_expression(
+                            right_side
+                        )
+                        print(
+                            f"DEBUG SINGLE: Got source '{function_source}' for variable '{left_side}'"
+                        )
                         variables.append(
                             {
                                 "name": left_side,
@@ -215,22 +227,26 @@ def parse_variables_locally(cells):
 def _extract_function_name_from_expression(expression):
     """Extract function name from expression, similar to TypeScript parser."""
     import re
-    
+
     # Remove comments and clean whitespace
-    clean_expression = re.sub(r'#[^\n]*', '', expression).strip()
-    clean_expression = re.sub(r'\s+', ' ', clean_expression)
-    
+    clean_expression = re.sub(r"#[^\n]*", "", expression).strip()
+    clean_expression = re.sub(r"\s+", " ", clean_expression)
+
     # Try to match function call patterns like: func(), module.func(), obj.method()
-    func_match = re.match(r'^([a-zA-Z_][a-zA-Z0-9_.]*)\s*\(', clean_expression)
-    
+    func_match = re.match(r"^([a-zA-Z_][a-zA-Z0-9_.]*)\s*\(", clean_expression)
+
     if func_match:
-        result = func_match.group(1) + '()'
-        print(f"DEBUG: Extracted function name '{result}' from expression '{clean_expression[:50]}'")
+        result = func_match.group(1) + "()"
+        print(
+            f"DEBUG: Extracted function name '{result}' from expression '{clean_expression[:50]}'"
+        )
         return result
-    
+
     # If no function pattern found, return shortened expression
-    fallback = clean_expression[:30] + ('...' if len(clean_expression) > 30 else '')
-    print(f"DEBUG: No function found in expression '{clean_expression[:50]}', using fallback '{fallback}'")
+    fallback = clean_expression[:30] + ("..." if len(clean_expression) > 30 else "")
+    print(
+        f"DEBUG: No function found in expression '{clean_expression[:50]}', using fallback '{fallback}'"
+    )
     return fallback
 
 
@@ -274,31 +290,31 @@ def _infer_type_from_expression(expression):
 
 def _is_external_library_function(func):
     """Check if function comes from an external library like scipy, numpy, etc."""
-    if not hasattr(func, '__module__'):
+    if not hasattr(func, "__module__"):
         return False
-    
+
     module_name = func.__module__
     if not module_name:
         return False
-    
+
     # List of external library modules to exclude
     external_libraries = [
-        'scipy',
-        'numpy', 
-        'sklearn',
-        'pandas',
-        'matplotlib',
-        'seaborn',
-        'tensorflow',
-        'torch',
-        'keras'
+        "scipy",
+        "numpy",
+        "sklearn",
+        "pandas",
+        "matplotlib",
+        "seaborn",
+        "tensorflow",
+        "torch",
+        "keras",
     ]
-    
+
     # Check if function comes from any external library
     for lib in external_libraries:
-        if module_name.startswith(lib + '.'):
+        if module_name.startswith(lib + "."):
             return True
-    
+
     return False
 
 
@@ -306,27 +322,29 @@ def _expand_top_level_modules(top_level_modules):
     """Expand top-level module names to include all their submodules."""
     import pkgutil
     import importlib
-    
+
     expanded_modules = []
-    
+
     for top_module in top_level_modules:
         try:
             # Import the top-level module
             module = importlib.import_module(top_module)
-            
+
             # Add the top-level module itself
             expanded_modules.append(top_module)
-            
+
             # Walk through all submodules
-            for importer, modname, ispkg in pkgutil.walk_packages(module.__path__, module.__name__ + "."):
+            for importer, modname, ispkg in pkgutil.walk_packages(
+                module.__path__, module.__name__ + "."
+            ):
                 # Skip private modules
-                if not modname.split('.')[-1].startswith('_'):
+                if not modname.split(".")[-1].startswith("_"):
                     expanded_modules.append(modname)
-                    
+
         except ImportError:
             # Module not available, skip it
             continue
-    
+
     return expanded_modules
 
 
@@ -334,33 +352,39 @@ def _discover_shmtools_modules():
     """Automatically discover all shmtools submodules recursively."""
     import pkgutil
     import shmtools
-    
+
     modules_to_scan = []
-    
+
     # Walk through all submodules of shmtools
-    for importer, modname, ispkg in pkgutil.walk_packages(shmtools.__path__, shmtools.__name__ + "."):
+    for importer, modname, ispkg in pkgutil.walk_packages(
+        shmtools.__path__, shmtools.__name__ + "."
+    ):
         # Skip private modules and __pycache__
-        if not modname.split('.')[-1].startswith('_'):
+        if not modname.split(".")[-1].startswith("_"):
             modules_to_scan.append(modname)
-    
+
     # Also scan examples modules if they exist
     try:
         import examples
-        for importer, modname, ispkg in pkgutil.walk_packages(examples.__path__, examples.__name__ + "."):
-            if not modname.split('.')[-1].startswith('_'):
+
+        for importer, modname, ispkg in pkgutil.walk_packages(
+            examples.__path__, examples.__name__ + "."
+        ):
+            if not modname.split(".")[-1].startswith("_"):
                 modules_to_scan.append(modname)
     except ImportError:
         # examples module not available
         pass
-    
+
     # Also check for LADPackage if it exists
     try:
         import LADPackage
-        modules_to_scan.append('LADPackage')
+
+        modules_to_scan.append("LADPackage")
     except ImportError:
         # LADPackage not available
         pass
-    
+
     return modules_to_scan
 
 
@@ -371,7 +395,9 @@ def discover_functions_locally(config=None):
     import pkgutil
 
     functions = []
-    seen_functions = set()  # Track functions by (actual_module, function_name) to avoid duplicates
+    seen_functions = (
+        set()
+    )  # Track functions by (actual_module, function_name) to avoid duplicates
 
     # Use config if provided, otherwise discover modules automatically
     if config and "function_discovery" in config:
@@ -390,24 +416,32 @@ def discover_functions_locally(config=None):
     try:
         # Create user-specific debug log file
         username = getpass.getuser()
-        debug_log_path = os.path.join(tempfile.gettempdir(), f'debug_introspection_{username}.log')
-        with open(debug_log_path, 'a') as f:
+        debug_log_path = os.path.join(
+            tempfile.gettempdir(), f"debug_introspection_{username}.log"
+        )
+        with open(debug_log_path, "a") as f:
             f.write(f"DEBUG: Scanning {len(modules_to_scan)} modules\n")
             if any("examples" in m for m in modules_to_scan):
-                f.write(f"DEBUG: Examples modules found in config: {[m for m in modules_to_scan if 'examples' in m]}\n")
+                f.write(
+                    f"DEBUG: Examples modules found in config: {[m for m in modules_to_scan if 'examples' in m]}\n"
+                )
     except Exception:
         # If debug logging fails, just continue without it
         pass
-    
+
     for module_name in modules_to_scan:
         try:
             # Ensure repo root is in path for examples and LADPackage modules
-            if module_name.startswith('examples') or module_name.startswith('LADPackage'):
+            if module_name.startswith("examples") or module_name.startswith(
+                "LADPackage"
+            ):
                 current_file = os.path.abspath(__file__)
-                repo_root = os.path.dirname(os.path.dirname(current_file))  # Go up 2 levels from shm_function_selector/introspection.py
+                repo_root = os.path.dirname(
+                    os.path.dirname(current_file)
+                )  # Go up 2 levels from shm_function_selector/introspection.py
                 if repo_root not in sys.path:
                     sys.path.insert(0, repo_root)
-                    
+
             module = importlib.import_module(module_name)
             category = _get_category_from_module_name(module_name, config)
 
@@ -421,36 +455,65 @@ def discover_functions_locally(config=None):
                     callable(obj)
                     and not name.startswith("_")
                     and inspect.isfunction(obj)
-                    and hasattr(obj, '__module__')
-                    and (obj.__module__ == module_name or 
-                         (obj.__module__ and obj.__module__.startswith(module_name.split('.')[0])))
+                    and hasattr(obj, "__module__")
+                    and (
+                        obj.__module__ == module_name
+                        or (
+                            obj.__module__
+                            and obj.__module__.startswith(module_name.split(".")[0])
+                        )
+                    )
                     and not _is_external_library_function(obj)
                 ):
                     # Check for duplicates using actual module where function is defined
                     actual_module = obj.__module__ if obj.__module__ else module_name
                     function_key = (actual_module, name)
-                    
+
                     if function_key not in seen_functions:
                         seen_functions.add(function_key)
-                        
-                        func_info = _extract_function_info(obj, name, category, module_name)
+
+                        func_info = _extract_function_info(
+                            obj, name, category, module_name
+                        )
                         if func_info:
                             # Debug output for every function discovered
-                            file_path = getattr(obj, '__code__', {}).co_filename if hasattr(obj, '__code__') else 'unknown'
-                            with open(os.path.join(tempfile.gettempdir(), f'function_discovery_debug_{getpass.getuser()}.log'), 'a') as f:
-                                f.write(f"DISCOVERED: category='{func_info.get('category', 'None')}', name='{func_info.get('name', 'None')}', function='{name}', actual_module='{actual_module}', file='{file_path}'\n")
+                            file_path = (
+                                getattr(obj, "__code__", {}).co_filename
+                                if hasattr(obj, "__code__")
+                                else "unknown"
+                            )
+                            with open(
+                                os.path.join(
+                                    tempfile.gettempdir(),
+                                    f"function_discovery_debug_{getpass.getuser()}.log",
+                                ),
+                                "a",
+                            ) as f:
+                                f.write(
+                                    f"DISCOVERED: category='{func_info.get('category', 'None')}', name='{func_info.get('name', 'None')}', function='{name}', actual_module='{actual_module}', file='{file_path}'\n"
+                                )
                             functions.append(func_info)
                     else:
                         # Debug output for skipped duplicates
-                        with open(os.path.join(tempfile.gettempdir(), f'function_discovery_debug_{getpass.getuser()}.log'), 'a') as f:
-                            f.write(f"SKIPPED DUPLICATE: name='{name}', actual_module='{actual_module}', scanning_module='{module_name}'\n")
+                        with open(
+                            os.path.join(
+                                tempfile.gettempdir(),
+                                f"function_discovery_debug_{getpass.getuser()}.log",
+                            ),
+                            "a",
+                        ) as f:
+                            f.write(
+                                f"SKIPPED DUPLICATE: name='{name}', actual_module='{actual_module}', scanning_module='{module_name}'\n"
+                            )
 
         except ImportError as e:
             # Skip modules that aren't available yet - log for debugging
             try:
                 username = getpass.getuser()
-                debug_log_path = os.path.join(tempfile.gettempdir(), f'debug_introspection_{username}.log')
-                with open(debug_log_path, 'a') as f:
+                debug_log_path = os.path.join(
+                    tempfile.gettempdir(), f"debug_introspection_{username}.log"
+                )
+                with open(debug_log_path, "a") as f:
                     f.write(f"DEBUG: Failed to import {module_name}: {e}\n")
             except Exception:
                 pass
@@ -463,18 +526,18 @@ def _get_category_from_module_name(module_name, config=None):
     """Generate category from configuration or default fallback."""
     if config and "function_discovery" in config:
         custom_categories = config["function_discovery"].get("custom_categories", {})
-        
+
         # Check custom categories first - try exact match first, then prefix match
         if module_name in custom_categories:
             return custom_categories[module_name]
-            
+
         # Try prefix matching for broader categorization
         for module_pattern, category in custom_categories.items():
             if module_name.startswith(module_pattern):
                 return category
-    
+
     # If no config or no match found, return generic category based on module name
-    parts = module_name.split('.')
+    parts = module_name.split(".")
     if len(parts) >= 2:
         return f"{parts[0].title()} - {parts[-1].replace('_', ' ').title()}"
     else:
@@ -484,12 +547,12 @@ def _get_category_from_module_name(module_name, config=None):
 def _extract_category_from_docstring(docstring, fallback_category):
     """Extract category from docstring metadata, fallback if not found."""
     import re
-    
+
     # Look for :category: in the docstring
-    category_match = re.search(r':category:\s*(.+)', docstring)
+    category_match = re.search(r":category:\s*(.+)", docstring)
     if category_match:
         return category_match.group(1).strip()
-    
+
     # Return fallback if not found in docstring
     return fallback_category
 
@@ -508,6 +571,18 @@ def _extract_function_info(func, name, category, module_name=None):
         # Extract category from docstring first, use fallback if not found
         actual_category = _extract_category_from_docstring(docstring, category)
 
+        # Extract file path
+        file_path = "Unknown file"
+        try:
+            file_path = inspect.getfile(func)
+        except (OSError, TypeError):
+            # Fallback to getting from __code__ if available
+            try:
+                if hasattr(func, "__code__") and hasattr(func.__code__, "co_filename"):
+                    file_path = func.__code__.co_filename
+            except:
+                pass
+
         # Extract basic info
         func_info = {
             "name": name,
@@ -520,6 +595,7 @@ def _extract_function_info(func, name, category, module_name=None):
             "parameters": [],
             "returns": _extract_return_info(docstring),
             "guiMetadata": _extract_gui_metadata(docstring),
+            "filePath": file_path,
         }
 
         # Extract parameter information
@@ -556,40 +632,45 @@ def _extract_display_name(docstring, fallback_name):
 def _extract_gui_metadata(docstring):
     """Extract GUI metadata from function docstring."""
     metadata = {}
-    
+
     if not docstring:
         return metadata
-    
-    lines = docstring.split('\n')
+
+    lines = docstring.split("\n")
     in_meta = False
-    
+
     for line in lines:
         stripped = line.strip()
-        
+
         # Look for meta section
-        if stripped.startswith('.. meta::'):
+        if stripped.startswith(".. meta::"):
             in_meta = True
             continue
-        
+
         # Stop at next major section
-        if in_meta and stripped and not stripped.startswith(':') and not stripped.startswith(' '):
+        if (
+            in_meta
+            and stripped
+            and not stripped.startswith(":")
+            and not stripped.startswith(" ")
+        ):
             break
-        
+
         # Extract meta properties
-        if in_meta and ':' in stripped:
-            if stripped.startswith(':category:'):
-                metadata['category'] = stripped.split(':', 2)[2].strip()
-            elif stripped.startswith(':complexity:'):
-                metadata['complexity'] = stripped.split(':', 2)[2].strip()
-            elif stripped.startswith(':data_type:'):
-                metadata['data_type'] = stripped.split(':', 2)[2].strip()
-            elif stripped.startswith(':output_type:'):
-                metadata['output_type'] = stripped.split(':', 2)[2].strip()
-            elif stripped.startswith(':matlab_equivalent:'):
-                metadata['matlab_equivalent'] = stripped.split(':', 2)[2].strip()
-            elif stripped.startswith(':verbose_call:'):
-                metadata['verbose_call'] = stripped.split(':', 2)[2].strip()
-    
+        if in_meta and ":" in stripped:
+            if stripped.startswith(":category:"):
+                metadata["category"] = stripped.split(":", 2)[2].strip()
+            elif stripped.startswith(":complexity:"):
+                metadata["complexity"] = stripped.split(":", 2)[2].strip()
+            elif stripped.startswith(":data_type:"):
+                metadata["data_type"] = stripped.split(":", 2)[2].strip()
+            elif stripped.startswith(":output_type:"):
+                metadata["output_type"] = stripped.split(":", 2)[2].strip()
+            elif stripped.startswith(":matlab_equivalent:"):
+                metadata["matlab_equivalent"] = stripped.split(":", 2)[2].strip()
+            elif stripped.startswith(":verbose_call:"):
+                metadata["verbose_call"] = stripped.split(":", 2)[2].strip()
+
     return metadata
 
 
@@ -642,9 +723,15 @@ def _extract_return_info(docstring):
 
         # Parse return value - skip directive blocks like .. gui:: and documentation lines
         # Check original line for indentation - indented lines are descriptions, not new variables
-        if (in_returns and ":" in stripped and not line.startswith(" ") and not line.startswith("\t")
-            and not stripped.startswith("..") and not stripped.startswith(":")):
-            
+        if (
+            in_returns
+            and ":" in stripped
+            and not line.startswith(" ")
+            and not line.startswith("\t")
+            and not stripped.startswith("..")
+            and not stripped.startswith(":")
+        ):
+
             if current_return:
                 returns.append(current_return)
 
@@ -657,21 +744,33 @@ def _extract_return_info(docstring):
                     "description": "",
                 }
             else:
-                # Single part, treat as name only 
+                # Single part, treat as name only
                 parts = stripped.split(":", 1)
                 name_part = parts[0].strip()
                 description = parts[1].strip() if len(parts) > 1 else ""
-                
+
                 # Skip lines that look like documentation rather than return values
                 # e.g., "Direction codes: 1=X, 2=Y, ..." or "Format: ..."
-                if (name_part.lower().startswith(('direction codes', 'format', 'note', 'example', 
-                                               'possible values', 'values', 'options')) or 
-                    '=' in description or description.startswith(('1', '0', 'see', 'e.g.'))):
+                if (
+                    name_part.lower().startswith(
+                        (
+                            "direction codes",
+                            "format",
+                            "note",
+                            "example",
+                            "possible values",
+                            "values",
+                            "options",
+                        )
+                    )
+                    or "=" in description
+                    or description.startswith(("1", "0", "see", "e.g."))
+                ):
                     continue
-                    
+
                 current_return = {
                     "name": name_part,
-                    "type": "unknown", 
+                    "type": "unknown",
                     "description": description,
                 }
         elif in_returns and current_return and stripped:
