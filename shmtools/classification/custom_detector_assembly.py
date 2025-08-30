@@ -43,6 +43,7 @@ def assemble_outlier_detector_shm(
     3. Semi-parametric Detectors: Gaussian Mixture Models with partitioning
 
         :example_notebooks: ["custom_detector_assembly.ipynb"]
+
     Parameters
     ----------
     suffix : str, optional

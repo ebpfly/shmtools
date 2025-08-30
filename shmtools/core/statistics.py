@@ -476,6 +476,7 @@ def crest_factor_shm(X: np.ndarray) -> np.ndarray:
     early stages of gear and bearing failure.
 
         :example_notebooks: ["ball_bearing_fault_analysis.ipynb", "gearbox_fault_analysis.ipynb", "gearbox_fault_analysis_executed.ipynb", "gearbox_fault_analysis_test.ipynb"]
+
     Parameters
     ----------
     X : ndarray, shape (samples, channels, instances)
@@ -554,6 +555,7 @@ def stat_moments_shm(X: np.ndarray) -> np.ndarray:
     (1) mean, (2) standard deviation, (3) skewness, (4) kurtosis
 
         :example_notebooks: ["ball_bearing_fault_analysis.ipynb", "gearbox_fault_analysis.ipynb", "gearbox_fault_analysis_executed.ipynb", "gearbox_fault_analysis_test.ipynb", "nlpca_outlier_detection.ipynb"]
+
     Parameters
     ----------
     X : ndarray, shape (time, channels, instances)
@@ -646,6 +648,7 @@ def rms_shm(X: np.ndarray) -> np.ndarray:
         :verbose_call: [RMS Feature Matrix] = Root Mean Square Feature (Signal Matrix)
 
         :example_notebooks: ["gearbox_fault_analysis.ipynb", "gearbox_fault_analysis_executed.ipynb", "gearbox_fault_analysis_test.ipynb"]
+
     Parameters
     ----------
     X : ndarray, shape (samples, channels, instances)

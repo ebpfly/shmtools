@@ -179,7 +179,7 @@ def update_function_docstring(file_path: Path, func_name: str, notebook_refs: Li
             
             # Insert the new line before the end of meta section
             notebooks_str = ', '.join([f'"{nb}"' for nb in notebook_refs])
-            new_line = f'{indent}:example_notebooks: [{notebooks_str}]\n'
+            new_line = f'{indent}:example_notebooks: [{notebooks_str}]\n\n'  # Added extra newline for spacing
             
             # Insert right before meta_end_idx
             new_lines.insert(meta_end_idx, new_line)

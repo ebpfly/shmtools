@@ -169,6 +169,7 @@ def scale_min_max_shm(
         :verbose_call: [Scaled Time Series Data] = Scale Minimum Maximum (Data Matrix, Dimension to Scale, Scale Range)
 
         :example_notebooks: ["data_normalization_modal_properties.ipynb", "final_validation.ipynb", "svd_outlier_detection.ipynb", "temp_final_test.ipynb"]
+
     Parameters
     ----------
     X : array_like
@@ -387,6 +388,7 @@ def envelope_shm(X: np.ndarray) -> np.ndarray:
     bands.
 
         :example_notebooks: ["ball_bearing_fault_analysis.ipynb"]
+
     Parameters
     ----------
     X : ndarray, shape (samples, channels, instances)
@@ -464,6 +466,7 @@ def demean_shm(X: np.ndarray) -> np.ndarray:
     dimension (time samples) for each channel and instance independently.
 
         :example_notebooks: ["ball_bearing_fault_analysis.ipynb", "gearbox_fault_analysis.ipynb", "gearbox_fault_analysis_executed.ipynb", "gearbox_fault_analysis_test.ipynb"]
+
     Parameters
     ----------
     X : ndarray, shape (samples, channels, instances)
@@ -531,6 +534,7 @@ def filter_shm(X: np.ndarray, filter_coef: np.ndarray) -> np.ndarray:
     signal is equal to the signal length of the output signal.
 
         :example_notebooks: ["gearbox_fault_analysis.ipynb", "gearbox_fault_analysis_executed.ipynb", "gearbox_fault_analysis_test.ipynb"]
+
     Parameters
     ----------
     X : ndarray, shape (samples, channels, instances)
@@ -634,6 +638,7 @@ def window_shm(
     design and 'PERIODIC' is useful for DFT/FFT and spectral analysis.
 
         :example_notebooks: ["gearbox_fault_analysis.ipynb", "gearbox_fault_analysis_executed.ipynb", "gearbox_fault_analysis_test.ipynb"]
+
     Parameters
     ----------
     win_type : str

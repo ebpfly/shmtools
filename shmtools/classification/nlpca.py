@@ -54,6 +54,7 @@ def learn_nlpca_shm(
         :output_type: Model
 
         :example_notebooks: ["nlpca_outlier_detection.ipynb"]
+
     Parameters
     ----------
     X : array_like
@@ -247,6 +248,7 @@ def score_nlpca_shm(
         :output_type: Scores
 
         :example_notebooks: ["nlpca_outlier_detection.ipynb"]
+
     Parameters
     ----------
     Y : array_like

@@ -409,6 +409,7 @@ def learn_kernel_density_shm(
         :verbose_call: Model = Learn Kernel Density Estimation (Training Features, Bandwidth Matrix, Kernel Function, Bandwidth Selection Method)
 
         :example_notebooks: ["direct_use_nonparametric.ipynb"]
+
     Parameters
     ----------
     X : array_like
@@ -507,6 +508,7 @@ def score_kernel_density_shm(
         :verbose_call: Density Scores = Score Kernel Density Estimation (Test Features, Model, Use Log Densities)
 
         :example_notebooks: ["direct_use_nonparametric.ipynb"]
+
     Parameters
     ----------
     Y : array_like
@@ -801,6 +803,7 @@ def learn_fast_metric_kernel_density_shm(
         :verbose_call: Model = Learn Fast Metric Kernel Density (Training Features, Bandwidth, Kernel Type, Distance Metric)
 
         :example_notebooks: ["fast_metric_kernel_density.ipynb"]
+
     Parameters
     ----------
     X : array_like
@@ -900,6 +903,7 @@ def score_fast_metric_kernel_density_shm(
         :verbose_call: Density Scores = Score Fast Metric Kernel Density (Test Features, Model)
 
         :example_notebooks: ["fast_metric_kernel_density.ipynb"]
+
     Parameters
     ----------
     Y : array_like

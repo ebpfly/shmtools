@@ -36,6 +36,7 @@ def ars_tach_shm(
         :verbose_call: [Angular Resampled Signal, Angular Domain] = Angular Resampling from Tachometer (Signal Matrix, Tachometer Signal, Sampling Frequency, Pulses Per Revolution, Gear Ratio, Angular Resolution)
 
         :example_notebooks: ["ball_bearing_fault_analysis.ipynb", "gearbox_fault_analysis.ipynb", "gearbox_fault_analysis_executed.ipynb", "gearbox_fault_analysis_test.ipynb"]
+
     Parameters
     ----------
     data : array_like, shape (n_samples,) or (n_samples, n_channels)

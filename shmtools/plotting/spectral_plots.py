@@ -34,6 +34,7 @@ def plot_scores_shm(
         :verbose_call: [Axes Handle] = Plot Detection Scores (Scores, Detected States, State Names, Threshold, Use Bar Chart, Show Legend, Axes Handle)
 
         :example_notebooks: ["ni_ultrasonic_daq.ipynb"]
+
     Parameters
     ----------
     scores : array_like, shape (n_tests,)
@@ -583,6 +584,7 @@ def plot_roc_shm(
     for each column of TPR and FPR.
 
         :example_notebooks: ["ball_bearing_fault_analysis.ipynb"]
+
     Parameters
     ----------
     tpr : ndarray, shape (points, curves)
@@ -719,6 +721,7 @@ def plot_time_freq_shm(
     stft_shm or dwvd_shm.
 
         :example_notebooks: ["gearbox_fault_analysis.ipynb", "gearbox_fault_analysis_executed.ipynb", "gearbox_fault_analysis_test.ipynb"]
+
     Parameters
     ----------
     time_freq_matrix : ndarray, shape (freq, time, channels, instances)
@@ -902,6 +905,7 @@ def plot_scalogram_shm(
     Create a time-frequency plot from output of cwt_scalogram_shm.
 
         :example_notebooks: ["gearbox_fault_analysis.ipynb", "gearbox_fault_analysis_executed.ipynb", "gearbox_fault_analysis_test.ipynb"]
+
     Parameters
     ----------
     scalo_matrix : ndarray, shape (n_scale, time, channels, instances)
@@ -1333,6 +1337,7 @@ def plot_features_shm(
     different structural states or conditions.
 
         :example_notebooks: ["gearbox_fault_analysis.ipynb", "gearbox_fault_analysis_executed.ipynb", "gearbox_fault_analysis_test.ipynb"]
+
     Parameters
     ----------
     feature_vectors : ndarray, shape (instances, features)

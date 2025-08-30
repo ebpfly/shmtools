@@ -137,6 +137,7 @@ def incoherent_matched_filter_shm(
         :verbose_call: Filter Result = Incoherent Matched Filter (Waveform, Matched Waveform)
 
         :example_notebooks: ["active_sensing_feature_extraction.ipynb"]
+
     Parameters
     ----------
     waveform : array_like

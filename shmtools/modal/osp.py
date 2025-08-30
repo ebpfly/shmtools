@@ -33,6 +33,7 @@ def response_interp_shm(
         :verbose_call: [Response XYZ] = Response Interpolation (Geometry Layout, Displacement Vector, Response DOF, Use 3D Interpolation)
 
         :example_notebooks: ["optimal_sensor_placement.ipynb", "optimal_sensor_placement_executed.ipynb", "optimal_sensor_placement_fixed.ipynb"]
+
     Parameters
     ----------
     geom_layout : array_like, shape (n_nodes, 3) or (4, n_nodes)
@@ -202,6 +203,7 @@ def osp_fisher_info_eiv_shm(
         :verbose_call: [Optimal DOF List, Determinant Q] = OSP Fisher Information EI (Number of Sensors, Mode Shapes, Covariance Matrix)
 
         :example_notebooks: ["optimal_sensor_placement.ipynb", "optimal_sensor_placement_executed.ipynb", "optimal_sensor_placement_fixed.ipynb"]
+
     Parameters
     ----------
     num_sensors : int
@@ -346,6 +348,7 @@ def get_sensor_layout_shm(
         :verbose_call: [Sensor Layout] = Get Sensor Layout (Optimal DOF List, Response DOF, Node Layout)
 
         :example_notebooks: ["optimal_sensor_placement.ipynb", "optimal_sensor_placement_executed.ipynb", "optimal_sensor_placement_fixed.ipynb"]
+
     Parameters
     ----------
     op_list : array_like, shape (n_sensors,)
@@ -427,6 +430,7 @@ def osp_max_norm_shm(
         :verbose_call: [Optimal DOF List] = OSP Maximum Norm (Number of Sensors, Mode Shapes, Weights, Dualing Distance, Response DOF, Geometry Layout)
 
         :example_notebooks: ["optimal_sensor_placement.ipynb", "optimal_sensor_placement_executed.ipynb", "optimal_sensor_placement_fixed.ipynb"]
+
     Parameters
     ----------
     num_sensors : int
