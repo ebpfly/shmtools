@@ -294,6 +294,8 @@ def build_contained_grid_shm(
         :display_name: Build Contained Grid
         :verbose_call: [Grid Points, Points of Interest Mask, X Matrix, Y Matrix] = Build Contained Grid (Border Structure, X Spacing, Y Spacing)
 
+        :example_notebooks: ["active_sensing_feature_extraction.ipynb"]
+
     Parameters
     ----------
     border_struct : list of array_like
@@ -408,6 +410,8 @@ def sensor_pair_line_of_sight_shm(
         :output_type: Visibility Matrix
         :display_name: Sensor Pair Line of Sight
         :verbose_call: [Line of Sight Matrix] = Sensor Pair Line of Sight (Pair List, Sensor Layout, Points of Interest, Border)
+
+        :example_notebooks: ["active_sensing_feature_extraction.ipynb"]
 
     Parameters
     ----------

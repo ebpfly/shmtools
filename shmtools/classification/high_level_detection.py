@@ -39,6 +39,8 @@ def train_outlier_detector_shm(
         :display_name: Train Outlier Detector
         :verbose_call: [Models] = Train Outlier Detector (Training Features, Number of Clusters, Confidence, Model File Name, Distribution Type)
 
+        :example_notebooks: ["how_to_use_default_detectors.ipynb"]
+
     Parameters
     ----------
     X_good : array_like
@@ -220,6 +222,8 @@ def detect_outlier_shm(
         :output_type: Classification
         :display_name: Detect Outlier
         :verbose_call: [Results, Confidences, Scores, Threshold] = Detect Outlier (Test Features, Model File Name, Models, Threshold, Sensor Codes)
+
+        :example_notebooks: ["custom_detector_assembly.ipynb", "how_to_use_default_detectors.ipynb"]
 
     Parameters
     ----------

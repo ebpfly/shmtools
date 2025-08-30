@@ -25,6 +25,8 @@ def learn_mahalanobis_shm(X: np.ndarray) -> Dict[str, Any]:
         :display_name: Learn Mahalanobis
         :verbose_call: [Model] = Learn Mahalanobis (Training Features)
 
+        :example_notebooks: ["chi_square_outlier_detection.ipynb", "damage_localization_ar_arx.ipynb", "damage_localization_ar_arx_executed.ipynb", "damage_localization_ar_arx_fixed.ipynb", "daq_ar_mahalanobis_integration.ipynb", "data_normalization_modal_properties.ipynb", "final_validation.ipynb", "mahalanobis_outlier_detection.ipynb", "ni_ultrasonic_daq.ipynb", "temp_final_test.ipynb"]
+
     Parameters
     ----------
     X : array_like
@@ -86,6 +88,8 @@ def score_mahalanobis_shm(Y: np.ndarray, model: Dict[str, Any]) -> np.ndarray:
         :output_type: Scores
         :display_name: Score Mahalanobis
         :verbose_call: [Scores] = Score Mahalanobis (Test Features, Model)
+
+        :example_notebooks: ["chi_square_outlier_detection.ipynb", "damage_localization_ar_arx.ipynb", "damage_localization_ar_arx_executed.ipynb", "damage_localization_ar_arx_fixed.ipynb", "daq_ar_mahalanobis_integration.ipynb", "data_normalization_modal_properties.ipynb", "final_validation.ipynb", "mahalanobis_outlier_detection.ipynb", "ni_ultrasonic_daq.ipynb", "temp_final_test.ipynb"]
 
     Parameters
     ----------
@@ -167,6 +171,8 @@ def learn_svd_shm(X: np.ndarray, param_stand: bool = True) -> Dict[str, Any]:
         :output_type: Model
         :display_name: Learn Singular Value Decomposition
         :verbose_call: [Model] = Learn Singular Value Decomposition (Training Features, Standardization)
+
+        :example_notebooks: ["svd_outlier_detection.ipynb"]
 
     Parameters
     ----------
@@ -253,6 +259,8 @@ def score_svd_shm(
         :output_type: Scores
         :display_name: Score Singular Value Decomposition
         :verbose_call: [Scores, Residuals] = Score Singular Value Decomposition (Test Features, SVD Model)
+
+        :example_notebooks: ["svd_outlier_detection.ipynb"]
 
     Parameters
     ----------
@@ -345,6 +353,8 @@ def learn_pca_shm(
         :output_type: Model
         :display_name: Learn Principal Component Analysis
         :verbose_call: [Model] = Learn Principal Component Analysis (Training Features, Percentage of Variance, Standardization)
+
+        :example_notebooks: ["data_normalization_modal_properties.ipynb", "final_validation.ipynb", "pca_outlier_detection.ipynb", "temp_final_test.ipynb"]
 
     Parameters
     ----------
@@ -464,6 +474,8 @@ def score_pca_shm(
         :display_name: Score Principal Component Analysis
         :verbose_call: [Scores, Residuals] = Score Principal Component Analysis (Test Features, Model)
 
+        :example_notebooks: ["data_normalization_modal_properties.ipynb", "final_validation.ipynb", "pca_outlier_detection.ipynb", "temp_final_test.ipynb"]
+
     Parameters
     ----------
     Y : array_like
@@ -546,6 +558,8 @@ def roc_shm(
         :output_type: Performance Metrics
         :display_name: ROC Curve
         :verbose_call: [True Positive Rate, False Positive Rate] = ROC Curve (Scores, Damage States, Number of Points, Threshold Type)
+
+        :example_notebooks: ["ball_bearing_fault_analysis.ipynb", "custom_detector_assembly.ipynb", "data_normalization_modal_properties.ipynb", "direct_use_nonparametric.ipynb", "direct_use_semiparametric.ipynb", "factor_analysis_test.ipynb", "final_validation.ipynb", "gearbox_fault_analysis.ipynb", "gearbox_fault_analysis_executed.ipynb", "gearbox_fault_analysis_test.ipynb", "how_to_use_default_detectors.ipynb", "svd_outlier_detection.ipynb", "temp_final_test.ipynb"]
 
     Parameters
     ----------
@@ -673,6 +687,8 @@ def learn_factor_analysis_shm(
         :output_type: Model
         :display_name: Learn Factor Analysis
         :verbose_call: [Factor Analysis Model] = Learn Factor Analysis (Training Features, Number of Factors, Estimation Method)
+
+        :example_notebooks: ["factor_analysis_final_validated.ipynb", "factor_analysis_outlier_detection.ipynb", "factor_analysis_test.ipynb"]
 
     Parameters
     ----------
@@ -805,6 +821,8 @@ def score_factor_analysis_shm(
         :output_type: Scores
         :display_name: Score Factor Analysis
         :verbose_call: [Scores, Unique Factors, Factor Scores] = Score Factor Analysis (Test Features, Factor Analysis Model)
+
+        :example_notebooks: ["factor_analysis_final_validated.ipynb", "factor_analysis_outlier_detection.ipynb", "factor_analysis_test.ipynb"]
 
     Parameters
     ----------

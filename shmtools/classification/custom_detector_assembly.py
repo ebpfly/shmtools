@@ -42,6 +42,8 @@ def assemble_outlier_detector_shm(
     2. Non-parametric Detectors: Kernel density estimation with various kernels
     3. Semi-parametric Detectors: Gaussian Mixture Models with partitioning
 
+        :example_notebooks: ["custom_detector_assembly.ipynb"]
+
     Parameters
     ----------
     suffix : str, optional

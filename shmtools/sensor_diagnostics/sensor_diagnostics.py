@@ -35,6 +35,8 @@ def sd_feature_shm(admittance_data: np.ndarray) -> np.ndarray:
         :data_type: Frequency Response
         :output_type: Features
 
+        :example_notebooks: ["sensor_diagnostics.ipynb"]
+
     Parameters
     ----------
     admittance_data : array_like
@@ -110,6 +112,8 @@ def sd_autoclassify_shm(
         :complexity: Intermediate
         :data_type: Features
         :output_type: Classification
+
+        :example_notebooks: ["sensor_diagnostics.ipynb"]
 
     Parameters
     ----------
@@ -280,6 +284,8 @@ def sd_plot_shm(data_for_plotting: Dict[str, Any]) -> None:
         :complexity: Basic
         :data_type: Plotting Data
         :output_type: Visualization
+
+        :example_notebooks: ["sensor_diagnostics.ipynb"]
 
     Parameters
     ----------

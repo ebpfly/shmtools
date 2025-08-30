@@ -22,6 +22,8 @@ def time_sync_avg_shm(x_ars_matrix: np.ndarray, samples_per_rev: int) -> np.ndar
         :display_name: Time Synchronous Average
         :verbose_call: [TSA Matrix] = Time Sync Avg (Angular Matrix, SPR)
 
+        :example_notebooks: ["time_synchronous_averaging_demo.ipynb"]
+
     Parameters
     ----------
     x_ars_matrix : array_like
