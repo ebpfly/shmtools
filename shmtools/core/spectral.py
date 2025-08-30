@@ -38,6 +38,7 @@ def psd_welch_shm(
     a signal. Typically the number of overlapping segments should be
     between 50 to 75 percent of the window length.
 
+        :example_notebooks: ["ball_bearing_fault_analysis.ipynb", "gearbox_fault_analysis.ipynb", "gearbox_fault_analysis_executed.ipynb", "gearbox_fault_analysis_test.ipynb"]
     Parameters
     ----------
     X : ndarray, shape (time, channels, instances)
@@ -210,6 +211,7 @@ def stft_shm(
         :display_name: Short-Time Fourier Transform
         :verbose_call: [Frequency, Time, STFT] = Short-Time Fourier Transform (Signal, Sampling Rate, Window, Segment Length, Overlap, FFT Length)
 
+        :example_notebooks: ["gearbox_fault_analysis.ipynb", "gearbox_fault_analysis_executed.ipynb", "gearbox_fault_analysis_test.ipynb"]
     Parameters
     ----------
     X : array_like
@@ -858,6 +860,7 @@ def hoelder_exp_shm(scalo_matrix: np.ndarray, f: np.ndarray) -> np.ndarray:
     the slope. This allows for non-linearities to be more easily detected in
     vibration signals.
 
+        :example_notebooks: ["gearbox_fault_analysis.ipynb", "gearbox_fault_analysis_executed.ipynb", "gearbox_fault_analysis_test.ipynb"]
     Parameters
     ----------
     scalo_matrix : ndarray, shape (n_freq, time, channels, instances)
@@ -1019,6 +1022,7 @@ def dwvd_shm(
     negative values which are not actually present in the signal being
     analyzed.
 
+        :example_notebooks: ["gearbox_fault_analysis.ipynb", "gearbox_fault_analysis_executed.ipynb", "gearbox_fault_analysis_test.ipynb"]
     Parameters
     ----------
     X : ndarray, shape (time, channels, instances)
@@ -1269,6 +1273,7 @@ def lpc_spectrogram_shm(
     the spectral envelope, providing better frequency resolution than
     traditional periodogram-based methods.
 
+        :example_notebooks: ["gearbox_fault_analysis.ipynb", "gearbox_fault_analysis_executed.ipynb", "gearbox_fault_analysis_test.ipynb"]
     Parameters
     ----------
     X : ndarray, shape (time, channels, instances)

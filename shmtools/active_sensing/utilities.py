@@ -24,6 +24,7 @@ def extract_subsets_shm(
         :display_name: Extract Subsets
         :verbose_call: Data Subsets = Extract Subsets (Data, Start Indices, Subset Window)
 
+        :example_notebooks: ["active_sensing_feature_extraction.ipynb"]
     Parameters
     ----------
     data : array_like
@@ -209,6 +210,7 @@ def flex_logic_filter_shm(
         :display_name: Flexible Logic Filter
         :verbose_call: Filtered Data = Flexible Logic Filter (Data, Logic Filter, Dimensions)
 
+        :example_notebooks: ["active_sensing_feature_extraction.ipynb"]
     Parameters
     ----------
     data : array_like
@@ -305,6 +307,7 @@ def sum_mult_dims_shm(data: np.ndarray, dimensions: List[int]) -> np.ndarray:
         :display_name: Sum Multiple Dimensions
         :verbose_call: [Data Sum] = Sum Multiple Dimensions (Data, Dimensions)
 
+        :example_notebooks: ["active_sensing_feature_extraction.ipynb"]
     Parameters
     ----------
     data : array_like
@@ -376,6 +379,7 @@ def estimate_group_velocity_shm(
         :display_name: Estimate Wavespeed
         :verbose_call: [Estimated Speed, Speed List] = Estimate Wavespeed (Waveform, Pair List, Sensor Layout, Sampling Rate, Actuation Width, Line of Sight)
 
+        :example_notebooks: ["active_sensing_feature_extraction.ipynb"]
     Parameters
     ----------
     waveform : array_like

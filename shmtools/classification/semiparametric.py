@@ -244,6 +244,7 @@ def score_gmm_shm(
         :display_name: Score Gaussian Mixture Model
         :verbose_call: Density Scores = Score Gaussian Mixture Model (Test Features, Model, Use Log Densities)
 
+        :example_notebooks: ["direct_use_semiparametric.ipynb"]
     Parameters
     ----------
     Y : array_like
@@ -367,6 +368,7 @@ def learn_gmm_semiparametric_model_shm(
         :display_name: Learn GMM Semi-Parametric Density Model
         :verbose_call: Density Model = Learn GMM semi-Parametric Density Model (Training Features, Partition Function, k)
 
+        :example_notebooks: ["direct_use_semiparametric.ipynb"]
     Parameters
     ----------
     X : array_like
@@ -450,6 +452,7 @@ def score_gmm_semiparametric_model_shm(
         :display_name: Score GMM Semi-Parametric Density Model
         :verbose_call: Density Scores = Score GMM Semi-Parametric Density Model (Test Features, Model)
 
+        :example_notebooks: ["direct_use_semiparametric.ipynb"]
     Parameters
     ----------
     Y : array_like

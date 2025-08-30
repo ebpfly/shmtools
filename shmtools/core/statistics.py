@@ -475,6 +475,7 @@ def crest_factor_shm(X: np.ndarray) -> np.ndarray:
     crest factor has been found to be more sensitive to damage incurred in
     early stages of gear and bearing failure.
 
+        :example_notebooks: ["ball_bearing_fault_analysis.ipynb", "gearbox_fault_analysis.ipynb", "gearbox_fault_analysis_executed.ipynb", "gearbox_fault_analysis_test.ipynb"]
     Parameters
     ----------
     X : ndarray, shape (samples, channels, instances)
@@ -552,6 +553,7 @@ def stat_moments_shm(X: np.ndarray) -> np.ndarray:
     Returns the first four statistical moments as damage sensitive features:
     (1) mean, (2) standard deviation, (3) skewness, (4) kurtosis
 
+        :example_notebooks: ["ball_bearing_fault_analysis.ipynb", "gearbox_fault_analysis.ipynb", "gearbox_fault_analysis_executed.ipynb", "gearbox_fault_analysis_test.ipynb", "nlpca_outlier_detection.ipynb"]
     Parameters
     ----------
     X : ndarray, shape (time, channels, instances)
@@ -643,6 +645,7 @@ def rms_shm(X: np.ndarray) -> np.ndarray:
         :display_name: Root Mean Square Feature
         :verbose_call: [RMS Feature Matrix] = Root Mean Square Feature (Signal Matrix)
 
+        :example_notebooks: ["gearbox_fault_analysis.ipynb", "gearbox_fault_analysis_executed.ipynb", "gearbox_fault_analysis_test.ipynb"]
     Parameters
     ----------
     X : ndarray, shape (samples, channels, instances)

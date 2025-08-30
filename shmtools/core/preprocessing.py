@@ -168,6 +168,7 @@ def scale_min_max_shm(
         :output_type: Time Series
         :verbose_call: [Scaled Time Series Data] = Scale Minimum Maximum (Data Matrix, Dimension to Scale, Scale Range)
 
+        :example_notebooks: ["data_normalization_modal_properties.ipynb", "final_validation.ipynb", "svd_outlier_detection.ipynb", "temp_final_test.ipynb"]
     Parameters
     ----------
     X : array_like
@@ -385,6 +386,7 @@ def envelope_shm(X: np.ndarray) -> np.ndarray:
     method which looks at the spectral kurtosis of different frequency
     bands.
 
+        :example_notebooks: ["ball_bearing_fault_analysis.ipynb"]
     Parameters
     ----------
     X : ndarray, shape (samples, channels, instances)
@@ -461,6 +463,7 @@ def demean_shm(X: np.ndarray) -> np.ndarray:
     removal or constant detrending. The mean is computed along the first
     dimension (time samples) for each channel and instance independently.
 
+        :example_notebooks: ["ball_bearing_fault_analysis.ipynb", "gearbox_fault_analysis.ipynb", "gearbox_fault_analysis_executed.ipynb", "gearbox_fault_analysis_test.ipynb"]
     Parameters
     ----------
     X : ndarray, shape (samples, channels, instances)
@@ -527,6 +530,7 @@ def filter_shm(X: np.ndarray, filter_coef: np.ndarray) -> np.ndarray:
     off the length of the signal such that the signal length of the input
     signal is equal to the signal length of the output signal.
 
+        :example_notebooks: ["gearbox_fault_analysis.ipynb", "gearbox_fault_analysis_executed.ipynb", "gearbox_fault_analysis_test.ipynb"]
     Parameters
     ----------
     X : ndarray, shape (samples, channels, instances)
@@ -629,6 +633,7 @@ def window_shm(
     and the samples [1:N] are returned. 'SYMMETRIC' should be used for filter
     design and 'PERIODIC' is useful for DFT/FFT and spectral analysis.
 
+        :example_notebooks: ["gearbox_fault_analysis.ipynb", "gearbox_fault_analysis_executed.ipynb", "gearbox_fault_analysis_test.ipynb"]
     Parameters
     ----------
     win_type : str

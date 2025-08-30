@@ -25,6 +25,7 @@ def band_lim_white_noise_shm(
         :display_name: Band-Limited White Noise
         :verbose_call: [Excitation Signal] = Band-Limited White Noise (Array Size, Cutoff Frequencies, RMS Level, Filter Order)
 
+        :example_notebooks: ["ni_ultrasonic_daq.ipynb"]
     Parameters
     ----------
     array_size : tuple of int

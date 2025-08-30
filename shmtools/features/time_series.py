@@ -25,6 +25,7 @@ def ar_model_shm(
         :display_name: AR Model
         :verbose_call: [AR Parameters Feature Vectors, RMS Residuals Feature Vectors, AR Parameters, AR Residuals, AR Prediction] = AR Model (Time Series Data, AR Model Order)
 
+        :example_notebooks: ["ar_model_order_selection.ipynb", "chi_square_outlier_detection.ipynb", "custom_detector_assembly.ipynb", "damage_localization_ar_arx.ipynb", "damage_localization_ar_arx_executed.ipynb", "damage_localization_ar_arx_fixed.ipynb", "daq_ar_mahalanobis_integration.ipynb", "direct_use_nonparametric.ipynb", "direct_use_semiparametric.ipynb", "factor_analysis_final_validated.ipynb", "factor_analysis_outlier_detection.ipynb", "factor_analysis_test.ipynb", "how_to_use_default_detectors.ipynb", "mahalanobis_outlier_detection.ipynb", "ni_ultrasonic_daq.ipynb", "pca_outlier_detection.ipynb", "svd_outlier_detection.ipynb"]
     Parameters
     ----------
     X : array_like
@@ -219,6 +220,7 @@ def ar_model_order_shm(
         :display_name: AR Model Order
         :verbose_call: [Mean AR Order, AR Orders, Model] = AR Model Order (Time Series Data, Method, Maximum AR Order, Tolerance)
 
+        :example_notebooks: ["ar_model_order_selection.ipynb", "ni_ultrasonic_daq.ipynb"]
     Parameters
     ----------
     X : array_like
@@ -471,6 +473,7 @@ def arx_model_shm(
         :display_name: ARX Model
         :verbose_call: [ARX Parameters Feature Vectors, RMS Residuals Feature Vectors, ARX Parameters, ARX Residuals, ARX Prediction, ARX Model Orders] = ARX Model (Time Series Data, ARX Model Orders)
 
+        :example_notebooks: ["damage_localization_ar_arx.ipynb", "damage_localization_ar_arx_executed.ipynb", "damage_localization_ar_arx_fixed.ipynb"]
     Parameters
     ----------
     X : array_like
@@ -764,6 +767,7 @@ def split_features_shm(
         :display_name: Split Features Into Training and Scoring
         :verbose_call: [Training Features, Scoring Features, All Features] = Split Features Into Training and Scoring (Features, Training Indices, Scoring Indices, Feature Indices to Use)
 
+        :example_notebooks: ["chi_square_outlier_detection.ipynb"]
     Parameters
     ----------
     features : array_like

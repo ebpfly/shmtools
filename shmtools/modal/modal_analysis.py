@@ -44,6 +44,7 @@ def frf_shm(
         :data_type: Time Series
         :output_type: Frequency Response
 
+        :example_notebooks: ["data_normalization_modal_properties.ipynb", "final_validation.ipynb", "temp_final_test.ipynb"]
     Parameters
     ----------
     data : array_like
@@ -226,6 +227,7 @@ def rpfit_shm(
         :data_type: Frequency Response
         :output_type: Modal Parameters
 
+        :example_notebooks: ["data_normalization_modal_properties.ipynb", "final_validation.ipynb", "temp_final_test.ipynb"]
     Parameters
     ----------
     frf_data : array_like
