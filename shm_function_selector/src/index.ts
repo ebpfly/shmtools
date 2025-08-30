@@ -1780,7 +1780,7 @@ class SHMFunctionSelector {
       `;
 
       const verboseCallLabel = document.createElement('div');
-      verboseCallLabel.textContent = 'Usage Example:';
+      verboseCallLabel.textContent = 'Verbose Call Signature:';
       verboseCallLabel.style.cssText = `
         color: #666;
         font-size: 11px;
