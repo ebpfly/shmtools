@@ -205,13 +205,18 @@ if [ "${ENABLE_SSL}" = "true" ] && [ -n "${USE_DOMAIN}" ]; then
       chown root:root /opt/tljh/state/traefik/acme/acme.json
       
       log_success "Valid Let's Encrypt certificate backup restored"
+      
+      # Mark that we restored a certificate so we can restart Traefik after TLJH install
+      CERT_WAS_RESTORED=true
     else
       log_step "Certificate backup exists but contains no valid certificates"
       log_step "Will generate new certificates (backup likely from rate-limited attempt)"
+      CERT_WAS_RESTORED=false
     fi
     
     rm -f /tmp/acme-restore.json
   else
+    CERT_WAS_RESTORED=false
     log_step "No certificate backup found, will generate new certificates"
   fi
 fi
@@ -246,6 +251,26 @@ if [ "${ENABLE_SSL}" = "true" ] && [ -n "${USE_DOMAIN}" ]; then
   # Running the installer directly is more reliable for applying HTTPS configuration
   log_step "🔄 Regenerating Traefik configuration with HTTPS support..."
   /opt/tljh/hub/bin/python3 -m tljh.installer --admin ${JUPYTER_ADMIN_USER} 2>&1 | sed 's/^/[TLJH-REGEN] /'
+  
+  # If we restored a certificate, make sure Traefik uses it
+  if [ "${CERT_WAS_RESTORED}" = "true" ]; then
+    log_step "🔐 Applying restored Let's Encrypt certificate..."
+    
+    # Ensure the acme.json is in the right place for Traefik
+    if [ -f /opt/tljh/state/acme.json ]; then
+      # Copy to Traefik's expected location
+      mkdir -p /etc/traefik
+      cp /opt/tljh/state/acme.json /etc/traefik/acme.json
+      chmod 600 /etc/traefik/acme.json
+      
+      # Restart Traefik to use the restored certificate
+      log_step "🔄 Restarting Traefik to use restored certificate..."
+      systemctl restart traefik
+      sleep 5
+      
+      log_success "✅ Restored Let's Encrypt certificate applied"
+    fi
+  fi
   
   # Wait for services to stabilize
   log_step "⏳ Waiting for services to stabilize..."

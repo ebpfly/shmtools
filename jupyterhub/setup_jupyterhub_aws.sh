@@ -173,8 +173,8 @@ echo "➡ Attaching AmazonSSMManagedInstanceCore (for SSM agent)…"
 aws iam attach-role-policy --role-name "$ROLE_NAME" \
   --policy-arn "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore" || true
 
-echo "➡ Adding inline policy to read ${GITHUB_PAT_SSM_PARAMETER_NAME}…"
-cat > /tmp/allow-read-github-pat.json <<POL
+echo "➡ Adding inline policy for SSM and S3 certificate access…"
+cat > /tmp/tljh-instance-policy.json <<POL
 {
   "Version":"2012-10-17",
   "Statement":[
@@ -190,13 +190,26 @@ cat > /tmp/allow-read-github-pat.json <<POL
       "Action":["kms:Decrypt"],
       "Resource":"*",
       "Condition":{"StringEquals":{"kms:ViaService":"ssm.${AWS_REGION}.amazonaws.com"}}
+    },
+    {
+      "Sid":"AccessCertificateBucket",
+      "Effect":"Allow",
+      "Action":[
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:ListBucket"
+      ],
+      "Resource":[
+        "arn:aws:s3:::${CERT_BACKUP_BUCKET}/*",
+        "arn:aws:s3:::${CERT_BACKUP_BUCKET}"
+      ]
     }
   ]
 }
 POL
 aws iam put-role-policy --role-name "$ROLE_NAME" \
-  --policy-name "AllowReadGithubPAT" \
-  --policy-document file:///tmp/allow-read-github-pat.json
+  --policy-name "TLJHInstancePolicy" \
+  --policy-document file:///tmp/tljh-instance-policy.json
 
 echo "👤 Ensuring instance profile '$PROFILE_NAME' exists…"
 if ! aws iam get-instance-profile --instance-profile-name "$PROFILE_NAME" >/dev/null 2>&1; then
@@ -205,6 +218,23 @@ if ! aws iam get-instance-profile --instance-profile-name "$PROFILE_NAME" >/dev/
   echo "✔ Created instance profile and attached role"
 else
   echo "✔ Instance profile exists"
+fi
+
+# --- S3 bucket for certificate backups ---
+echo "🪣 Ensuring S3 bucket '${CERT_BACKUP_BUCKET}' exists for certificate backups…"
+if aws s3api head-bucket --bucket "${CERT_BACKUP_BUCKET}" --region "${AWS_REGION}" --profile "${AWS_PROFILE}" 2>/dev/null; then
+  echo "✔ S3 bucket ${CERT_BACKUP_BUCKET} already exists"
+else
+  echo "➡ Creating S3 bucket ${CERT_BACKUP_BUCKET}..."
+  if [ "${AWS_REGION}" = "us-east-1" ]; then
+    aws s3api create-bucket --bucket "${CERT_BACKUP_BUCKET}" \
+      --region "${AWS_REGION}" --profile "${AWS_PROFILE}"
+  else
+    aws s3api create-bucket --bucket "${CERT_BACKUP_BUCKET}" \
+      --region "${AWS_REGION}" --profile "${AWS_PROFILE}" \
+      --create-bucket-configuration LocationConstraint="${AWS_REGION}"
+  fi
+  echo "✔ Created S3 bucket ${CERT_BACKUP_BUCKET}"
 fi
 
 # --- SSM parameter: ensure PAT exists; prompt if missing ---
