@@ -27,7 +27,7 @@ def compute_channel_wise_damage_indicators(
     localize damage in the structure.
 
     .. meta::
-        :category: Utilities - Spatial Analysis
+        :category: Auxiliary - Utilities - Spatial Analysis
         :complexity: Intermediate
         :data_type: Features
         :output_type: Damage Indicators

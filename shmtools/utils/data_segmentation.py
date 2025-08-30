@@ -22,7 +22,7 @@ def segment_time_series(
     instances by breaking long time series into shorter segments.
 
     .. meta::
-        :category: Utilities - Data Processing
+        :category: Auxiliary - Utilities - Data Processing
         :complexity: Basic
         :data_type: Time Series
         :output_type: Time Series

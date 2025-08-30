@@ -28,7 +28,7 @@
       "shmtools.active_sensing": "Active Sensing",
       "shmtools.modal": "Modal Analysis",
       "shmtools.hardware": "Data Acquisition",
-      "shmtools.utils": "Utilities",
+      "shmtools.utils": "Auxiliary - Utilities",
       "shmtools.sensor_diagnostics": "Sensor Diagnostics",
       "shmtools.plotting": "Visualization",
       "examples.data": "Data Import & Loading",
