@@ -236,13 +236,10 @@ if [ "${ENABLE_SSL}" = "true" ] && [ -n "${USE_DOMAIN}" ]; then
   tljh-config unset https.letsencrypt.domains 2>/dev/null || true
   tljh-config add-item https.letsencrypt.domains "${USE_DOMAIN}"
   
-  # Apply configuration changes - first general reload, then proxy specifically
-  log_step "🔄 Applying TLJH configuration changes..."
-  tljh-config reload 2>&1 | sed 's/^/[CONFIG-RELOAD] /'
-  
-  # Wait for initial configuration to settle
+  # Note: We don't need tljh-config reload here as the installer will apply all config
+  # Wait for initial configuration to settle before running installer
   log_step "⏳ Waiting for initial configuration to settle..."
-  sleep 10
+  sleep 5
   
   # Force regenerate Traefik configuration with HTTPS using the installer
   # Note: tljh-config reload proxy hangs indefinitely when HTTPS changes are pending
