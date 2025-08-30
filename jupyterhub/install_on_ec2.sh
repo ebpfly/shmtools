@@ -238,7 +238,7 @@ if [ "${ENABLE_SSL}" = "true" ] && [ -n "${USE_DOMAIN}" ]; then
   
   # Apply configuration changes - first general reload, then proxy specifically
   log_step "🔄 Applying TLJH configuration changes..."
-  tljh-config reload
+  tljh-config reload 2>&1 | sed 's/^/[CONFIG-RELOAD] /'
   
   # Wait for initial configuration to settle
   log_step "⏳ Waiting for initial configuration to settle..."
