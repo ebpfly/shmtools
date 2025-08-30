@@ -1,5 +1,5 @@
 # SHM Function Discovery Report
-Generated: 2025-08-29 17:40:11
+Generated: 2025-08-29 22:19:56
 
 This report shows all functions discovered by the JupyterLab extension's introspection system.
 
@@ -43,7 +43,7 @@ This report shows all functions discovered by the JupyterLab extension's introsp
   - Parameters: 6
   - File: /Users/eric/repo/shm/shmtools/modal/osp.py
 
-## Auxiliary - Sensor Support - Optimal Sensor Placement - Plotting (4 functions)
+## Auxiliary - Sensor Support - Optimal Sensor Placement - Plotting (6 functions)
 
 - `add_resp_2_geom_shm()` - Add response vector to geometry for deformed shape visualization.
   - Display Name: Add Response to Geometry
@@ -57,11 +57,23 @@ This report shows all functions discovered by the JupyterLab extension's introsp
   - Parameters: 4
   - File: /Users/eric/repo/shm/shmtools/modal/osp.py
 
+- `plot_nodal_response()` - Plot nodal response with element mesh for a specific mode.
+  - Display Name: Plot Nodal Response
+  - Module: `LADPackage.utils`
+  - Parameters: 5
+  - File: /Users/eric/repo/shm/LADPackage/utils/osp_plotting.py
+
 - `plot_sensors_shm()` - Plot sensor locations on structure.
   - Display Name: Plot Sensors
   - Module: `shmtools.modal`
   - Parameters: 2
   - File: /Users/eric/repo/shm/shmtools/modal/osp.py
+
+- `plot_sensors_with_mesh()` - Plot sensor locations overlaid on structural mesh.
+  - Display Name: Plot Sensors with Mesh
+  - Module: `LADPackage.utils`
+  - Parameters: 4
+  - File: /Users/eric/repo/shm/LADPackage/utils/osp_plotting.py
 
 - `response_interp_shm()` - Interpolate response from DOF indices to node XYZ coordinates.
   - Display Name: Response Interpolation
@@ -69,7 +81,31 @@ This report shows all functions discovered by the JupyterLab extension's introsp
   - Parameters: 4
   - File: /Users/eric/repo/shm/shmtools/modal/osp.py
 
-## Auxiliary - Utilities (1 functions)
+## Auxiliary - Utilities (5 functions)
+
+- `analyze_damage_localization()` - Analyze damage localization results and provide interpretation.
+  - Display Name: Analyze Damage Localization
+  - Module: `shmtools.utils`
+  - Parameters: 3
+  - File: /Users/eric/repo/shm/shmtools/utils/spatial_analysis.py
+
+- `compare_ar_arx_localization()` - Compare damage localization results between AR and ARX methods.
+  - Display Name: Compare Ar Arx Localization
+  - Module: `shmtools.utils`
+  - Parameters: 4
+  - File: /Users/eric/repo/shm/shmtools/utils/spatial_analysis.py
+
+- `plot_damage_indicators()` - Plot damage indicators for each channel in a subplot layout.
+  - Display Name: Plot Damage Indicators
+  - Module: `shmtools.utils`
+  - Parameters: 5
+  - File: /Users/eric/repo/shm/shmtools/utils/spatial_analysis.py
+
+- `prepare_train_test_split()` - Prepare train/test split for outlier detection with undamaged/damaged labels.
+  - Display Name: Prepare Train Test Split
+  - Module: `shmtools.utils`
+  - Parameters: 5
+  - File: /Users/eric/repo/shm/shmtools/utils/data_segmentation.py
 
 - `split_features_shm()` - Split feature vectors into training and scoring sets.
   - Display Name: Split Features Into Training and Scoring
@@ -77,115 +113,21 @@ This report shows all functions discovered by the JupyterLab extension's introsp
   - Parameters: 4
   - File: /Users/eric/repo/shm/shmtools/features/time_series.py
 
-## Classification - Detector Assembly (1 functions)
+## Auxiliary - Utilities - Data Processing (1 functions)
 
-- `assemble_outlier_detector_shm()` - Assemble custom outlier detector with interactive or programmatic configuration.
-  - Display Name: Assemble Outlier Detector
-  - Module: `shmtools.classification`
-  - Parameters: 5
-  - File: /Users/eric/repo/shm/shmtools/classification/custom_detector_assembly.py
-
-## Classification - LADPackage Utils (1 functions)
-
-- `learn_score_mahalanobis()` - LADPackage wrapper: Split data, train, and score using Mahalanobis distance.
-  - Display Name: Learn Score Mahalanobis
-  - Module: `LADPackage.utils`
-  - Parameters: 2
-  - File: /Users/eric/repo/shm/LADPackage/utils/learn_score_mahalanobis.py
-
-## Classification - Plotting (3 functions)
-
-- `plot_roc_shm()` - Plot receiver operating characteristic curve.
-  - Display Name: ROC Curve Plot
-  - Module: `shmtools.plotting`
+- `segment_time_series()` - Segment long time series into multiple shorter segments.
+  - Display Name: Segment Time Series
+  - Module: `shmtools.utils`
   - Parameters: 4
-  - File: /Users/eric/repo/shm/shmtools/plotting/spectral_plots.py
+  - File: /Users/eric/repo/shm/shmtools/utils/data_segmentation.py
 
-- `plot_score_distributions_shm()` - Plot distribution of scores using kernel density estimation (KDE).
-  - Display Name: Plot Score Distributions
-  - Module: `shmtools.plotting`
-  - Parameters: 8
-  - File: /Users/eric/repo/shm/shmtools/plotting/spectral_plots.py
+## Auxiliary - Utilities - Spatial Analysis (1 functions)
 
-- `plot_scores_shm()` - Plot damage detection scores with threshold and classification results.
-  - Display Name: Plot Detection Scores
-  - Module: `shmtools.plotting`
-  - Parameters: 7
-  - File: /Users/eric/repo/shm/shmtools/plotting/spectral_plots.py
-
-## Core - Signal Processing (12 functions)
-
-- `analytic_signal()` - Compute analytic signal using Hilbert transform.
-  - Display Name: Analytic Signal
-  - Module: `shmtools.core.preprocessing`
-  - Parameters: 1
-  - File: /Users/eric/repo/shm/shmtools/core/preprocessing.py
-
-- `bandpass_filter()` - Apply bandpass filter to signal.
-  - Display Name: Bandpass Filter
-  - Module: `shmtools.core.filtering`
-  - Parameters: 7
-  - File: /Users/eric/repo/shm/shmtools/core/filtering.py
-
-- `crest_factor()` - Compute crest factor (peak-to-RMS ratio).
-  - Display Name: Crest Factor
-  - Module: `shmtools.core.statistics`
-  - Parameters: 2
-  - File: /Users/eric/repo/shm/shmtools/core/statistics.py
-
-- `demean()` - Remove mean from signal.
-  - Display Name: Demean
-  - Module: `shmtools.core.preprocessing`
-  - Parameters: 2
-  - File: /Users/eric/repo/shm/shmtools/core/preprocessing.py
-
-- `envelope()` - Compute envelope of signal.
-  - Display Name: Envelope
-  - Module: `shmtools.core.preprocessing`
-  - Parameters: 2
-  - File: /Users/eric/repo/shm/shmtools/core/preprocessing.py
-
-- `filter_signal()` - Apply digital filter to signal.
-  - Display Name: Filter Signal
-  - Module: `shmtools.core.filtering`
-  - Parameters: 5
-  - File: /Users/eric/repo/shm/shmtools/core/filtering.py
-
-- `highpass_filter()` - Apply highpass filter to signal.
-  - Display Name: Highpass Filter
-  - Module: `shmtools.core.filtering`
+- `compute_channel_wise_damage_indicators()` - Compute damage indicators for each channel separately.
+  - Display Name: Channel-wise Damage Indicators
+  - Module: `shmtools.utils`
   - Parameters: 6
-  - File: /Users/eric/repo/shm/shmtools/core/filtering.py
-
-- `lowpass_filter()` - Apply lowpass filter to signal.
-  - Display Name: Lowpass Filter
-  - Module: `shmtools.core.filtering`
-  - Parameters: 6
-  - File: /Users/eric/repo/shm/shmtools/core/filtering.py
-
-- `rms()` - Compute root mean square (RMS) value.
-  - Display Name: Rms
-  - Module: `shmtools.core.statistics`
-  - Parameters: 2
-  - File: /Users/eric/repo/shm/shmtools/core/statistics.py
-
-- `scale_min_max()` - Scale signal to specified range.
-  - Display Name: Scale Min Max
-  - Module: `shmtools.core.preprocessing`
-  - Parameters: 2
-  - File: /Users/eric/repo/shm/shmtools/core/preprocessing.py
-
-- `statistical_moments()` - Compute statistical moments of a signal.
-  - Display Name: Statistical Moments
-  - Module: `shmtools.core`
-  - Parameters: 2
-  - File: /Users/eric/repo/shm/shmtools/core/statistics.py
-
-- `window_signal()` - Apply window function to signal.
-  - Display Name: Window Signal
-  - Module: `shmtools.core.preprocessing`
-  - Parameters: 2
-  - File: /Users/eric/repo/shm/shmtools/core/preprocessing.py
+  - File: /Users/eric/repo/shm/shmtools/utils/spatial_analysis.py
 
 ## Data Acquisition - Signal Generation (1 functions)
 
@@ -249,6 +191,14 @@ This report shows all functions discovered by the JupyterLab extension's introsp
   - Parameters: 2
   - File: /Users/eric/repo/shm/shmtools/classification/custom_detector_assembly.py
 
+## Feature Classification - Detector Assembly (1 functions)
+
+- `assemble_outlier_detector_shm()` - Assemble custom outlier detector with interactive or programmatic configuration.
+  - Display Name: Assemble Outlier Detector
+  - Module: `shmtools.classification`
+  - Parameters: 5
+  - File: /Users/eric/repo/shm/shmtools/classification/custom_detector_assembly.py
+
 ## Feature Classification - High Level Interface (2 functions)
 
 - `detect_outlier_shm()` - Detect outliers in test features using trained models.
@@ -262,6 +212,14 @@ This report shows all functions discovered by the JupyterLab extension's introsp
   - Module: `shmtools.classification`
   - Parameters: 5
   - File: /Users/eric/repo/shm/shmtools/classification/high_level_detection.py
+
+## Feature Classification - LADPackage Utils (1 functions)
+
+- `learn_score_mahalanobis()` - LADPackage wrapper: Split data, train, and score using Mahalanobis distance.
+  - Display Name: Learn Score Mahalanobis
+  - Module: `LADPackage.utils`
+  - Parameters: 2
+  - File: /Users/eric/repo/shm/LADPackage/utils/learn_score_mahalanobis.py
 
 ## Feature Classification - Non-Parametric Detectors (13 functions)
 
@@ -406,6 +364,26 @@ This report shows all functions discovered by the JupyterLab extension's introsp
   - Module: `shmtools.classification.nonparametric`
   - Parameters: 4
   - File: /Users/eric/repo/shm/shmtools/classification/nonparametric.py
+
+## Feature Classification - Plotting (3 functions)
+
+- `plot_roc_shm()` - Plot receiver operating characteristic curve.
+  - Display Name: ROC Curve Plot
+  - Module: `shmtools.plotting`
+  - Parameters: 4
+  - File: /Users/eric/repo/shm/shmtools/plotting/spectral_plots.py
+
+- `plot_score_distributions_shm()` - Plot distribution of scores using kernel density estimation (KDE).
+  - Display Name: Plot Score Distributions
+  - Module: `shmtools.plotting`
+  - Parameters: 8
+  - File: /Users/eric/repo/shm/shmtools/plotting/spectral_plots.py
+
+- `plot_scores_shm()` - Plot damage detection scores with threshold and classification results.
+  - Display Name: Plot Detection Scores
+  - Module: `shmtools.plotting`
+  - Parameters: 7
+  - File: /Users/eric/repo/shm/shmtools/plotting/spectral_plots.py
 
 ## Feature Classification - Semi-Parametric Detectors (5 functions)
 
@@ -579,6 +557,14 @@ This report shows all functions discovered by the JupyterLab extension's introsp
   - Parameters: 5
   - File: /Users/eric/repo/shm/shmtools/modal/modal_analysis.py
 
+## Feature Extraction - Plotting (1 functions)
+
+- `plot_features_shm()` - Plot feature vectors as subplots for each feature.
+  - Display Name: Plot Features
+  - Module: `shmtools.plotting`
+  - Parameters: 6
+  - File: /Users/eric/repo/shm/shmtools/plotting/spectral_plots.py
+
 ## Feature Extraction - Preprocessing (13 functions)
 
 - `analytic_signal_shm()` - Convert signals to their analytic form using Hilbert transform via FFT.
@@ -657,6 +643,80 @@ This report shows all functions discovered by the JupyterLab extension's introsp
   - Display Name: Window Generator
   - Module: `shmtools.core`
   - Parameters: 3
+  - File: /Users/eric/repo/shm/shmtools/core/preprocessing.py
+
+## Feature Extraction - Signal Processing (12 functions)
+
+- `analytic_signal()` - Compute analytic signal using Hilbert transform.
+  - Display Name: Analytic Signal
+  - Module: `shmtools.core.preprocessing`
+  - Parameters: 1
+  - File: /Users/eric/repo/shm/shmtools/core/preprocessing.py
+
+- `bandpass_filter()` - Apply bandpass filter to signal.
+  - Display Name: Bandpass Filter
+  - Module: `shmtools.core.filtering`
+  - Parameters: 7
+  - File: /Users/eric/repo/shm/shmtools/core/filtering.py
+
+- `crest_factor()` - Compute crest factor (peak-to-RMS ratio).
+  - Display Name: Crest Factor
+  - Module: `shmtools.core.statistics`
+  - Parameters: 2
+  - File: /Users/eric/repo/shm/shmtools/core/statistics.py
+
+- `demean()` - Remove mean from signal.
+  - Display Name: Demean
+  - Module: `shmtools.core.preprocessing`
+  - Parameters: 2
+  - File: /Users/eric/repo/shm/shmtools/core/preprocessing.py
+
+- `envelope()` - Compute envelope of signal.
+  - Display Name: Envelope
+  - Module: `shmtools.core.preprocessing`
+  - Parameters: 2
+  - File: /Users/eric/repo/shm/shmtools/core/preprocessing.py
+
+- `filter_signal()` - Apply digital filter to signal.
+  - Display Name: Filter Signal
+  - Module: `shmtools.core.filtering`
+  - Parameters: 5
+  - File: /Users/eric/repo/shm/shmtools/core/filtering.py
+
+- `highpass_filter()` - Apply highpass filter to signal.
+  - Display Name: Highpass Filter
+  - Module: `shmtools.core.filtering`
+  - Parameters: 6
+  - File: /Users/eric/repo/shm/shmtools/core/filtering.py
+
+- `lowpass_filter()` - Apply lowpass filter to signal.
+  - Display Name: Lowpass Filter
+  - Module: `shmtools.core.filtering`
+  - Parameters: 6
+  - File: /Users/eric/repo/shm/shmtools/core/filtering.py
+
+- `rms()` - Compute root mean square (RMS) value.
+  - Display Name: Rms
+  - Module: `shmtools.core.statistics`
+  - Parameters: 2
+  - File: /Users/eric/repo/shm/shmtools/core/statistics.py
+
+- `scale_min_max()` - Scale signal to specified range.
+  - Display Name: Scale Min Max
+  - Module: `shmtools.core.preprocessing`
+  - Parameters: 2
+  - File: /Users/eric/repo/shm/shmtools/core/preprocessing.py
+
+- `statistical_moments()` - Compute statistical moments of a signal.
+  - Display Name: Statistical Moments
+  - Module: `shmtools.core`
+  - Parameters: 2
+  - File: /Users/eric/repo/shm/shmtools/core/statistics.py
+
+- `window_signal()` - Apply window function to signal.
+  - Display Name: Window Signal
+  - Module: `shmtools.core.preprocessing`
+  - Parameters: 2
   - File: /Users/eric/repo/shm/shmtools/core/preprocessing.py
 
 ## Feature Extraction - Spectral - Plotting (4 functions)
@@ -835,7 +895,7 @@ This report shows all functions discovered by the JupyterLab extension's introsp
   - Parameters: 3
   - File: /Users/eric/repo/shm/shmtools/features/time_series.py
 
-## LAD (5 functions)
+## LAD - Active Sensing (5 functions)
 
 - `arrival_filter()` - Filter guided wave envelopes to first arrival.
   - Display Name: Arrival Filter
@@ -867,74 +927,10 @@ This report shows all functions discovered by the JupyterLab extension's introsp
   - Parameters: 6
   - File: /Users/eric/repo/shm/LADPackage/active_sensing/active_sensing_utils.py
 
-## Plotting - Feature Visualization (1 functions)
-
-- `plot_features_shm()` - Plot feature vectors as subplots for each feature.
-  - Display Name: Plot Features
-  - Module: `shmtools.plotting`
-  - Parameters: 6
-  - File: /Users/eric/repo/shm/shmtools/plotting/spectral_plots.py
-
-## Plotting - Optimal Sensor Placement (2 functions)
-
-- `plot_nodal_response()` - Plot nodal response with element mesh for a specific mode.
-  - Display Name: Plot Nodal Response
-  - Module: `LADPackage.utils`
-  - Parameters: 5
-  - File: /Users/eric/repo/shm/LADPackage/utils/osp_plotting.py
-
-- `plot_sensors_with_mesh()` - Plot sensor locations overlaid on structural mesh.
-  - Display Name: Plot Sensors with Mesh
-  - Module: `LADPackage.utils`
-  - Parameters: 4
-  - File: /Users/eric/repo/shm/LADPackage/utils/osp_plotting.py
-
-## Utilities (4 functions)
-
-- `analyze_damage_localization()` - Analyze damage localization results and provide interpretation.
-  - Display Name: Analyze Damage Localization
-  - Module: `shmtools.utils`
-  - Parameters: 3
-  - File: /Users/eric/repo/shm/shmtools/utils/spatial_analysis.py
-
-- `compare_ar_arx_localization()` - Compare damage localization results between AR and ARX methods.
-  - Display Name: Compare Ar Arx Localization
-  - Module: `shmtools.utils`
-  - Parameters: 4
-  - File: /Users/eric/repo/shm/shmtools/utils/spatial_analysis.py
-
-- `plot_damage_indicators()` - Plot damage indicators for each channel in a subplot layout.
-  - Display Name: Plot Damage Indicators
-  - Module: `shmtools.utils`
-  - Parameters: 5
-  - File: /Users/eric/repo/shm/shmtools/utils/spatial_analysis.py
-
-- `prepare_train_test_split()` - Prepare train/test split for outlier detection with undamaged/damaged labels.
-  - Display Name: Prepare Train Test Split
-  - Module: `shmtools.utils`
-  - Parameters: 5
-  - File: /Users/eric/repo/shm/shmtools/utils/data_segmentation.py
-
-## Utilities - Data Processing (1 functions)
-
-- `segment_time_series()` - Segment long time series into multiple shorter segments.
-  - Display Name: Segment Time Series
-  - Module: `shmtools.utils`
-  - Parameters: 4
-  - File: /Users/eric/repo/shm/shmtools/utils/data_segmentation.py
-
-## Utilities - Spatial Analysis (1 functions)
-
-- `compute_channel_wise_damage_indicators()` - Compute damage indicators for each channel separately.
-  - Display Name: Channel-wise Damage Indicators
-  - Module: `shmtools.utils`
-  - Parameters: 6
-  - File: /Users/eric/repo/shm/shmtools/utils/spatial_analysis.py
-
 ## Summary
 
 - **Total functions discovered:** 144
-- **Total categories:** 32
+- **Total categories:** 30
 - **Modules scanned:** 3 (shmtools, examples, LADPackage)
 
 ### Functions by Category
@@ -943,34 +939,32 @@ This report shows all functions discovered by the JupyterLab extension's introsp
 - **Feature Extraction - Preprocessing:** 13 functions
 - **Feature Classification - Non-Parametric Detectors:** 13 functions
 - **Feature Extraction - Statistics:** 12 functions
-- **Core - Signal Processing:** 12 functions
+- **Feature Extraction - Signal Processing:** 12 functions
 - **Feature Extraction - Spectral Analysis:** 8 functions
 - **Feature Classification - Parametric Detectors:** 8 functions
+- **Auxiliary - Sensor Support - Optimal Sensor Placement - Plotting:** 6 functions
 - **Feature Extraction - Condition Based Monitoring:** 5 functions
 - **Feature Classification - Semi-Parametric Detectors:** 5 functions
+- **Auxiliary - Utilities:** 5 functions
 - **Data Import:** 5 functions
-- **LAD:** 5 functions
+- **LAD - Active Sensing:** 5 functions
 - **Feature Extraction - Time Series Models:** 4 functions
 - **Feature Extraction - Spectral - Plotting:** 4 functions
-- **Auxiliary - Sensor Support - Optimal Sensor Placement - Plotting:** 4 functions
-- **Utilities:** 4 functions
 - **Auxiliary - Sensor Support:** 3 functions
 - **Auxiliary - Sensor Support - Optimal Sensor Placement:** 3 functions
-- **Classification - Plotting:** 3 functions
+- **Feature Classification - Plotting:** 3 functions
 - **Feature Extraction - Modal Analysis:** 2 functions
 - **Feature Classification - Performance Evaluation:** 2 functions
 - **Feature Classification - High Level Interface:** 2 functions
 - **Feature Classification:** 2 functions
-- **Plotting - Optimal Sensor Placement:** 2 functions
-- **Classification - Detector Assembly:** 1 functions
-- **Auxiliary - Utilities:** 1 functions
+- **Feature Classification - Detector Assembly:** 1 functions
 - **Feature Extraction:** 1 functions
 - **Data Acquisition - Signal Generation:** 1 functions
-- **Plotting - Feature Visualization:** 1 functions
-- **Utilities - Spatial Analysis:** 1 functions
-- **Utilities - Data Processing:** 1 functions
+- **Feature Extraction - Plotting:** 1 functions
+- **Auxiliary - Utilities - Spatial Analysis:** 1 functions
+- **Auxiliary - Utilities - Data Processing:** 1 functions
 - **Data Import - LADPackage:** 1 functions
-- **Classification - LADPackage Utils:** 1 functions
+- **Feature Classification - LADPackage Utils:** 1 functions
 
 ---
 *Report generated automatically by SHM JupyterLab Extension*
