@@ -45,6 +45,7 @@ USE_DOMAIN="${USE_DOMAIN:-}"
 SSL_EMAIL="${SSL_EMAIL:-}"
 CERT_BACKUP_BUCKET="${CERT_BACKUP_BUCKET:-}"
 CERT_BACKUP_KEY="${CERT_BACKUP_KEY:-}"
+S3_DATA_BUCKET="${S3_DATA_BUCKET:-shmtools-data-files}"
 
 export DEBIAN_FRONTEND=noninteractive
 
@@ -166,25 +167,46 @@ else
     log_warning "Skipping JupyterLab extension installation..."
 fi
 
-# Copy data files from local development machine to EC2 instance
+# Copy data files from S3 bucket to EC2 instance
 log_step "📂 Setting up data files directory..."
 mkdir -p /srv/classrepo/examples/data/data_files
 chown -R ${JUPYTER_ADMIN_USER}:${JUPYTER_ADMIN_USER} /srv/classrepo/examples/data/data_files
 
 log_step "📥 Downloading required data files..."
 echo "========================================="
-echo "📥 DOWNLOADING DATA FILES"
+echo "📥 DOWNLOADING DATA FILES FROM S3"
 echo "========================================="
 
-# Define data files to download (these would need to be hosted somewhere accessible)
-# For now, create placeholder message since we need a way to get the files to EC2
 DATA_FILES_DIR="/srv/classrepo/examples/data/data_files"
+S3_DATA_BUCKET="${S3_DATA_BUCKET:-shmtools-data-files}"
 
-# Create a marker file indicating data setup is needed
-cat > "$DATA_FILES_DIR/DATA_SETUP_REQUIRED.txt" <<'DATASETUP'
+# List of required data files
+DATA_FILES=(
+    "data3SS.mat"
+    "dataSensorDiagnostic.mat"
+    "data_CBM.mat"
+    "data_example_ActiveSense.mat"
+    "data_OSPExampleModal.mat"
+)
+
+# Download each file from S3
+DOWNLOAD_SUCCESS=true
+for file in "${DATA_FILES[@]}"; do
+    log_step "Downloading $file..."
+    if aws s3 cp "s3://${S3_DATA_BUCKET}/${file}" "${DATA_FILES_DIR}/${file}" --region "${AWS_REGION}" 2>&1 | sed 's/^/[S3-DOWNLOAD] /'; then
+        log_success "$file downloaded successfully"
+    else
+        log_warning "Failed to download $file from S3"
+        DOWNLOAD_SUCCESS=false
+    fi
+done
+
+# Create placeholder if download failed
+if [ "$DOWNLOAD_SUCCESS" = false ]; then
+    cat > "$DATA_FILES_DIR/DATA_SETUP_REQUIRED.txt" <<'DATASETUP'
 IMPORTANT: Data files are required for SHMTools examples to work properly.
 
-Required files (~161MB total):
+Some files failed to download from S3. Required files (~161MB total):
 - data3SS.mat (25MB) - 3-story structure, 8192×5×170
 - dataSensorDiagnostic.mat (63KB) - Sensor health
 - data_CBM.mat (54MB) - Condition monitoring  
@@ -196,9 +218,11 @@ scp -i ~/.ssh/class-key-ssh-rsa /path/to/local/examples/data/data_files/*.mat ub
 
 Or use the remote_update.sh script which will copy them automatically.
 DATASETUP
-
-log_warning "Data files not automatically copied - see DATA_SETUP_REQUIRED.txt for instructions"
-log_step "💡 Use remote_update.sh script to copy data files automatically"
+    log_warning "Some data files could not be downloaded - see DATA_SETUP_REQUIRED.txt for instructions"
+    log_step "💡 Use remote_update.sh script to copy data files manually"
+else
+    log_success "All data files downloaded successfully from S3"
+fi
 
 # Set proper ownership
 log_step "🔧 Setting proper file ownership..."

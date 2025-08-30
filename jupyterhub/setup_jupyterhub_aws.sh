@@ -50,6 +50,9 @@ SSL_EMAIL="ericbflynn@gmail.com"      # Email for Let's Encrypt certificates
 # Certificate backup configuration
 CERT_BACKUP_BUCKET="shmtools-deployment-bucket"  # S3 bucket for certificate backups
 CERT_BACKUP_KEY="certificates/acme.json"         # S3 key for certificate backup
+
+# Data files configuration
+S3_DATA_BUCKET="shmtools-data-files"            # S3 bucket containing .mat data files
 ############################################
 
 # --- helpers ---
@@ -202,6 +205,18 @@ cat > /tmp/tljh-instance-policy.json <<POL
       "Resource":[
         "arn:aws:s3:::${CERT_BACKUP_BUCKET}/*",
         "arn:aws:s3:::${CERT_BACKUP_BUCKET}"
+      ]
+    },
+    {
+      "Sid":"AccessDataFilesBucket",
+      "Effect":"Allow",
+      "Action":[
+        "s3:GetObject",
+        "s3:ListBucket"
+      ],
+      "Resource":[
+        "arn:aws:s3:::${S3_DATA_BUCKET}/*",
+        "arn:aws:s3:::${S3_DATA_BUCKET}"
       ]
     }
   ]
@@ -365,6 +380,7 @@ export USE_DOMAIN="USE_DOMAIN_VALUE"
 export SSL_EMAIL="SSL_EMAIL_VALUE"
 export CERT_BACKUP_BUCKET="CERT_BACKUP_BUCKET_VALUE"
 export CERT_BACKUP_KEY="CERT_BACKUP_KEY_VALUE"
+export S3_DATA_BUCKET="S3_DATA_BUCKET_VALUE"
 
 # Execute main installation script
 echo "[BOOTSTRAP] Executing main installation script..."
@@ -393,6 +409,7 @@ sed -i '' "s/USE_DOMAIN_VALUE/${USE_DOMAIN}/g" "$USERDATA_FILE"
 sed -i '' "s/SSL_EMAIL_VALUE/${SSL_EMAIL}/g" "$USERDATA_FILE"
 sed -i '' "s/CERT_BACKUP_BUCKET_VALUE/${CERT_BACKUP_BUCKET}/g" "$USERDATA_FILE"
 sed -i '' "s|CERT_BACKUP_KEY_VALUE|${CERT_BACKUP_KEY}|g" "$USERDATA_FILE"
+sed -i '' "s/S3_DATA_BUCKET_VALUE/${S3_DATA_BUCKET}/g" "$USERDATA_FILE"
 
 echo "📝 User data written to $USERDATA_FILE"
 

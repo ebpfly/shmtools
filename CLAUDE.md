@@ -234,3 +234,4 @@ gh pr merge --squash --delete-branch
 - When running scripts through ssh, always run them in a background process and then check in on them so that if your ssh connection times out, the script keeps running
 - Deployment is never successful if HTTPS is not functional. Never ever declare success if HTTPS is not functional. Never allow deployment without HTTPS enabled.
 - HTTPS on the deployed instance doesn't count unless it's a Let's Encrypt certificate. HTTPS with any other certificate is failure. Don't every claim success or say anything is "complete" unless HTTPS works with a Let's Encrypt certificate.
+- commit and push with the completion of every task
