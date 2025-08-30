@@ -24,7 +24,7 @@ def response_interp_shm(
     3D response array indexed by node coordinates.
 
     .. meta::
-        :category: Auxiliary - Plotting
+        :category: Auxiliary - Sensor Support - Optimal Sensor Placement - Plotting
         :matlab_equivalent: responseInterp_shm
         :complexity: Basic
         :data_type: Modal Data
@@ -104,7 +104,7 @@ def add_resp_2_geom_shm(
     Add response vector to geometry for deformed shape visualization.
 
     .. meta::
-        :category: Auxiliary - Plotting
+        :category: Auxiliary - Sensor Support - Optimal Sensor Placement - Plotting
         :matlab_equivalent: addResp2Geom_shm
         :complexity: Basic
         :data_type: Modal Data
@@ -567,7 +567,7 @@ def node_element_plot_shm(
     Plot structural geometry with optional deformed shape.
 
     .. meta::
-        :category: Auxiliary - Plotting
+        :category: Auxiliary - Sensor Support - Optimal Sensor Placement - Plotting
         :matlab_equivalent: nodeElementPlot_shm
         :complexity: Basic
         :data_type: Geometry Data
@@ -587,7 +587,7 @@ def plot_sensors_shm(
     Plot sensor locations on structure.
 
     .. meta::
-        :category: Auxiliary - Plotting
+        :category: Auxiliary - Sensor Support - Optimal Sensor Placement - Plotting
         :matlab_equivalent: plotSensors_shm
         :complexity: Basic
         :data_type: Sensor Locations

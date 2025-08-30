@@ -89,7 +89,7 @@ def plot_nodal_response(
     LADPackage wrapper: Node-element plot with response values
     
     .. meta::
-        :category: Plotting - Optimal Sensor Placement
+        :category: Auxiliary - Sensor Support - Optimal Sensor Placement - Plotting
         :matlab_equivalent: PlotNodalResponse
         :complexity: Intermediate
         :data_type: Modal Data

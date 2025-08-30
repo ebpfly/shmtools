@@ -244,26 +244,21 @@ if [ "${ENABLE_SSL}" = "true" ] && [ -n "${USE_DOMAIN}" ]; then
   log_step "⏳ Waiting for initial configuration to settle..."
   sleep 10
   
-  # Now reload the proxy specifically to ensure HTTPS is enabled
-  log_step "🔄 Reloading proxy with HTTPS configuration..."
-  tljh-config reload proxy
+  # Force regenerate Traefik configuration with HTTPS using the installer
+  # Note: tljh-config reload proxy hangs indefinitely when HTTPS changes are pending
+  # Running the installer directly is more reliable for applying HTTPS configuration
+  log_step "🔄 Regenerating Traefik configuration with HTTPS support..."
+  /opt/tljh/hub/bin/python3 -m tljh.installer --admin ${JUPYTER_ADMIN_USER} 2>&1 | sed 's/^/[TLJH-REGEN] /'
   
-  # Wait for proxy reload to complete
-  log_step "⏳ Waiting for proxy reload to complete..."
-  sleep 15
+  # Wait for services to stabilize
+  log_step "⏳ Waiting for services to stabilize..."
+  sleep 10
   
-  # Verify HTTPS is configured, if not force regeneration
-  if ! grep -q ":443" /opt/tljh/state/traefik.toml 2>/dev/null; then
-      log_warning "HTTPS not configured in traefik, forcing regeneration..."
-      
-      # Run the installer to ensure proper configuration
-      log_step "Running TLJH installer to ensure proper configuration..."
-      /opt/tljh/hub/bin/python3 -m tljh.installer --admin ${JUPYTER_ADMIN_USER}
-      
-      # Reload proxy again
-      log_step "Reloading proxy after installer..."
-      tljh-config reload proxy
-      sleep 10
+  # Verify HTTPS is configured
+  if grep -q ":443" /opt/tljh/state/traefik.toml 2>/dev/null; then
+      log_success "✅ HTTPS successfully configured in Traefik"
+  else
+      log_warning "⚠️ HTTPS configuration may need manual verification"
   fi
   
   # Final restart to ensure everything is working

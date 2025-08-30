@@ -32,7 +32,7 @@ def ars_tach_shm(
     NOTE: FIRST CHANNEL OF SIGNAL MATRIX X MUST BE THE TACHOMETER SIGNAL.
 
     .. meta::
-        :category: Features - Condition Based Monitoring
+        :category: Feature Extraction - Condition Based Monitoring
         :matlab_equivalent: arsTach_shm
         :complexity: Advanced
         :data_type: Time Series

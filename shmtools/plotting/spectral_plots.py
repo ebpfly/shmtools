@@ -24,7 +24,7 @@ def plot_scores_shm(
     Plot damage detection scores with threshold and classification results.
 
     .. meta::
-        :category: Auxiliary - Plotting
+        :category: Classification - Plotting
         :matlab_equivalent: plotScores_shm
         :complexity: Basic
         :data_type: Scores
@@ -206,7 +206,7 @@ def plot_psd_shm(
     PSD visualization with colormap support for multi-instance data.
 
     .. meta::
-        :category: Plotting - Spectral
+        :category: Feature Extraction - Spectral - Plotting
         :matlab_equivalent: plotPSD_shm
         :complexity: Basic
         :data_type: Frequency Domain
@@ -471,7 +471,7 @@ def plot_spectrogram_shm(
     colorbar, and dB scaling for visualization.
 
     .. meta::
-        :category: Auxiliary - Plotting
+        :category: Feature Extraction - Spectral - Plotting
         :matlab_equivalent: plotTimeFreq_shm
         :complexity: Basic
         :data_type: Time-Frequency Data
@@ -570,7 +570,7 @@ def plot_roc_shm(
     Plot receiver operating characteristic curve.
 
     .. meta::
-        :category: Plotting - Classification
+        :category: Classification - Plotting
         :matlab_equivalent: plotROC_shm
         :complexity: Basic
         :data_type: Performance Metrics
@@ -705,7 +705,7 @@ def plot_time_freq_shm(
     Create a time-frequency plot.
 
     .. meta::
-        :category: Plotting - Spectral
+        :category: Feature Extraction - Spectral - Plotting
         :matlab_equivalent: plotTimeFreq_shm
         :complexity: Basic
         :data_type: Time-Frequency
@@ -888,7 +888,7 @@ def plot_scalogram_shm(
     Create a scalogram plot.
 
     .. meta::
-        :category: Plotting - Spectral
+        :category: Feature Extraction - Spectral - Plotting
         :matlab_equivalent: plotScalogram_shm
         :complexity: Basic
         :data_type: Time-Frequency
@@ -1051,7 +1051,7 @@ def plot_score_distributions_shm(
     Plot distribution of scores using kernel density estimation (KDE).
 
     .. meta::
-        :category: Plotting - Score Analysis
+        :category: Classification - Plotting
         :matlab_equivalent: plotScoreDistributions_shm
         :complexity: Intermediate
         :data_type: Scores

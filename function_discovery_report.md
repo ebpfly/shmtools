@@ -1,45 +1,7 @@
 # SHM Function Discovery Report
-Generated: 2025-08-29 16:45:21
+Generated: 2025-08-29 17:40:11
 
 This report shows all functions discovered by the JupyterLab extension's introspection system.
-
-## Auxiliary - Plotting (6 functions)
-
-- `add_resp_2_geom_shm()` - Add response vector to geometry for deformed shape visualization.
-  - Display Name: Add Response to Geometry
-  - Module: `shmtools.modal`
-  - Parameters: 3
-  - File: /Users/eric/repo/shm/shmtools/modal/osp.py
-
-- `node_element_plot_shm()` - Plot structural geometry with optional deformed shape.
-  - Display Name: Node Element Plot
-  - Module: `shmtools.modal`
-  - Parameters: 4
-  - File: /Users/eric/repo/shm/shmtools/modal/osp.py
-
-- `plot_scores_shm()` - Plot damage detection scores with threshold and classification results.
-  - Display Name: Plot Detection Scores
-  - Module: `shmtools.plotting`
-  - Parameters: 7
-  - File: /Users/eric/repo/shm/shmtools/plotting/spectral_plots.py
-
-- `plot_sensors_shm()` - Plot sensor locations on structure.
-  - Display Name: Plot Sensors
-  - Module: `shmtools.modal`
-  - Parameters: 2
-  - File: /Users/eric/repo/shm/shmtools/modal/osp.py
-
-- `plot_spectrogram_shm()` - Plot spectrogram with proper formatting.
-  - Display Name: Plot Spectrogram
-  - Module: `shmtools`
-  - Parameters: 5
-  - File: /Users/eric/repo/shm/shmtools/plotting/spectral_plots.py
-
-- `response_interp_shm()` - Interpolate response from DOF indices to node XYZ coordinates.
-  - Display Name: Response Interpolation
-  - Module: `shmtools.modal`
-  - Parameters: 4
-  - File: /Users/eric/repo/shm/shmtools/modal/osp.py
 
 ## Auxiliary - Sensor Support (3 functions)
 
@@ -81,6 +43,32 @@ This report shows all functions discovered by the JupyterLab extension's introsp
   - Parameters: 6
   - File: /Users/eric/repo/shm/shmtools/modal/osp.py
 
+## Auxiliary - Sensor Support - Optimal Sensor Placement - Plotting (4 functions)
+
+- `add_resp_2_geom_shm()` - Add response vector to geometry for deformed shape visualization.
+  - Display Name: Add Response to Geometry
+  - Module: `shmtools.modal`
+  - Parameters: 3
+  - File: /Users/eric/repo/shm/shmtools/modal/osp.py
+
+- `node_element_plot_shm()` - Plot structural geometry with optional deformed shape.
+  - Display Name: Node Element Plot
+  - Module: `shmtools.modal`
+  - Parameters: 4
+  - File: /Users/eric/repo/shm/shmtools/modal/osp.py
+
+- `plot_sensors_shm()` - Plot sensor locations on structure.
+  - Display Name: Plot Sensors
+  - Module: `shmtools.modal`
+  - Parameters: 2
+  - File: /Users/eric/repo/shm/shmtools/modal/osp.py
+
+- `response_interp_shm()` - Interpolate response from DOF indices to node XYZ coordinates.
+  - Display Name: Response Interpolation
+  - Module: `shmtools.modal`
+  - Parameters: 4
+  - File: /Users/eric/repo/shm/shmtools/modal/osp.py
+
 ## Auxiliary - Utilities (1 functions)
 
 - `split_features_shm()` - Split feature vectors into training and scoring sets.
@@ -88,20 +76,6 @@ This report shows all functions discovered by the JupyterLab extension's introsp
   - Module: `shmtools.features`
   - Parameters: 4
   - File: /Users/eric/repo/shm/shmtools/features/time_series.py
-
-## Classification & Detection (2 functions)
-
-- `load_detector_assembly()` - Load assembled detector configuration from file.
-  - Display Name: Load Detector Assembly
-  - Module: `shmtools.classification`
-  - Parameters: 1
-  - File: /Users/eric/repo/shm/shmtools/classification/custom_detector_assembly.py
-
-- `save_detector_assembly()` - Save assembled detector configuration to file.
-  - Display Name: Save Detector Assembly
-  - Module: `shmtools.classification`
-  - Parameters: 2
-  - File: /Users/eric/repo/shm/shmtools/classification/custom_detector_assembly.py
 
 ## Classification - Detector Assembly (1 functions)
 
@@ -118,6 +92,26 @@ This report shows all functions discovered by the JupyterLab extension's introsp
   - Module: `LADPackage.utils`
   - Parameters: 2
   - File: /Users/eric/repo/shm/LADPackage/utils/learn_score_mahalanobis.py
+
+## Classification - Plotting (3 functions)
+
+- `plot_roc_shm()` - Plot receiver operating characteristic curve.
+  - Display Name: ROC Curve Plot
+  - Module: `shmtools.plotting`
+  - Parameters: 4
+  - File: /Users/eric/repo/shm/shmtools/plotting/spectral_plots.py
+
+- `plot_score_distributions_shm()` - Plot distribution of scores using kernel density estimation (KDE).
+  - Display Name: Plot Score Distributions
+  - Module: `shmtools.plotting`
+  - Parameters: 8
+  - File: /Users/eric/repo/shm/shmtools/plotting/spectral_plots.py
+
+- `plot_scores_shm()` - Plot damage detection scores with threshold and classification results.
+  - Display Name: Plot Detection Scores
+  - Module: `shmtools.plotting`
+  - Parameters: 7
+  - File: /Users/eric/repo/shm/shmtools/plotting/spectral_plots.py
 
 ## Core - Signal Processing (12 functions)
 
@@ -240,6 +234,20 @@ This report shows all functions discovered by the JupyterLab extension's introsp
   - Module: `LADPackage.utils`
   - Parameters: 1
   - File: /Users/eric/repo/shm/LADPackage/utils/data_import.py
+
+## Feature Classification (2 functions)
+
+- `load_detector_assembly()` - Load assembled detector configuration from file.
+  - Display Name: Load Detector Assembly
+  - Module: `shmtools.classification`
+  - Parameters: 1
+  - File: /Users/eric/repo/shm/shmtools/classification/custom_detector_assembly.py
+
+- `save_detector_assembly()` - Save assembled detector configuration to file.
+  - Display Name: Save Detector Assembly
+  - Module: `shmtools.classification`
+  - Parameters: 2
+  - File: /Users/eric/repo/shm/shmtools/classification/custom_detector_assembly.py
 
 ## Feature Classification - High Level Interface (2 functions)
 
@@ -525,7 +533,13 @@ This report shows all functions discovered by the JupyterLab extension's introsp
   - Parameters: 2
   - File: /Users/eric/repo/shm/shmtools/active_sensing/utilities.py
 
-## Feature Extraction - Condition Based Monitoring (4 functions)
+## Feature Extraction - Condition Based Monitoring (5 functions)
+
+- `ars_tach_shm()` - Feature Extraction: Resamples signals to angular domain using tachometer.
+  - Display Name: Ars Tach
+  - Module: `shmtools.core`
+  - Parameters: 4
+  - File: /Users/eric/repo/shm/shmtools/core/cbm_processing.py
 
 - `fm0_shm()` - Feature Extraction: Compute FM0 gear damage indicator.
   - Display Name: FM0 Feature
@@ -644,6 +658,32 @@ This report shows all functions discovered by the JupyterLab extension's introsp
   - Module: `shmtools.core`
   - Parameters: 3
   - File: /Users/eric/repo/shm/shmtools/core/preprocessing.py
+
+## Feature Extraction - Spectral - Plotting (4 functions)
+
+- `plot_psd_shm()` - Plot power spectral density with various visualization options.
+  - Display Name: Plot Psd
+  - Module: `shmtools`
+  - Parameters: 8
+  - File: /Users/eric/repo/shm/shmtools/plotting/spectral_plots.py
+
+- `plot_scalogram_shm()` - Create a scalogram plot.
+  - Display Name: Scalogram Plot
+  - Module: `shmtools.plotting.spectral_plots`
+  - Parameters: 6
+  - File: /Users/eric/repo/shm/shmtools/plotting/spectral_plots.py
+
+- `plot_spectrogram_shm()` - Plot spectrogram with proper formatting.
+  - Display Name: Plot Spectrogram
+  - Module: `shmtools`
+  - Parameters: 5
+  - File: /Users/eric/repo/shm/shmtools/plotting/spectral_plots.py
+
+- `plot_time_freq_shm()` - Create a time-frequency plot.
+  - Display Name: Time-Frequency Plot
+  - Module: `shmtools.plotting.spectral_plots`
+  - Parameters: 7
+  - File: /Users/eric/repo/shm/shmtools/plotting/spectral_plots.py
 
 ## Feature Extraction - Spectral Analysis (8 functions)
 
@@ -795,14 +835,6 @@ This report shows all functions discovered by the JupyterLab extension's introsp
   - Parameters: 3
   - File: /Users/eric/repo/shm/shmtools/features/time_series.py
 
-## Features - Condition Based Monitoring (1 functions)
-
-- `ars_tach_shm()` - Feature Extraction: Resamples signals to angular domain using tachometer.
-  - Display Name: Ars Tach
-  - Module: `shmtools.core`
-  - Parameters: 4
-  - File: /Users/eric/repo/shm/shmtools/core/cbm_processing.py
-
 ## LAD (5 functions)
 
 - `arrival_filter()` - Filter guided wave envelopes to first arrival.
@@ -835,14 +867,6 @@ This report shows all functions discovered by the JupyterLab extension's introsp
   - Parameters: 6
   - File: /Users/eric/repo/shm/LADPackage/active_sensing/active_sensing_utils.py
 
-## Plotting - Classification (1 functions)
-
-- `plot_roc_shm()` - Plot receiver operating characteristic curve.
-  - Display Name: ROC Curve Plot
-  - Module: `shmtools.plotting`
-  - Parameters: 4
-  - File: /Users/eric/repo/shm/shmtools/plotting/spectral_plots.py
-
 ## Plotting - Feature Visualization (1 functions)
 
 - `plot_features_shm()` - Plot feature vectors as subplots for each feature.
@@ -864,34 +888,6 @@ This report shows all functions discovered by the JupyterLab extension's introsp
   - Module: `LADPackage.utils`
   - Parameters: 4
   - File: /Users/eric/repo/shm/LADPackage/utils/osp_plotting.py
-
-## Plotting - Score Analysis (1 functions)
-
-- `plot_score_distributions_shm()` - Plot distribution of scores using kernel density estimation (KDE).
-  - Display Name: Plot Score Distributions
-  - Module: `shmtools.plotting`
-  - Parameters: 8
-  - File: /Users/eric/repo/shm/shmtools/plotting/spectral_plots.py
-
-## Plotting - Spectral (3 functions)
-
-- `plot_psd_shm()` - Plot power spectral density with various visualization options.
-  - Display Name: Plot Psd
-  - Module: `shmtools`
-  - Parameters: 8
-  - File: /Users/eric/repo/shm/shmtools/plotting/spectral_plots.py
-
-- `plot_scalogram_shm()` - Create a scalogram plot.
-  - Display Name: Scalogram Plot
-  - Module: `shmtools.plotting.spectral_plots`
-  - Parameters: 6
-  - File: /Users/eric/repo/shm/shmtools/plotting/spectral_plots.py
-
-- `plot_time_freq_shm()` - Create a time-frequency plot.
-  - Display Name: Time-Frequency Plot
-  - Module: `shmtools.plotting.spectral_plots`
-  - Parameters: 7
-  - File: /Users/eric/repo/shm/shmtools/plotting/spectral_plots.py
 
 ## Utilities (4 functions)
 
@@ -938,7 +934,7 @@ This report shows all functions discovered by the JupyterLab extension's introsp
 ## Summary
 
 - **Total functions discovered:** 144
-- **Total categories:** 34
+- **Total categories:** 32
 - **Modules scanned:** 3 (shmtools, examples, LADPackage)
 
 ### Functions by Category
@@ -950,29 +946,27 @@ This report shows all functions discovered by the JupyterLab extension's introsp
 - **Core - Signal Processing:** 12 functions
 - **Feature Extraction - Spectral Analysis:** 8 functions
 - **Feature Classification - Parametric Detectors:** 8 functions
-- **Auxiliary - Plotting:** 6 functions
+- **Feature Extraction - Condition Based Monitoring:** 5 functions
 - **Feature Classification - Semi-Parametric Detectors:** 5 functions
 - **Data Import:** 5 functions
 - **LAD:** 5 functions
 - **Feature Extraction - Time Series Models:** 4 functions
-- **Feature Extraction - Condition Based Monitoring:** 4 functions
+- **Feature Extraction - Spectral - Plotting:** 4 functions
+- **Auxiliary - Sensor Support - Optimal Sensor Placement - Plotting:** 4 functions
 - **Utilities:** 4 functions
-- **Plotting - Spectral:** 3 functions
 - **Auxiliary - Sensor Support:** 3 functions
 - **Auxiliary - Sensor Support - Optimal Sensor Placement:** 3 functions
+- **Classification - Plotting:** 3 functions
 - **Feature Extraction - Modal Analysis:** 2 functions
 - **Feature Classification - Performance Evaluation:** 2 functions
 - **Feature Classification - High Level Interface:** 2 functions
-- **Classification & Detection:** 2 functions
+- **Feature Classification:** 2 functions
 - **Plotting - Optimal Sensor Placement:** 2 functions
 - **Classification - Detector Assembly:** 1 functions
-- **Features - Condition Based Monitoring:** 1 functions
 - **Auxiliary - Utilities:** 1 functions
 - **Feature Extraction:** 1 functions
 - **Data Acquisition - Signal Generation:** 1 functions
 - **Plotting - Feature Visualization:** 1 functions
-- **Plotting - Classification:** 1 functions
-- **Plotting - Score Analysis:** 1 functions
 - **Utilities - Spatial Analysis:** 1 functions
 - **Utilities - Data Processing:** 1 functions
 - **Data Import - LADPackage:** 1 functions

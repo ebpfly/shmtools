@@ -278,7 +278,7 @@ class SHMFunctionHandler(APIHandler):
             {
                 "name": "ar_model",
                 "displayName": "AR Model Parameters",
-                "category": "Features - Time Series Models",
+                "category": "Feature Extraction - Time Series Models",
                 "module": "shmtools.features.time_series",
                 "signature": "ar_model(data, order=10)",
                 "description": "Estimate autoregressive model parameters",

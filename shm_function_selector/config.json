@@ -24,7 +24,7 @@
     "custom_categories": {
       "shmtools.core": "Core - Signal Processing",
       "shmtools.features": "Feature Extraction",
-      "shmtools.classification": "Classification & Detection",
+      "shmtools.classification": "Feature Classification",
       "shmtools.active_sensing": "Active Sensing",
       "shmtools.modal": "Modal Analysis",
       "shmtools.hardware": "Data Acquisition",
