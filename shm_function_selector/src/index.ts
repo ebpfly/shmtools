@@ -1731,7 +1731,7 @@ class SHMFunctionSelector {
       line-height: 1.5;
     `;
 
-    // Header section
+    // Header section (moved to top)
     const header = document.createElement('div');
     header.style.cssText = `
       border-bottom: 2px solid #e9ecef;
@@ -1768,36 +1768,41 @@ class SHMFunctionSelector {
     header.appendChild(subtitle);
     header.appendChild(description);
 
-    // Function signature section
-    const signatureSection = document.createElement('div');
-    signatureSection.style.cssText = `
-      margin-bottom: 16px;
-    `;
+    // Add verbose call if available
+    if (func.guiMetadata && func.guiMetadata.verbose_call) {
+      const verboseCallDiv = document.createElement('div');
+      verboseCallDiv.style.cssText = `
+        margin-top: 12px;
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 4px;
+        padding: 10px;
+      `;
 
-    const signatureTitle = document.createElement('h3');
-    signatureTitle.textContent = 'Function Signature';
-    signatureTitle.style.cssText = `
-      margin: 0 0 8px 0;
-      color: #333;
-      font-size: 14px;
-      font-weight: bold;
-    `;
+      const verboseCallLabel = document.createElement('div');
+      verboseCallLabel.textContent = 'Usage Example:';
+      verboseCallLabel.style.cssText = `
+        color: #666;
+        font-size: 11px;
+        font-weight: bold;
+        margin-bottom: 4px;
+      `;
 
-    const signatureCode = document.createElement('div');
-    signatureCode.textContent = func.signature;
-    signatureCode.style.cssText = `
-      background: #f8f9fa;
-      border: 1px solid #e9ecef;
-      border-radius: 4px;
-      padding: 12px;
-      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-      font-size: 11px;
-      color: #333;
-      overflow-x: auto;
-    `;
+      const verboseCallCode = document.createElement('div');
+      verboseCallCode.textContent = func.guiMetadata.verbose_call;
+      verboseCallCode.style.cssText = `
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 11px;
+        color: #333;
+      `;
 
-    signatureSection.appendChild(signatureTitle);
-    signatureSection.appendChild(signatureCode);
+      verboseCallDiv.appendChild(verboseCallLabel);
+      verboseCallDiv.appendChild(verboseCallCode);
+      header.appendChild(verboseCallDiv);
+    }
+
+    // Add header to content first
+    content.appendChild(header);
 
     // Parameters section
     if (func.parameters && func.parameters.length > 0) {
@@ -1811,7 +1816,7 @@ class SHMFunctionSelector {
       content.appendChild(returnsSection);
     }
 
-    // GUI metadata section
+    // GUI metadata section (with Complexity removed)
     if (func.guiMetadata) {
       const metadataSection = this.createMetadataSection(func.guiMetadata);
       content.appendChild(metadataSection);
@@ -1822,9 +1827,6 @@ class SHMFunctionSelector {
       const docstringSection = this.createDocstringSection(func.docstring);
       content.appendChild(docstringSection);
     }
-
-    content.appendChild(header);
-    content.appendChild(signatureSection);
 
     return content;
   }
@@ -2041,7 +2043,6 @@ class SHMFunctionSelector {
     `;
 
     const metadataEntries = [
-      ['Complexity', metadata.complexity],
       ['Data Type', metadata.data_type],
       ['Output Type', metadata.output_type],
       ['MATLAB Equivalent', metadata.matlab_equivalent]
