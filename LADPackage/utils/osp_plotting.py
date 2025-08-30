@@ -258,7 +258,7 @@ def plot_sensors_with_mesh(
     LADPackage wrapper: Node-element plot with sensors
     
     .. meta::
-        :category: Plotting - Optimal Sensor Placement
+        :category: Auxiliary - Sensor Support - Optimal Sensor Placement - Plotting
         :matlab_equivalent: PlotSensorsWithMesh
         :complexity: Intermediate
         :data_type: Modal Data

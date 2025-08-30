@@ -28,7 +28,7 @@ def assemble_outlier_detector_shm(
     Assemble custom outlier detector with interactive or programmatic configuration.
 
     .. meta::
-        :category: Classification - Detector Assembly
+        :category: Feature Classification - Detector Assembly
         :display_name: Assemble Outlier Detector
         :verbose_call: [Assembled Detector Structure] = Assemble Outlier Detector (Suffix, Base Directory)
         :matlab_equivalent: assembleOutlierDetector_shm

@@ -22,7 +22,7 @@
       "*_helper"
     ],
     "custom_categories": {
-      "shmtools.core": "Core - Signal Processing",
+      "shmtools.core": "Feature Extraction - Signal Processing",
       "shmtools.features": "Feature Extraction",
       "shmtools.classification": "Feature Classification",
       "shmtools.active_sensing": "Active Sensing",

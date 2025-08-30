@@ -24,7 +24,7 @@ def plot_scores_shm(
     Plot damage detection scores with threshold and classification results.
 
     .. meta::
-        :category: Classification - Plotting
+        :category: Feature Classification - Plotting
         :matlab_equivalent: plotScores_shm
         :complexity: Basic
         :data_type: Scores
@@ -570,7 +570,7 @@ def plot_roc_shm(
     Plot receiver operating characteristic curve.
 
     .. meta::
-        :category: Classification - Plotting
+        :category: Feature Classification - Plotting
         :matlab_equivalent: plotROC_shm
         :complexity: Basic
         :data_type: Performance Metrics
@@ -1051,7 +1051,7 @@ def plot_score_distributions_shm(
     Plot distribution of scores using kernel density estimation (KDE).
 
     .. meta::
-        :category: Classification - Plotting
+        :category: Feature Classification - Plotting
         :matlab_equivalent: plotScoreDistributions_shm
         :complexity: Intermediate
         :data_type: Scores
@@ -1315,7 +1315,7 @@ def plot_features_shm(
     Plot feature vectors as subplots for each feature.
 
     .. meta::
-        :category: Plotting - Feature Visualization
+        :category: Feature Extraction - Plotting
         :matlab_equivalent: plotFeatures_shm
         :complexity: Basic
         :data_type: Features
