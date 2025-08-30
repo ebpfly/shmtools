@@ -205,6 +205,14 @@ log_step "🔧 Setting proper file ownership..."
 chown -R ${JUPYTER_ADMIN_USER}:${JUPYTER_ADMIN_USER} /srv/classrepo 2>&1 | sed 's/^/[CHOWN] /'
 log_success "File ownership configured"
 
+# Copy example notebooks to /etc/skel for all new users
+log_step "📚 Setting up example notebooks template for new users..."
+mkdir -p /etc/skel/shmtools-examples
+cp -r /srv/classrepo/examples/notebooks/* /etc/skel/shmtools-examples/
+chown -R root:root /etc/skel/shmtools-examples
+chmod -R 755 /etc/skel/shmtools-examples
+log_success "Example notebooks will be automatically copied to each new user's home directory"
+
 # Claude Code (native installer) - Non-interactive installation
 log_step "🤖 Installing Claude Code CLI..."
 echo "========================================="
