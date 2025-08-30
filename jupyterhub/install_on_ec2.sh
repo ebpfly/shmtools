@@ -48,6 +48,53 @@ CERT_BACKUP_KEY="${CERT_BACKUP_KEY:-}"
 
 export DEBIAN_FRONTEND=noninteractive
 
+# Certificate restore from backup (BEFORE TLJH installation so it can use the certificate)
+if [ "${ENABLE_SSL}" = "true" ] && [ -n "${USE_DOMAIN}" ]; then
+  log_step "🔐 Checking for certificate backup to restore..."
+  
+  # Try to restore existing certificate from S3
+  if aws s3 cp "s3://${CERT_BACKUP_BUCKET}/${CERT_BACKUP_KEY}" /tmp/acme-restore.json 2>/dev/null; then
+    log_step "Found certificate backup, validating..."
+    
+    # Validate that the backup contains valid Let's Encrypt certificates
+    if jq -e '.letsencrypt.Certificates != null and (.letsencrypt.Certificates | length) > 0' /tmp/acme-restore.json >/dev/null 2>&1; then
+      log_success "Certificate backup contains valid Let's Encrypt certificates, restoring..."
+      
+      # Show certificate details
+      CERT_DOMAIN=$(jq -r '.letsencrypt.Certificates[0].domain.main // "unknown"' /tmp/acme-restore.json 2>/dev/null)
+      log_success "Restoring certificate for domain: $CERT_DOMAIN"
+      
+      # Create the TLJH state directory if it doesn't exist
+      mkdir -p /opt/tljh/state
+      
+      # Copy the certificate file to the correct location
+      cp /tmp/acme-restore.json /opt/tljh/state/acme.json
+      chmod 600 /opt/tljh/state/acme.json
+      chown root:root /opt/tljh/state/acme.json
+      
+      # Also create the traefik acme directory structure that TLJH expects
+      mkdir -p /opt/tljh/state/traefik/acme
+      cp /tmp/acme-restore.json /opt/tljh/state/traefik/acme/acme.json
+      chmod 600 /opt/tljh/state/traefik/acme/acme.json
+      chown root:root /opt/tljh/state/traefik/acme/acme.json
+      
+      log_success "Valid Let's Encrypt certificate backup restored"
+      
+      # Mark that we restored a certificate so we can restart Traefik after TLJH install
+      CERT_WAS_RESTORED=true
+    else
+      log_step "Certificate backup exists but contains no valid certificates"
+      log_step "Will generate new certificates (backup likely from rate-limited attempt)"
+      CERT_WAS_RESTORED=false
+    fi
+    
+    rm -f /tmp/acme-restore.json
+  else
+    CERT_WAS_RESTORED=false
+    log_step "No certificate backup found, will generate new certificates"
+  fi
+fi
+
 log_step "📦 Installing TLJH (The Littlest JupyterHub)..."
 curl -L https://tljh.jupyter.org/bootstrap.py | sudo python3 - --admin ${JUPYTER_ADMIN_USER} 2>&1 | sed 's/^/[TLJH-INSTALL] /'
 log_success "TLJH installation complete!"
