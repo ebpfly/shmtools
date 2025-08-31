@@ -235,7 +235,16 @@ mkdir -p /etc/skel/shmtools-examples
 cp -r /srv/classrepo/examples/notebooks/* /etc/skel/shmtools-examples/
 chown -R root:root /etc/skel/shmtools-examples
 chmod -R 755 /etc/skel/shmtools-examples
-log_success "Example notebooks will be automatically copied to each new user's home directory"
+log_success "Example notebooks will be automatically copied to each new user's home directory at ~/shmtools-examples/"
+
+# Also ensure notebooks are available in a shared read-only location
+log_step "📚 Creating shared examples directory accessible to all users..."
+SHARED_DIR="/srv/shared-notebooks"
+mkdir -p "$SHARED_DIR"
+cp -r /srv/classrepo/examples/notebooks/* "$SHARED_DIR/"
+chmod -R 755 "$SHARED_DIR"
+chown -R root:root "$SHARED_DIR"
+log_success "Shared notebooks also available at $SHARED_DIR for reference"
 
 # Claude Code (native installer) - Non-interactive installation
 log_step "🤖 Installing Claude Code CLI..."
