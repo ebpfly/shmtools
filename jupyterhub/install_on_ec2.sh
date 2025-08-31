@@ -105,6 +105,14 @@ log_step "👥 Installing and configuring FirstUse Authenticator..."
 sudo -E pip install jupyterhub-firstuseauthenticator 2>&1 | sed 's/^/[FIRSTUSE-INSTALL] /'
 sudo tljh-config set auth.type firstuseauthenticator.FirstUseAuthenticator 2>&1 | sed 's/^/[AUTH-CONFIG] /'
 sudo tljh-config set auth.FirstUseAuthenticator.create_users true 2>&1 | sed 's/^/[AUTH-CONFIG] /'
+
+# Configure post-spawn hook to ensure examples are available
+log_step "🔧 Configuring JupyterHub post-spawn hook for example notebooks..."
+if [ -f "/srv/classrepo/jupyterhub/tljh_config_post_install.py" ]; then
+    sudo cp /srv/classrepo/jupyterhub/tljh_config_post_install.py /opt/tljh/config/jupyterhub_config.d/
+    log_success "Post-spawn hook configured for notebook distribution"
+fi
+
 sudo tljh-config reload 2>&1 | sed 's/^/[CONFIG-RELOAD] /'
 log_success "FirstUse Authenticator configured!"
 
@@ -229,22 +237,41 @@ log_step "🔧 Setting proper file ownership..."
 chown -R ${JUPYTER_ADMIN_USER}:${JUPYTER_ADMIN_USER} /srv/classrepo 2>&1 | sed 's/^/[CHOWN] /'
 log_success "File ownership configured"
 
-# Copy example notebooks to /etc/skel for all new users
-log_step "📚 Setting up example notebooks template for new users..."
-mkdir -p /etc/skel/shmtools-examples
-cp -r /srv/classrepo/examples/notebooks/* /etc/skel/shmtools-examples/
-chown -R root:root /etc/skel/shmtools-examples
-chmod -R 755 /etc/skel/shmtools-examples
-log_success "Example notebooks will be automatically copied to each new user's home directory at ~/shmtools-examples/"
+# Set up shared data directory for TLJH (recommended approach)
+log_step "📚 Setting up shared examples directory for all JupyterHub users..."
+SHARED_DATA_DIR="/srv/data"
+mkdir -p "$SHARED_DATA_DIR/shmtools-examples"
+cp -r /srv/classrepo/examples/notebooks/* "$SHARED_DATA_DIR/shmtools-examples/"
+# Make it read-only for all users
+chmod -R 755 "$SHARED_DATA_DIR"
+chown -R root:root "$SHARED_DATA_DIR"
+log_success "Shared notebooks available at /srv/data/shmtools-examples/ for all users"
 
-# Also ensure notebooks are available in a shared read-only location
-log_step "📚 Creating shared examples directory accessible to all users..."
-SHARED_DIR="/srv/shared-notebooks"
-mkdir -p "$SHARED_DIR"
-cp -r /srv/classrepo/examples/notebooks/* "$SHARED_DIR/"
-chmod -R 755 "$SHARED_DIR"
-chown -R root:root "$SHARED_DIR"
-log_success "Shared notebooks also available at $SHARED_DIR for reference"
+# Create symbolic link in /etc/skel so new TLJH users automatically see the shared folder
+log_step "📚 Creating symbolic link for new user directories..."
+ln -sf /srv/data/shmtools-examples /etc/skel/shared-shmtools-examples
+log_success "New users will see shared-shmtools-examples link in their home directory"
+
+# For existing jupyter-* users, create the symlink manually
+log_step "📚 Adding symbolic links for any existing JupyterHub users..."
+for USER_HOME in /home/jupyter-*; do
+    if [ -d "$USER_HOME" ]; then
+        USERNAME=$(basename "$USER_HOME")
+        if [ ! -e "$USER_HOME/shared-shmtools-examples" ]; then
+            ln -sf /srv/data/shmtools-examples "$USER_HOME/shared-shmtools-examples"
+            chown -h "$USERNAME:$USERNAME" "$USER_HOME/shared-shmtools-examples"
+            log_success "Created symlink for $USERNAME"
+        fi
+    fi
+done
+
+# Also copy example notebooks directly to /etc/skel for personal copies
+log_step "📚 Setting up personal notebook copies for new users..."
+mkdir -p /etc/skel/my-shmtools-examples
+cp -r /srv/classrepo/examples/notebooks/* /etc/skel/my-shmtools-examples/
+chown -R root:root /etc/skel/my-shmtools-examples
+chmod -R 755 /etc/skel/my-shmtools-examples
+log_success "New users will also get personal copies in ~/my-shmtools-examples/"
 
 # Claude Code (native installer) - Non-interactive installation
 log_step "🤖 Installing Claude Code CLI..."
