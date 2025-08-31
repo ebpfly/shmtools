@@ -15,23 +15,18 @@ def post_spawn_hook(spawner):
     username = spawner.user.name
     user_home = Path(f"/home/jupyter-{username}")
     
-    # Create symlink to shared examples if it doesn't exist
-    shared_link = user_home / "shared-shmtools-examples"
-    if not shared_link.exists():
+    # Copy examples if they don't exist
+    examples_dir = user_home / "shmtools-examples"
+    if not examples_dir.exists():
         try:
-            shared_link.symlink_to("/srv/data/shmtools-examples")
-            os.system(f"chown -h jupyter-{username}:jupyter-{username} {shared_link}")
-            spawner.log.info(f"Created shared examples symlink for {username}")
-        except Exception as e:
-            spawner.log.error(f"Failed to create symlink for {username}: {e}")
-    
-    # Copy personal examples if they don't exist
-    personal_examples = user_home / "my-shmtools-examples"
-    if not personal_examples.exists():
-        try:
-            shutil.copytree("/srv/data/shmtools-examples", personal_examples)
-            os.system(f"chown -R jupyter-{username}:jupyter-{username} {personal_examples}")
-            spawner.log.info(f"Copied personal examples for {username}")
+            # Copy from the repository location
+            source_dir = Path("/srv/classrepo/examples/notebooks")
+            if source_dir.exists():
+                shutil.copytree(source_dir, examples_dir)
+                os.system(f"chown -R jupyter-{username}:jupyter-{username} {examples_dir}")
+                spawner.log.info(f"Copied example notebooks for {username}")
+            else:
+                spawner.log.warning(f"Source notebooks not found at {source_dir}")
         except Exception as e:
             spawner.log.error(f"Failed to copy examples for {username}: {e}")
 

@@ -237,41 +237,28 @@ log_step "🔧 Setting proper file ownership..."
 chown -R ${JUPYTER_ADMIN_USER}:${JUPYTER_ADMIN_USER} /srv/classrepo 2>&1 | sed 's/^/[CHOWN] /'
 log_success "File ownership configured"
 
-# Set up shared data directory for TLJH (recommended approach)
-log_step "📚 Setting up shared examples directory for all JupyterHub users..."
-SHARED_DATA_DIR="/srv/data"
-mkdir -p "$SHARED_DATA_DIR/shmtools-examples"
-cp -r /srv/classrepo/examples/notebooks/* "$SHARED_DATA_DIR/shmtools-examples/"
-# Make it read-only for all users
-chmod -R 755 "$SHARED_DATA_DIR"
-chown -R root:root "$SHARED_DATA_DIR"
-log_success "Shared notebooks available at /srv/data/shmtools-examples/ for all users"
+# Copy example notebooks to /etc/skel for new users
+log_step "📚 Setting up example notebooks for new users..."
+mkdir -p /etc/skel/shmtools-examples
+cp -r /srv/classrepo/examples/notebooks/* /etc/skel/shmtools-examples/
+chown -R root:root /etc/skel/shmtools-examples
+chmod -R 755 /etc/skel/shmtools-examples
+log_success "New users will get example notebooks in ~/shmtools-examples/"
 
-# Create symbolic link in /etc/skel so new TLJH users automatically see the shared folder
-log_step "📚 Creating symbolic link for new user directories..."
-ln -sf /srv/data/shmtools-examples /etc/skel/shared-shmtools-examples
-log_success "New users will see shared-shmtools-examples link in their home directory"
-
-# For existing jupyter-* users, create the symlink manually
-log_step "📚 Adding symbolic links for any existing JupyterHub users..."
+# For any existing jupyter-* users, copy notebooks directly
+log_step "📚 Copying example notebooks to existing JupyterHub users..."
 for USER_HOME in /home/jupyter-*; do
     if [ -d "$USER_HOME" ]; then
         USERNAME=$(basename "$USER_HOME")
-        if [ ! -e "$USER_HOME/shared-shmtools-examples" ]; then
-            ln -sf /srv/data/shmtools-examples "$USER_HOME/shared-shmtools-examples"
-            chown -h "$USERNAME:$USERNAME" "$USER_HOME/shared-shmtools-examples"
-            log_success "Created symlink for $USERNAME"
+        if [ ! -d "$USER_HOME/shmtools-examples" ]; then
+            cp -r /srv/classrepo/examples/notebooks "$USER_HOME/shmtools-examples"
+            chown -R "$USERNAME:$USERNAME" "$USER_HOME/shmtools-examples"
+            log_success "Copied notebooks for $USERNAME"
+        else
+            log_step "Notebooks already exist for $USERNAME, skipping..."
         fi
     fi
 done
-
-# Also copy example notebooks directly to /etc/skel for personal copies
-log_step "📚 Setting up personal notebook copies for new users..."
-mkdir -p /etc/skel/my-shmtools-examples
-cp -r /srv/classrepo/examples/notebooks/* /etc/skel/my-shmtools-examples/
-chown -R root:root /etc/skel/my-shmtools-examples
-chmod -R 755 /etc/skel/my-shmtools-examples
-log_success "New users will also get personal copies in ~/my-shmtools-examples/"
 
 # Claude Code (native installer) - Non-interactive installation
 log_step "🤖 Installing Claude Code CLI..."
