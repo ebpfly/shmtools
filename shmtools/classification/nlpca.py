@@ -24,10 +24,6 @@ try:
     TENSORFLOW_AVAILABLE = True
 except ImportError:
     TENSORFLOW_AVAILABLE = False
-    warnings.warn(
-        "TensorFlow not available. NLPCA functions will not work. "
-        "Install TensorFlow: pip install tensorflow"
-    )
 
 
 def learn_nlpca_shm(

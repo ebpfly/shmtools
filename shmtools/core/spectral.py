@@ -28,7 +28,7 @@ def psd_welch_shm(
         :data_type: Time Series
         :output_type: Spectral
         :display_name: Power Spectral Density via Welch's Method
-        :verbose_call: [PSD Matrix, Frequency Vector, PSD Range] = Power Spectral Density via Welch's Method (Signal Matrix, Window Length, Overlap Length, FFT Bins, Sampling Frequency, Use One-Sided PSD)
+        :verbose_call: [PSD Matrix, Frequency Vector, Use One Sided] = Power Spectral Density via Welch's Method (Signal Matrix, Window Length, Overlap Length, FFT Bins, Sampling Frequency, Use One-Sided PSD)
 
     Computes the power spectral density of a digital signal using Welch's
     method. Welch's method segments a signal into a specified number of

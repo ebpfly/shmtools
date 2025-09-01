@@ -199,7 +199,6 @@ def plot_psd_shm(
     use_colormap: bool = False,
     use_subplots: bool = False,
     ax: Optional[Axes] = None,
-    **kwargs,
 ) -> Union[Axes, List[Axes]]:
     """
     Plot power spectral density with various visualization options.
@@ -214,7 +213,7 @@ def plot_psd_shm(
         :data_type: Frequency Domain
         :output_type: Plot
         :interactive_plot: True
-        :verbose_call: [Plot Axes] = Plot Power Spectral Density (PSD Matrix, Channel Number, One-Sided Flag, Frequency Vector, Use Colormap, Use Subplots)
+        :verbose_call: [Plot Axes] = Plot Power Spectral Density (PSD Matrix, Channel Number, One-Sided Flag, Frequency Vector, Use Colormap, Use Subplots, Axes Handle)
 
     Parameters
     ----------
@@ -267,9 +266,6 @@ def plot_psd_shm(
 
     ax : matplotlib.axes.Axes, optional
         Existing axes to plot on. If None, creates new figure.
-
-    **kwargs
-        Additional keyword arguments passed to matplotlib plotting functions.
 
     Returns
     -------
