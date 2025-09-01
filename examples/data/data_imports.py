@@ -124,6 +124,8 @@ def import_cbm_data_shm() -> Tuple[np.ndarray, np.ndarray, np.ndarray, float]:
         :complexity: Intermediate
         :data_type: Vibration Data
         :output_type: Dataset
+        :verbose_call: [Dataset, Damage States, State List, Fs] = Import CBM Dataset()
+
         
     Returns
     -------

@@ -4274,16 +4274,25 @@ class SHMContextMenuManager {
         body: JSON.stringify({ cells })
       });
       
+      console.log('🔍 DEBUG: Backend response:', response);
+      
       // Convert backend response to frontend Variable format
       const backendVariables = Array.isArray(response) ? response : [];
+      console.log(`🔍 DEBUG: Backend returned ${backendVariables.length} variables`);
+      backendVariables.forEach((v: any) => {
+        console.log(`  - Variable: ${v.name} from cell ${v.cellIndex}, source: ${v.source}`);
+      });
+      
       this.variables = backendVariables.map((v: any, index: number) => ({
         name: v.name,
         displayName: v.displayName,
         type: v.type || 'unknown',
-        cellId: `cell-${v.cellIndex || index}`,
+        cellId: `cell-${v.cellIndex !== undefined ? v.cellIndex : index}`,
         compatible: false, // Will be set later based on context
         source: v.source
       }));
+      
+      console.log(`🔍 DEBUG: After mapping, this.variables has ${this.variables.length} items`);
       
     } catch (error) {
       console.warn('Backend variable extraction failed, falling back to frontend parsing:', error);
@@ -4447,6 +4456,13 @@ class SHMContextMenuManager {
     
     // Filter to only show variables from cells before the current one
     if (currentCellIndex >= 0) {
+      console.log(`🔍 DEBUG: Filtering variables for currentCellIndex=${currentCellIndex}`);
+      console.log(`🔍 DEBUG: Before filtering: ${this.variables.length} variables`);
+      this.variables.forEach(v => {
+        const cellNumber = parseInt(v.cellId.replace('cell-', ''));
+        console.log(`  - ${v.name} in ${v.cellId} (cellNumber=${cellNumber}, will keep=${cellNumber < currentCellIndex})`);
+      });
+      
       this.variables = this.variables.filter(v => {
         const cellNumber = parseInt(v.cellId.replace('cell-', ''));
         return cellNumber < currentCellIndex;
@@ -4459,7 +4475,14 @@ class SHMContextMenuManager {
     console.log(`🚫 Input variables to exclude: ${inputVariableNames.join(', ')}`);
     
     // Filter out variables that are currently being used as inputs
+    const beforeExclude = this.variables.length;
     this.variables = this.variables.filter(v => !inputVariableNames.includes(v.name));
+    console.log(`🔍 DEBUG: After excluding input variables: ${this.variables.length} variables (removed ${beforeExclude - this.variables.length})`);
+    if (beforeExclude > this.variables.length) {
+      console.log(`🔍 DEBUG: Removed variables:`, inputVariableNames.filter(name => 
+        this.variables.every(v => v.name !== name)
+      ));
+    }
     
     console.log(`📊 Variables from cells before cell ${currentCellIndex}: ${this.variables.length}`);
     this.variables.forEach(v => {
@@ -4602,16 +4625,19 @@ class SHMContextMenuManager {
       // Get the current notebook cell to analyze the function call
       const activeCell = document.querySelector('.jp-Cell.jp-mod-active .jp-InputArea .jp-Editor') as HTMLElement;
       if (!activeCell) {
+        console.log('DEBUG: No active cell found');
         return inputVariables;
       }
       
       // Get the CodeMirror instance to access the full code
       const codeMirrorDiv = activeCell.querySelector('.CodeMirror') as any;
       if (!codeMirrorDiv?.CodeMirror) {
+        console.log('DEBUG: No CodeMirror instance found');
         return inputVariables;
       }
       
       const code = codeMirrorDiv.CodeMirror.getValue();
+      console.log('DEBUG: Cell code:', code);
       
       // Find the function call that contains the current parameter
       const functionCallPattern = new RegExp(`${parameterContext.functionName}\\s*\\(([^)]+)\\)`, 'gs');
@@ -4619,6 +4645,7 @@ class SHMContextMenuManager {
       
       if (match && match[1]) {
         const parametersText = match[1];
+        console.log('DEBUG: Function parameters text:', parametersText);
         
         // Parse parameter values and extract variable names
         // Look for patterns like: param=variable_name or just variable_name
@@ -4627,6 +4654,7 @@ class SHMContextMenuManager {
         
         while ((valueMatch = paramValuePattern.exec(parametersText)) !== null) {
           const potentialVariable = valueMatch[1];
+          console.log('DEBUG: Found potential variable:', potentialVariable);
           
           // Skip common literals and keywords
           if (!['None', 'True', 'False', 'int', 'float', 'str', 'list', 'dict'].includes(potentialVariable) &&
@@ -4634,11 +4662,14 @@ class SHMContextMenuManager {
             inputVariables.push(potentialVariable);
           }
         }
+      } else {
+        console.log('DEBUG: No function call match found for:', parameterContext.functionName);
       }
     } catch (error) {
       console.warn('Error extracting input variable names:', error);
     }
     
+    console.log('DEBUG: Final input variables to exclude:', inputVariables);
     return [...new Set(inputVariables)]; // Remove duplicates
   }
 

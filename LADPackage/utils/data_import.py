@@ -25,7 +25,7 @@ def import_3story_structure_sub_floors(floor_numbers: Optional[Union[List[int], 
     function for compatibility with LADPackage demo scripts.
     
     .. meta::
-        :category: Data Import - LADPackage
+        :category: LAD - Data Import
         :matlab_equivalent: import_3StoryStructure_subFloors
         :complexity: Basic
         :data_type: Time Series
