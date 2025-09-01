@@ -13,10 +13,10 @@ NC='\033[0m' # No Color
 
 echo -e "${YELLOW}🔄 Restarting JupyterLab for extension testing...${NC}"
 
-# Navigate to project root and activate venv
-cd /Users/eric/repo/shm/
-echo -e "${YELLOW}📁 Activating virtual environment...${NC}"
-source venv/bin/activate
+# Navigate to project root 
+cd /srv/classrepo
+echo -e "${YELLOW}📁 Working in project directory...${NC}"
+# No venv to activate on this system
 
 # Kill any existing JupyterLab processes
 echo -e "${YELLOW}🛑 Stopping existing JupyterLab processes...${NC}"
