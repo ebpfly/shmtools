@@ -2338,69 +2338,76 @@ class SHMFunctionSelector {
     }
 
     const notebook = currentWidget.content;
-    const activeCell = notebook.activeCell;
     
-    if (activeCell && activeCell.model.type === 'code') {
-      console.log('📝 Inserting into active code cell');
-      // Insert at cursor position in active cell
-      const editor = activeCell.editor;
-      if (editor) {
-        const cursorPos = editor.getCursorPosition();
-        const currentText = editor.model.sharedModel.getSource();
-        
-        // Insert code at cursor position
-        const lines = currentText.split('\n');
-        const line = lines[cursorPos.line] || '';
-        const before = line.substring(0, cursorPos.column);
-        const after = line.substring(cursorPos.column);
-        
-        // If we're in the middle of a line, add newlines
-        const insertion = (before.trim() ? '\n' : '') + codeSnippet + (after.trim() ? '\n' : '');
-        lines[cursorPos.line] = before + insertion + after;
-        
-        editor.model.sharedModel.setSource(lines.join('\n'));
-        
-        // Move cursor to first parameter
-        const newCursorLine = cursorPos.line + (before.trim() ? 1 : 0);
-        editor.setCursorPosition({ line: newCursorLine, column: codeSnippet.indexOf('=') + 1 });
-        
-        console.log('✅ Successfully inserted function into active cell');
+    // Insert new cells after current cell
+    console.log('📄 Inserting function cells after current cell');
+    
+    const currentCellIndex = notebook.activeCellIndex;
+    const markdownContent = `## ${func.displayName}\n\n${func.description}`;
+    
+    if (currentCellIndex >= 0 && currentCellIndex < notebook.widgets.length) {
+      // Check if current cell has content
+      const currentCellModel = notebook.model.cells.get(currentCellIndex);
+      const cellHasContent = currentCellModel && currentCellModel.sharedModel.getSource().trim().length > 0;
+      
+      // Determine insertion index based on whether current cell has content
+      let insertIndex = currentCellIndex;
+      if (cellHasContent) {
+        // If current cell has content, insert after it
+        insertIndex = currentCellIndex + 1;
+      } else {
+        // If current cell is empty, delete it and use its position
+        notebook.model.sharedModel.deleteCell(currentCellIndex);
       }
-    } else {
-      console.log('📄 Creating new code cell');
-      // Create new code cell
-      const cellIndex = notebook.activeCellIndex !== -1 ? notebook.activeCellIndex + 1 : notebook.widgets.length;
-      notebook.model.sharedModel.insertCell(cellIndex, {
+      
+      // Insert markdown cell
+      notebook.model.sharedModel.insertCell(insertIndex, {
+        cell_type: 'markdown',
+        source: markdownContent
+      });
+      
+      // Insert code cell after the markdown cell
+      notebook.model.sharedModel.insertCell(insertIndex + 1, {
         cell_type: 'code',
         source: codeSnippet
       });
       
-      // Activate the new cell
-      notebook.activeCellIndex = cellIndex;
-      console.log('✅ Successfully created new cell with function');
+      // Insert empty code cell after the function code for next input
+      notebook.model.sharedModel.insertCell(insertIndex + 2, {
+        cell_type: 'code',
+        source: ''
+      });
+      
+      // Activate and focus the empty cell
+      notebook.activeCellIndex = insertIndex + 2;
+      
+      setTimeout(() => {
+        const emptyCell = notebook.widgets[insertIndex + 2];
+        if (emptyCell && emptyCell.editor) {
+          emptyCell.editor.focus();
+          console.log('✅ Focused on new empty cell');
+        }
+      }, 100);
+    } else {
+      // No active cell, create cells at the end
+      const insertIndex = notebook.widgets.length;
+      notebook.model.sharedModel.insertCell(insertIndex, {
+        cell_type: 'markdown',
+        source: markdownContent
+      });
+      notebook.model.sharedModel.insertCell(insertIndex + 1, {
+        cell_type: 'code',
+        source: codeSnippet
+      });
+      // Insert empty code cell for next input
+      notebook.model.sharedModel.insertCell(insertIndex + 2, {
+        cell_type: 'code',
+        source: ''
+      });
+      notebook.activeCellIndex = insertIndex + 2;
     }
-
-    // Create a new empty cell after function insertion for chaining
-    console.log('📄 Creating new empty cell for next function');
-    const currentCellIndex = notebook.activeCellIndex;
-    const nextCellIndex = currentCellIndex + 1;
     
-    notebook.model.sharedModel.insertCell(nextCellIndex, {
-      cell_type: 'code',
-      source: ''
-    });
-    
-    // Move to the new empty cell
-    notebook.activeCellIndex = nextCellIndex;
-    
-    // Set focus to the new cell's editor
-    setTimeout(() => {
-      const newActiveCell = notebook.activeCell;
-      if (newActiveCell && newActiveCell.editor) {
-        newActiveCell.editor.focus();
-        console.log('✅ Moved cursor to new empty cell');
-      }
-    }, 100);
+    console.log('✅ Successfully inserted function with markdown description and empty cell');
 
     // Show success notification
     this.showNotification(`✅ Inserted ${func.displayName}`, '#4caf50');
@@ -2426,43 +2433,57 @@ class SHMFunctionSelector {
     // Generate code snippet
     const codeSnippet = this.generateCodeSnippet(selectedFunc);
     
-    // Insert into active cell or create new cell
+    // Use current cell for markdown and insert code cell after
     const notebook = nbPanel.content;
-    const activeCell = notebook.activeCell;
+    const currentCellIndex = notebook.activeCellIndex;
+    const markdownContent = `## ${selectedFunc.displayName}\n\n${selectedFunc.description}`;
     
-    if (activeCell && activeCell.model.type === 'code') {
-      // Insert at cursor position in active cell
-      const editor = activeCell.editor;
-      if (editor) {
-        const cursorPos = editor.getCursorPosition();
-        const currentText = editor.model.sharedModel.getSource();
-        
-        // Insert code at cursor position
-        const lines = currentText.split('\n');
-        const line = lines[cursorPos.line] || '';
-        const before = line.substring(0, cursorPos.column);
-        const after = line.substring(cursorPos.column);
-        
-        // If we're in the middle of a line, add newlines
-        const insertion = (before.trim() ? '\n' : '') + codeSnippet + (after.trim() ? '\n' : '');
-        lines[cursorPos.line] = before + insertion + after;
-        
-        editor.model.sharedModel.setSource(lines.join('\n'));
-        
-        // Move cursor to first parameter
-        const newCursorLine = cursorPos.line + (before.trim() ? 1 : 0);
-        editor.setCursorPosition({ line: newCursorLine, column: codeSnippet.indexOf('=') + 1 });
-      }
-    } else {
-      // Create new code cell
-      const cellIndex = notebook.activeCellIndex !== -1 ? notebook.activeCellIndex + 1 : notebook.widgets.length;
-      notebook.model.sharedModel.insertCell(cellIndex, {
+    if (currentCellIndex >= 0 && currentCellIndex < notebook.widgets.length) {
+      // Delete current cell and insert markdown + code cells
+      notebook.model.sharedModel.deleteCell(currentCellIndex);
+      
+      // Insert markdown cell at the same position
+      notebook.model.sharedModel.insertCell(currentCellIndex, {
+        cell_type: 'markdown',
+        source: markdownContent
+      });
+      
+      // Insert code cell after the markdown cell
+      notebook.model.sharedModel.insertCell(currentCellIndex + 1, {
         cell_type: 'code',
         source: codeSnippet
       });
       
-      // Activate the new cell
-      notebook.activeCellIndex = cellIndex;
+      // Activate and focus the code cell
+      notebook.activeCellIndex = currentCellIndex + 1;
+      
+      setTimeout(() => {
+        const codeCell = notebook.widgets[currentCellIndex + 1];
+        if (codeCell && codeCell.editor) {
+          codeCell.editor.focus();
+          // Position cursor at first parameter (None value)
+          const lines = codeSnippet.split('\n');
+          for (let i = 0; i < lines.length; i++) {
+            const paramIndex = lines[i].indexOf('=None');
+            if (paramIndex !== -1) {
+              codeCell.editor.setCursorPosition({ line: i, column: paramIndex + 1 });
+              break;
+            }
+          }
+        }
+      }, 100);
+    } else {
+      // No active cell, create both cells at the end
+      const insertIndex = notebook.widgets.length;
+      notebook.model.sharedModel.insertCell(insertIndex, {
+        cell_type: 'markdown',
+        source: markdownContent
+      });
+      notebook.model.sharedModel.insertCell(insertIndex + 1, {
+        cell_type: 'code',
+        source: codeSnippet
+      });
+      notebook.activeCellIndex = insertIndex + 1;
     }
 
     // Show success notification
@@ -2705,9 +2726,8 @@ class SHMFunctionSelector {
   }
 
   private generateFunctionHeader(func: SHMFunction): string {
-    let header = `# ${func.description}\n`;
-    
-    return header;
+    // No longer include header in code snippet since it goes in markdown cell
+    return '';
   }
 
   private suggestOutputVariables(func: SHMFunction): string {
