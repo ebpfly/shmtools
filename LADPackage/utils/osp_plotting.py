@@ -264,7 +264,7 @@ def plot_sensors_with_mesh(
         :data_type: Modal Data
         :output_type: 3D Plot
         :display_name: Plot Sensors with Mesh
-        :verbose_call: [Axes Handle, Axes Handle, Sensor Handle] = Plot Sensors with Mesh (Elements, Nodes, Sensor Indices, Response DOF)
+        :verbose_call: [Axes Handle, Sensor Handle] = Plot Sensors with Mesh (Elements, Nodes, Sensor Indices, Response DOF)
     
     Parameters
     ----------
@@ -300,8 +300,6 @@ def plot_sensors_with_mesh(
     -------
     ax1 : matplotlib.axes.Axes
         Primary axes handle for 3D mesh plot
-    ax2 : matplotlib.axes.Axes
-        Secondary axes handle (same as ax1 for compatibility)
     sensor_handle : matplotlib collection
         Handle to sensor scatter plot for legend/styling
     
@@ -392,4 +390,4 @@ def plot_sensors_with_mesh(
     ax.set_zlim(mid_z - max_range, mid_z + max_range)
     
     # Return axes handles for MATLAB compatibility
-    return ax, ax, sensor_handle
+    return ax, sensor_handle

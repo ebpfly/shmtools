@@ -6,40 +6,42 @@
 
 ## Sequence
 
-### Step 1: Import Modal Optimal Sensor Placement Dataset (Examples\ExampleData)
+### Step 0: Import All Modules (Quick Actions)
+
+### Step 1: Import Modal Optimal Sensor Placement Dataset (Data Import)
 No Inputs  
-**Output**: Nodes = (NODEINFO, NODES, INSTANCES)  
+**Output**: Node Layout = (NODEINFO, NODES, INSTANCES)  
 **Output**: Elements = (NODES, ELEMENTS)  
 **Output**: Mode Shapes = (DOFS, MODES)  
 **Output**: Response DOF = (DOFS, DOFINFO)
 
-### Step 2: Plot Nodal Response (LADPackage\Optimal Sensor Placement\)
-**Input**: Geometry_Layout = Nodes (Step 1)  
-**Input**: ModeShapes = Mode Shapes (Step 1)  
+### Step 2: Plot Nodal Response (Auxiliary\Sensor Support\Optimal Sensor Placement\Plotting)
+**Input**: Geometry_Layout = Node Layout (Step 1)  
+**Input**: Mode Shapes = Mode Shapes (Step 1)  
 **Input**: Response DOF = Response DOF (Step 1)  
 **Input**: Elements = Elements (Step 1)  
 **Input**: Mode Number = 3  
 **Output**: Axes Handle
 
-### Step 3: Plot Nodal Response (LADPackage\Optimal Sensor Placement\)
-**Input**: Geometry_Layout = Nodes (Step 1)  
+### Step 3: Plot Nodal Response (Auxiliary\Sensor Support\Optimal Sensor Placement\Plotting)
+**Input**: Geometry_Layout = Node Layout (Step 1)  
 **Input**: ModeShapes = Mode Shapes (Step 1)  
 **Input**: Response DOF = Response DOF (Step 1)  
 **Input**: Elements = Elements (Step 1)  
 **Input**: Mode Number = 10  
 **Output**: Axes Handle
 
-### Step 4: OSP Fisher Information EIV (Auxiliary\SensorSupport\OptimalSensorPlacement)
+### Step 4: OSP Fisher Information EIV (Auxiliary\Sensor Support\Optimal Sensor Placement)
 **Input**: # Of Sensors = 12  
 **Input**: Mode Shapes = Mode Shapes (Step 1)  
-**Input**: Covariance Matrix = I (Default)  
+**Input**: Covariance Matrix = None (Default)  
 **Output**: Optimal List = (SENSORS)  
 **Output**: Fisher Determinant = scalar
 
-### Step 5: Plot Sensors With Mesh (LADPackage\Optimal Sensor Placement\)
+### Step 5: Plot Sensors (Auxiliary\Sensor Support\Optimal Sensor Placement\Plotting)
 **Input**: Elements = Elements (Step 1)  
-**Input**: Nodes = Nodes (Step 1)  
-**Input**: Sensor Indices = Optimal List (Step 4)  
+**Input**: Nodes = Node Layout (Step 1)  
+**Input**: Sensor Indices = Optimal DOF List (Step 4)  
 **Input**: Response DOF = Response DOF (Step 1)  
 **Output**: Axes Handle
 
@@ -49,13 +51,13 @@ No Inputs
 **Input**: Weights = 13:-1:1  
 **Input**: Dueling Distance = 20  
 **Input**: Response DOF = Response DOF (Step 1)  
-**Input**: Geometry Layout = Nodes (Step 1)  
+**Input**: Geometry Layout = Node Layout (Step 1)  
 **Output**: Optimal List = (SENSORS)  
 **Output**: Fisher Determinant = scalar
 
 ### Step 7: Plot Sensors With Mesh (LADPackage\Optimal Sensor Placement\)
 **Input**: Elements = Elements (Step 1)  
-**Input**: Nodes = Nodes (Step 1)  
+**Input**: Node Layout = Node Layout (Step 1)  
 **Input**: Sensor Indices = Optimal List (Step 6)  
 **Input**: Response DOF = Response DOF (Step 1)  
 **Output**: Axes Handle

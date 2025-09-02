@@ -6,14 +6,16 @@
 
 ## Sequence
 
-### Step 1: Import Condition Based Monitoring Data (SHMTools/Examples/ExampleData)
+### Step 0: Import All Modules (Quick Actions)
+
+### Step 1: Import CBM Data (Data Import)
 No inputs  
 **Output**: Dataset = (TIME, CHANNELS, INSTANCES)  
 **Output**: Damage States = (INSTANCES, 1)  
 **Output**: State List = (INSTANCES,1)  
 **Output**: Sampling Frequency = (scalar)
 
-### Step 2: Power Spectral Density via Welch's Method (SHMFunctions/Feature Extraction/Spectral Analysis)
+### Step 2: Power Spectral Density via Welch's Method (Feature Extraction/Spectral)
 **Input**: X = Dataset (Step 1)  
 **Input**: Window Length = leave as default  
 **Input**: Overlap Length = leave as default  
@@ -24,10 +26,10 @@ No inputs
 **Output**: Frequency Vector = (NFFT, 1)  
 **Output**: PSD Range = (string)
 
-### Step 3: Plot Power Spectral Density (SHMFunctions/Feature Extraction/Spectral Analysis)
+### Step 3: Plot Power Spectral Density (Feature Extraction/Spectral/Plotting)
 **Input**: PSD Matrix = PSD Matrix (Step 2)  
-**Input**: Channel Index = 3  
-**Input**: PSD Range = PSD Range (Step 2)  
+**Input**: Channel Number = 3  
+**Input**: Is One Sided = Use One Sided (Step 2)  
 **Input**: Frequency Vector = Frequency Vector (Step 2)  
 **Input**: Use dB Magnitude = leave as default  
 **Input**: Plot Average PSD = leave as default  
