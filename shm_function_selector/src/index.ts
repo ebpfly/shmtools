@@ -60,12 +60,19 @@ function activate(
     
     // Listen for right-click events on code cells with full functionality
     notebook.node.addEventListener('contextmenu', (event: MouseEvent) => {
+      // Only handle events that are actually on code editor areas
+      const target = event.target as HTMLElement;
+      if (!target.closest('.jp-CodeMirrorEditor')) {
+        // Not clicking on a code editor, let JupyterLab handle it normally
+        return;
+      }
+
       const activeCell = notebook.activeCell;
       if (!activeCell || activeCell.model.type !== 'code') {
         return;
       }
 
-      console.log('🚀 Right-click detected, altKey:', event.altKey, 'ctrlKey:', event.ctrlKey, 'shiftKey:', event.shiftKey);
+      console.log('🚀 Right-click detected on code editor, altKey:', event.altKey, 'ctrlKey:', event.ctrlKey, 'shiftKey:', event.shiftKey);
 
       // Check if Alt/Option key is held for plotting mode
       if (event.altKey) {
@@ -194,29 +201,7 @@ function activate(
         contextMenuManager.showContextMenu(event, parameterContext, notebook, currentCellIndex, enableValidation);
       } else {
         console.log('📝 No parameter detected at cursor position');
-        
-        // Show a brief indicator that the system is working but no parameter found
-        const notification = document.createElement('div');
-        notification.textContent = '🔍 Position cursor on a parameter value and right-click';
-        notification.style.cssText = `
-          position: fixed;
-          top: 20px;
-          right: 20px;
-          background: #ff9800;
-          color: white;
-          padding: 8px 12px;
-          border-radius: 4px;
-          z-index: 10000;
-          font-family: monospace;
-          font-size: 11px;
-        `;
-        document.body.appendChild(notification);
-        
-        setTimeout(() => {
-          if (notification.parentNode) {
-            notification.parentNode.removeChild(notification);
-          }
-        }, 2000);
+        // Don't show notification - just let the normal context menu appear
       }
     });
   });
