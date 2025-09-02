@@ -4664,15 +4664,33 @@ class SHMContextMenuManager {
 
     // Close menu on outside click
     const closeHandler = (e: MouseEvent) => {
-      if (!this.contextMenu?.contains(e.target as Node)) {
+      const target = e.target as HTMLElement;
+      // Check if click is on JupyterLab UI elements (toolbar buttons, cell controls, etc.)
+      const isJupyterUIClick = target.closest('.jp-Toolbar') || 
+                               target.closest('.jp-cell-toolbar') ||
+                               target.closest('.jp-SideBar') ||
+                               target.closest('.jp-MainAreaWidget-toolbar') ||
+                               target.closest('[data-command]') ||
+                               target.closest('.lm-MenuBar');
+      
+      // If clicking on JupyterLab UI, immediately remove handler and let the click through
+      if (isJupyterUIClick) {
+        document.removeEventListener('click', closeHandler);
+        this.hideContextMenu();
+        return;
+      }
+      
+      // Otherwise, close menu if clicking outside
+      if (!this.contextMenu?.contains(target)) {
         this.hideContextMenu();
         document.removeEventListener('click', closeHandler);
       }
     };
     
-    setTimeout(() => {
+    // Use requestAnimationFrame instead of setTimeout to avoid interfering with UI operations
+    requestAnimationFrame(() => {
       document.addEventListener('click', closeHandler);
-    }, 100);
+    });
   }
 
   /**
@@ -4969,15 +4987,33 @@ class SHMContextMenuManager {
 
     // Close menu on outside click
     const closeHandler = (e: MouseEvent) => {
-      if (!this.contextMenu?.contains(e.target as Node)) {
+      const target = e.target as HTMLElement;
+      // Check if click is on JupyterLab UI elements (toolbar buttons, cell controls, etc.)
+      const isJupyterUIClick = target.closest('.jp-Toolbar') || 
+                               target.closest('.jp-cell-toolbar') ||
+                               target.closest('.jp-SideBar') ||
+                               target.closest('.jp-MainAreaWidget-toolbar') ||
+                               target.closest('[data-command]') ||
+                               target.closest('.lm-MenuBar');
+      
+      // If clicking on JupyterLab UI, immediately remove handler and let the click through
+      if (isJupyterUIClick) {
+        document.removeEventListener('click', closeHandler);
+        this.hideContextMenu();
+        return;
+      }
+      
+      // Otherwise, close menu if clicking outside
+      if (!this.contextMenu?.contains(target)) {
         this.hideContextMenu();
         document.removeEventListener('click', closeHandler);
       }
     };
     
-    setTimeout(() => {
+    // Use requestAnimationFrame instead of setTimeout to avoid interfering with UI operations
+    requestAnimationFrame(() => {
       document.addEventListener('click', closeHandler);
-    }, 100);
+    });
   }
 
   /**
@@ -5163,15 +5199,33 @@ class SHMContextMenuManager {
 
     // Close menu on outside click
     const closeHandler = (e: MouseEvent) => {
-      if (!this.contextMenu?.contains(e.target as Node)) {
+      const target = e.target as HTMLElement;
+      // Check if click is on JupyterLab UI elements (toolbar buttons, cell controls, etc.)
+      const isJupyterUIClick = target.closest('.jp-Toolbar') || 
+                               target.closest('.jp-cell-toolbar') ||
+                               target.closest('.jp-SideBar') ||
+                               target.closest('.jp-MainAreaWidget-toolbar') ||
+                               target.closest('[data-command]') ||
+                               target.closest('.lm-MenuBar');
+      
+      // If clicking on JupyterLab UI, immediately remove handler and let the click through
+      if (isJupyterUIClick) {
+        document.removeEventListener('click', closeHandler);
+        this.hideContextMenu();
+        return;
+      }
+      
+      // Otherwise, close menu if clicking outside
+      if (!this.contextMenu?.contains(target)) {
         this.hideContextMenu();
         document.removeEventListener('click', closeHandler);
       }
     };
     
-    setTimeout(() => {
+    // Use requestAnimationFrame instead of setTimeout to avoid interfering with UI operations
+    requestAnimationFrame(() => {
       document.addEventListener('click', closeHandler);
-    }, 100);
+    });
   }
 
   /**
