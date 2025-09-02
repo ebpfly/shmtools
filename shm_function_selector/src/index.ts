@@ -160,7 +160,8 @@ function activate(
       const code = editor.model.sharedModel.getSource();
       
       // Get the index of the current cell
-      const currentCellIndex = notebook.widgets.indexOf(activeCell);
+      const currentCellIndex = notebook.activeCellIndex;
+      console.log(`🔍 Current cell index for context menu: ${currentCellIndex}`);
       
       // Calculate absolute cursor position in text
       const lines = code.split('\n');
@@ -4475,19 +4476,26 @@ class SHMContextMenuManager {
     this.variables.forEach(v => console.log(`  - ${v.name} (${v.type}) from ${v.source} in ${v.cellId}`));
     
     // Filter to only show variables from cells before the current one
+    console.log(`🔍 DEBUG: currentCellIndex parameter value: ${currentCellIndex}`);
     if (currentCellIndex >= 0) {
       console.log(`🔍 DEBUG: Filtering variables for currentCellIndex=${currentCellIndex}`);
       console.log(`🔍 DEBUG: Before filtering: ${this.variables.length} variables`);
-      this.variables.forEach(v => {
-        const cellNumber = parseInt(v.cellId.replace('cell-', ''));
-        console.log(`  - ${v.name} in ${v.cellId} (cellNumber=${cellNumber}, will keep=${cellNumber < currentCellIndex})`);
-      });
       
-      this.variables = this.variables.filter(v => {
+      // Create filtered list with detailed logging
+      const filteredVariables = [];
+      for (const v of this.variables) {
         const cellNumber = parseInt(v.cellId.replace('cell-', ''));
-        return cellNumber < currentCellIndex;
-      });
+        const shouldKeep = cellNumber < currentCellIndex;
+        console.log(`  - ${v.name} in ${v.cellId} (cellNumber=${cellNumber}, currentCellIndex=${currentCellIndex}, will keep=${shouldKeep})`);
+        if (shouldKeep) {
+          filteredVariables.push(v);
+        }
+      }
+      
+      this.variables = filteredVariables;
       console.log(`🔍 DEBUG: After filtering for cells before ${currentCellIndex}: ${this.variables.length} variables`);
+    } else {
+      console.log(`🔍 DEBUG: currentCellIndex is ${currentCellIndex}, no filtering applied`);
     }
     
     // Extract input variable names from the current function call to exclude them
