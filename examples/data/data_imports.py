@@ -31,6 +31,7 @@ def import_3story_structure_shm() -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         :complexity: Basic
         :data_type: Vibration Data
         :output_type: Dataset
+        :verbose_call: [Dataset, Damage States, State List] = Import 3-Story Structure Dataset()
         
     Returns
     -------
@@ -205,7 +206,7 @@ def import_cbm_data_shm() -> Tuple[np.ndarray, np.ndarray, np.ndarray, float]:
     return dataset, damage_states, state_list, fs
 
 
-def import_active_sense1_shm() -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray,
+def import_active_sense_shm() -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray,
                                         Dict, float, np.ndarray, np.ndarray]:
     """
     Import active sensing experimental dataset #1.
@@ -220,6 +221,7 @@ def import_active_sense1_shm() -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.n
         :complexity: Advanced
         :data_type: Guided Waves
         :output_type: Dataset
+        :verbose_call: [Baseline Waveforms, Test Waveforms, Sensor Layout, Sensor Pair List, Border Structure, Sample Rate, Actuation Waveform, Damage Location] = Import Active Sensing Dataset #1()
         
     Returns
     -------
@@ -288,7 +290,7 @@ def import_active_sense1_shm() -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.n
     --------
     >>> (waveform_base, waveform_test, sensor_layout, pair_list,
     ...  border_struct, sample_rate, actuation_waveform, 
-    ...  damage_location) = import_active_sense1_shm()
+    ...  damage_location) = import_active_sense_shm()
     >>> print(f"Number of sensor pairs: {pair_list.shape[1]}")
     >>> print(f"Sampling rate: {sample_rate} Hz")
     >>> print(f"Damage at: ({damage_location[0,0]:.1f}, {damage_location[1,0]:.1f})")
@@ -358,6 +360,7 @@ def import_sensor_diagnostic_shm() -> Tuple[np.ndarray, np.ndarray]:
         :complexity: Intermediate
         :data_type: Impedance Data
         :output_type: Dataset
+        :verbose_call: [Baseline Data, Data to Score] = Import Sensor Diagnostic Dataset ()
         
     Returns
     -------
@@ -446,6 +449,7 @@ def import_modal_osp_shm() -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarr
         :complexity: Advanced
         :data_type: Modal Data
         :output_type: Dataset
+        :verbose_call: [Node Layout, Elements, Mode Shapes, Response DOF] = Import Modal OSP Dataset()
         
     Returns
     -------

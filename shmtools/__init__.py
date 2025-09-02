@@ -118,7 +118,7 @@ from .sensor_diagnostics.sensor_diagnostics import (
 from examples.data.data_imports import (
     import_3story_structure_shm,
     import_cbm_data_shm,
-    import_active_sense1_shm,
+    import_active_sense_shm,
     import_sensor_diagnostic_shm,
     import_modal_osp_shm,
 )
@@ -127,7 +127,7 @@ from examples.data.data_imports import (
 import_ModalOSP_shm = import_modal_osp_shm
 import_3StoryStructure_shm = import_3story_structure_shm
 import_CBMData_shm = import_cbm_data_shm
-import_ActiveSense1_shm = import_active_sense1_shm
+import_ActiveSense1_shm = import_active_sense_shm
 import_SensorDiagnostic_shm = import_sensor_diagnostic_shm
 
 # Introspection capabilities moved to JupyterLab extension
@@ -220,7 +220,7 @@ __all__ = [
     # Data import
     "import_3story_structure_shm",
     "import_cbm_data_shm",
-    "import_active_sense1_shm",
+    "import_active_sense_shm",
     "import_sensor_diagnostic_shm",
     "import_modal_osp_shm",
     # MATLAB-compatible aliases

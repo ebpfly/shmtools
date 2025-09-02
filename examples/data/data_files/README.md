@@ -52,11 +52,11 @@ data = load_cbm_data()
 
 **Usage:**
 ```python
-from examples.data import import_active_sense1_shm
+from examples.data import import_active_sense_shm
 
 (waveform_base, waveform_test, sensor_layout, pair_list,
  border_struct, sample_rate, actuation_waveform, 
- damage_location) = import_active_sense1_shm()
+ damage_location) = import_active_sense_shm()
 ```
 
 ### 4. Sensor Diagnostic Dataset (`dataSensorDiagnostic.mat`)
