@@ -58,8 +58,78 @@ function activate(
     
     // Note: Removed the red SHM Parameter Linker button per user request
     
-    // Listen for right-click events on code cells with full functionality
+    // Add passive debugging to monitor JupyterLab operations without interfering
+    // Using bubble phase and passive listeners to avoid any interference
+    notebook.node.addEventListener('click', (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (target.closest('.jp-Toolbar') || target.closest('[data-command]')) {
+        const command = (target.closest('[data-command]') as HTMLElement)?.getAttribute('data-command');
+        console.log('🔵 TOOLBAR CLICK (passive observer):', {
+          command: command,
+          timestamp: Date.now(),
+          activeCell: notebook.activeCell?.model?.type,
+          cellCount: notebook.widgets.length
+        });
+        
+        // If this is an insert cell command, force a layout update after a brief delay
+        if (command && command.includes('insert-cell')) {
+          console.log('🔧 Detected insert-cell command, forcing layout update...');
+          setTimeout(() => {
+            // Force JupyterLab to update its layout
+            if (notebook.update) {
+              notebook.update();
+              console.log('🔧 Called notebook.update()');
+            }
+            // Also try to trigger a resize event which often forces re-rendering
+            window.dispatchEvent(new Event('resize'));
+            console.log('🔧 Dispatched resize event');
+          }, 50);
+        }
+      }
+    }, { passive: true, capture: false }); // Passive listener in bubble phase
+    
+    // DISABLED: MutationObserver might be blocking rendering
+    // Monitor DOM changes to see if cells are being added
+    /*
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+          mutation.addedNodes.forEach((node) => {
+            if ((node as HTMLElement).classList?.contains('jp-Cell')) {
+              console.log('🟢 CELL ADDED to DOM:', {
+                cellType: (node as HTMLElement).classList.toString(),
+                timestamp: Date.now()
+              });
+            }
+          });
+        }
+      });
+    });
+    
+    // Observe the notebook content area for cell additions
+    const cellsContainer = notebook.node.querySelector('.jp-Notebook-cell') || notebook.node;
+    observer.observe(cellsContainer.parentElement || cellsContainer, { 
+      childList: true, 
+      subtree: true 
+    });
+    */
+    
+    // Listen for right-click events ONLY on code cell editors to avoid interfering with JupyterLab
+    // Using event delegation to handle dynamically added cells
     notebook.node.addEventListener('contextmenu', (event: MouseEvent) => {
+      // Only process if the right-click is within a code cell editor area
+      const target = event.target as HTMLElement;
+      const codeEditor = target.closest('.jp-CodeCell .jp-Editor');
+      
+      if (!codeEditor) {
+        // Not in a code cell editor, let JupyterLab handle it normally
+        return;
+      }
+      
+      console.log('🟡 CONTEXTMENU in code cell editor', {
+        timestamp: Date.now()
+      });
+      
       const activeCell = notebook.activeCell;
       if (!activeCell || activeCell.model.type !== 'code') {
         return;
@@ -160,7 +230,8 @@ function activate(
       const code = editor.model.sharedModel.getSource();
       
       // Get the index of the current cell
-      const currentCellIndex = notebook.widgets.indexOf(activeCell);
+      const currentCellIndex = notebook.activeCellIndex;
+      console.log(`🔍 Current cell index for context menu: ${currentCellIndex}`);
       
       // Calculate absolute cursor position in text
       const lines = code.split('\n');
@@ -217,6 +288,10 @@ function activate(
           }
         }, 2000);
       }
+      
+      // Don't call notebook.update() here - it interferes with JupyterLab's 
+      // internal state management and causes toolbar buttons to require 
+      // double-clicks to work properly
     });
   });
 
@@ -2338,69 +2413,76 @@ class SHMFunctionSelector {
     }
 
     const notebook = currentWidget.content;
-    const activeCell = notebook.activeCell;
     
-    if (activeCell && activeCell.model.type === 'code') {
-      console.log('📝 Inserting into active code cell');
-      // Insert at cursor position in active cell
-      const editor = activeCell.editor;
-      if (editor) {
-        const cursorPos = editor.getCursorPosition();
-        const currentText = editor.model.sharedModel.getSource();
-        
-        // Insert code at cursor position
-        const lines = currentText.split('\n');
-        const line = lines[cursorPos.line] || '';
-        const before = line.substring(0, cursorPos.column);
-        const after = line.substring(cursorPos.column);
-        
-        // If we're in the middle of a line, add newlines
-        const insertion = (before.trim() ? '\n' : '') + codeSnippet + (after.trim() ? '\n' : '');
-        lines[cursorPos.line] = before + insertion + after;
-        
-        editor.model.sharedModel.setSource(lines.join('\n'));
-        
-        // Move cursor to first parameter
-        const newCursorLine = cursorPos.line + (before.trim() ? 1 : 0);
-        editor.setCursorPosition({ line: newCursorLine, column: codeSnippet.indexOf('=') + 1 });
-        
-        console.log('✅ Successfully inserted function into active cell');
+    // Insert new cells after current cell
+    console.log('📄 Inserting function cells after current cell');
+    
+    const currentCellIndex = notebook.activeCellIndex;
+    const markdownContent = `## ${func.displayName}\n\n${func.description}`;
+    
+    if (currentCellIndex >= 0 && currentCellIndex < notebook.widgets.length) {
+      // Check if current cell has content
+      const currentCellModel = notebook.model.cells.get(currentCellIndex);
+      const cellHasContent = currentCellModel && currentCellModel.sharedModel.getSource().trim().length > 0;
+      
+      // Determine insertion index based on whether current cell has content
+      let insertIndex = currentCellIndex;
+      if (cellHasContent) {
+        // If current cell has content, insert after it
+        insertIndex = currentCellIndex + 1;
+      } else {
+        // If current cell is empty, delete it and use its position
+        notebook.model.sharedModel.deleteCell(currentCellIndex);
       }
-    } else {
-      console.log('📄 Creating new code cell');
-      // Create new code cell
-      const cellIndex = notebook.activeCellIndex !== -1 ? notebook.activeCellIndex + 1 : notebook.widgets.length;
-      notebook.model.sharedModel.insertCell(cellIndex, {
+      
+      // Insert markdown cell
+      notebook.model.sharedModel.insertCell(insertIndex, {
+        cell_type: 'markdown',
+        source: markdownContent
+      });
+      
+      // Insert code cell after the markdown cell
+      notebook.model.sharedModel.insertCell(insertIndex + 1, {
         cell_type: 'code',
         source: codeSnippet
       });
       
-      // Activate the new cell
-      notebook.activeCellIndex = cellIndex;
-      console.log('✅ Successfully created new cell with function');
+      // Insert empty code cell after the function code for next input
+      notebook.model.sharedModel.insertCell(insertIndex + 2, {
+        cell_type: 'code',
+        source: ''
+      });
+      
+      // Activate and focus the empty cell
+      notebook.activeCellIndex = insertIndex + 2;
+      
+      setTimeout(() => {
+        const emptyCell = notebook.widgets[insertIndex + 2];
+        if (emptyCell && emptyCell.editor) {
+          emptyCell.editor.focus();
+          console.log('✅ Focused on new empty cell');
+        }
+      }, 100);
+    } else {
+      // No active cell, create cells at the end
+      const insertIndex = notebook.widgets.length;
+      notebook.model.sharedModel.insertCell(insertIndex, {
+        cell_type: 'markdown',
+        source: markdownContent
+      });
+      notebook.model.sharedModel.insertCell(insertIndex + 1, {
+        cell_type: 'code',
+        source: codeSnippet
+      });
+      // Insert empty code cell for next input
+      notebook.model.sharedModel.insertCell(insertIndex + 2, {
+        cell_type: 'code',
+        source: ''
+      });
+      notebook.activeCellIndex = insertIndex + 2;
     }
-
-    // Create a new empty cell after function insertion for chaining
-    console.log('📄 Creating new empty cell for next function');
-    const currentCellIndex = notebook.activeCellIndex;
-    const nextCellIndex = currentCellIndex + 1;
     
-    notebook.model.sharedModel.insertCell(nextCellIndex, {
-      cell_type: 'code',
-      source: ''
-    });
-    
-    // Move to the new empty cell
-    notebook.activeCellIndex = nextCellIndex;
-    
-    // Set focus to the new cell's editor
-    setTimeout(() => {
-      const newActiveCell = notebook.activeCell;
-      if (newActiveCell && newActiveCell.editor) {
-        newActiveCell.editor.focus();
-        console.log('✅ Moved cursor to new empty cell');
-      }
-    }, 100);
+    console.log('✅ Successfully inserted function with markdown description and empty cell');
 
     // Show success notification
     this.showNotification(`✅ Inserted ${func.displayName}`, '#4caf50');
@@ -2426,43 +2508,57 @@ class SHMFunctionSelector {
     // Generate code snippet
     const codeSnippet = this.generateCodeSnippet(selectedFunc);
     
-    // Insert into active cell or create new cell
+    // Use current cell for markdown and insert code cell after
     const notebook = nbPanel.content;
-    const activeCell = notebook.activeCell;
+    const currentCellIndex = notebook.activeCellIndex;
+    const markdownContent = `## ${selectedFunc.displayName}\n\n${selectedFunc.description}`;
     
-    if (activeCell && activeCell.model.type === 'code') {
-      // Insert at cursor position in active cell
-      const editor = activeCell.editor;
-      if (editor) {
-        const cursorPos = editor.getCursorPosition();
-        const currentText = editor.model.sharedModel.getSource();
-        
-        // Insert code at cursor position
-        const lines = currentText.split('\n');
-        const line = lines[cursorPos.line] || '';
-        const before = line.substring(0, cursorPos.column);
-        const after = line.substring(cursorPos.column);
-        
-        // If we're in the middle of a line, add newlines
-        const insertion = (before.trim() ? '\n' : '') + codeSnippet + (after.trim() ? '\n' : '');
-        lines[cursorPos.line] = before + insertion + after;
-        
-        editor.model.sharedModel.setSource(lines.join('\n'));
-        
-        // Move cursor to first parameter
-        const newCursorLine = cursorPos.line + (before.trim() ? 1 : 0);
-        editor.setCursorPosition({ line: newCursorLine, column: codeSnippet.indexOf('=') + 1 });
-      }
-    } else {
-      // Create new code cell
-      const cellIndex = notebook.activeCellIndex !== -1 ? notebook.activeCellIndex + 1 : notebook.widgets.length;
-      notebook.model.sharedModel.insertCell(cellIndex, {
+    if (currentCellIndex >= 0 && currentCellIndex < notebook.widgets.length) {
+      // Delete current cell and insert markdown + code cells
+      notebook.model.sharedModel.deleteCell(currentCellIndex);
+      
+      // Insert markdown cell at the same position
+      notebook.model.sharedModel.insertCell(currentCellIndex, {
+        cell_type: 'markdown',
+        source: markdownContent
+      });
+      
+      // Insert code cell after the markdown cell
+      notebook.model.sharedModel.insertCell(currentCellIndex + 1, {
         cell_type: 'code',
         source: codeSnippet
       });
       
-      // Activate the new cell
-      notebook.activeCellIndex = cellIndex;
+      // Activate and focus the code cell
+      notebook.activeCellIndex = currentCellIndex + 1;
+      
+      setTimeout(() => {
+        const codeCell = notebook.widgets[currentCellIndex + 1];
+        if (codeCell && codeCell.editor) {
+          codeCell.editor.focus();
+          // Position cursor at first parameter (None value)
+          const lines = codeSnippet.split('\n');
+          for (let i = 0; i < lines.length; i++) {
+            const paramIndex = lines[i].indexOf('=None');
+            if (paramIndex !== -1) {
+              codeCell.editor.setCursorPosition({ line: i, column: paramIndex + 1 });
+              break;
+            }
+          }
+        }
+      }, 100);
+    } else {
+      // No active cell, create both cells at the end
+      const insertIndex = notebook.widgets.length;
+      notebook.model.sharedModel.insertCell(insertIndex, {
+        cell_type: 'markdown',
+        source: markdownContent
+      });
+      notebook.model.sharedModel.insertCell(insertIndex + 1, {
+        cell_type: 'code',
+        source: codeSnippet
+      });
+      notebook.activeCellIndex = insertIndex + 1;
     }
 
     // Show success notification
@@ -2705,9 +2801,8 @@ class SHMFunctionSelector {
   }
 
   private generateFunctionHeader(func: SHMFunction): string {
-    let header = `# ${func.description}\n`;
-    
-    return header;
+    // No longer include header in code snippet since it goes in markdown cell
+    return '';
   }
 
   private suggestOutputVariables(func: SHMFunction): string {
@@ -4256,7 +4351,11 @@ class SHMContextMenuManager {
     this.variables = [];
     
     // Collect all notebook cells for backend processing
+    // Map code cell indices to actual notebook cell indices
     const cells = [];
+    const codeCellToNotebookIndex = new Map<number, number>();
+    let codeCellIndex = 0;
+    
     for (let i = 0; i < notebook.model.cells.length; i++) {
       const cell = notebook.model.cells.get(i);
       if (cell.type === 'code') {
@@ -4264,6 +4363,8 @@ class SHMContextMenuManager {
           cell_type: 'code',
           source: cell.sharedModel.getSource()
         });
+        codeCellToNotebookIndex.set(codeCellIndex, i);
+        codeCellIndex++;
       }
     }
     
@@ -4274,21 +4375,34 @@ class SHMContextMenuManager {
         body: JSON.stringify({ cells })
       });
       
+      console.log('🔍 DEBUG: Backend response:', response);
+      
       // Convert backend response to frontend Variable format
       const backendVariables = Array.isArray(response) ? response : [];
-      this.variables = backendVariables.map((v: any, index: number) => ({
-        name: v.name,
-        displayName: v.displayName,
-        type: v.type || 'unknown',
-        cellId: `cell-${v.cellIndex || index}`,
-        compatible: false, // Will be set later based on context
-        source: v.source
-      }));
+      console.log(`🔍 DEBUG: Backend returned ${backendVariables.length} variables`);
+      backendVariables.forEach((v: any) => {
+        console.log(`  - Variable: ${v.name} from code cell ${v.cellIndex}, actual notebook cell ${codeCellToNotebookIndex.get(v.cellIndex)}, source: ${v.source}`);
+      });
+      
+      this.variables = backendVariables.map((v: any, index: number) => {
+        // Convert code cell index to actual notebook cell index
+        const actualNotebookIndex = codeCellToNotebookIndex.get(v.cellIndex) ?? v.cellIndex;
+        return {
+          name: v.name,
+          displayName: v.displayName,
+          type: v.type || 'unknown',
+          cellId: `cell-${actualNotebookIndex}`,
+          compatible: false, // Will be set later based on context
+          source: v.source
+        };
+      });
+      
+      console.log(`🔍 DEBUG: After mapping, this.variables has ${this.variables.length} items`);
       
     } catch (error) {
       console.warn('Backend variable extraction failed, falling back to frontend parsing:', error);
       
-      // Fallback to original frontend parsing
+      // Fallback to original frontend parsing - use actual notebook indices
       for (let i = 0; i < notebook.model.cells.length; i++) {
         const cell = notebook.model.cells.get(i);
         if (cell.type === 'code') {
@@ -4446,20 +4560,57 @@ class SHMContextMenuManager {
     this.variables.forEach(v => console.log(`  - ${v.name} (${v.type}) from ${v.source} in ${v.cellId}`));
     
     // Filter to only show variables from cells before the current one
+    console.log(`🔍 DEBUG: currentCellIndex parameter value: ${currentCellIndex}`);
     if (currentCellIndex >= 0) {
-      this.variables = this.variables.filter(v => {
+      console.log(`🔍 DEBUG: Filtering variables for currentCellIndex=${currentCellIndex}`);
+      console.log(`🔍 DEBUG: Before filtering: ${this.variables.length} variables`);
+      
+      // Create filtered list with detailed logging
+      const filteredVariables = [];
+      for (const v of this.variables) {
         const cellNumber = parseInt(v.cellId.replace('cell-', ''));
-        return cellNumber < currentCellIndex;
-      });
+        const shouldKeep = cellNumber < currentCellIndex;
+        console.log(`  - ${v.name} in ${v.cellId} (cellNumber=${cellNumber}, currentCellIndex=${currentCellIndex}, will keep=${shouldKeep})`);
+        if (shouldKeep) {
+          filteredVariables.push(v);
+        }
+      }
+      
+      this.variables = filteredVariables;
       console.log(`🔍 DEBUG: After filtering for cells before ${currentCellIndex}: ${this.variables.length} variables`);
+    } else {
+      console.log(`🔍 DEBUG: currentCellIndex is ${currentCellIndex}, no filtering applied`);
     }
     
     // Extract input variable names from the current function call to exclude them
     const inputVariableNames = this.extractInputVariableNames(parameterContext);
     console.log(`🚫 Input variables to exclude: ${inputVariableNames.join(', ')}`);
     
-    // Filter out variables that are currently being used as inputs
-    this.variables = this.variables.filter(v => !inputVariableNames.includes(v.name));
+    // Also exclude output variables from the same function type in previous cells
+    const currentFunctionName = parameterContext.functionName;
+    console.log(`🔍 Excluding outputs from previous ${currentFunctionName} calls`);
+    
+    // Filter out variables that are currently being used as inputs or are outputs from same function
+    const beforeExclude = this.variables.length;
+    this.variables = this.variables.filter(v => {
+      // Exclude if it's a current input variable
+      if (inputVariableNames.includes(v.name)) {
+        console.log(`  - Excluding ${v.name}: currently used as input`);
+        return false;
+      }
+      
+      // Exclude if it's an output from the same function in a previous cell
+      if (v.source && v.source.includes(currentFunctionName)) {
+        console.log(`  - Excluding ${v.name}: output from previous ${currentFunctionName} call`);
+        return false;
+      }
+      
+      return true;
+    });
+    console.log(`🔍 DEBUG: After excluding input variables and same-function outputs: ${this.variables.length} variables (removed ${beforeExclude - this.variables.length})`);
+    if (beforeExclude > this.variables.length) {
+      console.log(`🔍 DEBUG: Kept ${this.variables.length} variables after filtering`);
+    }
     
     console.log(`📊 Variables from cells before cell ${currentCellIndex}: ${this.variables.length}`);
     this.variables.forEach(v => {
@@ -4581,15 +4732,41 @@ class SHMContextMenuManager {
 
     // Close menu on outside click
     const closeHandler = (e: MouseEvent) => {
-      if (!this.contextMenu?.contains(e.target as Node)) {
+      console.log('🟢 CLOSHANDLER CALLED', {
+        target: (e.target as HTMLElement).className,
+        timestamp: Date.now()
+      });
+      const target = e.target as HTMLElement;
+      // Check if click is on JupyterLab UI elements (toolbar buttons, cell controls, etc.)
+      const isJupyterUIClick = target.closest('.jp-Toolbar') || 
+                               target.closest('.jp-cell-toolbar') ||
+                               target.closest('.jp-SideBar') ||
+                               target.closest('.jp-MainAreaWidget-toolbar') ||
+                               target.closest('[data-command]') ||
+                               target.closest('.lm-MenuBar');
+      
+      // If clicking on JupyterLab UI, immediately remove handler and let the click through
+      if (isJupyterUIClick) {
+        console.log('🟢 CLOSHANDLER: Detected JupyterLab UI click, removing handler');
+        document.removeEventListener('click', closeHandler);
+        this.hideContextMenu();
+        return;
+      }
+      
+      // Otherwise, close menu if clicking outside
+      if (!this.contextMenu?.contains(target)) {
+        console.log('🟢 CLOSHANDLER: Click outside menu, closing');
         this.hideContextMenu();
         document.removeEventListener('click', closeHandler);
       }
     };
     
-    setTimeout(() => {
+    // Use requestAnimationFrame instead of setTimeout to avoid interfering with UI operations
+    console.log('🟢 CLOSHANDLER: Setting up with requestAnimationFrame');
+    requestAnimationFrame(() => {
+      console.log('🟢 CLOSHANDLER: Adding document click listener');
       document.addEventListener('click', closeHandler);
-    }, 100);
+    });
   }
 
   /**
@@ -4602,16 +4779,19 @@ class SHMContextMenuManager {
       // Get the current notebook cell to analyze the function call
       const activeCell = document.querySelector('.jp-Cell.jp-mod-active .jp-InputArea .jp-Editor') as HTMLElement;
       if (!activeCell) {
+        console.log('DEBUG: No active cell found');
         return inputVariables;
       }
       
       // Get the CodeMirror instance to access the full code
       const codeMirrorDiv = activeCell.querySelector('.CodeMirror') as any;
       if (!codeMirrorDiv?.CodeMirror) {
+        console.log('DEBUG: No CodeMirror instance found');
         return inputVariables;
       }
       
       const code = codeMirrorDiv.CodeMirror.getValue();
+      console.log('DEBUG: Cell code:', code);
       
       // Find the function call that contains the current parameter
       const functionCallPattern = new RegExp(`${parameterContext.functionName}\\s*\\(([^)]+)\\)`, 'gs');
@@ -4619,6 +4799,7 @@ class SHMContextMenuManager {
       
       if (match && match[1]) {
         const parametersText = match[1];
+        console.log('DEBUG: Function parameters text:', parametersText);
         
         // Parse parameter values and extract variable names
         // Look for patterns like: param=variable_name or just variable_name
@@ -4627,6 +4808,7 @@ class SHMContextMenuManager {
         
         while ((valueMatch = paramValuePattern.exec(parametersText)) !== null) {
           const potentialVariable = valueMatch[1];
+          console.log('DEBUG: Found potential variable:', potentialVariable);
           
           // Skip common literals and keywords
           if (!['None', 'True', 'False', 'int', 'float', 'str', 'list', 'dict'].includes(potentialVariable) &&
@@ -4634,11 +4816,14 @@ class SHMContextMenuManager {
             inputVariables.push(potentialVariable);
           }
         }
+      } else {
+        console.log('DEBUG: No function call match found for:', parameterContext.functionName);
       }
     } catch (error) {
       console.warn('Error extracting input variable names:', error);
     }
     
+    console.log('DEBUG: Final input variables to exclude:', inputVariables);
     return [...new Set(inputVariables)]; // Remove duplicates
   }
 
@@ -4878,15 +5063,41 @@ class SHMContextMenuManager {
 
     // Close menu on outside click
     const closeHandler = (e: MouseEvent) => {
-      if (!this.contextMenu?.contains(e.target as Node)) {
+      console.log('🟢 CLOSHANDLER CALLED', {
+        target: (e.target as HTMLElement).className,
+        timestamp: Date.now()
+      });
+      const target = e.target as HTMLElement;
+      // Check if click is on JupyterLab UI elements (toolbar buttons, cell controls, etc.)
+      const isJupyterUIClick = target.closest('.jp-Toolbar') || 
+                               target.closest('.jp-cell-toolbar') ||
+                               target.closest('.jp-SideBar') ||
+                               target.closest('.jp-MainAreaWidget-toolbar') ||
+                               target.closest('[data-command]') ||
+                               target.closest('.lm-MenuBar');
+      
+      // If clicking on JupyterLab UI, immediately remove handler and let the click through
+      if (isJupyterUIClick) {
+        console.log('🟢 CLOSHANDLER: Detected JupyterLab UI click, removing handler');
+        document.removeEventListener('click', closeHandler);
+        this.hideContextMenu();
+        return;
+      }
+      
+      // Otherwise, close menu if clicking outside
+      if (!this.contextMenu?.contains(target)) {
+        console.log('🟢 CLOSHANDLER: Click outside menu, closing');
         this.hideContextMenu();
         document.removeEventListener('click', closeHandler);
       }
     };
     
-    setTimeout(() => {
+    // Use requestAnimationFrame instead of setTimeout to avoid interfering with UI operations
+    console.log('🟢 CLOSHANDLER: Setting up with requestAnimationFrame');
+    requestAnimationFrame(() => {
+      console.log('🟢 CLOSHANDLER: Adding document click listener');
       document.addEventListener('click', closeHandler);
-    }, 100);
+    });
   }
 
   /**
@@ -5072,15 +5283,41 @@ class SHMContextMenuManager {
 
     // Close menu on outside click
     const closeHandler = (e: MouseEvent) => {
-      if (!this.contextMenu?.contains(e.target as Node)) {
+      console.log('🟢 CLOSHANDLER CALLED', {
+        target: (e.target as HTMLElement).className,
+        timestamp: Date.now()
+      });
+      const target = e.target as HTMLElement;
+      // Check if click is on JupyterLab UI elements (toolbar buttons, cell controls, etc.)
+      const isJupyterUIClick = target.closest('.jp-Toolbar') || 
+                               target.closest('.jp-cell-toolbar') ||
+                               target.closest('.jp-SideBar') ||
+                               target.closest('.jp-MainAreaWidget-toolbar') ||
+                               target.closest('[data-command]') ||
+                               target.closest('.lm-MenuBar');
+      
+      // If clicking on JupyterLab UI, immediately remove handler and let the click through
+      if (isJupyterUIClick) {
+        console.log('🟢 CLOSHANDLER: Detected JupyterLab UI click, removing handler');
+        document.removeEventListener('click', closeHandler);
+        this.hideContextMenu();
+        return;
+      }
+      
+      // Otherwise, close menu if clicking outside
+      if (!this.contextMenu?.contains(target)) {
+        console.log('🟢 CLOSHANDLER: Click outside menu, closing');
         this.hideContextMenu();
         document.removeEventListener('click', closeHandler);
       }
     };
     
-    setTimeout(() => {
+    // Use requestAnimationFrame instead of setTimeout to avoid interfering with UI operations
+    console.log('🟢 CLOSHANDLER: Setting up with requestAnimationFrame');
+    requestAnimationFrame(() => {
+      console.log('🟢 CLOSHANDLER: Adding document click listener');
       document.addEventListener('click', closeHandler);
-    }, 100);
+    });
   }
 
   /**

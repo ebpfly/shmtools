@@ -474,11 +474,26 @@ class SHMFunctionHandler(APIHandler):
 
     def _extract_display_name(self, docstring: str, fallback_name: str) -> str:
         """Extract human-readable display name from docstring."""
-        # Look for display_name in meta section
         lines = docstring.split("\n")
+        
+        # First, look for display_name in meta section
         for line in lines:
             if ":display_name:" in line:
                 return line.split(":display_name:")[1].strip()
+        
+        # Second, try to extract from verbose_call if available
+        for line in lines:
+            if ":verbose_call:" in line:
+                verbose_call = line.split(":verbose_call:")[1].strip()
+                # Extract function name from verbose_call format:
+                # "[Output] = Function Name (Parameters)" -> "Function Name"
+                if "=" in verbose_call and "(" in verbose_call:
+                    # Get the part between = and (
+                    parts = verbose_call.split("=")[1].split("(")
+                    if len(parts) >= 1:
+                        func_name = parts[0].strip()
+                        if func_name:  # Make sure it's not empty
+                            return func_name
 
         # Fallback: convert function name to readable format
         display_name = fallback_name.replace("_shm", "").replace("_", " ")
@@ -1038,7 +1053,6 @@ class SHMVariableHandler(APIHandler):
 
             cell_variables = self._extract_variables_from_code(code, cell_index)
             variables.extend(cell_variables)
-
         return variables
 
     def _extract_variables_from_code(
@@ -1066,13 +1080,14 @@ class SHMVariableHandler(APIHandler):
                 continue
 
             # Check for variable assignments that start at the beginning of lines
+            # IMPORTANT: Order matters! More specific patterns must come first
             patterns = [
-                # Simple assignment: var = expression
-                r"^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)",
-                # Tuple unpacking: var1, var2 = expression
-                r"^([a-zA-Z_][a-zA-Z0-9_,\s]*)\s*=\s*(.+)",
                 # Parenthesized tuple: (var1, var2) = expression
                 r"^\(([a-zA-Z_][a-zA-Z0-9_,\s]*)\)\s*=\s*(.+)",
+                # Tuple unpacking: var1, var2 = expression (must come before simple assignment)
+                r"^([a-zA-Z_][a-zA-Z0-9_]*(?:\s*,\s*[a-zA-Z_][a-zA-Z0-9_]*)+)\s*=\s*(.+)",
+                # Simple assignment: var = expression (must come last)
+                r"^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)",
             ]
 
             assignment_found = False

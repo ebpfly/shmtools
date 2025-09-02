@@ -27,7 +27,7 @@ def learn_score_mahalanobis(features: np.ndarray,
     for direct compatibility with LADPackage demo scripts.
     
     .. meta::
-        :category: Feature Classification - LADPackage Utils
+        :category: LAD - Feature Classification
         :matlab_equivalent: LearnScoreMahalanobis
         :complexity: Intermediate
         :data_type: Features

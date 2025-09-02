@@ -235,3 +235,5 @@ gh pr merge --squash --delete-branch
 - Deployment is never successful if HTTPS is not functional. Never ever declare success if HTTPS is not functional. Never allow deployment without HTTPS enabled.
 - HTTPS on the deployed instance doesn't count unless it's a Let's Encrypt certificate. HTTPS with any other certificate is failure. Don't every claim success or say anything is "complete" unless HTTPS works with a Let's Encrypt certificate.
 - commit and push with the completion of every task
+- Use "sudo ./restart_jupyterlab.sh" to rebuild the jupyterlab extension
+- Building the jupyter extension takes more than 2 minutes. Always run in the background.
