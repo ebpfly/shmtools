@@ -58,8 +58,78 @@ function activate(
     
     // Note: Removed the red SHM Parameter Linker button per user request
     
-    // Listen for right-click events on code cells with full functionality
+    // Add passive debugging to monitor JupyterLab operations without interfering
+    // Using bubble phase and passive listeners to avoid any interference
+    notebook.node.addEventListener('click', (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (target.closest('.jp-Toolbar') || target.closest('[data-command]')) {
+        const command = (target.closest('[data-command]') as HTMLElement)?.getAttribute('data-command');
+        console.log('🔵 TOOLBAR CLICK (passive observer):', {
+          command: command,
+          timestamp: Date.now(),
+          activeCell: notebook.activeCell?.model?.type,
+          cellCount: notebook.widgets.length
+        });
+        
+        // If this is an insert cell command, force a layout update after a brief delay
+        if (command && command.includes('insert-cell')) {
+          console.log('🔧 Detected insert-cell command, forcing layout update...');
+          setTimeout(() => {
+            // Force JupyterLab to update its layout
+            if (notebook.update) {
+              notebook.update();
+              console.log('🔧 Called notebook.update()');
+            }
+            // Also try to trigger a resize event which often forces re-rendering
+            window.dispatchEvent(new Event('resize'));
+            console.log('🔧 Dispatched resize event');
+          }, 50);
+        }
+      }
+    }, { passive: true, capture: false }); // Passive listener in bubble phase
+    
+    // DISABLED: MutationObserver might be blocking rendering
+    // Monitor DOM changes to see if cells are being added
+    /*
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+          mutation.addedNodes.forEach((node) => {
+            if ((node as HTMLElement).classList?.contains('jp-Cell')) {
+              console.log('🟢 CELL ADDED to DOM:', {
+                cellType: (node as HTMLElement).classList.toString(),
+                timestamp: Date.now()
+              });
+            }
+          });
+        }
+      });
+    });
+    
+    // Observe the notebook content area for cell additions
+    const cellsContainer = notebook.node.querySelector('.jp-Notebook-cell') || notebook.node;
+    observer.observe(cellsContainer.parentElement || cellsContainer, { 
+      childList: true, 
+      subtree: true 
+    });
+    */
+    
+    // Listen for right-click events ONLY on code cell editors to avoid interfering with JupyterLab
+    // Using event delegation to handle dynamically added cells
     notebook.node.addEventListener('contextmenu', (event: MouseEvent) => {
+      // Only process if the right-click is within a code cell editor area
+      const target = event.target as HTMLElement;
+      const codeEditor = target.closest('.jp-CodeCell .jp-Editor');
+      
+      if (!codeEditor) {
+        // Not in a code cell editor, let JupyterLab handle it normally
+        return;
+      }
+      
+      console.log('🟡 CONTEXTMENU in code cell editor', {
+        timestamp: Date.now()
+      });
+      
       const activeCell = notebook.activeCell;
       if (!activeCell || activeCell.model.type !== 'code') {
         return;
@@ -219,11 +289,9 @@ function activate(
         }, 2000);
       }
       
-      // Force notebook to update its view to ensure proper rendering after cell operations
-      // This fixes the issue where new cells don't appear until the next click
-      if (notebook && notebook.update) {
-        notebook.update();
-      }
+      // Don't call notebook.update() here - it interferes with JupyterLab's 
+      // internal state management and causes toolbar buttons to require 
+      // double-clicks to work properly
     });
   });
 
@@ -4664,6 +4732,10 @@ class SHMContextMenuManager {
 
     // Close menu on outside click
     const closeHandler = (e: MouseEvent) => {
+      console.log('🟢 CLOSHANDLER CALLED', {
+        target: (e.target as HTMLElement).className,
+        timestamp: Date.now()
+      });
       const target = e.target as HTMLElement;
       // Check if click is on JupyterLab UI elements (toolbar buttons, cell controls, etc.)
       const isJupyterUIClick = target.closest('.jp-Toolbar') || 
@@ -4675,6 +4747,7 @@ class SHMContextMenuManager {
       
       // If clicking on JupyterLab UI, immediately remove handler and let the click through
       if (isJupyterUIClick) {
+        console.log('🟢 CLOSHANDLER: Detected JupyterLab UI click, removing handler');
         document.removeEventListener('click', closeHandler);
         this.hideContextMenu();
         return;
@@ -4682,13 +4755,16 @@ class SHMContextMenuManager {
       
       // Otherwise, close menu if clicking outside
       if (!this.contextMenu?.contains(target)) {
+        console.log('🟢 CLOSHANDLER: Click outside menu, closing');
         this.hideContextMenu();
         document.removeEventListener('click', closeHandler);
       }
     };
     
     // Use requestAnimationFrame instead of setTimeout to avoid interfering with UI operations
+    console.log('🟢 CLOSHANDLER: Setting up with requestAnimationFrame');
     requestAnimationFrame(() => {
+      console.log('🟢 CLOSHANDLER: Adding document click listener');
       document.addEventListener('click', closeHandler);
     });
   }
@@ -4987,6 +5063,10 @@ class SHMContextMenuManager {
 
     // Close menu on outside click
     const closeHandler = (e: MouseEvent) => {
+      console.log('🟢 CLOSHANDLER CALLED', {
+        target: (e.target as HTMLElement).className,
+        timestamp: Date.now()
+      });
       const target = e.target as HTMLElement;
       // Check if click is on JupyterLab UI elements (toolbar buttons, cell controls, etc.)
       const isJupyterUIClick = target.closest('.jp-Toolbar') || 
@@ -4998,6 +5078,7 @@ class SHMContextMenuManager {
       
       // If clicking on JupyterLab UI, immediately remove handler and let the click through
       if (isJupyterUIClick) {
+        console.log('🟢 CLOSHANDLER: Detected JupyterLab UI click, removing handler');
         document.removeEventListener('click', closeHandler);
         this.hideContextMenu();
         return;
@@ -5005,13 +5086,16 @@ class SHMContextMenuManager {
       
       // Otherwise, close menu if clicking outside
       if (!this.contextMenu?.contains(target)) {
+        console.log('🟢 CLOSHANDLER: Click outside menu, closing');
         this.hideContextMenu();
         document.removeEventListener('click', closeHandler);
       }
     };
     
     // Use requestAnimationFrame instead of setTimeout to avoid interfering with UI operations
+    console.log('🟢 CLOSHANDLER: Setting up with requestAnimationFrame');
     requestAnimationFrame(() => {
+      console.log('🟢 CLOSHANDLER: Adding document click listener');
       document.addEventListener('click', closeHandler);
     });
   }
@@ -5199,6 +5283,10 @@ class SHMContextMenuManager {
 
     // Close menu on outside click
     const closeHandler = (e: MouseEvent) => {
+      console.log('🟢 CLOSHANDLER CALLED', {
+        target: (e.target as HTMLElement).className,
+        timestamp: Date.now()
+      });
       const target = e.target as HTMLElement;
       // Check if click is on JupyterLab UI elements (toolbar buttons, cell controls, etc.)
       const isJupyterUIClick = target.closest('.jp-Toolbar') || 
@@ -5210,6 +5298,7 @@ class SHMContextMenuManager {
       
       // If clicking on JupyterLab UI, immediately remove handler and let the click through
       if (isJupyterUIClick) {
+        console.log('🟢 CLOSHANDLER: Detected JupyterLab UI click, removing handler');
         document.removeEventListener('click', closeHandler);
         this.hideContextMenu();
         return;
@@ -5217,13 +5306,16 @@ class SHMContextMenuManager {
       
       // Otherwise, close menu if clicking outside
       if (!this.contextMenu?.contains(target)) {
+        console.log('🟢 CLOSHANDLER: Click outside menu, closing');
         this.hideContextMenu();
         document.removeEventListener('click', closeHandler);
       }
     };
     
     // Use requestAnimationFrame instead of setTimeout to avoid interfering with UI operations
+    console.log('🟢 CLOSHANDLER: Setting up with requestAnimationFrame');
     requestAnimationFrame(() => {
+      console.log('🟢 CLOSHANDLER: Adding document click listener');
       document.addEventListener('click', closeHandler);
     });
   }
