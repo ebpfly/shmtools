@@ -4502,14 +4502,30 @@ class SHMContextMenuManager {
     const inputVariableNames = this.extractInputVariableNames(parameterContext);
     console.log(`🚫 Input variables to exclude: ${inputVariableNames.join(', ')}`);
     
-    // Filter out variables that are currently being used as inputs
+    // Also exclude output variables from the same function type in previous cells
+    const currentFunctionName = parameterContext.functionName;
+    console.log(`🔍 Excluding outputs from previous ${currentFunctionName} calls`);
+    
+    // Filter out variables that are currently being used as inputs or are outputs from same function
     const beforeExclude = this.variables.length;
-    this.variables = this.variables.filter(v => !inputVariableNames.includes(v.name));
-    console.log(`🔍 DEBUG: After excluding input variables: ${this.variables.length} variables (removed ${beforeExclude - this.variables.length})`);
+    this.variables = this.variables.filter(v => {
+      // Exclude if it's a current input variable
+      if (inputVariableNames.includes(v.name)) {
+        console.log(`  - Excluding ${v.name}: currently used as input`);
+        return false;
+      }
+      
+      // Exclude if it's an output from the same function in a previous cell
+      if (v.source && v.source.includes(currentFunctionName)) {
+        console.log(`  - Excluding ${v.name}: output from previous ${currentFunctionName} call`);
+        return false;
+      }
+      
+      return true;
+    });
+    console.log(`🔍 DEBUG: After excluding input variables and same-function outputs: ${this.variables.length} variables (removed ${beforeExclude - this.variables.length})`);
     if (beforeExclude > this.variables.length) {
-      console.log(`🔍 DEBUG: Removed variables:`, inputVariableNames.filter(name => 
-        this.variables.every(v => v.name !== name)
-      ));
+      console.log(`🔍 DEBUG: Kept ${this.variables.length} variables after filtering`);
     }
     
     console.log(`📊 Variables from cells before cell ${currentCellIndex}: ${this.variables.length}`);
