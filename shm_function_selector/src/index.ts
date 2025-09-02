@@ -218,6 +218,12 @@ function activate(
           }
         }, 2000);
       }
+      
+      // Force notebook to update its view to ensure proper rendering after cell operations
+      // This fixes the issue where new cells don't appear until the next click
+      if (notebook && notebook.update) {
+        notebook.update();
+      }
     });
   });
 
