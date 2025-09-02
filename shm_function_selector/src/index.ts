@@ -4277,7 +4277,11 @@ class SHMContextMenuManager {
     this.variables = [];
     
     // Collect all notebook cells for backend processing
+    // Map code cell indices to actual notebook cell indices
     const cells = [];
+    const codeCellToNotebookIndex = new Map<number, number>();
+    let codeCellIndex = 0;
+    
     for (let i = 0; i < notebook.model.cells.length; i++) {
       const cell = notebook.model.cells.get(i);
       if (cell.type === 'code') {
@@ -4285,6 +4289,8 @@ class SHMContextMenuManager {
           cell_type: 'code',
           source: cell.sharedModel.getSource()
         });
+        codeCellToNotebookIndex.set(codeCellIndex, i);
+        codeCellIndex++;
       }
     }
     
@@ -4301,24 +4307,28 @@ class SHMContextMenuManager {
       const backendVariables = Array.isArray(response) ? response : [];
       console.log(`🔍 DEBUG: Backend returned ${backendVariables.length} variables`);
       backendVariables.forEach((v: any) => {
-        console.log(`  - Variable: ${v.name} from cell ${v.cellIndex}, source: ${v.source}`);
+        console.log(`  - Variable: ${v.name} from code cell ${v.cellIndex}, actual notebook cell ${codeCellToNotebookIndex.get(v.cellIndex)}, source: ${v.source}`);
       });
       
-      this.variables = backendVariables.map((v: any, index: number) => ({
-        name: v.name,
-        displayName: v.displayName,
-        type: v.type || 'unknown',
-        cellId: `cell-${v.cellIndex !== undefined ? v.cellIndex : index}`,
-        compatible: false, // Will be set later based on context
-        source: v.source
-      }));
+      this.variables = backendVariables.map((v: any, index: number) => {
+        // Convert code cell index to actual notebook cell index
+        const actualNotebookIndex = codeCellToNotebookIndex.get(v.cellIndex) ?? v.cellIndex;
+        return {
+          name: v.name,
+          displayName: v.displayName,
+          type: v.type || 'unknown',
+          cellId: `cell-${actualNotebookIndex}`,
+          compatible: false, // Will be set later based on context
+          source: v.source
+        };
+      });
       
       console.log(`🔍 DEBUG: After mapping, this.variables has ${this.variables.length} items`);
       
     } catch (error) {
       console.warn('Backend variable extraction failed, falling back to frontend parsing:', error);
       
-      // Fallback to original frontend parsing
+      // Fallback to original frontend parsing - use actual notebook indices
       for (let i = 0; i < notebook.model.cells.length; i++) {
         const cell = notebook.model.cells.get(i);
         if (cell.type === 'code') {
