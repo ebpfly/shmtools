@@ -14,11 +14,13 @@ from matplotlib.axes import Axes
 def plot_scores_shm(
     scores: np.ndarray,
     detected_states: np.ndarray,
-    state_names: List[str],
-    threshold: float,
+    state_names: Optional[List[str]] = None,
+    threshold: Optional[float] = None,
     use_bar_chart: bool = True,
     show_legend: bool = True,
     ax: Optional[Axes] = None,
+    flip_signs: bool = False,
+    use_log_scores: bool = False,
 ) -> Axes:
     """
     Plot damage detection scores with threshold and classification results.
@@ -51,20 +53,21 @@ def plot_scores_shm(
             :widget: array_input
             :description: Detection results (0/1)
 
-    state_names : list of str
-        Names for the detection states ['Healthy', 'Damaged'].
+    state_names : list of str, optional
+        Names for the detection states ['Healthy', 'Damaged']. 
+        If None, defaults to ['State 0', 'State 1', ...] based on unique states.
 
         .. gui::
             :widget: text_list
-            :default: ["Healthy", "Damaged"]
+            :default: ["State 0", "State 1"]
 
-    threshold : float
-        Detection threshold value.
+    threshold : float, optional
+        Detection threshold value. If None, no threshold line is drawn.
 
         .. gui::
             :widget: number_input
             :min: 0.0
-            :default: 1.0
+            :allow_none: True
 
     use_bar_chart : bool, optional
         If True, use bar chart. If False, use line plot. Default is True.
@@ -83,6 +86,22 @@ def plot_scores_shm(
     ax : matplotlib.axes.Axes, optional
         Axes to plot on. If None, creates new figure.
 
+    flip_signs : bool, optional
+        Whether signs of scores and threshold should be flipped. Default is False.
+
+        .. gui::
+            :widget: checkbox
+            :default: false
+            :description: Flip score signs
+
+    use_log_scores : bool, optional
+        Whether log scores should be used for visualization. Default is False.
+
+        .. gui::
+            :widget: checkbox
+            :default: false
+            :description: Use logarithmic scale for scores
+
     Returns
     -------
     ax : matplotlib.axes.Axes
@@ -98,14 +117,48 @@ def plot_scores_shm(
     >>> detected = np.array([0, 0, 0, 1, 1, 1])
     >>> threshold = 2.0
     >>>
-    >>> # Plot results
+    >>> # Plot results with explicit state names and threshold
     >>> ax = plot_scores_shm(scores, detected, ['Healthy', 'Damaged'], threshold)
+    >>> 
+    >>> # Plot with auto-generated state names and no threshold
+    >>> ax = plot_scores_shm(scores, detected)
+    >>> 
+    >>> # Plot with flipped signs and log scores
+    >>> ax = plot_scores_shm(scores, detected, flip_signs=True, use_log_scores=True)
     >>> plt.show()
     """
     if ax is None:
         fig, ax = plt.subplots(figsize=(10, 6))
 
-    n_tests = len(scores)
+    # Set default state_names if None (MATLAB behavior)
+    if state_names is None:
+        unique_states = np.unique(detected_states)
+        state_names = [f"State {int(state)}" for state in unique_states]
+
+    # Apply sign flip if requested (MATLAB behavior)
+    plot_scores = scores.copy()
+    plot_threshold = threshold
+    if flip_signs:
+        plot_scores = -plot_scores
+        if plot_threshold is not None:
+            plot_threshold = -plot_threshold
+
+    # Apply log transformation if requested (MATLAB behavior)
+    if use_log_scores:
+        if np.min(plot_scores) > 0 and (plot_threshold is None or plot_threshold > 0):
+            plot_scores = np.log10(plot_scores)
+            if plot_threshold is not None:
+                plot_threshold = np.log10(plot_threshold)
+        elif np.max(plot_scores) < 0 and (plot_threshold is None or plot_threshold < 0):
+            plot_scores = -np.log10(-plot_scores)
+            if plot_threshold is not None:
+                plot_threshold = -np.log10(-plot_threshold)
+        else:
+            raise ValueError(
+                "Log axis cannot be used with scores and threshold containing positive and negative values."
+            )
+
+    n_tests = len(plot_scores)
     test_indices = np.arange(n_tests)
 
     # Color mapping
@@ -113,37 +166,41 @@ def plot_scores_shm(
 
     if use_bar_chart:
         # Bar chart
-        bars = ax.bar(test_indices, scores, color=colors, alpha=0.7, edgecolor="black")
+        bars = ax.bar(test_indices, plot_scores, color=colors, alpha=0.7, edgecolor="black")
 
         # Add value labels on bars
-        for i, (bar, score) in enumerate(zip(bars, scores)):
+        for i, (bar, score) in enumerate(zip(bars, plot_scores)):
             height = bar.get_height()
             ax.text(
                 bar.get_x() + bar.get_width() / 2.0,
-                height + 0.05 * max(scores),
+                height + 0.05 * max(plot_scores),
                 f"{score:.2f}",
                 ha="center",
                 va="bottom",
             )
     else:
         # Line plot with markers
-        ax.plot(test_indices, scores, "o-", markersize=8, linewidth=2)
-        for i, (score, state) in enumerate(zip(scores, detected_states)):
+        ax.plot(test_indices, plot_scores, "o-", markersize=8, linewidth=2)
+        for i, (score, state) in enumerate(zip(plot_scores, detected_states)):
             color = "green" if state == 0 else "red"
             ax.plot(i, score, "o", color=color, markersize=10, alpha=0.7)
 
-    # Add threshold line
-    ax.axhline(
-        y=threshold,
-        color="red",
-        linestyle="--",
-        linewidth=2,
-        label=f"Threshold = {threshold:.2f}",
-    )
+    # Add threshold line if provided
+    if plot_threshold is not None:
+        ax.axhline(
+            y=plot_threshold,
+            color="red",
+            linestyle="--",
+            linewidth=2,
+            label=f"Threshold = {plot_threshold:.2f}",
+        )
 
     # Formatting
     ax.set_xlabel("Test Case")
-    ax.set_ylabel("Detection Score")
+    if use_log_scores:
+        ax.set_ylabel("Log Detection Score")
+    else:
+        ax.set_ylabel("Detection Score")
     ax.set_title("Damage Detection Results")
     ax.grid(True, alpha=0.3)
 
@@ -159,14 +216,20 @@ def plot_scores_shm(
         legend_elements = [
             Patch(facecolor="green", alpha=0.7, label=state_names[0]),
             Patch(facecolor="red", alpha=0.7, label=state_names[1]),
-            plt.Line2D(
-                [0],
-                [0],
-                color="red",
-                linestyle="--",
-                label=f"Threshold = {threshold:.2f}",
-            ),
         ]
+        
+        # Add threshold to legend only if provided
+        if plot_threshold is not None:
+            legend_elements.append(
+                plt.Line2D(
+                    [0],
+                    [0],
+                    color="red",
+                    linestyle="--",
+                    label=f"Threshold = {plot_threshold:.2f}",
+                )
+            )
+        
         ax.legend(handles=legend_elements, loc="upper left")
 
     # Add statistics text box
