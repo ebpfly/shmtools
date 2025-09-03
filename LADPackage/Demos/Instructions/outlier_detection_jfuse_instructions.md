@@ -48,7 +48,7 @@
 **Input**: Axes Handle = leave as leave as default  
 **Output**: Axes Handle = scalar
 
-### Step 6: Plot Score Distributions (SHMFunctions/Feature Classification)
+### Step 6: Plot Score Distributions (Feature Classification/Plotting)
 **Input**: Scores = Scores (Step 4)  
 **Input**: Damage States = Damage States (Step 1)  
 **Input**: State Names = leave as default  
@@ -59,7 +59,7 @@
 **Input**: Axes Handle = leave as default  
 **Output**: Axes Handle = scalar
 
-### Step 7: Receiver Operating Characteristic (ROC) Curve (SHMFunctions/Feature Classification)
+### Step 7: ROC Curve (Feature Classification/Performance Evaluation)
 **Input**: Scores = Scores (Step 4)  
 **Input**: Damage States = Damage States (Step 1)  
 **Input**: # of Points = default  
@@ -67,7 +67,7 @@
 **Output**: True Positive Rate = (INSTANCES, 1)  
 **Output**: False Positive Rate = (INSTANCES, 1)
 
-### Step 8: Plot Receiver Operating Characteristic (ROC) Curve (SHMFunctions/Feature Classification)
+### Step 8: ROC Curve Plot (Feature Classification/Plotting)
 **Input**: True Positive Rate = True Positive Rate (Step 7)  
 **Input**: False Positive Rate = False Positive Rate (Step 7)  
 **Input**: Scaling = default  
