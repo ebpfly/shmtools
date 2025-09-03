@@ -589,143 +589,143 @@ def score_kernel_density_shm(
     return densities
 
 
-def roc_shm(
-    scores: np.ndarray,
-    damage_states: np.ndarray,
-    num_pts: Optional[int] = None,
-    threshold_type: str = "below",
-) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Receiver operating characteristic (ROC) curve.
+# def roc_shm(
+#     scores: np.ndarray,
+#     damage_states: np.ndarray,
+#     num_pts: Optional[int] = None,
+#     threshold_type: str = "below",
+# ) -> Tuple[np.ndarray, np.ndarray]:
+#     """
+#     Receiver operating characteristic (ROC) curve.
 
-    .. meta::
-        :category: Feature Classification - Performance Evaluation
-        :matlab_equivalent: ROC_shm
-        :complexity: Intermediate
-        :data_type: Scores
-        :output_type: Performance Metrics
-        :display_name: Receiver Operating Characteristic
-        :verbose_call: [True Positive Rate, False Positive Rate] = Receiver Operating Characteristic (Scores, Damaged States, # of Points, Threshold Type)
+#     .. meta::
+#         :category: Feature Classification - Performance Evaluation
+#         :matlab_equivalent: ROC_shm
+#         :complexity: Intermediate
+#         :data_type: Scores
+#         :output_type: Performance Metrics
+#         :display_name: Receiver Operating Characteristic
+#         :verbose_call: [True Positive Rate, False Positive Rate] = Receiver Operating Characteristic (Scores, Damaged States, # of Points, Threshold Type)
 
-    Parameters
-    ----------
-    scores : array_like
-        Vector of scores for each instance of shape (INSTANCES,).
+#     Parameters
+#     ----------
+#     scores : array_like
+#         Vector of scores for each instance of shape (INSTANCES,).
 
-        .. gui::
-            :widget: array_input
-            :description: Classification scores
+#         .. gui::
+#             :widget: array_input
+#             :description: Classification scores
 
-    damage_states : array_like
-        Binary classification vector of known damage states
-        (0-undamaged, 1-damaged) corresponding to scores.
+#     damage_states : array_like
+#         Binary classification vector of known damage states
+#         (0-undamaged, 1-damaged) corresponding to scores.
 
-        .. gui::
-            :widget: array_input
-            :description: True damage labels (0/1)
+#         .. gui::
+#             :widget: array_input
+#             :description: True damage labels (0/1)
 
-    num_pts : int, optional
-        Number of points to evaluate ROC curve at. If None (default),
-        each score value from damaged states is used as a threshold.
+#     num_pts : int, optional
+#         Number of points to evaluate ROC curve at. If None (default),
+#         each score value from damaged states is used as a threshold.
 
-        .. gui::
-            :widget: number_input
-            :min: 10
-            :max: 1000
-            :description: Number of ROC points (optional)
+#         .. gui::
+#             :widget: number_input
+#             :min: 10
+#             :max: 1000
+#             :description: Number of ROC points (optional)
 
-    threshold_type : str, optional
-        'above' or 'below' to define if scores above or below a given
-        threshold should be flagged as damaged (default: 'below').
+#     threshold_type : str, optional
+#         'above' or 'below' to define if scores above or below a given
+#         threshold should be flagged as damaged (default: 'below').
 
-        .. gui::
-            :widget: select
-            :options: ["below", "above"]
-            :default: "below"
-            :description: Threshold direction
+#         .. gui::
+#             :widget: select
+#             :options: ["below", "above"]
+#             :default: "below"
+#             :description: Threshold direction
 
-    Returns
-    -------
-    TPR : ndarray
-        Vector of true positive rates.
-    FPR : ndarray
-        Vector of false positive rates.
+#     Returns
+#     -------
+#     TPR : ndarray
+#         Vector of true positive rates.
+#     FPR : ndarray
+#         Vector of false positive rates.
 
-    Notes
-    -----
-    Tool to compare and evaluate the performance of classification
-    algorithms. Note that the scores should decrease for the damaged
-    instances when using threshold_type='below'.
+#     Notes
+#     -----
+#     Tool to compare and evaluate the performance of classification
+#     algorithms. Note that the scores should decrease for the damaged
+#     instances when using threshold_type='below'.
 
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from shmtools.classification import roc_shm
-    >>>
-    >>> # Generate sample scores and labels
-    >>> np.random.seed(42)
-    >>> scores = np.concatenate([np.random.randn(50) + 1, np.random.randn(50) - 1])
-    >>> labels = np.concatenate([np.zeros(50), np.ones(50)])
-    >>>
-    >>> # Compute ROC curve
-    >>> tpr, fpr = roc_shm(scores, labels, threshold_type='above')
-    >>> print(f"ROC computed with {len(tpr)} points")
-    """
-    scores = np.asarray(scores, dtype=np.float64)
-    damage_states = np.asarray(damage_states, dtype=bool)
+#     Examples
+#     --------
+#     >>> import numpy as np
+#     >>> from shmtools.classification import roc_shm
+#     >>>
+#     >>> # Generate sample scores and labels
+#     >>> np.random.seed(42)
+#     >>> scores = np.concatenate([np.random.randn(50) + 1, np.random.randn(50) - 1])
+#     >>> labels = np.concatenate([np.zeros(50), np.ones(50)])
+#     >>>
+#     >>> # Compute ROC curve
+#     >>> tpr, fpr = roc_shm(scores, labels, threshold_type='above')
+#     >>> print(f"ROC computed with {len(tpr)} points")
+#     """
+#     scores = np.asarray(scores, dtype=np.float64)
+#     damage_states = np.asarray(damage_states, dtype=bool)
 
-    # Check parameters
-    if len(scores) != len(damage_states):
-        raise ValueError("Input arguments must have the same dimensions")
+#     # Check parameters
+#     if len(scores) != len(damage_states):
+#         raise ValueError("Input arguments must have the same dimensions")
 
-    # Handle threshold type
-    if threshold_type in [0, "below"]:
-        # Damage is flagged below threshold
-        scores = -scores
-    elif threshold_type in [1, "above"]:
-        # Damage is flagged above threshold
-        pass
-    else:
-        raise ValueError("Invalid option for threshold_type")
+#     # Handle threshold type
+#     if threshold_type in [0, "below"]:
+#         # Damage is flagged below threshold
+#         scores = -scores
+#     elif threshold_type in [1, "above"]:
+#         # Damage is flagged above threshold
+#         pass
+#     else:
+#         raise ValueError("Invalid option for threshold_type")
 
-    # Sorted scores
-    ordered_undam = np.sort(scores[~damage_states])[::-1]  # descending
-    ordered_dam = np.sort(scores[damage_states])[::-1]  # descending
+#     # Sorted scores
+#     ordered_undam = np.sort(scores[~damage_states])[::-1]  # descending
+#     ordered_dam = np.sort(scores[damage_states])[::-1]  # descending
 
-    # Set threshold values
-    if num_pts is None:
-        threshold_values = ordered_dam
-    else:
-        threshold_values = np.linspace(np.min(scores), np.max(scores), num_pts)
+#     # Set threshold values
+#     if num_pts is None:
+#         threshold_values = ordered_dam
+#     else:
+#         threshold_values = np.linspace(np.min(scores), np.max(scores), num_pts)
 
-    num_thresholds = len(threshold_values)
+#     num_thresholds = len(threshold_values)
 
-    N = len(ordered_undam)  # number of undamaged instances
-    P = len(ordered_dam)  # number of damaged instances
+#     N = len(ordered_undam)  # number of undamaged instances
+#     P = len(ordered_dam)  # number of damaged instances
 
-    # Calculate rates - following MATLAB exactly
-    # MATLAB uses 1-based indexing but the algorithm logic is the same
-    ukk = 0  # Index for undamaged sorted scores
-    tkk = 0  # Index for damaged sorted scores
-    TPR = np.zeros(num_thresholds)  # True positive rate
-    FPR = np.zeros(num_thresholds)  # False positive rate
+#     # Calculate rates - following MATLAB exactly
+#     # MATLAB uses 1-based indexing but the algorithm logic is the same
+#     ukk = 0  # Index for undamaged sorted scores
+#     tkk = 0  # Index for damaged sorted scores
+#     TPR = np.zeros(num_thresholds)  # True positive rate
+#     FPR = np.zeros(num_thresholds)  # False positive rate
 
-    for j in range(num_thresholds):
-        # Count undamaged instances above threshold (false positives)
-        while ukk < N and ordered_undam[ukk] > threshold_values[j]:
-            FPR[j] += 1
-            ukk += 1
+#     for j in range(num_thresholds):
+#         # Count undamaged instances above threshold (false positives)
+#         while ukk < N and ordered_undam[ukk] > threshold_values[j]:
+#             FPR[j] += 1
+#             ukk += 1
 
-        # Count damaged instances above threshold (true positives)
-        while tkk < P and ordered_dam[tkk] > threshold_values[j]:
-            TPR[j] += 1
-            tkk += 1
+#         # Count damaged instances above threshold (true positives)
+#         while tkk < P and ordered_dam[tkk] > threshold_values[j]:
+#             TPR[j] += 1
+#             tkk += 1
 
-    # Convert counts to rates using cumulative sum
-    TPR = np.cumsum(TPR) / P
-    FPR = np.cumsum(FPR) / N
+#     # Convert counts to rates using cumulative sum
+#     TPR = np.cumsum(TPR) / P
+#     FPR = np.cumsum(FPR) / N
 
-    return TPR, FPR
+#     return TPR, FPR
 
 
 def _bandwidth_select_var(X_train: np.ndarray) -> np.ndarray:
