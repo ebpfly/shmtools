@@ -13,7 +13,7 @@ from matplotlib.axes import Axes
 
 def plot_scores_shm(
     scores: np.ndarray,
-    detected_states: np.ndarray,
+    states: np.ndarray,
     state_names: Optional[List[str]] = None,
     threshold: Optional[float] = None,
     use_bar_chart: bool = True,
@@ -33,7 +33,7 @@ def plot_scores_shm(
         :output_type: Plot
         :interactive_plot: True
         :display_name: Plot Detection Scores
-        :verbose_call: [Axes Handle] = Plot Detection Scores (Scores, Detected States, State Names, Threshold, Use Bar Chart, Show Legend, Axes Handle)
+        :verbose_call: [Axes Handle] = Plot Detection Scores (Scores, States, State Names, Threshold, Use Bar Chart, Show Legend, Axes Handle)
 
         :example_notebooks: ["ni_ultrasonic_daq.ipynb"]
 
@@ -46,7 +46,7 @@ def plot_scores_shm(
             :widget: array_input
             :description: Detection scores array
 
-    detected_states : array_like, shape (n_tests,)
+    states : array_like, shape (n_tests,)
         Binary detection results (0=healthy, 1=damaged).
 
         .. gui::
@@ -132,12 +132,12 @@ def plot_scores_shm(
 
     # Set default state_names if None (MATLAB behavior)
     if state_names is None:
-        unique_states = np.unique(detected_states)
+        unique_states = np.unique(states)
         state_names = [f"State {int(state)}" for state in unique_states]
 
-    # Ensure scores and detected_states are 1D arrays
+    # Ensure scores and states are 1D arrays
     scores = np.asarray(scores).flatten()
-    detected_states = np.asarray(detected_states).flatten()
+    states = np.asarray(states).flatten()
     
     # Apply sign flip if requested (MATLAB behavior)
     plot_scores = scores.copy()
@@ -166,7 +166,7 @@ def plot_scores_shm(
     test_indices = np.arange(n_tests)
 
     # Color mapping
-    colors = ["green" if state == 0 else "red" for state in detected_states]
+    colors = ["green" if state == 0 else "red" for state in states]
 
     if use_bar_chart:
         # Bar chart
@@ -179,7 +179,7 @@ def plot_scores_shm(
     else:
         # Line plot with markers
         ax.plot(test_indices, plot_scores, "o-", markersize=8, linewidth=2)
-        for i, (score, state) in enumerate(zip(plot_scores, detected_states)):
+        for i, (score, state) in enumerate(zip(plot_scores, states)):
             color = "green" if state == 0 else "red"
             ax.plot(i, score, "o", color=color, markersize=10, alpha=0.7)
 
@@ -231,8 +231,8 @@ def plot_scores_shm(
         ax.legend(handles=legend_elements, loc="upper left")
 
     # Add statistics text box
-    n_healthy = np.sum(detected_states == 0)
-    n_damaged = np.sum(detected_states == 1)
+    n_healthy = np.sum(states == 0)
+    n_damaged = np.sum(states == 1)
 
     stats_text = f"""Statistics:
 {state_names[0]}: {n_healthy}/{n_tests} ({n_healthy/n_tests*100:.0f}%)
