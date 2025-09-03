@@ -6,13 +6,15 @@
 
 ## Sequence
 
-### Step 1: Import 3 Story Structure Dataset (LADPackage/Outlier Models)
-**Input**: Floor Numbers = 5 (Default)  
+### Step 0: Import All Modules (Quick Actions)
+
+### Step 1: Import 3 Story Structure Dataset (LAD/Data Import)
+**Input**: Floor Numbers = 5
 **Output**: Dataset = (TIME, CHANNELS, INSTANCES)  
 **Output**: Damage States = (INSTANCES, 1)  
 **Output**: List of States = (INSTANCES,1)
 
-### Step 2: AR Model (SHMFunctions/Feature Extraction/Time Series Models)
+### Step 2: AR Model (Feature Extraction/Time Series Models)
 **Input**: Time Series Data = topFloorChannel (Step 1)  
 **Input**: AR Model Order = 15  
 **Output**: AR Parameters Feature Vectors = (INSTANCES, FEATURES)  
@@ -21,36 +23,36 @@
 **Output**: AR Residuals = (TIME, CHANNELS, INSTANCES)  
 **Output**: AR Prediction = (TIME, CHANNELS, INSTANCES)
 
-### Step 3: Plot Features (SHMFunctions/Feature Extraction)
+### Step 3: Plot Features (Feature Extraction/Plotting)
 **Input**: Feature Vectors = AR Parameters Feature Vectors (Step 2)  
 **Input**: Instances to Plot = leave as default  
-**Input**: Features to Plot = 1:4  
-**Input**: Titles for Subplots = default  
+**Input**: Features to Plot = range(0,4) 
+**Input**: Titles for Subplots = leave as default  
 **Input**: Y-Axis Labels for Subplots = leave as default  
 **Input**: Axes Handle = leave as default  
 **Output**: Axes Handle = scalar
 
-### Step 4: Learn Score Mahalanobis (LADPackage/Feature Models)
+### Step 4: Learn Score Mahalanobis (LAD/Feature Classification)
 **Input**: Features = AR Parameters Feature Vectors (Step 2)  
 **Input**: Training Indices = 1:2:91  
 **Input**: Scoring Indices = leave as default  
 **Output**: Scores (INSTANCES, 1)
 
-### Step 5: Plot Scores (SHMFunctions/Feature Classification)
+### Step 5: Plot Detection Scores (Feature Classification/Plotting)
 **Input**: Scores = Scores (Step 4)  
 **Input**: States = Damage States (Step 1)  
-**Input**: State Names = default  
-**Input**: Thresholds = default  
+**Input**: State Names = leave as default  
+**Input**: Thresholds = leave as default  
 **Input**: Flip Signs = true  
-**Input**: Use Log Scores = default  
-**Input**: Axes Handle = leave as default  
+**Input**: Use Log Scores = leave as default  
+**Input**: Axes Handle = leave as leave as default  
 **Output**: Axes Handle = scalar
 
 ### Step 6: Plot Score Distributions (SHMFunctions/Feature Classification)
 **Input**: Scores = Scores (Step 4)  
 **Input**: Damage States = Damage States (Step 1)  
-**Input**: State Names = default  
-**Input**: Thresholds = default  
+**Input**: State Names = leave as default  
+**Input**: Thresholds = leave as default  
 **Input**: Flip Signs = true  
 **Input**: Use Log Scores = true  
 **Input**: Kernel Smoothing Parameter = true  
