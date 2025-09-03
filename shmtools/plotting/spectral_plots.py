@@ -135,6 +135,10 @@ def plot_scores_shm(
         unique_states = np.unique(detected_states)
         state_names = [f"State {int(state)}" for state in unique_states]
 
+    # Ensure scores and detected_states are 1D arrays
+    scores = np.asarray(scores).flatten()
+    detected_states = np.asarray(detected_states).flatten()
+    
     # Apply sign flip if requested (MATLAB behavior)
     plot_scores = scores.copy()
     plot_threshold = threshold
