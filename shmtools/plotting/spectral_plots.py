@@ -166,7 +166,11 @@ def plot_scores_shm(
 
     if use_bar_chart:
         # Bar chart
-        bars = ax.bar(test_indices, plot_scores, color=colors, alpha=0.7, edgecolor="black")
+        bars = ax.bar(test_indices, plot_scores, color=colors, alpha=0.7)
+        
+        # Set edge color for each bar individually
+        for bar in bars:
+            bar.set_edgecolor("black")
 
         # Add value labels on bars
         for i, (bar, score) in enumerate(zip(bars, plot_scores)):
