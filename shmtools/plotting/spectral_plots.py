@@ -176,16 +176,6 @@ def plot_scores_shm(
         for bar in bars:
             bar.set_edgecolor("black")
 
-        # Add value labels on bars
-        for i, (bar, score) in enumerate(zip(bars, plot_scores)):
-            height = bar.get_height()
-            ax.text(
-                bar.get_x() + bar.get_width() / 2.0,
-                height + 0.05 * max(plot_scores),
-                f"{score:.2f}",
-                ha="center",
-                va="bottom",
-            )
     else:
         # Line plot with markers
         ax.plot(test_indices, plot_scores, "o-", markersize=8, linewidth=2)
@@ -212,9 +202,9 @@ def plot_scores_shm(
     ax.set_title("Damage Detection Results")
     ax.grid(True, alpha=0.3)
 
-    # Set x-axis ticks
-    ax.set_xticks(test_indices)
-    ax.set_xticklabels([f"Test {i+1}" for i in test_indices])
+    # # Set x-axis ticks
+    # ax.set_xticks(test_indices)
+    # ax.set_xticklabels([f"Test {i+1}" for i in test_indices])
 
     # Add legend if requested
     if show_legend:
