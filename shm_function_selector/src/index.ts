@@ -2439,67 +2439,83 @@ class SHMFunctionSelector {
         insertIndex = currentCellIndex;
       }
       
-      // Insert markdown cell
-      notebook.model.sharedModel.insertCell(insertIndex, {
-        cell_type: 'markdown',
-        source: markdownContent
-      });
+      // Insert all cells at once using insertCells for better rendering
+      notebook.model.sharedModel.insertCells(insertIndex, [
+        {
+          cell_type: 'markdown',
+          source: markdownContent
+        },
+        {
+          cell_type: 'code',
+          source: codeSnippet
+        },
+        {
+          cell_type: 'code',
+          source: ''
+        }
+      ]);
       
-      // Insert code cell after the markdown cell
-      notebook.model.sharedModel.insertCell(insertIndex + 1, {
-        cell_type: 'code',
-        source: codeSnippet
-      });
+      // Set active cell immediately (not in requestAnimationFrame)
+      // This follows JupyterLab's own pattern
+      notebook.activeCellIndex = insertIndex + 2;
+      notebook.deselectAll();
+      notebook.activate();
       
-      // Insert empty code cell after the function code for next input
-      notebook.model.sharedModel.insertCell(insertIndex + 2, {
-        cell_type: 'code',
-        source: ''
-      });
+      // Force update to ensure rendering
+      if (notebook.update) {
+        notebook.update();
+      }
       
-      // Wait for cells to be added to the DOM before trying to select
-      // Use requestAnimationFrame to wait for next render cycle
-      requestAnimationFrame(() => {
-        // Use proper notebook API to select the new cell
+      // Focus the editor after a minimal delay for DOM update
+      setTimeout(() => {
         const targetCell = notebook.widgets[insertIndex + 2];
         if (targetCell) {
-          notebook.deselectAll();
           notebook.select(targetCell);
-          notebook.activate();
           if (targetCell.editor) {
             targetCell.editor.focus();
             console.log('✅ Focused on new empty cell');
           }
         }
-      });
+      }, 0);
     } else {
       // No active cell, create cells at the end
       const insertIndex = notebook.widgets.length;
-      notebook.model.sharedModel.insertCell(insertIndex, {
-        cell_type: 'markdown',
-        source: markdownContent
-      });
-      notebook.model.sharedModel.insertCell(insertIndex + 1, {
-        cell_type: 'code',
-        source: codeSnippet
-      });
-      // Insert empty code cell for next input
-      notebook.model.sharedModel.insertCell(insertIndex + 2, {
-        cell_type: 'code',
-        source: ''
-      });
-      // Use requestAnimationFrame for proper timing
-      requestAnimationFrame(() => {
+      // Insert all cells at once
+      notebook.model.sharedModel.insertCells(insertIndex, [
+        {
+          cell_type: 'markdown',
+          source: markdownContent
+        },
+        {
+          cell_type: 'code',
+          source: codeSnippet
+        },
+        {
+          cell_type: 'code',
+          source: ''
+        }
+      ]);
+      
+      // Set active cell immediately
+      notebook.activeCellIndex = insertIndex + 2;
+      notebook.deselectAll();
+      notebook.activate();
+      
+      // Force update
+      if (notebook.update) {
+        notebook.update();
+      }
+      
+      // Focus after minimal delay
+      setTimeout(() => {
         const targetCell = notebook.widgets[insertIndex + 2];
         if (targetCell) {
-          notebook.deselectAll();
           notebook.select(targetCell);
-          notebook.activate();
           if (targetCell.editor) {
             targetCell.editor.focus();
           }
         }
-      });
+      }, 0);
     }
     
     console.log('✅ Successfully inserted function with markdown description and empty cell');
@@ -2540,25 +2556,33 @@ class SHMFunctionSelector {
       // After deletion, the insertion point is exactly where the deleted cell was
       const insertIndex = currentCellIndex;
       
-      // Insert markdown cell at the same position
-      notebook.model.sharedModel.insertCell(insertIndex, {
-        cell_type: 'markdown',
-        source: markdownContent
-      });
+      // Insert both cells at once
+      notebook.model.sharedModel.insertCells(insertIndex, [
+        {
+          cell_type: 'markdown',
+          source: markdownContent
+        },
+        {
+          cell_type: 'code',
+          source: codeSnippet
+        }
+      ]);
       
-      // Insert code cell after the markdown cell
-      notebook.model.sharedModel.insertCell(insertIndex + 1, {
-        cell_type: 'code',
-        source: codeSnippet
-      });
+      // Set active cell immediately
+      notebook.activeCellIndex = insertIndex + 1;
+      notebook.deselectAll();
+      notebook.activate();
       
-      // Use requestAnimationFrame for proper timing
-      requestAnimationFrame(() => {
+      // Force update
+      if (notebook.update) {
+        notebook.update();
+      }
+      
+      // Focus after minimal delay
+      setTimeout(() => {
         const codeTargetCell = notebook.widgets[insertIndex + 1];
         if (codeTargetCell) {
-          notebook.deselectAll();
           notebook.select(codeTargetCell);
-          notebook.activate();
           if (codeTargetCell.editor) {
             codeTargetCell.editor.focus();
             // Position cursor at first parameter (None value)
@@ -2572,30 +2596,42 @@ class SHMFunctionSelector {
             }
           }
         }
-      });
+      }, 0);
     } else {
       // No active cell, create both cells at the end
       const insertIndex = notebook.widgets.length;
-      notebook.model.sharedModel.insertCell(insertIndex, {
-        cell_type: 'markdown',
-        source: markdownContent
-      });
-      notebook.model.sharedModel.insertCell(insertIndex + 1, {
-        cell_type: 'code',
-        source: codeSnippet
-      });
-      // Use requestAnimationFrame for proper timing
-      requestAnimationFrame(() => {
+      // Insert both cells at once
+      notebook.model.sharedModel.insertCells(insertIndex, [
+        {
+          cell_type: 'markdown',
+          source: markdownContent
+        },
+        {
+          cell_type: 'code',
+          source: codeSnippet
+        }
+      ]);
+      
+      // Set active cell immediately
+      notebook.activeCellIndex = insertIndex + 1;
+      notebook.deselectAll();
+      notebook.activate();
+      
+      // Force update
+      if (notebook.update) {
+        notebook.update();
+      }
+      
+      // Focus after minimal delay
+      setTimeout(() => {
         const targetCell = notebook.widgets[insertIndex + 1];
         if (targetCell) {
-          notebook.deselectAll();
           notebook.select(targetCell);
-          notebook.activate();
           if (targetCell.editor) {
             targetCell.editor.focus();
           }
         }
-      });
+      }, 0);
     }
 
     // Show success notification
