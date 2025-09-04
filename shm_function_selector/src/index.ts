@@ -2462,16 +2462,20 @@ class SHMFunctionSelector {
         source: ''
       });
       
-      // Activate and focus the empty cell
-      notebook.activeCellIndex = insertIndex + 2;
-      
-      setTimeout(() => {
-        const emptyCell = notebook.widgets[insertIndex + 2];
-        if (emptyCell && emptyCell.editor) {
-          emptyCell.editor.focus();
-          console.log('✅ Focused on new empty cell');
-        }
-      }, 100);
+      // Activate and focus the empty cell using proper API
+      // Use deselectAll() and select() to properly update JupyterLab's internal state
+      notebook.deselectAll();
+      const targetCell = notebook.widgets[insertIndex + 2];
+      if (targetCell) {
+        notebook.select(targetCell);
+        notebook.activate();
+        setTimeout(() => {
+          if (targetCell.editor) {
+            targetCell.editor.focus();
+            console.log('✅ Focused on new empty cell');
+          }
+        }, 100);
+      }
     } else {
       // No active cell, create cells at the end
       const insertIndex = notebook.widgets.length;
@@ -2488,7 +2492,13 @@ class SHMFunctionSelector {
         cell_type: 'code',
         source: ''
       });
-      notebook.activeCellIndex = insertIndex + 2;
+      // Use proper API to select the cell
+      notebook.deselectAll();
+      const endTargetCell = notebook.widgets[insertIndex + 2];
+      if (endTargetCell) {
+        notebook.select(endTargetCell);
+        notebook.activate();
+      }
     }
     
     console.log('✅ Successfully inserted function with markdown description and empty cell');
@@ -2548,24 +2558,27 @@ class SHMFunctionSelector {
         source: codeSnippet
       });
       
-      // Activate and focus the code cell
-      notebook.activeCellIndex = insertIndex + 1;
-      
-      setTimeout(() => {
-        const codeCell = notebook.widgets[insertIndex + 1];
-        if (codeCell && codeCell.editor) {
-          codeCell.editor.focus();
-          // Position cursor at first parameter (None value)
-          const lines = codeSnippet.split('\n');
-          for (let i = 0; i < lines.length; i++) {
-            const paramIndex = lines[i].indexOf('=None');
-            if (paramIndex !== -1) {
-              codeCell.editor.setCursorPosition({ line: i, column: paramIndex + 1 });
-              break;
+      // Activate and focus the code cell using proper API
+      notebook.deselectAll();
+      const codeTargetCell = notebook.widgets[insertIndex + 1];
+      if (codeTargetCell) {
+        notebook.select(codeTargetCell);
+        notebook.activate();
+        setTimeout(() => {
+          if (codeTargetCell.editor) {
+            codeTargetCell.editor.focus();
+            // Position cursor at first parameter (None value)
+            const lines = codeSnippet.split('\n');
+            for (let i = 0; i < lines.length; i++) {
+              const paramIndex = lines[i].indexOf('=None');
+              if (paramIndex !== -1) {
+                codeTargetCell.editor.setCursorPosition({ line: i, column: paramIndex + 1 });
+                break;
+              }
             }
           }
-        }
-      }, 100);
+        }, 100);
+      }
     } else {
       // No active cell, create both cells at the end
       const insertIndex = notebook.widgets.length;
@@ -2577,7 +2590,13 @@ class SHMFunctionSelector {
         cell_type: 'code',
         source: codeSnippet
       });
-      notebook.activeCellIndex = insertIndex + 1;
+      // Use proper API to select the cell
+      notebook.deselectAll();
+      const lastTargetCell = notebook.widgets[insertIndex + 1];
+      if (lastTargetCell) {
+        notebook.select(lastTargetCell);
+        notebook.activate();
+      }
     }
 
     // Show success notification
