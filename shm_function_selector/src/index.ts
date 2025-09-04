@@ -814,7 +814,7 @@ function showFunctionSearchDialog(
           functionSelector.insertFunction(func);
           showKeyboardNotification(`✅ Inserted ${func.displayName}`, '#4caf50');
         }
-      }, 10);
+      }, 50);
     }
   };
 
@@ -928,8 +928,11 @@ function updateSearchResults(
 
     item.addEventListener('click', () => {
       cleanupCallback(); // Clean up first
-      functionSelector.insertFunction(func);
-      showKeyboardNotification(`✅ Inserted ${func.displayName}`, '#4caf50');
+      // Delay insertion to ensure dialog cleanup doesn't interfere with focus
+      setTimeout(() => {
+        functionSelector.insertFunction(func);
+        showKeyboardNotification(`✅ Inserted ${func.displayName}`, '#4caf50');
+      }, 50);
     });
 
     container.appendChild(item);
