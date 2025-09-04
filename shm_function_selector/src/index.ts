@@ -805,16 +805,14 @@ function showFunctionSearchDialog(
     } else if (e.key === 'Enter' && selectedIndex >= 0) {
       e.preventDefault();
       e.stopPropagation();
-      // Clean up BEFORE triggering the function insertion
+      const func = (searchResults[selectedIndex] as any).__functionData;
+      if (func) {
+        // Insert FIRST (like dropdown does)
+        functionSelector.insertFunction(func);
+        showKeyboardNotification(`✅ Inserted ${func.displayName}`, '#4caf50');
+      }
+      // Then clean up after (like dropdown does with closeDropdown)
       cleanupAndClose();
-      // Use setTimeout to ensure the event listener is fully removed before triggering
-      setTimeout(() => {
-        const func = (searchResults[selectedIndex] as any).__functionData;
-        if (func) {
-          functionSelector.insertFunction(func);
-          showKeyboardNotification(`✅ Inserted ${func.displayName}`, '#4caf50');
-        }
-      }, 50);
     }
   };
 
@@ -927,12 +925,11 @@ function updateSearchResults(
     });
 
     item.addEventListener('click', () => {
-      cleanupCallback(); // Clean up first
-      // Delay insertion to ensure dialog cleanup doesn't interfere with focus
-      setTimeout(() => {
-        functionSelector.insertFunction(func);
-        showKeyboardNotification(`✅ Inserted ${func.displayName}`, '#4caf50');
-      }, 50);
+      // Insert FIRST (like dropdown does)
+      functionSelector.insertFunction(func);
+      showKeyboardNotification(`✅ Inserted ${func.displayName}`, '#4caf50');
+      // Then clean up after (like dropdown does with closeDropdown)
+      cleanupCallback();
     });
 
     container.appendChild(item);
