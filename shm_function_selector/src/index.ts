@@ -2466,13 +2466,20 @@ class SHMFunctionSelector {
         // Simply set the active cell - don't use complex selection API
         if (insertIndex + 2 < notebook.model.cells.length) {
           notebook.activeCellIndex = insertIndex + 2;
+          notebook.activate();
           const targetCell = notebook.widgets[insertIndex + 2];
-          if (targetCell && targetCell.editor) {
-            targetCell.editor.focus();
-            console.log('✅ Focused on new empty cell');
+          if (targetCell) {
+            // Ensure the cell is properly selected and activated
+            notebook.select(targetCell);
+            if (targetCell.editor) {
+              targetCell.editor.focus();
+              // Click into the cell to ensure it's truly active
+              targetCell.node.click();
+              console.log('✅ Focused on new empty cell');
+            }
           }
         }
-      }, 50);
+      }, 100);
     } else {
       // No active cell, create cells at the end
       const insertIndex = notebook.widgets.length;
@@ -2494,8 +2501,17 @@ class SHMFunctionSelector {
       setTimeout(() => {
         if (insertIndex + 2 < notebook.model.cells.length) {
           notebook.activeCellIndex = insertIndex + 2;
+          notebook.activate();
+          const targetCell = notebook.widgets[insertIndex + 2];
+          if (targetCell) {
+            notebook.select(targetCell);
+            if (targetCell.editor) {
+              targetCell.editor.focus();
+              targetCell.node.click();
+            }
+          }
         }
-      }, 50);
+      }, 100);
     }
     
     console.log('✅ Successfully inserted function with markdown description and empty cell');
@@ -2553,21 +2569,26 @@ class SHMFunctionSelector {
       setTimeout(() => {
         if (insertIndex + 1 < notebook.model.cells.length) {
           notebook.activeCellIndex = insertIndex + 1;
+          notebook.activate();
           const codeTargetCell = notebook.widgets[insertIndex + 1];
-          if (codeTargetCell && codeTargetCell.editor) {
-            codeTargetCell.editor.focus();
-            // Position cursor at first parameter (None value)
-            const lines = codeSnippet.split('\n');
-            for (let i = 0; i < lines.length; i++) {
-              const paramIndex = lines[i].indexOf('=None');
-              if (paramIndex !== -1) {
-                codeTargetCell.editor.setCursorPosition({ line: i, column: paramIndex + 1 });
-                break;
+          if (codeTargetCell) {
+            notebook.select(codeTargetCell);
+            if (codeTargetCell.editor) {
+              codeTargetCell.editor.focus();
+              codeTargetCell.node.click();
+              // Position cursor at first parameter (None value)
+              const lines = codeSnippet.split('\n');
+              for (let i = 0; i < lines.length; i++) {
+                const paramIndex = lines[i].indexOf('=None');
+                if (paramIndex !== -1) {
+                  codeTargetCell.editor.setCursorPosition({ line: i, column: paramIndex + 1 });
+                  break;
+                }
               }
             }
           }
         }
-      }, 50);
+      }, 100);
     } else {
       // No active cell, create both cells at the end
       const insertIndex = notebook.widgets.length;
@@ -2584,8 +2605,17 @@ class SHMFunctionSelector {
       setTimeout(() => {
         if (insertIndex + 1 < notebook.model.cells.length) {
           notebook.activeCellIndex = insertIndex + 1;
+          notebook.activate();
+          const targetCell = notebook.widgets[insertIndex + 1];
+          if (targetCell) {
+            notebook.select(targetCell);
+            if (targetCell.editor) {
+              targetCell.editor.focus();
+              targetCell.node.click();
+            }
+          }
         }
-      }, 50);
+      }, 100);
     }
 
     // Show success notification
