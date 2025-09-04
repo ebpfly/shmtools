@@ -423,7 +423,7 @@ function setupKeyboardShortcuts(
   app.commands.addKeyBinding({
     command: 'shm-selector:search-functions',
     keys: ['Ctrl Shift S'],
-    selector: '.jp-Notebook'
+    selector: 'body'
   });
 
   console.log('✅ SHM keyboard shortcuts registered:');
