@@ -60,37 +60,7 @@ function activate(
     
     // Note: Removed the red SHM Parameter Linker button per user request
     
-    // Add passive debugging to monitor JupyterLab operations without interfering
-    // Using bubble phase and passive listeners to avoid any interference
-    notebook.node.addEventListener('click', (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (target.closest('.jp-Toolbar') || target.closest('[data-command]')) {
-        const command = (target.closest('[data-command]') as HTMLElement)?.getAttribute('data-command');
-        console.log('🔵 TOOLBAR CLICK (passive observer):', {
-          command: command,
-          timestamp: Date.now(),
-          activeCell: notebook.activeCell?.model?.type,
-          cellCount: notebook.widgets.length
-        });
-        
-        // DISABLED: Forced update may be causing positioning issues with add cell button
-        /*
-        // If this is an insert cell command, force a layout update after a brief delay
-        if (command && command.includes('insert-cell')) {
-          console.log('🔧 Detected insert-cell command, forcing layout update...');
-          setTimeout(() => {
-            // Force JupyterLab to update its layout
-            if (notebook.update) {
-              notebook.update();
-              console.log('🔧 Called notebook.update()');
-            }
-            // Removed resize event as it may cause positioning issues
-            // window.dispatchEvent(new Event('resize'));
-          }, 50);
-        }
-        */
-      }
-    }, { passive: true, capture: false }); // Passive listener in bubble phase
+    // REMOVED: Debugging click listener was interfering with JupyterLab's event handling
     
     // DISABLED: MutationObserver might be blocking rendering
     // Monitor DOM changes to see if cells are being added
@@ -2295,7 +2265,7 @@ class SHMFunctionSelector {
         if (e.key === 'ArrowDown') {
           e.preventDefault();
           e.stopPropagation();
-          // Removed stopImmediatePropagation to allow Lumino update cycle
+          e.stopImmediatePropagation();
           this.selectedNavigationIndex = 0;
           this.updateNavigationHighlight();
           // Move focus away from search box to enable navigation
@@ -2303,7 +2273,7 @@ class SHMFunctionSelector {
         } else if (e.key === 'Escape') {
           e.preventDefault();
           e.stopPropagation();
-          // Removed stopImmediatePropagation to allow Lumino update cycle
+          e.stopImmediatePropagation();
           this.closeDropdown();
         }
         return;
@@ -2353,7 +2323,7 @@ class SHMFunctionSelector {
         if (searchBox && e.key.length === 1) {
           e.preventDefault();
           e.stopPropagation();
-          // Removed stopImmediatePropagation to allow Lumino update cycle
+          e.stopImmediatePropagation();
           searchBox.focus();
           // Add the typed character to search box
           searchBox.value += e.key;
