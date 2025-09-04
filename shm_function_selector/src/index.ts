@@ -2273,7 +2273,7 @@ class SHMFunctionSelector {
         if (e.key === 'ArrowDown') {
           e.preventDefault();
           e.stopPropagation();
-          e.stopImmediatePropagation();
+          // Removed stopImmediatePropagation to allow Lumino update cycle
           this.selectedNavigationIndex = 0;
           this.updateNavigationHighlight();
           // Move focus away from search box to enable navigation
@@ -2281,7 +2281,7 @@ class SHMFunctionSelector {
         } else if (e.key === 'Escape') {
           e.preventDefault();
           e.stopPropagation();
-          e.stopImmediatePropagation();
+          // Removed stopImmediatePropagation to allow Lumino update cycle
           this.closeDropdown();
         }
         return;
@@ -2331,7 +2331,7 @@ class SHMFunctionSelector {
         if (searchBox && e.key.length === 1) {
           e.preventDefault();
           e.stopPropagation();
-          e.stopImmediatePropagation();
+          // Removed stopImmediatePropagation to allow Lumino update cycle
           searchBox.focus();
           // Add the typed character to search box
           searchBox.value += e.key;
@@ -2340,8 +2340,8 @@ class SHMFunctionSelector {
       }
     };
 
-    // Add event listener with capture phase to catch events early
-    document.addEventListener('keydown', this.dropdownKeyboardHandler, true);
+    // Add event listener in bubble phase (false) to not interfere with JupyterLab
+    document.addEventListener('keydown', this.dropdownKeyboardHandler, false);
 
     // Note: Navigation items are now updated directly in the main search input handler
     // to avoid timing conflicts between filtering and navigation updates
@@ -2461,11 +2461,6 @@ class SHMFunctionSelector {
       notebook.deselectAll();
       notebook.activate();
       
-      // Force update to ensure rendering
-      if (notebook.update) {
-        notebook.update();
-      }
-      
       // Focus the editor after a minimal delay for DOM update
       setTimeout(() => {
         const targetCell = notebook.widgets[insertIndex + 2];
@@ -2500,11 +2495,6 @@ class SHMFunctionSelector {
       notebook.activeCellIndex = insertIndex + 2;
       notebook.deselectAll();
       notebook.activate();
-      
-      // Force update
-      if (notebook.update) {
-        notebook.update();
-      }
       
       // Focus after minimal delay
       setTimeout(() => {
@@ -2573,11 +2563,6 @@ class SHMFunctionSelector {
       notebook.deselectAll();
       notebook.activate();
       
-      // Force update
-      if (notebook.update) {
-        notebook.update();
-      }
-      
       // Focus after minimal delay
       setTimeout(() => {
         const codeTargetCell = notebook.widgets[insertIndex + 1];
@@ -2616,11 +2601,6 @@ class SHMFunctionSelector {
       notebook.activeCellIndex = insertIndex + 1;
       notebook.deselectAll();
       notebook.activate();
-      
-      // Force update
-      if (notebook.update) {
-        notebook.update();
-      }
       
       // Focus after minimal delay
       setTimeout(() => {
