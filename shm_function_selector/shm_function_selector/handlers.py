@@ -922,17 +922,83 @@ class SHMVariableHandler(APIHandler):
 
     _verbose_call_cache = None  # Class-level cache for function verbose_call mappings
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._config = None
+
+    def _load_config(self) -> Dict[str, Any]:
+        """Load configuration from config.json file."""
+        if self._config is not None:
+            return self._config
+
+        # Try multiple locations for config file
+        possible_paths = [
+            # 1. In the parent directory (for installed package)
+            Path(__file__).parent.parent / "config.json",
+            # 2. In the same directory as handler (for development)
+            Path(__file__).parent / "config.json",
+            # 3. In the repository (for TLJH installations)
+            Path("/srv/classrepo/shm_function_selector/config.json"),
+            # 4. In site-packages root (for pip installed)
+            Path(__file__).parent.parent.parent / "config.json",
+        ]
+
+        config_path = None
+        for path in possible_paths:
+            if path.exists():
+                config_path = path
+                break
+
+        try:
+            if config_path and config_path.exists():
+                with open(config_path, "r") as f:
+                    self._config = json.load(f)
+                self.log.info(f"Loaded configuration from {config_path}")
+            else:
+                # Return default configuration
+                self._config = self._get_default_config()
+                self.log.info("Using default configuration (config.json not found)")
+        except Exception as e:
+            self.log.warning(f"Error loading config: {e}, using defaults")
+            self._config = self._get_default_config()
+
+        return self._config
+
+    def _get_default_config(self) -> Dict[str, Any]:
+        """Return default configuration."""
+        return {
+            "function_discovery": {
+                "enabled": True,
+                "discovery_mode": "modules",
+                "modules_to_scan": [],
+                "include_patterns": ["*_shm", "learn_*", "apply_*", "compute_*"],
+                "exclude_patterns": ["_*", "__*", "*_internal", "*_helper"],
+                "custom_categories": {},
+            },
+            "variable_discovery": {
+                "enabled": True,
+                "include_notebook_variables": True,
+                "include_kernel_variables": False,
+            },
+            "gui_integration": {
+                "show_parameter_hints": True,
+                "show_function_descriptions": True,
+                "group_by_category": True,
+                "max_functions_per_category": 50,
+            },
+        }
+
     def _get_verbose_call_cache(self) -> Dict[str, str]:
         """Get cached mapping of function_name -> verbose_call."""
         if SHMVariableHandler._verbose_call_cache is None:
             self.log.info("Building verbose_call cache from function metadata...")
 
             # Reuse the same function discovery logic as SHMFunctionHandler
-            # We can't instantiate the handler directly, so we'll call the introspection directly
+            # Load the proper config instead of using a minimal one
             from ..introspection import discover_functions_locally
 
-            # Create a minimal config for function discovery
-            config = {"function_discovery": {"enabled": True}, "modules_to_scan": []}
+            # Load the actual config file with all configured modules
+            config = self._load_config()
 
             functions = discover_functions_locally(config)
 

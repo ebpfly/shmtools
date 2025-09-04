@@ -71,6 +71,8 @@ function activate(
           cellCount: notebook.widgets.length
         });
         
+        // DISABLED: Forced update may be causing positioning issues with add cell button
+        /*
         // If this is an insert cell command, force a layout update after a brief delay
         if (command && command.includes('insert-cell')) {
           console.log('🔧 Detected insert-cell command, forcing layout update...');
@@ -80,11 +82,11 @@ function activate(
               notebook.update();
               console.log('🔧 Called notebook.update()');
             }
-            // Also try to trigger a resize event which often forces re-rendering
-            window.dispatchEvent(new Event('resize'));
-            console.log('🔧 Dispatched resize event');
+            // Removed resize event as it may cause positioning issues
+            // window.dispatchEvent(new Event('resize'));
           }, 50);
         }
+        */
       }
     }, { passive: true, capture: false }); // Passive listener in bubble phase
     
