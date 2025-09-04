@@ -2435,13 +2435,8 @@ class SHMFunctionSelector {
       } else {
         // If current cell is empty, delete it and use its position
         notebook.model.sharedModel.deleteCell(currentCellIndex);
-        // CRITICAL: Refresh the insertion index after deletion
-        insertIndex = notebook.activeCellIndex;
-        // Validate the index is within bounds
-        if (insertIndex < 0 || insertIndex > notebook.model.cells.length) {
-          console.warn(`⚠️ Invalid insertion index ${insertIndex} after deletion, adjusting to ${Math.min(currentCellIndex, notebook.model.cells.length)}`);
-          insertIndex = Math.min(currentCellIndex, notebook.model.cells.length);
-        }
+        // After deletion, the insertion point is exactly where the deleted cell was
+        insertIndex = currentCellIndex;
       }
       
       // Insert markdown cell
@@ -2462,20 +2457,22 @@ class SHMFunctionSelector {
         source: ''
       });
       
-      // Activate and focus the empty cell using proper API
-      // Use deselectAll() and select() to properly update JupyterLab's internal state
-      notebook.deselectAll();
-      const targetCell = notebook.widgets[insertIndex + 2];
-      if (targetCell) {
-        notebook.select(targetCell);
-        notebook.activate();
-        setTimeout(() => {
-          if (targetCell.editor) {
+      // Wait for cells to be added to the DOM before trying to select
+      // Force notebook update
+      notebook.update();
+      
+      // Use a small delay to ensure cells are in the widgets array
+      setTimeout(() => {
+        // Simply set the active cell - don't use complex selection API
+        if (insertIndex + 2 < notebook.model.cells.length) {
+          notebook.activeCellIndex = insertIndex + 2;
+          const targetCell = notebook.widgets[insertIndex + 2];
+          if (targetCell && targetCell.editor) {
             targetCell.editor.focus();
             console.log('✅ Focused on new empty cell');
           }
-        }, 100);
-      }
+        }
+      }, 50);
     } else {
       // No active cell, create cells at the end
       const insertIndex = notebook.widgets.length;
@@ -2492,13 +2489,13 @@ class SHMFunctionSelector {
         cell_type: 'code',
         source: ''
       });
-      // Use proper API to select the cell
-      notebook.deselectAll();
-      const endTargetCell = notebook.widgets[insertIndex + 2];
-      if (endTargetCell) {
-        notebook.select(endTargetCell);
-        notebook.activate();
-      }
+      // Force notebook update and set active cell after delay
+      notebook.update();
+      setTimeout(() => {
+        if (insertIndex + 2 < notebook.model.cells.length) {
+          notebook.activeCellIndex = insertIndex + 2;
+        }
+      }, 50);
     }
     
     console.log('✅ Successfully inserted function with markdown description and empty cell');
@@ -2536,15 +2533,8 @@ class SHMFunctionSelector {
       // Delete current cell and insert markdown + code cells
       notebook.model.sharedModel.deleteCell(currentCellIndex);
       
-      // CRITICAL: Refresh the insertion index after deletion
-      const updatedCellIndex = notebook.activeCellIndex;
-      let insertIndex = updatedCellIndex;
-      
-      // Validate the index is within bounds
-      if (insertIndex < 0 || insertIndex > notebook.model.cells.length) {
-        console.warn(`⚠️ Invalid insertion index ${insertIndex} after deletion, adjusting to ${Math.min(currentCellIndex, notebook.model.cells.length)}`);
-        insertIndex = Math.min(currentCellIndex, notebook.model.cells.length);
-      }
+      // After deletion, the insertion point is exactly where the deleted cell was
+      const insertIndex = currentCellIndex;
       
       // Insert markdown cell at the same position
       notebook.model.sharedModel.insertCell(insertIndex, {
@@ -2558,14 +2548,13 @@ class SHMFunctionSelector {
         source: codeSnippet
       });
       
-      // Activate and focus the code cell using proper API
-      notebook.deselectAll();
-      const codeTargetCell = notebook.widgets[insertIndex + 1];
-      if (codeTargetCell) {
-        notebook.select(codeTargetCell);
-        notebook.activate();
-        setTimeout(() => {
-          if (codeTargetCell.editor) {
+      // Force notebook update and set active cell after delay
+      notebook.update();
+      setTimeout(() => {
+        if (insertIndex + 1 < notebook.model.cells.length) {
+          notebook.activeCellIndex = insertIndex + 1;
+          const codeTargetCell = notebook.widgets[insertIndex + 1];
+          if (codeTargetCell && codeTargetCell.editor) {
             codeTargetCell.editor.focus();
             // Position cursor at first parameter (None value)
             const lines = codeSnippet.split('\n');
@@ -2577,8 +2566,8 @@ class SHMFunctionSelector {
               }
             }
           }
-        }, 100);
-      }
+        }
+      }, 50);
     } else {
       // No active cell, create both cells at the end
       const insertIndex = notebook.widgets.length;
@@ -2590,13 +2579,13 @@ class SHMFunctionSelector {
         cell_type: 'code',
         source: codeSnippet
       });
-      // Use proper API to select the cell
-      notebook.deselectAll();
-      const lastTargetCell = notebook.widgets[insertIndex + 1];
-      if (lastTargetCell) {
-        notebook.select(lastTargetCell);
-        notebook.activate();
-      }
+      // Force notebook update and set active cell after delay
+      notebook.update();
+      setTimeout(() => {
+        if (insertIndex + 1 < notebook.model.cells.length) {
+          notebook.activeCellIndex = insertIndex + 1;
+        }
+      }, 50);
     }
 
     // Show success notification
