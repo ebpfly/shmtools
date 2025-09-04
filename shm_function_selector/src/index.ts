@@ -35,6 +35,11 @@ function activate(
   // Initialize managers
   const contextMenuManager = new SHMContextMenuManager();
   const functionSelector = new SHMFunctionSelector(app, notebookTracker);
+  
+  // Set refresh callback on context menu manager
+  contextMenuManager.setRefreshCallback(() => {
+    functionSelector.forceNotebookRefresh();
+  });
 
   // Set up basic commands first
   const { commands } = app;
@@ -1021,6 +1026,31 @@ class SHMFunctionSelector {
     this.setupNotebookTracking();
   }
 
+  /**
+   * Force JupyterLab to update all notebooks to fix rendering issues
+   * Call this after any event handlers that might block updates
+   */
+  public forceNotebookRefresh(): void {
+    requestAnimationFrame(() => {
+      // Get current notebook
+      const currentWidget = this.notebookTracker.currentWidget;
+      if (currentWidget && currentWidget.content) {
+        const notebook = currentWidget.content;
+        // Schedule a repaint/layout pass
+        notebook.update();
+        // Post explicit Lumino messages
+        MessageLoop.postMessage(notebook, Widget.Msg.UpdateRequest);
+        MessageLoop.postMessage(notebook, Widget.Msg.FitRequest);
+        // Also update the panel
+        currentWidget.update();
+      }
+      // Also try to update the shell
+      if (this.app.shell) {
+        MessageLoop.postMessage(this.app.shell as any, Widget.Msg.FitRequest);
+      }
+    });
+  }
+
   private async loadModuleImports(): Promise<void> {
     try {
       console.log('📥 Loading module imports from server...');
@@ -1358,6 +1388,11 @@ class SHMFunctionSelector {
               document.removeEventListener('click', outsideClickHandler);
               outsideClickHandler = null;
             }
+            // Force refresh after handling click
+            this.forceNotebookRefresh();
+          } else {
+            // Force refresh even when click is inside dropdown
+            this.forceNotebookRefresh();
           }
         };
         // Use setTimeout to avoid catching the same click that opened it
@@ -2330,6 +2365,9 @@ class SHMFunctionSelector {
           searchBox.dispatchEvent(new Event('input'));
         }
       }
+      
+      // Force refresh after handling keyboard events
+      this.forceNotebookRefresh();
     };
 
     // Add event listener in bubble phase (false) to not interfere with JupyterLab
@@ -2509,6 +2547,9 @@ class SHMFunctionSelector {
     if (this.dropdown) {
       this.dropdown.value = func.name;
     }
+    
+    // Force notebook refresh to ensure proper rendering
+    this.forceNotebookRefresh();
   }
 
   private insertSelectedFunction(nbPanel: any): void {
@@ -2612,6 +2653,9 @@ class SHMFunctionSelector {
     // Reset dropdown
     this.dropdown.value = '';
     this.populateDropdown();
+    
+    // Force notebook refresh to ensure proper rendering
+    this.forceNotebookRefresh();
   }
 
   private generateCodeSnippet(func: SHMFunction): string {
@@ -3786,6 +3830,11 @@ interface Variable {
 class SHMContextMenuManager {
   private variables: Variable[] = [];
   private contextMenu: HTMLElement | null = null;
+  private refreshCallback: (() => void) | null = null;
+  
+  setRefreshCallback(callback: () => void): void {
+    this.refreshCallback = callback;
+  }
 
   /**
    * Detect if right-click happened on a variable in cell output area ONLY
@@ -4982,6 +5031,11 @@ class SHMContextMenuManager {
 
     // Show success notification
     this.showNotification(`✅ Linked ${parameterContext.parameterName} = ${variable.name}`, '#4caf50');
+    
+    // Trigger refresh callback if set
+    if (this.refreshCallback) {
+      this.refreshCallback();
+    }
   }
 
   private showNotification(message: string, color: string): void {
