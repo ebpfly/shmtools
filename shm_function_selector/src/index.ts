@@ -8,6 +8,8 @@ import { Cell } from '@jupyterlab/cells';
 import { IConsoleTracker } from '@jupyterlab/console';
 import { CodeConsole } from '@jupyterlab/console';
 import { requestAPI } from './serverAPI';
+import { MessageLoop } from '@lumino/messaging';
+import { Widget } from '@lumino/widgets';
 
 /**
  * The plugin registration information.
@@ -1357,6 +1359,8 @@ class SHMFunctionSelector {
         arrow.style.transform = 'rotate(180deg)';
         // Collapse all categories when dropdown reopens
         this.collapseAllCategories(dropdownContent);
+        // Setup outside click handler when dropdown opens
+        setupOutsideClickHandler();
         // Auto-focus the search box when dropdown opens
         setTimeout(() => {
           const searchBox = dropdownContent.querySelector('input') as HTMLInputElement;
@@ -1368,14 +1372,32 @@ class SHMFunctionSelector {
       }
     });
 
-    // Close dropdown when clicking outside
-    document.addEventListener('click', (e) => {
-      if (!enhancedDropdown.contains(e.target as Node)) {
-        dropdownContent.style.display = 'none';
-        arrow.style.transform = 'rotate(0deg)';
-        this.cleanupDropdownKeyboardNavigation();
+    // Store click handler so we can remove it later
+    let outsideClickHandler: ((e: MouseEvent) => void) | null = null;
+    
+    // Only add outside click handler when dropdown is open
+    const setupOutsideClickHandler = () => {
+      if (!outsideClickHandler) {
+        outsideClickHandler = (e: MouseEvent) => {
+          if (!enhancedDropdown.contains(e.target as Node)) {
+            dropdownContent.style.display = 'none';
+            arrow.style.transform = 'rotate(0deg)';
+            this.cleanupDropdownKeyboardNavigation();
+            // Remove the handler when dropdown closes
+            if (outsideClickHandler) {
+              document.removeEventListener('click', outsideClickHandler);
+              outsideClickHandler = null;
+            }
+          }
+        };
+        // Use setTimeout to avoid catching the same click that opened it
+        setTimeout(() => {
+          if (outsideClickHandler && dropdownContent.style.display !== 'none') {
+            document.addEventListener('click', outsideClickHandler);
+          }
+        }, 0);
       }
-    });
+    };
 
     enhancedDropdown.appendChild(triggerButton);
     enhancedDropdown.appendChild(dropdownContent);
