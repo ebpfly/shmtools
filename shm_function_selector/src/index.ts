@@ -2435,6 +2435,13 @@ class SHMFunctionSelector {
       } else {
         // If current cell is empty, delete it and use its position
         notebook.model.sharedModel.deleteCell(currentCellIndex);
+        // CRITICAL: Refresh the insertion index after deletion
+        insertIndex = notebook.activeCellIndex;
+        // Validate the index is within bounds
+        if (insertIndex < 0 || insertIndex > notebook.model.cells.length) {
+          console.warn(`⚠️ Invalid insertion index ${insertIndex} after deletion, adjusting to ${Math.min(currentCellIndex, notebook.model.cells.length)}`);
+          insertIndex = Math.min(currentCellIndex, notebook.model.cells.length);
+        }
       }
       
       // Insert markdown cell
@@ -2519,23 +2526,33 @@ class SHMFunctionSelector {
       // Delete current cell and insert markdown + code cells
       notebook.model.sharedModel.deleteCell(currentCellIndex);
       
+      // CRITICAL: Refresh the insertion index after deletion
+      const updatedCellIndex = notebook.activeCellIndex;
+      let insertIndex = updatedCellIndex;
+      
+      // Validate the index is within bounds
+      if (insertIndex < 0 || insertIndex > notebook.model.cells.length) {
+        console.warn(`⚠️ Invalid insertion index ${insertIndex} after deletion, adjusting to ${Math.min(currentCellIndex, notebook.model.cells.length)}`);
+        insertIndex = Math.min(currentCellIndex, notebook.model.cells.length);
+      }
+      
       // Insert markdown cell at the same position
-      notebook.model.sharedModel.insertCell(currentCellIndex, {
+      notebook.model.sharedModel.insertCell(insertIndex, {
         cell_type: 'markdown',
         source: markdownContent
       });
       
       // Insert code cell after the markdown cell
-      notebook.model.sharedModel.insertCell(currentCellIndex + 1, {
+      notebook.model.sharedModel.insertCell(insertIndex + 1, {
         cell_type: 'code',
         source: codeSnippet
       });
       
       // Activate and focus the code cell
-      notebook.activeCellIndex = currentCellIndex + 1;
+      notebook.activeCellIndex = insertIndex + 1;
       
       setTimeout(() => {
-        const codeCell = notebook.widgets[currentCellIndex + 1];
+        const codeCell = notebook.widgets[insertIndex + 1];
         if (codeCell && codeCell.editor) {
           codeCell.editor.focus();
           // Position cursor at first parameter (None value)
