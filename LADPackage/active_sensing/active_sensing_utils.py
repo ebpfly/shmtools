@@ -269,7 +269,7 @@ def arrival_filter(
         :data_type: Active Sensing
         :output_type: Features
         :display_name: Arrival Filter
-        :verbose_call: [filteredWaveforms] = Arrival Filter (waveforms, frontClip, arrivalOffset)
+        :verbose_call: [Filtered Waveforms] = Arrival Filter (Waveforms, Front Clip, Arrival Offset)
     
     Parameters
     ----------
