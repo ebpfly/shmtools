@@ -2458,28 +2458,20 @@ class SHMFunctionSelector {
       });
       
       // Wait for cells to be added to the DOM before trying to select
-      // Force notebook update
-      notebook.update();
-      
-      // Use a small delay to ensure cells are in the widgets array
-      setTimeout(() => {
-        // Simply set the active cell - don't use complex selection API
-        if (insertIndex + 2 < notebook.model.cells.length) {
-          notebook.activeCellIndex = insertIndex + 2;
+      // Use requestAnimationFrame to wait for next render cycle
+      requestAnimationFrame(() => {
+        // Use proper notebook API to select the new cell
+        const targetCell = notebook.widgets[insertIndex + 2];
+        if (targetCell) {
+          notebook.deselectAll();
+          notebook.select(targetCell);
           notebook.activate();
-          const targetCell = notebook.widgets[insertIndex + 2];
-          if (targetCell) {
-            // Ensure the cell is properly selected and activated
-            notebook.select(targetCell);
-            if (targetCell.editor) {
-              targetCell.editor.focus();
-              // Click into the cell to ensure it's truly active
-              targetCell.node.click();
-              console.log('✅ Focused on new empty cell');
-            }
+          if (targetCell.editor) {
+            targetCell.editor.focus();
+            console.log('✅ Focused on new empty cell');
           }
         }
-      }, 100);
+      });
     } else {
       // No active cell, create cells at the end
       const insertIndex = notebook.widgets.length;
@@ -2496,22 +2488,18 @@ class SHMFunctionSelector {
         cell_type: 'code',
         source: ''
       });
-      // Force notebook update and set active cell after delay
-      notebook.update();
-      setTimeout(() => {
-        if (insertIndex + 2 < notebook.model.cells.length) {
-          notebook.activeCellIndex = insertIndex + 2;
+      // Use requestAnimationFrame for proper timing
+      requestAnimationFrame(() => {
+        const targetCell = notebook.widgets[insertIndex + 2];
+        if (targetCell) {
+          notebook.deselectAll();
+          notebook.select(targetCell);
           notebook.activate();
-          const targetCell = notebook.widgets[insertIndex + 2];
-          if (targetCell) {
-            notebook.select(targetCell);
-            if (targetCell.editor) {
-              targetCell.editor.focus();
-              targetCell.node.click();
-            }
+          if (targetCell.editor) {
+            targetCell.editor.focus();
           }
         }
-      }, 100);
+      });
     }
     
     console.log('✅ Successfully inserted function with markdown description and empty cell');
@@ -2564,31 +2552,27 @@ class SHMFunctionSelector {
         source: codeSnippet
       });
       
-      // Force notebook update and set active cell after delay
-      notebook.update();
-      setTimeout(() => {
-        if (insertIndex + 1 < notebook.model.cells.length) {
-          notebook.activeCellIndex = insertIndex + 1;
+      // Use requestAnimationFrame for proper timing
+      requestAnimationFrame(() => {
+        const codeTargetCell = notebook.widgets[insertIndex + 1];
+        if (codeTargetCell) {
+          notebook.deselectAll();
+          notebook.select(codeTargetCell);
           notebook.activate();
-          const codeTargetCell = notebook.widgets[insertIndex + 1];
-          if (codeTargetCell) {
-            notebook.select(codeTargetCell);
-            if (codeTargetCell.editor) {
-              codeTargetCell.editor.focus();
-              codeTargetCell.node.click();
-              // Position cursor at first parameter (None value)
-              const lines = codeSnippet.split('\n');
-              for (let i = 0; i < lines.length; i++) {
-                const paramIndex = lines[i].indexOf('=None');
-                if (paramIndex !== -1) {
-                  codeTargetCell.editor.setCursorPosition({ line: i, column: paramIndex + 1 });
-                  break;
-                }
+          if (codeTargetCell.editor) {
+            codeTargetCell.editor.focus();
+            // Position cursor at first parameter (None value)
+            const lines = codeSnippet.split('\n');
+            for (let i = 0; i < lines.length; i++) {
+              const paramIndex = lines[i].indexOf('=None');
+              if (paramIndex !== -1) {
+                codeTargetCell.editor.setCursorPosition({ line: i, column: paramIndex + 1 });
+                break;
               }
             }
           }
         }
-      }, 100);
+      });
     } else {
       // No active cell, create both cells at the end
       const insertIndex = notebook.widgets.length;
@@ -2600,22 +2584,18 @@ class SHMFunctionSelector {
         cell_type: 'code',
         source: codeSnippet
       });
-      // Force notebook update and set active cell after delay
-      notebook.update();
-      setTimeout(() => {
-        if (insertIndex + 1 < notebook.model.cells.length) {
-          notebook.activeCellIndex = insertIndex + 1;
+      // Use requestAnimationFrame for proper timing
+      requestAnimationFrame(() => {
+        const targetCell = notebook.widgets[insertIndex + 1];
+        if (targetCell) {
+          notebook.deselectAll();
+          notebook.select(targetCell);
           notebook.activate();
-          const targetCell = notebook.widgets[insertIndex + 1];
-          if (targetCell) {
-            notebook.select(targetCell);
-            if (targetCell.editor) {
-              targetCell.editor.focus();
-              targetCell.node.click();
-            }
+          if (targetCell.editor) {
+            targetCell.editor.focus();
           }
         }
-      }, 100);
+      });
     }
 
     // Show success notification
