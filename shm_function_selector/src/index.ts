@@ -2366,10 +2366,12 @@ class SHMFunctionSelector {
     // Get all category headers and function items
     const allItems: HTMLElement[] = [];
     
-    // Get all category sections
-    const categorySections = dropdownContent.querySelectorAll('.shm-category-section');
+    // Only get top-level category sections (direct children)
+    const topLevelCategories = Array.from(dropdownContent.children).filter(child => 
+      child.classList.contains('shm-category-section')
+    );
     
-    categorySections.forEach(section => {
+    topLevelCategories.forEach(section => {
       const sectionElement = section as HTMLElement;
       
       // Skip hidden sections
@@ -2386,21 +2388,49 @@ class SHMFunctionSelector {
       // Check if category is expanded
       const content = section.querySelector('.shm-category-content') as HTMLElement;
       if (content && content.style.display !== 'none') {
-        // Add visible function items within this expanded category
-        const functionItems = content.querySelectorAll('.shm-function-item');
-        functionItems.forEach(item => {
-          const funcElement = item as HTMLElement;
-          if (funcElement.style.display !== 'none') {
-            allItems.push(funcElement);
-          }
-        });
+        // Recursively add subcategory headers and functions
+        this.addNavigableItemsFromContent(content, allItems);
       }
     });
     
     console.log('[SHM] Updated navigable items:', allItems.length, 'items');
     console.log('[SHM] Categories only?', allItems.every(item => item.classList.contains('shm-category-header')));
+    console.log('[SHM] First 5 items:', allItems.slice(0, 5).map(item => 
+      item.classList.contains('shm-category-header') ? 
+        'Category: ' + item.textContent?.trim() : 
+        'Function: ' + item.textContent?.trim()
+    ));
     
     this.keyboardNavigationItems = allItems;
+  }
+
+  private addNavigableItemsFromContent(content: HTMLElement, allItems: HTMLElement[]): void {
+    // Get direct child elements that are category sections or function items
+    Array.from(content.children).forEach(child => {
+      if (child.classList.contains('shm-category-section')) {
+        // It's a subcategory
+        const subSection = child as HTMLElement;
+        if (subSection.style.display !== 'none') {
+          const header = subSection.querySelector('.shm-category-header') as HTMLElement;
+          if (header) {
+            allItems.push(header);
+          }
+          
+          // Check if subcategory is expanded
+          const subContent = subSection.querySelector('.shm-category-content') as HTMLElement;
+          if (subContent && subContent.style.display !== 'none') {
+            // Recursively add items from subcategory
+            this.addNavigableItemsFromContent(subContent, allItems);
+          }
+        }
+      } else if (child.classList.contains('shm-function-item')) {
+        // It's a function item
+        const funcElement = child as HTMLElement;
+        if (funcElement.style.display !== 'none') {
+          allItems.push(funcElement);
+        }
+      }
+    });
   }
 
   private updateNavigationHighlight(): void {
