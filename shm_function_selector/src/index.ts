@@ -293,16 +293,16 @@ function setupKeyboardShortcuts(
   // Shortcut 1: Ctrl+Shift+F - Open function browser
   app.commands.addCommand('shm-selector:open-function-browser', {
     label: 'Open SHM Function Browser',
-    caption: 'Open the SHM function browser dropdown',
+    caption: 'Open the SHM function browser',
     execute: () => {
       const activeNotebook = notebookTracker.currentWidget;
       if (activeNotebook) {
-        const trigger = activeNotebook.node.querySelector('.shm-dropdown-trigger') as HTMLElement;
-        if (trigger) {
-          trigger.click();
+        const jfuseButton = activeNotebook.node.querySelector('.shm-jfuse-button') as HTMLElement;
+        if (jfuseButton) {
+          jfuseButton.click();
           console.log('📚 Opened function browser via keyboard shortcut');
         } else {
-          console.log('⚠️ Function browser trigger not found');
+          console.log('⚠️ jFUSE button not found');
         }
       }
     }
@@ -342,27 +342,6 @@ function setupKeyboardShortcuts(
     }
   });
 
-  // Shortcut 3: Ctrl+Shift+I - Insert popular function
-  app.commands.addCommand('shm-selector:insert-popular-function', {
-    label: 'Insert Popular SHM Function',
-    caption: 'Quick insert of commonly used SHM functions',
-    execute: () => {
-      showPopularFunctionsQuickSelect(functionSelector, notebookTracker);
-    }
-  });
-
-  // Shortcut 4: Ctrl+Shift+L - Link parameter to variable (context-aware)
-  app.commands.addCommand('shm-selector:smart-parameter-link', {
-    label: 'Smart Parameter Link',
-    caption: 'Intelligently link parameter at cursor to compatible variable',
-    execute: () => {
-      const activeNotebook = notebookTracker.currentWidget;
-      if (activeNotebook) {
-        smartParameterLink(activeNotebook.content);
-      }
-    }
-  });
-
   // Shortcut 5: Ctrl+Shift+S - Search functions
   app.commands.addCommand('shm-selector:search-functions', {
     label: 'Search SHM Functions',
@@ -386,29 +365,15 @@ function setupKeyboardShortcuts(
   });
 
   app.commands.addKeyBinding({
-    command: 'shm-selector:insert-popular-function',
-    keys: ['Ctrl Shift I'],
-    selector: '.jp-Notebook'
-  });
-
-  app.commands.addKeyBinding({
-    command: 'shm-selector:smart-parameter-link',
-    keys: ['Ctrl Shift L'],
-    selector: '.jp-Notebook'
-  });
-
-  app.commands.addKeyBinding({
     command: 'shm-selector:search-functions',
-    keys: ['Ctrl Shift S'],
+    keys: ['Ctrl Shift /'],
     selector: 'body'
   });
 
   console.log('✅ SHM keyboard shortcuts registered:');
   console.log('   📚 Ctrl+Shift+F - Open function browser');
   console.log('   📖 Ctrl+Shift+H - Show function help');
-  console.log('   ⚡ Ctrl+Shift+I - Insert popular function');
-  console.log('   🔗 Ctrl+Shift+L - Smart parameter link');
-  console.log('   🔍 Ctrl+Shift+S - Search functions');
+  console.log('   🔍 Ctrl+Shift+/ - Search functions');
 }
 
 // Helper functions for keyboard shortcuts
@@ -3694,9 +3659,7 @@ class SHMFunctionSelector {
       [
         '<kbd>Ctrl+Shift+F</kbd> - Open function browser',
         '<kbd>Ctrl+Shift+H</kbd> - Show function help for current cursor position',
-        '<kbd>Ctrl+Shift+I</kbd> - Insert popular function',
-        '<kbd>Ctrl+Shift+L</kbd> - Show recently used functions',
-        '<kbd>Ctrl+Shift+S</kbd> - Search functions'
+        '<kbd>Ctrl+Shift+/</kbd> - Search functions'
       ]
     );
 
@@ -3729,7 +3692,7 @@ class SHMFunctionSelector {
       '💡 Pro Tips',
       [
         'Click the ⚙️ button to customize auto-insertion, shortcuts, and display preferences',
-        'Use the search feature (Ctrl+Shift+S) to quickly find functions by name or category',
+        'Use the search feature (Ctrl+Shift+/) to quickly find functions by name or category',
         'Function documentation includes examples, parameters, and return values',
         'Recently used functions are remembered across sessions',
         'Right-click sensitivity can be adjusted in settings for better parameter detection'
