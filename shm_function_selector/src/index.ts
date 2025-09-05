@@ -2306,11 +2306,29 @@ class SHMFunctionSelector {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
-        // Get the selected function and trigger it immediately
+        // Get the selected item
         const selectedItem = this.keyboardNavigationItems[this.selectedNavigationIndex];
-        const contentDiv = selectedItem.querySelector('div') as HTMLElement;
-        if (contentDiv) {
-          contentDiv.click();
+        
+        // Check if it's a category header or function item
+        if (selectedItem.classList.contains('shm-category-header')) {
+          // Toggle category expand/collapse
+          selectedItem.click();
+          // Update navigable items after toggling
+          setTimeout(() => {
+            this.updateNavigableItems(dropdownContent);
+            // Keep selection on the same category header
+            const newIndex = this.keyboardNavigationItems.indexOf(selectedItem);
+            if (newIndex !== -1) {
+              this.selectedNavigationIndex = newIndex;
+            }
+            this.updateNavigationHighlight();
+          }, 50);
+        } else if (selectedItem.classList.contains('shm-function-item')) {
+          // Insert function as before
+          const contentDiv = selectedItem.querySelector('div') as HTMLElement;
+          if (contentDiv) {
+            contentDiv.click();
+          }
         }
       } else if (e.key === 'Escape') {
         e.preventDefault();
@@ -2343,12 +2361,41 @@ class SHMFunctionSelector {
   }
 
   private updateNavigableItems(dropdownContent: HTMLElement): void {
-    this.keyboardNavigationItems = Array.from(
-      dropdownContent.querySelectorAll('.shm-function-item')
-    ).filter(item => {
-      const style = (item as HTMLElement).style;
-      return style.display !== 'none';
-    }) as HTMLElement[];
+    // Get all category headers and function items
+    const allItems: HTMLElement[] = [];
+    
+    // Get all category sections
+    const categorySections = dropdownContent.querySelectorAll('.shm-category-section');
+    
+    categorySections.forEach(section => {
+      const sectionElement = section as HTMLElement;
+      
+      // Skip hidden sections
+      if (sectionElement.style.display === 'none') {
+        return;
+      }
+      
+      // Add the category header
+      const header = section.querySelector('.shm-category-header') as HTMLElement;
+      if (header) {
+        allItems.push(header);
+      }
+      
+      // Check if category is expanded
+      const content = section.querySelector('.shm-category-content') as HTMLElement;
+      if (content && content.style.display !== 'none') {
+        // Add visible function items within this expanded category
+        const functionItems = content.querySelectorAll('.shm-function-item');
+        functionItems.forEach(item => {
+          const funcElement = item as HTMLElement;
+          if (funcElement.style.display !== 'none') {
+            allItems.push(funcElement);
+          }
+        });
+      }
+    });
+    
+    this.keyboardNavigationItems = allItems;
   }
 
   private updateNavigationHighlight(): void {
