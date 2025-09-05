@@ -1,0 +1,92 @@
+<h1 id="demo-feature-extraction-and-outlier-detection">Demo: Feature
+Extraction and Outlier Detection</h1>
+<p><strong>Dataset</strong>: Base-excited 3-Story structure dataset as
+described in SHMTools/Documentation/ExampleUsages.pdf</p>
+<p><strong>Goal</strong>: Estimate AR model parameters, then detect
+outliers using the Mahalanobis distance and plot results. Swap out or
+add additional feature extraction methods to compare results for
+different features.</p>
+<h2 id="sequence">Sequence</h2>
+<h3
+id="step-1-import-3-story-structure-dataset-ladpackageoutlier-models">Step
+1: Import 3 Story Structure Dataset (LADPackage/Outlier Models)</h3>
+<p><strong>Input</strong>: Floor Numbers = 5 (Default)<br />
+<strong>Output</strong>: Dataset = (TIME, CHANNELS, INSTANCES)<br />
+<strong>Output</strong>: Damage States = (INSTANCES, 1)<br />
+<strong>Output</strong>: List of States = (INSTANCES,1)</p>
+<h3
+id="step-2-ar-model-shmfunctionsfeature-extractiontime-series-models">Step
+2: AR Model (SHMFunctions/Feature Extraction/Time Series Models)</h3>
+<p><strong>Input</strong>: Time Series Data = topFloorChannel (Step
+1)<br />
+<strong>Input</strong>: AR Model Order = 15<br />
+<strong>Output</strong>: AR Parameters Feature Vectors = (INSTANCES,
+FEATURES)<br />
+<strong>Output</strong>: RMS Residuals Feature Vectors = (INSTANCES,
+FEATURES)<br />
+<strong>Output</strong>: AR Parameters = (ARORDER, CHANNELS,
+INSTANCES)<br />
+<strong>Output</strong>: AR Residuals = (TIME, CHANNELS,
+INSTANCES)<br />
+<strong>Output</strong>: AR Prediction = (TIME, CHANNELS, INSTANCES)</p>
+<h3 id="step-3-plot-features-shmfunctionsfeature-extraction">Step 3:
+Plot Features (SHMFunctions/Feature Extraction)</h3>
+<p><strong>Input</strong>: Feature Vectors = AR Parameters Feature
+Vectors (Step 2)<br />
+<strong>Input</strong>: Instances to Plot = leave as default<br />
+<strong>Input</strong>: Features to Plot = 1:4<br />
+<strong>Input</strong>: Titles for Subplots = default<br />
+<strong>Input</strong>: Y-Axis Labels for Subplots = leave as
+default<br />
+<strong>Input</strong>: Axes Handle = leave as default<br />
+<strong>Output</strong>: Axes Handle = scalar</p>
+<h3 id="step-4-learn-score-mahalanobis-ladpackagefeature-models">Step 4:
+Learn Score Mahalanobis (LADPackage/Feature Models)</h3>
+<p><strong>Input</strong>: Features = AR Parameters Feature Vectors
+(Step 2)<br />
+<strong>Input</strong>: Training Indices = 1:2:91<br />
+<strong>Input</strong>: Scoring Indices = leave as default<br />
+<strong>Output</strong>: Scores (INSTANCES, 1)</p>
+<h3 id="step-5-plot-scores-shmfunctionsfeature-classification">Step 5:
+Plot Scores (SHMFunctions/Feature Classification)</h3>
+<p><strong>Input</strong>: Scores = Scores (Step 4)<br />
+<strong>Input</strong>: States = Damage States (Step 1)<br />
+<strong>Input</strong>: State Names = default<br />
+<strong>Input</strong>: Thresholds = default<br />
+<strong>Input</strong>: Flip Signs = true<br />
+<strong>Input</strong>: Use Log Scores = default<br />
+<strong>Input</strong>: Axes Handle = leave as default<br />
+<strong>Output</strong>: Axes Handle = scalar</p>
+<h3
+id="step-6-plot-score-distributions-shmfunctionsfeature-classification">Step
+6: Plot Score Distributions (SHMFunctions/Feature Classification)</h3>
+<p><strong>Input</strong>: Scores = Scores (Step 4)<br />
+<strong>Input</strong>: Damage States = Damage States (Step 1)<br />
+<strong>Input</strong>: State Names = default<br />
+<strong>Input</strong>: Thresholds = default<br />
+<strong>Input</strong>: Flip Signs = true<br />
+<strong>Input</strong>: Use Log Scores = true<br />
+<strong>Input</strong>: Kernel Smoothing Parameter = true<br />
+<strong>Input</strong>: Axes Handle = leave as default<br />
+<strong>Output</strong>: Axes Handle = scalar</p>
+<h3
+id="step-7-receiver-operating-characteristic-roc-curve-shmfunctionsfeature-classification">Step
+7: Receiver Operating Characteristic (ROC) Curve (SHMFunctions/Feature
+Classification)</h3>
+<p><strong>Input</strong>: Scores = Scores (Step 4)<br />
+<strong>Input</strong>: Damage States = Damage States (Step 1)<br />
+<strong>Input</strong>: # of Points = default<br />
+<strong>Input</strong>: Threshold Type = ‘below’ (default)<br />
+<strong>Output</strong>: True Positive Rate = (INSTANCES, 1)<br />
+<strong>Output</strong>: False Positive Rate = (INSTANCES, 1)</p>
+<h3
+id="step-8-plot-receiver-operating-characteristic-roc-curve-shmfunctionsfeature-classification">Step
+8: Plot Receiver Operating Characteristic (ROC) Curve
+(SHMFunctions/Feature Classification)</h3>
+<p><strong>Input</strong>: True Positive Rate = True Positive Rate (Step
+7)<br />
+<strong>Input</strong>: False Positive Rate = False Positive Rate (Step
+7)<br />
+<strong>Input</strong>: Scaling = default<br />
+<strong>Input</strong>: Axes Handle = default<br />
+<strong>Output</strong>: Axes Handle = scalar</p>
