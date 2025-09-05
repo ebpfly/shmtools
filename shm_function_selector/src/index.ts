@@ -1333,6 +1333,8 @@ class SHMFunctionSelector {
             searchBox.focus();
           }
           this.setupDropdownKeyboardNavigation(dropdownContent);
+          // Ensure navigation items are updated after categories are collapsed
+          this.updateNavigableItems(dropdownContent);
         }, 50);
       }
     });
@@ -2394,6 +2396,9 @@ class SHMFunctionSelector {
         });
       }
     });
+    
+    console.log('[SHM] Updated navigable items:', allItems.length, 'items');
+    console.log('[SHM] Categories only?', allItems.every(item => item.classList.contains('shm-category-header')));
     
     this.keyboardNavigationItems = allItems;
   }
