@@ -137,9 +137,9 @@ sudo -E pip3 install -e . 2>&1 | sed 's/^/[PIP-SHMTOOLS-SYS] /' || log_error "Fa
 log_step "🔧 Installing shmtools in TLJH user environment..."
 sudo -E /opt/tljh/user/bin/pip install -e . 2>&1 | sed 's/^/[PIP-SHMTOOLS-USER] /' || log_error "Failed to install shmtools in TLJH user environment"
 
-# Install ipywidgets for interactive matplotlib plots
-log_step "🎛️ Installing ipywidgets for interactive plots..."
-sudo -E /opt/tljh/user/bin/pip install ipywidgets 2>&1 | sed 's/^/[PIP-IPYWIDGETS] /' || log_error "Failed to install ipywidgets"
+# Install ipywidgets and ipympl for interactive matplotlib plots
+log_step "🎛️ Installing ipywidgets and ipympl for interactive plots..."
+sudo -E /opt/tljh/user/bin/pip install ipywidgets ipympl 2>&1 | sed 's/^/[PIP-IPYWIDGETS] /' || log_error "Failed to install ipywidgets/ipympl"
 log_success "shmtools package installed!"
 
 # Install JupyterLab extension
