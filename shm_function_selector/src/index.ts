@@ -4820,6 +4820,18 @@ class SHMContextMenuManager {
     `;
     this.contextMenu.appendChild(header);
 
+    // Group variables by cell for color coding
+    const groupByCellId = (vars: Variable[]) => {
+      const groups = new Map<string, Variable[]>();
+      vars.forEach(v => {
+        if (!groups.has(v.cellId)) {
+          groups.set(v.cellId, []);
+        }
+        groups.get(v.cellId)!.push(v);
+      });
+      return groups;
+    };
+
     // Add compatible variables section
     if (compatibleVars.length > 0) {
       const compatibleHeader = document.createElement('div');
@@ -4833,8 +4845,13 @@ class SHMContextMenuManager {
       `;
       this.contextMenu.appendChild(compatibleHeader);
 
-      compatibleVars.forEach(variable => {
-        this.addVariableMenuItem(variable, parameterContext, notebook, true, enableValidation);
+      const compatibleGroups = groupByCellId(compatibleVars);
+      let cellColorIndex = 0;
+      compatibleGroups.forEach((variables, cellId) => {
+        variables.forEach(variable => {
+          this.addVariableMenuItem(variable, parameterContext, notebook, true, enableValidation, cellColorIndex);
+        });
+        cellColorIndex++;
       });
     }
 
@@ -4851,8 +4868,13 @@ class SHMContextMenuManager {
       `;
       this.contextMenu.appendChild(otherHeader);
 
-      otherVars.forEach(variable => {
-        this.addVariableMenuItem(variable, parameterContext, notebook, false, enableValidation);
+      const otherGroups = groupByCellId(otherVars);
+      let cellColorIndex = 0;
+      otherGroups.forEach((variables, cellId) => {
+        variables.forEach(variable => {
+          this.addVariableMenuItem(variable, parameterContext, notebook, false, enableValidation, cellColorIndex);
+        });
+        cellColorIndex++;
       });
     }
 
@@ -4971,17 +4993,32 @@ class SHMContextMenuManager {
     parameterContext: ParameterContext, 
     notebook: any,
     isRecommended: boolean,
-    enableValidation: boolean = false
+    enableValidation: boolean = false,
+    cellColorIndex: number = 0
   ): void {
     const menuItem = document.createElement('div');
     menuItem.className = 'shm-context-menu-item';
     const isMobile = window.innerWidth < 768;
+    
+    // Determine background color based on cell color index
+    let backgroundColor: string;
+    let hoverColor: string;
+    if (isRecommended) {
+      // For recommended items, alternate between green shades
+      backgroundColor = cellColorIndex % 2 === 0 ? '#f0fff0' : '#e0f7fa';
+      hoverColor = cellColorIndex % 2 === 0 ? '#e8f5e8' : '#b2ebf2';
+    } else {
+      // For other items, alternate between neutral shades  
+      backgroundColor = cellColorIndex % 2 === 0 ? 'white' : '#f0f8ff';
+      hoverColor = cellColorIndex % 2 === 0 ? '#f5f5f5' : '#e6f3ff';
+    }
+    
     menuItem.style.cssText = `
       padding: ${isMobile ? '12px 16px' : '8px 12px'};
       cursor: pointer;
       border-bottom: 1px solid #eee;
       transition: background 0.2s;
-      ${isRecommended ? 'background: #f0fff0;' : ''}
+      background: ${backgroundColor};
       touch-action: manipulation;
       user-select: none;
       -webkit-tap-highlight-color: transparent;
@@ -4997,11 +5034,11 @@ class SHMContextMenuManager {
     `;
 
     menuItem.addEventListener('mouseenter', () => {
-      menuItem.style.background = isRecommended ? '#e8f5e8' : '#f5f5f5';
+      menuItem.style.background = hoverColor;
     });
 
     menuItem.addEventListener('mouseleave', () => {
-      menuItem.style.background = isRecommended ? '#f0fff0' : 'white';
+      menuItem.style.background = backgroundColor;
     });
 
     menuItem.addEventListener('click', () => {

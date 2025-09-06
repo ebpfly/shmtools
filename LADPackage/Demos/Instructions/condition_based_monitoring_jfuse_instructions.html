@@ -1,0 +1,44 @@
+<h1
+id="demo-power-spectral-density-plotting-for-condition-based-monitoring-data">Demo:
+Power Spectral Density Plotting for Condition Based Monitoring Data</h1>
+<p><strong>Dataset</strong>: Accelerometer measurements from rotating
+machinery fault simulator, see ExampleUsages.pdf documentation</p>
+<p><strong>Goal</strong>: Plot power spectral density estimates for
+channel 3 of all instances in dataset</p>
+<h2 id="sequence">Sequence</h2>
+<h3 id="step-0-import-all-modules-quick-actions">Step 0: Import All
+Modules (Quick Actions)</h3>
+<h3 id="step-1-import-cbm-data-data-import">Step 1: Import CBM Data
+(Data Import)</h3>
+<p>No inputs<br />
+<strong>Output</strong>: Dataset = (TIME, CHANNELS, INSTANCES)<br />
+<strong>Output</strong>: Damage States = (INSTANCES, 1)<br />
+<strong>Output</strong>: State List = (INSTANCES,1)<br />
+<strong>Output</strong>: Sampling Frequency = (scalar)</p>
+<h3
+id="step-2-power-spectral-density-via-welchs-method-feature-extractionspectral">Step
+2: Power Spectral Density via Welch’s Method (Feature
+Extraction/Spectral)</h3>
+<p><strong>Input</strong>: X = Dataset (Step 1)<br />
+<strong>Input</strong>: Window Length = leave as default<br />
+<strong>Input</strong>: Overlap Length = leave as default<br />
+<strong>Input</strong>: FFT Bins = leave as default<br />
+<strong>Input</strong>: Sampling Frequency = Sampling Frequency (Step
+1)<br />
+<strong>Input</strong>: Use One-Sided PSD = leave as default<br />
+<strong>Output</strong>: PSD Matrix = (NFFT, CHANNELS, INSTANCES)<br />
+<strong>Output</strong>: Frequency Vector = (NFFT, 1)<br />
+<strong>Output</strong>: PSD Range = (string)</p>
+<h3
+id="step-3-plot-power-spectral-density-feature-extractionspectralplotting">Step
+3: Plot Power Spectral Density (Feature
+Extraction/Spectral/Plotting)</h3>
+<p><strong>Input</strong>: PSD Matrix = PSD Matrix (Step 2)<br />
+<strong>Input</strong>: Channel Number = 3<br />
+<strong>Input</strong>: Is One Sided = Use One Sided (Step 2)<br />
+<strong>Input</strong>: Frequency Vector = Frequency Vector (Step
+2)<br />
+<strong>Input</strong>: Use dB Magnitude = leave as default<br />
+<strong>Input</strong>: Plot Average PSD = leave as default<br />
+<strong>Input</strong>: Axes Handle = leave as default<br />
+<strong>Output</strong>: Axes Handle = (handle)</p>

@@ -1,0 +1,77 @@
+<h1 id="demo-optimal-sensor-placement">Demo: Optimal Sensor
+Placement</h1>
+<p><strong>Dataset</strong>: FEM-computed mode shapes for representative
+3D structure</p>
+<p><strong>Goal</strong>: Compute the 12-sensor optimal arrangements
+using the Fisher information method and the maximum norm method,
+plotting the resulting arrangements on the structure’s geometry.</p>
+<h2 id="sequence">Sequence</h2>
+<h3 id="step-0-import-all-modules-quick-actions">Step 0: Import All
+Modules (Quick Actions)</h3>
+<h3
+id="step-1-import-modal-optimal-sensor-placement-dataset-data-import">Step
+1: Import Modal Optimal Sensor Placement Dataset (Data Import)</h3>
+<p>No Inputs<br />
+<strong>Output</strong>: Node Layout = (NODEINFO, NODES,
+INSTANCES)<br />
+<strong>Output</strong>: Elements = (NODES, ELEMENTS)<br />
+<strong>Output</strong>: Mode Shapes = (DOFS, MODES)<br />
+<strong>Output</strong>: Response DOF = (DOFS, DOFINFO)</p>
+<h3
+id="step-2-plot-nodal-response-auxiliarysensor-supportoptimal-sensor-placementplotting">Step
+2: Plot Nodal Response (Auxiliary/Sensor Support/Optimal Sensor
+Placement/Plotting)</h3>
+<p><strong>Input</strong>: Geometry_Layout = Node Layout (Step 1)<br />
+<strong>Input</strong>: Mode Shapes = Mode Shapes (Step 1)<br />
+<strong>Input</strong>: Response DOF = Response DOF (Step 1)<br />
+<strong>Input</strong>: Elements = Elements (Step 1)<br />
+<strong>Input</strong>: Mode Number = 3<br />
+<strong>Output</strong>: Axes Handle</p>
+<h3
+id="step-3-plot-nodal-response-auxiliarysensor-supportoptimal-sensor-placementplotting">Step
+3: Plot Nodal Response (Auxiliary/Sensor Support/Optimal Sensor
+Placement/Plotting)</h3>
+<p><strong>Input</strong>: Geometry_Layout = Node Layout (Step 1)<br />
+<strong>Input</strong>: ModeShapes = Mode Shapes (Step 1)<br />
+<strong>Input</strong>: Response DOF = Response DOF (Step 1)<br />
+<strong>Input</strong>: Elements = Elements (Step 1)<br />
+<strong>Input</strong>: Mode Number = 10<br />
+<strong>Output</strong>: Axes Handle</p>
+<h3
+id="step-4-osp-fisher-information-eiv-auxiliarysensor-supportoptimal-sensor-placement">Step
+4: OSP Fisher Information EIV (Auxiliary/Sensor Support/Optimal Sensor
+Placement)</h3>
+<p><strong>Input</strong>: # Of Sensors = 12<br />
+<strong>Input</strong>: Mode Shapes = Mode Shapes (Step 1)<br />
+<strong>Input</strong>: Covariance Matrix = None (Default)<br />
+<strong>Output</strong>: Optimal List = (SENSORS)<br />
+<strong>Output</strong>: Fisher Determinant = scalar</p>
+<h3
+id="step-5-plot-sensors-auxiliarysensor-supportoptimal-sensor-placementplotting">Step
+5: Plot Sensors (Auxiliary/Sensor Support/Optimal Sensor
+Placement/Plotting)</h3>
+<p><strong>Input</strong>: Elements = Elements (Step 1)<br />
+<strong>Input</strong>: Nodes = Node Layout (Step 1)<br />
+<strong>Input</strong>: Sensor Indices = Optimal DOF List (Step 4)<br />
+<strong>Input</strong>: Response DOF = Response DOF (Step 1)<br />
+<strong>Output</strong>: Axes Handle</p>
+<h3
+id="step-6-osp-using-maximum-norm-auxiliarysensorsupportoptimalsensorplacement">Step
+6: OSP Using Maximum Norm
+(Auxiliary/SensorSupport/OptimalSensorPlacement)</h3>
+<p><strong>Input</strong>: # Of Sensors = 12<br />
+<strong>Input</strong>: Mode Shapes = Mode Shapes (Step 1)<br />
+<strong>Input</strong>: Weights = 13:-1:1<br />
+<strong>Input</strong>: Dueling Distance = 20<br />
+<strong>Input</strong>: Response DOF = Response DOF (Step 1)<br />
+<strong>Input</strong>: Geometry Layout = Node Layout (Step 1)<br />
+<strong>Output</strong>: Optimal List = (SENSORS)<br />
+<strong>Output</strong>: Fisher Determinant = scalar</p>
+<h3
+id="step-7-plot-sensors-with-mesh-ladpackageoptimal-sensor-placement">Step
+7: Plot Sensors With Mesh (LADPackage/Optimal Sensor Placement/)</h3>
+<p><strong>Input</strong>: Elements = Elements (Step 1)<br />
+<strong>Input</strong>: Node Layout = Node Layout (Step 1)<br />
+<strong>Input</strong>: Sensor Indices = Optimal List (Step 6)<br />
+<strong>Input</strong>: Response DOF = Response DOF (Step 1)<br />
+<strong>Output</strong>: Axes Handle</p>
