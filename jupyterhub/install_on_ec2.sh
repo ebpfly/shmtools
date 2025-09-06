@@ -136,6 +136,10 @@ sudo -E pip3 install -e . 2>&1 | sed 's/^/[PIP-SHMTOOLS-SYS] /' || log_error "Fa
 # Also install in TLJH user environment for server extension access
 log_step "🔧 Installing shmtools in TLJH user environment..."
 sudo -E /opt/tljh/user/bin/pip install -e . 2>&1 | sed 's/^/[PIP-SHMTOOLS-USER] /' || log_error "Failed to install shmtools in TLJH user environment"
+
+# Install ipywidgets and ipympl for interactive matplotlib plots
+log_step "🎛️ Installing ipywidgets and ipympl for interactive plots..."
+sudo -E /opt/tljh/user/bin/pip install ipywidgets ipympl 2>&1 | sed 's/^/[PIP-IPYWIDGETS] /' || log_error "Failed to install ipywidgets/ipympl"
 log_success "shmtools package installed!"
 
 # Install JupyterLab extension
@@ -174,6 +178,11 @@ else
     log_error "Extension installation script not found at /srv/classrepo/jupyterhub/install_jupyterlab_extension.sh"
     log_warning "Skipping JupyterLab extension installation..."
 fi
+
+# Enable JupyterLab widgets extension for interactive plots
+log_step "🔧 Enabling JupyterLab widgets extension..."
+sudo -E /opt/tljh/user/bin/jupyter labextension enable @jupyter-widgets/jupyterlab-manager 2>&1 | sed 's/^/[WIDGETS-ENABLE] /' || log_warning "Widgets extension enable failed (may already be enabled)"
+log_success "JupyterLab widgets extension configured"
 
 # Copy data files from S3 bucket to EC2 instance
 log_step "📂 Setting up data files directory..."
