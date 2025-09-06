@@ -4755,14 +4755,6 @@ class SHMContextMenuManager {
     this.variables.forEach(v => {
       console.log(`  - ${v.name} (${v.type}) from ${v.source || 'unknown'} in ${v.cellId}`);
     });
-    
-    // Filter and sort variables by compatibility
-    const compatibleVars = this.variables.filter(v => 
-      this.isVariableCompatible(v, parameterContext)
-    );
-    const otherVars = this.variables.filter(v => 
-      !this.isVariableCompatible(v, parameterContext)
-    );
 
     // Create context menu
     this.contextMenu = document.createElement('div');
@@ -4832,53 +4824,19 @@ class SHMContextMenuManager {
       return groups;
     };
 
-    // Add compatible variables section
-    if (compatibleVars.length > 0) {
-      const compatibleHeader = document.createElement('div');
-      compatibleHeader.textContent = 'Recommended';
-      compatibleHeader.style.cssText = `
-        padding: 6px 12px;
-        background: #e8f5e8;
-        color: #2e7d2e;
-        font-weight: bold;
-        border-bottom: 1px solid #ddd;
-      `;
-      this.contextMenu.appendChild(compatibleHeader);
-
-      const compatibleGroups = groupByCellId(compatibleVars);
+    // Add all variables without sorting or categorization
+    if (this.variables.length > 0) {
+      const variableGroups = groupByCellId(this.variables);
       let cellColorIndex = 0;
-      compatibleGroups.forEach((variables, cellId) => {
+      variableGroups.forEach((variables, cellId) => {
         variables.forEach(variable => {
-          this.addVariableMenuItem(variable, parameterContext, notebook, true, enableValidation, cellColorIndex);
+          // Check if variable is compatible for determining styling
+          const isCompatible = this.isVariableCompatible(variable, parameterContext);
+          this.addVariableMenuItem(variable, parameterContext, notebook, isCompatible, enableValidation, cellColorIndex);
         });
         cellColorIndex++;
       });
-    }
-
-    // Add other variables section
-    if (otherVars.length > 0) {
-      const otherHeader = document.createElement('div');
-      otherHeader.textContent = 'Other variables';
-      otherHeader.style.cssText = `
-        padding: 6px 12px;
-        background: #f0f0f0;
-        color: #666;
-        font-weight: bold;
-        border-bottom: 1px solid #ddd;
-      `;
-      this.contextMenu.appendChild(otherHeader);
-
-      const otherGroups = groupByCellId(otherVars);
-      let cellColorIndex = 0;
-      otherGroups.forEach((variables, cellId) => {
-        variables.forEach(variable => {
-          this.addVariableMenuItem(variable, parameterContext, notebook, false, enableValidation, cellColorIndex);
-        });
-        cellColorIndex++;
-      });
-    }
-
-    if (compatibleVars.length === 0 && otherVars.length === 0) {
+    } else {
       const noVars = document.createElement('div');
       noVars.textContent = 'No variables found';
       noVars.style.cssText = `
@@ -5000,18 +4958,11 @@ class SHMContextMenuManager {
     menuItem.className = 'shm-context-menu-item';
     const isMobile = window.innerWidth < 768;
     
-    // Determine background color based on cell color index
+    // Determine background color based on cell color index - alternate between green and blue
     let backgroundColor: string;
     let hoverColor: string;
-    if (isRecommended) {
-      // For recommended items, alternate between green shades
-      backgroundColor = cellColorIndex % 2 === 0 ? '#f0fff0' : '#e0f7fa';
-      hoverColor = cellColorIndex % 2 === 0 ? '#e8f5e8' : '#b2ebf2';
-    } else {
-      // For other items, alternate between neutral shades  
-      backgroundColor = cellColorIndex % 2 === 0 ? 'white' : '#f0f8ff';
-      hoverColor = cellColorIndex % 2 === 0 ? '#f5f5f5' : '#e6f3ff';
-    }
+    backgroundColor = cellColorIndex % 2 === 0 ? '#f0fff0' : '#e0f7fa';
+    hoverColor = cellColorIndex % 2 === 0 ? '#e8f5e8' : '#b2ebf2';
     
     menuItem.style.cssText = `
       padding: ${isMobile ? '12px 16px' : '8px 12px'};
@@ -5025,7 +4976,7 @@ class SHMContextMenuManager {
     `;
 
     menuItem.innerHTML = `
-      <div style="font-weight: bold; color: ${isRecommended ? '#2e7d2e' : '#333'};">
+      <div style="font-weight: bold; color: #333;">
         ${variable.displayName || variable.name}
       </div>
       <div style="font-size: 10px; color: #666;">
