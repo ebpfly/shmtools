@@ -913,8 +913,13 @@ class SHMImportsHandler(APIHandler):
             if module_parts:
                 top_level_modules.add(module_parts[0])
 
-        # Return sorted list of import statements
-        return sorted([f"import {module}" for module in top_level_modules])
+        # Start with matplotlib widget magic command
+        imports = ["%matplotlib widget", "from matplotlib import pyplot as plt", "import numpy as np"]
+        
+        # Add sorted list of import statements
+        imports.extend(sorted([f"import {module}" for module in top_level_modules]))
+        
+        return imports
 
 
 class SHMVariableHandler(APIHandler):

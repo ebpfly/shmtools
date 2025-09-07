@@ -48,7 +48,7 @@ def import_active_sense_data(filename: Optional[str] = None) -> Tuple[
         :data_type: Active Sensing
         :output_type: Data
         :display_name: Import Active Sensing Dataset
-        :verbose_call: [Baseline Waveforms, Test Waveforms, Sensor Layout, Sensor Pair List, Border Structure, Sample Rate, Actuation Waveform, Damage Location] = Import Active Sensing Dataset(File Name)
+        :verbose_call: [Baseline Waveforms, Test Waveforms, Sensor Layout, Sensor Pair List, Border Structure, Sample Rate, Actuation Waveform, Damage Location] = LAD Import Active Sensing Dataset(File Name)
     
     Parameters
     ----------

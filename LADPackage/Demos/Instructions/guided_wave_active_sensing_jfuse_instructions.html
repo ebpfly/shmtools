@@ -1,68 +1,165 @@
-<h1 id="demo-guided-wave-active-sensing">Demo: Guided Wave Active
-Sensing</h1>
-<p><strong>Dataset</strong>: Active sensing dataset packaged with
-SHMTools</p>
-<p><strong>Goal</strong>: Localize defect using active sensing waveform
-measurements</p>
-<h2 id="sequence">Sequence</h2>
-<h3
-id="step-1-import-active-sensing-dataset-ladpackageactive-sensing">Step
-1: Import Active Sensing Dataset (LADPackage/Active Sensing)</h3>
-<p><strong>Input</strong>: File Name: ‘data_example_ActiveSense.mat’
-(Default) <strong>Output</strong>: Baseline Waveforms = (TIME,
-SENSORPAIRS)<br />
-<strong>Output</strong>: Test Waveforms = (TIME, SENSORPAIRS)<br />
-<strong>Output</strong>: Sensor Layout = (SENSORINFO, SENSORS)<br />
-<strong>Output</strong>: Sensor Pair = (SENSORIDS, PAIRS)<br />
-<strong>Output</strong>: Border Structure = (struct)<br />
-<strong>Output</strong>: Sample Rate = (scalar)<br />
-<strong>Output</strong>: Actuation Waveform = (TIME, 1)<br />
-<strong>Output</strong>: Damage Location = (COORDINATES, 1)</p>
-<h3
-id="step-2-process-active-sensing-waveforms-ladpackageactive-sensing">Step
-2: Process Active Sensing Waveforms (LADPackage/Active Sensing/)</h3>
-<p><strong>Input</strong>: Sensor Subset List = 1:31
-<strong>Input</strong>: Sensor Layout = Sensor Layout (Step 1)<br />
-<strong>Input</strong>: Sensor Pair List = Sensor Pair List (Step
-1)<br />
-<strong>Input</strong>: Baseline Waveforms = Baseline Waveforms (Step
-1)<br />
-<strong>Input</strong>: Test Waveforms = Test Waveforms (Step 1)<br />
-<strong>Input</strong>: Excitation Waveform = Actuation Waveform (Step
-1)<br />
-<strong>Output</strong>: Filter Result<br />
-<strong>Output</strong>: Layout Subset<br />
-<strong>Output</strong>: Sensor Pair Subset</p>
-<h3 id="step-3-arrival-filter-ladpackageactive-sensing">Step 3: Arrival
-Filter (LADPackage/Active Sensing/)</h3>
-<p><strong>Input</strong>: Waveforms = Filter Result (Step 2)<br />
-<strong>Input</strong>: Front Clip = 450 (Default)<br />
-<strong>Input</strong>: ArrivalOffset = 450 (Default)
-<strong>Output</strong>: Filtered Waveforms</p>
-<h3 id="step-4-map-active-sensing-ladpackageactive-sensing">Step 4: Map
-Active Sensing (LADPackage/Active Sensing/)</h3>
-<p><strong>Input</strong>: Velocity = 66000 (Default)
-<strong>Input</strong>: Subset Window = 1 (Default)<br />
-<strong>Input</strong>: Distance Allowance = inf (Default)<br />
-<strong>Input</strong>: Geometry = Border Structure (Step 1)<br />
-<strong>Input</strong>: X Spacing = .5 (Default)<br />
-<strong>Input</strong>: Y Spacing = .5 (Default)<br />
-<strong>Input</strong>: Sample Rate = Sample Rate (Step 1)<br />
-<strong>Input</strong>: Actuation Waveform = Actuation Waveforms (Step
-1)<br />
-<strong>Input</strong>: Data = Filtered Waveforms (Step 3)<br />
-<strong>Input</strong>: Sensor Pair List = Sensor Pair Subset (Step
-2)<br />
-<strong>Input</strong>: Sensor Layout = Layout Subset (Step 2)<br />
-<strong>Output</strong>: X Matrix<br />
-<strong>Output</strong>: Y Matrix<br />
-<strong>Output</strong>: Data Map 2D<br />
-<strong>Output</strong>: Combined Geometry</p>
-<h3 id="step-5-plot-active-sensing-map-ladpackageactive-sensing">Step 5:
-Plot Active Sensing Map (LADPackage/Active Sensing)</h3>
-<p><strong>Input</strong>: X Matrix = X Matrix (Step 4)<br />
-<strong>Input</strong>: Y Matrix = Y Matrix (Step 4)<br />
-<strong>Input</strong>: Data Map 2D = Data Map 2D (Step 4)<br />
-<strong>Input</strong>: Border = Combined Geometry (Step 4)<br />
-<strong>Input</strong>: Sensor Subset Layout = Layout Subset (Step
-2)</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo: Guided Wave Active Sensing</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 8px;
+        }
+        
+        h3 {
+            color: #555;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            background-color: #e8f4f8;
+            padding: 10px;
+            border-left: 4px solid #3498db;
+        }
+        
+        strong {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        
+        p {
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+        
+        /* Simple styling for Input/Output - no boxes */
+        p strong:first-child {
+            color: #2c3e50;
+            font-weight: bold;
+        }
+        
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9em;
+        }
+        
+        pre {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        
+        pre code {
+            background-color: transparent;
+            color: #ecf0f1;
+            padding: 0;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+            
+            h2 {
+                font-size: 1.4em;
+            }
+            
+            h3 {
+                font-size: 1.2em;
+                padding: 8px;
+            }
+        }
+        
+        /* Additional styling for better readability */
+        ul, ol {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+        
+        li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Demo: Guided Wave Active Sensing</h1>
+<p><strong>Dataset</strong>: Active sensing dataset packaged with SHMTools</p>
+<p><strong>Goal</strong>: Localize defect using active sensing waveform measurements</p>
+<h2>Sequence</h2>
+<h3>Step 0: Import All Modules (Quick Actions)</h3>
+<h3>Step 1: Import Active Sensing Dataset (LAD/Active Sensing)</h3>
+<p><strong>Input</strong>: File Name: None (Default)  </p>
+<p><strong>Output</strong>: Baseline Waveforms = (TIME, SENSORPAIRS)  </p>
+<p><strong>Output</strong>: Test Waveforms = (TIME, SENSORPAIRS)  </p>
+<p><strong>Output</strong>: Sensor Layout = (SENSORINFO, SENSORS)  </p>
+<p><strong>Output</strong>: Sensor Pair = (SENSORIDS, PAIRS)  </p>
+<p><strong>Output</strong>: Border Structure = (struct)  </p>
+<p><strong>Output</strong>: Sample Rate = (scalar)  </p>
+<p><strong>Output</strong>: Actuation Waveform = (TIME, 1)  </p>
+<p><strong>Output</strong>: Damage Location = (COORDINATES, 1)</p>
+<h3>Step 2: Process Active Sensing Waveforms (LAD/Active Sensing/)</h3>
+<p><strong>Input</strong>: Sensor Subset List = range(0,5,31) </p>
+<p><strong>Input</strong>: Sensor Layout = Sensor Layout (Step 1)  </p>
+<p><strong>Input</strong>: Sensor Pair List = Sensor Pair List (Step 1)  </p>
+<p><strong>Input</strong>: Baseline Waveforms = Baseline Waveforms (Step 1)  </p>
+<p><strong>Input</strong>: Test Waveforms = Test Waveforms (Step 1)  </p>
+<p><strong>Input</strong>: Excitation Waveform = Actuation Waveform (Step 1)  </p>
+<p><strong>Output</strong>: Filter Result  </p>
+<p><strong>Output</strong>: Layout Subset  </p>
+<p><strong>Output</strong>: Sensor Pair Subset</p>
+<h3>Step 3: Arrival Filter (LAD/Active Sensing/)</h3>
+<p><strong>Input</strong>: Waveforms = Filter Result (Step 2)  </p>
+<p><strong>Input</strong>: Front Clip = 450  </p>
+<p><strong>Input</strong>: ArrivalOffset = 450</p>
+<p><strong>Output</strong>: Filtered Waveforms</p>
+<h3>Step 4: Map Active Sensing (LAD/Active Sensing/)</h3>
+<p><strong>Input</strong>: Velocity = 61000 </p>
+<p><strong>Input</strong>: Subset Window = 1 (Default)  </p>
+<p><strong>Input</strong>: Distance Allowance = 10000  </p>
+<p><strong>Input</strong>: Geometry = Border Structure (Step 1)  </p>
+<p><strong>Input</strong>: X Spacing = .5</p>
+<p><strong>Input</strong>: Y Spacing = .5 </p>
+<p><strong>Input</strong>: Sample Rate = Sample Rate (Step 1)  </p>
+<p><strong>Input</strong>: Actuation Waveform = Actuation Waveforms (Step 1)  </p>
+<p><strong>Input</strong>: Data = Filtered Waveforms (Step 3)  </p>
+<p><strong>Input</strong>: Sensor Pair List = Sensor Pair Subset (Step 2)  </p>
+<p><strong>Input</strong>: Sensor Layout = Layout Subset (Step 2)  </p>
+<p><strong>Output</strong>: X Matrix  </p>
+<p><strong>Output</strong>: Y Matrix  </p>
+<p><strong>Output</strong>: Data Map 2D  </p>
+<p><strong>Output</strong>: Combined Geometry</p>
+<h3>Step 5: Plot Active Sensing Map (LAD/Active Sensing)</h3>
+<p><strong>Input</strong>: X Matrix = X Matrix (Step 4)  </p>
+<p><strong>Input</strong>: Y Matrix = Y Matrix (Step 4)  </p>
+<p><strong>Input</strong>: Data Map 2D = Data Map 2D (Step 4)  </p>
+<p><strong>Input</strong>: Border = Combined Geometry (Step 4)  </p>
+<p><strong>Input</strong>: Sensor Subset Layout = Layout Subset (Step 2)</p>
+</body>
+</html>
