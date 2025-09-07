@@ -20,7 +20,7 @@
 **Output**: Damage Location = (COORDINATES, 1)
 
 ### Step 2: Process Active Sensing Waveforms (LAD/Active Sensing/)
-**Input**: Sensor Subset List = range(0,5,31) 
+**Input**: Sensor Subset List = range(0,31,1) 
 **Input**: Sensor Layout = Sensor Layout (Step 1)  
 **Input**: Sensor Pair List = Sensor Pair List (Step 1)  
 **Input**: Baseline Waveforms = Baseline Waveforms (Step 1)  
