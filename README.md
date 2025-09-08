@@ -398,8 +398,27 @@ If you use SHMTools Python in your research, please cite:
 ```bibtex
 @software{shmtools_python,
   title={SHMTools Python: A JupyterLab-Based Structural Health Monitoring Toolkit},
-  author={SHMTools Development Team},
-  year={2024},
+  author={Flynn, Eric B. and Harvey, Dustin},
+  year={2025},
   url={https://github.com/ebpfly/shmtools}
+}
+```
+```bibtex
+@inproceedings{FlynnEricB2010SAne,
+title = {SHMTools: A new embeddable software package for SHM applications},
+author = {Flynn, Eric B. and Kpotufe, Samory and Harvey, Dustin and Figueiredo, Eloi and Taylor, Stuart and Dondi, Denis and Mollov, Todor and Todd, Michael D. and Rosing, Tajana Simunic and Park, Gyuhae and Farrar, Charles},
+editor = {Tomizuka, M and Yun, C B and Giurgiutiu and Lynch, J P},
+doi = {10.1117/12.848234},
+isbn = {0819480622},
+issn = {0277-786X},
+journal = {SENSORS AND SMART STRUCTURES TECHNOLOGIES FOR CIVIL, MECHANICAL, AND AEROSPACE SYSTEMS 2010},
+keywords = {Engineering;Engineering, Aerospace;Engineering, Mechanical;Optics;Physical Sciences;Remote Sensing;Science & Technology;Technology},
+language = {eng},
+number = {1},
+pages = {11},
+publisher = {Spie-Int Soc Optical Engineering},
+series = {Proceedings of SPIE},
+volume = {7647},
+year = {2010},
 }
 ```
