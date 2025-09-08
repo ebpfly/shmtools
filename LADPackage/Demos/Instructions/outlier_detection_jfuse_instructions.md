@@ -15,7 +15,7 @@
 **Output**: List of States = (INSTANCES,1)
 
 ### Step 2: AR Model (Feature Extraction/Time Series Models)
-**Input**: Time Series Data = topFloorChannel (Step 1)  
+**Input**: Time Series Data = Dataset (Step 1)  
 **Input**: AR Model Order = 15  
 **Output**: AR Parameters Feature Vectors = (INSTANCES, FEATURES)  
 **Output**: RMS Residuals Feature Vectors = (INSTANCES, FEATURES)  
