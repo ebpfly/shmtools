@@ -23,7 +23,14 @@ fi
 
 echo "📦 Installing Node.js dependencies..."
 cd shm_function_selector
-npm install
+
+# Fix npm cache issues (common EACCES error)
+echo "🔧 Fixing npm cache permissions..."
+npm cache clear --force 2>/dev/null || true
+mkdir -p ~/.npm && chown -R $USER ~/.npm 2>/dev/null || true
+
+# Install with temporary cache to avoid permission issues
+npm install --cache /tmp/npm-cache-$(whoami)-$$ || npm install
 
 echo "🔨 Compiling TypeScript..."
 npm run build:lib
