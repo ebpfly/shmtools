@@ -1,5 +1,5 @@
-# Ignore MATLAB data files (large files, manually downloaded)
-*.mat
+# MATLAB data files are now included in the repository
+# *.mat
 
 # Keep README and other documentation
 !README.md
