@@ -4,43 +4,69 @@ A comprehensive Python-based structural health monitoring toolkit, converted fro
 
 ## Overview
 
-SHMTools Python provides a modern, web-based platform for structural health monitoring analysis, featuring:
+SHMTools Python provides a modern, JupyterLab-based platform for structural health monitoring analysis, featuring:
 
-- **165+ signal processing and ML functions** converted from MATLAB
-- **Modern Bokeh web interface** replacing the original Java mFUSE GUI
-- **Interactive workflow builder** for creating analysis sequences
-- **Real-time data visualization** with zoom, pan, and selection
-- **Cross-platform deployment** - runs in any web browser
+- **108+ signal processing and ML functions** converted from MATLAB with full numerical parity
+- **jFUSE JupyterLab extension** - an intelligent function selector replacing the original Java mFUSE GUI
+- **Interactive Jupyter notebooks** with guided workflows and educational examples
+- **Real-time data visualization** with rich plotting capabilities
+- **Cloud deployment** - AWS JupyterHub instances with complete SHMTools environment
+- **Example-driven development** - comprehensive notebooks covering all SHM applications
 
 ## Quick Start
 
-### Installation
+### Local Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/shmtools-python.git
-cd shmtools-python
+git clone https://github.com/ebpfly/shmtools.git
+cd shm
+
+# Activate virtual environment (CRITICAL)
+source venv/bin/activate
 
 # Install dependencies
-pip install -r requirements.txt
-
-# Install in development mode
+pip install -r requirements.txt -r requirements-dev.txt
 pip install -e .
+
+# Install Jupyter kernel
+python -m ipykernel install --user --name=shm-venv --display-name="SHM Python (venv)"
 ```
 
-### Launch the Web Interface
+### Launch JupyterLab with jFUSE Extension
 
 ```bash
-# Start the Bokeh server
-bokeh serve bokeh_shmtools/app.py --show
+# Build the jFUSE extension (first time only)
+cd shm_function_selector/
+npm run build:lib
+npm run build:labextension:dev
+cd .. && jupyter lab build
 
-# Or use the command line entry point
-shmtools-gui serve
+# Launch JupyterLab
+jupyter lab
 ```
 
-Open your browser to `http://localhost:5006` to access the workflow builder.
+Open your browser to `http://localhost:8888` and use the "SHM Python (venv)" kernel.
+
+### Cloud Deployment (Recommended)
+
+Deploy a complete SHMTools environment on AWS in ~5-10 minutes:
+
+```bash
+cd jupyterhub/
+./setup_jupyterhub_aws.sh
+# Access at http://<PUBLIC_IP> with HTTPS enabled
+```
 
 ### Basic Usage
+
+#### Using jFUSE Extension in JupyterLab
+1. Open JupyterLab and create a new notebook with "SHM Python (venv)" kernel
+2. Click the jFUSE extension icon in the left sidebar
+3. Search for functions (e.g., "psd", "filter", "outlier")
+4. Click any function to insert pre-configured code
+
+#### Direct Python API
 
 ```python
 import numpy as np
@@ -52,17 +78,25 @@ t = np.linspace(0, 1, fs, endpoint=False)
 signal = np.sin(2*np.pi*50*t) + 0.1*np.random.randn(fs)
 
 # Compute power spectral density
-f, psd = shmtools.psd_welch(signal, fs=fs)
+f, psd = shmtools.psd_welch_shm(signal, fs)
 
 # Apply bandpass filter
-filtered = shmtools.bandpass_filter(signal, 40, 60, fs)
+filtered = shmtools.bandpass_shm(signal, 40, 60, fs)
 
 # Extract AR model features
-ar_coeffs = shmtools.ar_model(signal, order=10)
+ar_coeffs = shmtools.ar_model_shm(signal, 10)
 
-# Outlier detection
-scores = shmtools.mahalanobis_distance(ar_coeffs.reshape(1, -1))
+# Outlier detection using Mahalanobis distance
+scores = shmtools.mahalanobis_squared_shm(ar_coeffs.reshape(1, -1))
 ```
+
+#### Example Workflows
+Explore complete analysis workflows in `examples/notebooks/`:
+- **Basic SHM**: Signal processing fundamentals
+- **Modal Analysis**: Structural dynamics and mode shapes
+- **Active Sensing**: Guided wave damage detection
+- **Condition Monitoring**: Health state classification
+- **Outlier Detection**: Anomaly detection techniques
 
 ## Architecture
 
@@ -72,44 +106,64 @@ scores = shmtools.mahalanobis_distance(ar_coeffs.reshape(1, -1))
 - **`features/`**: Feature extraction (time series modeling, modal analysis)
 - **`classification/`**: Machine learning and outlier detection
 - **`modal/`**: Modal analysis and structural dynamics
-- **`active_sensing/`**: Guided wave analysis
-- **`hardware/`**: Data acquisition interfaces
-- **`plotting/`**: Bokeh-specific visualization utilities
+- **`active_sensing/`**: Guided wave analysis and ultrasonic testing
+- **`hardware/`**: Data acquisition interfaces (NI-DAQ, serial communication)
+- **`plotting/`**: Matplotlib and Bokeh visualization utilities
 - **`utils/`**: General utilities and data management
 
-### Web Interface (`bokeh_shmtools/`)
+### jFUSE JupyterLab Extension (`shm_function_selector/`)
 
-- **`app.py`**: Main Bokeh server application
-- **`panels/`**: UI panel components (function library, workflow builder, etc.)
-- **`workflows/`**: Workflow execution engine
-- **`sessions/`**: Session file management (.ses compatibility)
+- **TypeScript Frontend**: Interactive function selector with smart search and parameter forms
+- **Python Backend**: Server extension providing function metadata and code generation
+- **Integration**: Seamless insertion of SHMTools functions into Jupyter notebooks
+- **Educational**: Context-aware help and example code snippets
+
+### Educational Content (`examples/`)
+
+- **`notebooks/`**: Comprehensive tutorials by category (basic, intermediate, advanced)
+- **`data/`**: Real-world datasets (.mat files) for hands-on learning
+- **Published HTML**: Static exports for offline viewing and teaching
+
+### Cloud Infrastructure (`jupyterhub/`)
+
+- **AWS Deployment**: Automated EC2 setup with JupyterHub, HTTPS, and complete SHMTools environment
+- **User Management**: The Littlest JupyterHub (TLJH) with multi-user support
+- **Remote Updates**: Continuous deployment from GitHub repository
 
 ## Development Status
 
-### Phase 1: Core Library (In Progress)
-- ✅ Project structure and packaging
-- ✅ Core signal processing stubs
-- 🔄 Spectral analysis functions
-- 🔄 Filtering and preprocessing
-- 🔄 Statistical analysis
-- ⏳ Time series modeling
-- ⏳ Outlier detection algorithms
+### ✅ Core Library (Completed)
+- ✅ 108+ functions with full MATLAB parity
+- ✅ Spectral analysis (PSD, coherence, transfer functions)
+- ✅ Filtering and preprocessing (bandpass, highpass, lowpass)
+- ✅ Statistical analysis (moments, distributions, correlation)
+- ✅ Time series modeling (AR, ARMA, state-space)
+- ✅ Outlier detection algorithms (Mahalanobis, novelty detection)
+- ✅ Modal analysis (frequency domain decomposition, stochastic subspace)
+- ✅ Active sensing (guided waves, damage detection)
 
-### Phase 2: Web Interface (In Progress)  
-- ✅ Bokeh application structure
-- ✅ Function library panel
-- ✅ Workflow builder panel
-- ✅ Parameter controls panel
-- ✅ Results viewer panel
-- ⏳ Workflow execution engine
-- ⏳ Session file support
+### ✅ jFUSE JupyterLab Extension (Production Ready)
+- ✅ TypeScript frontend with intelligent search
+- ✅ Python server extension with function metadata
+- ✅ Seamless code insertion and parameter forms
+- ✅ Context-sensitive help and documentation
+- ✅ Educational examples and workflows
 
-### Phase 3: Advanced Features (Planned)
-- ⏳ Modal analysis functions
-- ⏳ Active sensing algorithms
-- ⏳ Hardware integration
-- ⏳ Advanced visualization
-- ⏳ Real-time data streaming
+### ✅ Educational Content (Comprehensive)
+- ✅ 20+ example notebooks covering all SHM applications
+- ✅ Real-world datasets with complete analysis workflows
+- ✅ HTML exports for offline access and teaching
+- ✅ Progressive learning path (basic → intermediate → advanced)
+
+### ✅ Cloud Deployment (Production)
+- ✅ Automated AWS EC2 deployment with JupyterHub
+- ✅ HTTPS with Let's Encrypt certificates
+- ✅ Multi-user environment with complete SHMTools stack
+- ✅ Remote update capabilities for continuous deployment
+
+### 🔄 Current Development
+- 🔄 Hardware integration testing (NI-DAQ, serial devices)
+- 🔄 Additional example datasets and use cases
 
 ## Contributing
 
@@ -123,37 +177,111 @@ We welcome contributions! Please see our [development guide](docs/development.md
 ### Development Setup
 
 ```bash
+# Activate virtual environment (CRITICAL)
+cd /Users/eric/repo/shm/ && source venv/bin/activate
+
 # Install development dependencies
 pip install -r requirements-dev.txt
 
-# Install pre-commit hooks
-pre-commit install
-
 # Run tests
-pytest
+pytest                                 # All tests
+pytest -m "not hardware"              # Skip hardware tests
 
-# Run linting
-black shmtools/ bokeh_shmtools/
-flake8 shmtools/ bokeh_shmtools/
+# Code quality
+black shmtools/ && flake8 shmtools/   # Format & lint
+
+# Build jFUSE extension after changes
+cd shm_function_selector/
+npm run build:lib
+npm run build:labextension:dev
+cd .. && jupyter lab build
+```
+
+## AWS Cloud Deployment
+
+### Quick Deploy
+Create a complete SHMTools cloud environment in ~5-10 minutes:
+
+```bash
+cd jupyterhub/
+./setup_jupyterhub_aws.sh
+# Creates Ubuntu 22.04 EC2 with JupyterHub, Node.js 20.x, Python 3.10/3.12
+# Installs 108+ SHM functions, jFUSE extension, example datasets
+# Enables HTTPS with Let's Encrypt certificate
+# Access at http://<PUBLIC_IP>
+```
+
+### Configuration Options
+Edit `jupyterhub/setup_jupyterhub_aws.sh` for custom settings:
+
+```bash
+AWS_REGION="us-east-2"
+INSTANCE_TYPE="t3.medium"  # ~$30/month
+GITHUB_OWNER="your-username"
+GITHUB_REPO="shmtools"
+```
+
+### Update Deployed Instance
+Keep cloud instances synchronized with latest code:
+
+```bash
+# From local machine (recommended)
+cd jupyterhub/
+./remote_update.sh 3.130.148.209        # Update specific IP
+./remote_update.sh                       # Auto-detect running instance
+
+# Or directly on server
+ssh -i ~/.ssh/class-key-ssh-rsa ubuntu@<IP>
+cd /srv/classrepo
+./jupyterhub/update_deployment.sh       # Full update workflow
+```
+
+### User Management
+```bash
+# Add users to JupyterHub
+ssh -i ~/.ssh/class-key-ssh-rsa ubuntu@<IP>
+sudo tljh-config set users.allowed username1 username2
+sudo tljh-config reload
+```
+
+### Cost Management
+```bash
+# Stop instance when not in use
+aws ec2 stop-instances --instance-ids <INSTANCE_ID>
+
+# Terminate when done
+aws ec2 terminate-instances --instance-ids <INSTANCE_ID>
 ```
 
 ## Migration from MATLAB
 
-This project maintains compatibility with existing MATLAB workflows:
+SHMTools Python provides seamless transition from MATLAB workflows:
 
-- **Function names** preserve the original `_shm` suffix pattern
-- **Parameter interfaces** match MATLAB function signatures
-- **Session files** (.ses) from mFUSE can be imported
-- **Data formats** support MATLAB .mat file loading
+### 🔄 Function Compatibility
+- **Naming**: All functions use `_shm` suffix (e.g., `psd_welch_shm`, `ar_model_shm`)
+- **Signatures**: Parameter interfaces match MATLAB exactly
+- **Numerics**: Results validated to machine precision against MATLAB
+- **Documentation**: Complete docstrings with GUI metadata for jFUSE integration
 
-See the [migration guide](docs/matlab-migration.md) for detailed conversion information.
+### 📁 Data Compatibility
+- **MATLAB .mat files**: Direct loading with `scipy.io.loadmat`
+- **Real datasets**: 161MB of example data covering all SHM applications
+- **Synthetic validation**: Extensive testing with known-answer problems
 
-## Documentation
+### 🎓 Learning Resources
+- **Side-by-side comparisons**: MATLAB and Python implementations
+- **Conversion examples**: Complete workflows showing before/after
+- **Best practices**: Modern Python patterns while preserving MATLAB logic
 
-- [API Documentation](docs/api/)
-- [User Guide](docs/user-guide.md) 
-- [Conversion Plan](docs/conversion-plan.md)
-- [MATLAB Function Mapping](docs/matlab-mapping.md)
+Explore `examples/notebooks/` for hands-on migration examples.
+
+## Documentation & Resources
+
+- **CLAUDE.md**: Essential development instructions and deployment guides
+- **Example Notebooks**: 20+ comprehensive tutorials in `examples/notebooks/`
+- **Published HTML**: Offline-viewable exports in `published_notebooks/`
+- **Function Reference**: Built-in documentation accessible through jFUSE extension
+- **AWS Deployment**: Complete cloud setup guides in `jupyterhub/README.md`
 
 ## License
 
@@ -163,15 +291,37 @@ This project is licensed under the BSD 3-Clause License, consistent with the ori
 
 This work builds upon the original SHMTools library developed by Los Alamos National Laboratory. We gratefully acknowledge the contributions of the original authors and the structural health monitoring research community.
 
+## Key Features
+
+### 🔬 Complete MATLAB Parity
+- All 108+ functions maintain exact numerical compatibility with MATLAB originals
+- Comprehensive test suite validates results against reference implementations
+- Supports existing .mat datasets and analysis workflows
+
+### 🎯 Intelligent Function Discovery
+- jFUSE extension provides smart search across all SHM functions
+- Context-aware parameter forms with validation and defaults
+- Instant code insertion with proper imports and documentation
+
+### 📚 Educational Excellence
+- Progressive learning path from basic signal processing to advanced SHM
+- Real-world datasets with complete analysis workflows
+- Interactive notebooks combining theory, code, and visualization
+
+### ☁️ Cloud-Ready Deployment
+- One-command AWS deployment with complete SHMTools environment
+- HTTPS-enabled JupyterHub with multi-user support
+- Automated updates and maintenance scripts
+
 ## Citation
 
 If you use SHMTools Python in your research, please cite:
 
 ```bibtex
 @software{shmtools_python,
-  title={SHMTools Python: A Web-Based Structural Health Monitoring Toolkit},
+  title={SHMTools Python: A JupyterLab-Based Structural Health Monitoring Toolkit},
   author={SHMTools Development Team},
   year={2024},
-  url={https://github.com/yourusername/shmtools-python}
+  url={https://github.com/ebpfly/shmtools}
 }
 ```
