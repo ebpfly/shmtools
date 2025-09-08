@@ -522,7 +522,7 @@ def map_active_sensing_geometry(
     filtered_data = flex_logic_filter_shm(data_subsets, below_max_distance)
     
     # Step 12: Sum multiple dimensions
-    filtered_data = data_subsets
+    # filtered_data = data_subsets
     data_sum = sum_mult_dims_shm(filtered_data, [0, 2])  # Sum along first two dimensions
     
     # Step 13: Fill 2D map

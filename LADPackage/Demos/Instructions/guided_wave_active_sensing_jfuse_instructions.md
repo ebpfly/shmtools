@@ -13,7 +13,7 @@
 **Output**: Baseline Waveforms = (TIME, SENSORPAIRS)  
 **Output**: Test Waveforms = (TIME, SENSORPAIRS)  
 **Output**: Sensor Layout = (SENSORINFO, SENSORS)  
-**Output**: Sensor Pair = (SENSORIDS, PAIRS)  
+**Output**: Sensor Pair List = (SENSORIDS, PAIRS)  
 **Output**: Border Structure = (struct)  
 **Output**: Sample Rate = (scalar)  
 **Output**: Actuation Waveform = (TIME, 1)  
@@ -38,7 +38,7 @@
 
 ### Step 4: Map Active Sensing (LAD/Active Sensing/)
 **Input**: Velocity = 61000 
-**Input**: Subset Window = 1 (Default)  
+**Input**: Subset Window = None (Default)  
 **Input**: Distance Allowance = 10000  
 **Input**: Geometry = Border Structure (Step 1)  
 **Input**: X Spacing = .5

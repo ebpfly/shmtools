@@ -34,7 +34,7 @@
 
 ### Step 4: Learn Score Mahalanobis (LAD/Feature Classification)
 **Input**: Features = AR Parameters Feature Vectors (Step 2)  
-**Input**: Training Indices = 1:2:91  
+**Input**: Training Indices = range(0,91,2)
 **Input**: Scoring Indices = leave as default  
 **Output**: Scores (INSTANCES, 1)
 

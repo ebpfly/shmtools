@@ -12,7 +12,7 @@
             max-width: 900px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #ffffff;
+            background-color: #f8f9fa;
         }
         
         h1 {
@@ -45,14 +45,29 @@
         }
         
         p {
-            margin: 8px 0;
-            line-height: 1.6;
+            margin: 10px 0;
+            line-height: 1.8;
         }
         
-        /* Simple styling for Input/Output - no boxes */
-        p strong:first-child {
-            color: #2c3e50;
-            font-weight: bold;
+        /* Style for Input/Output labels */
+        p > strong:first-child {
+            display: inline-block;
+            min-width: 80px;
+            margin-right: 10px;
+            padding: 2px 8px;
+            background-color: #fff;
+            border-radius: 3px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        p > strong:first-child:contains("Input") {
+            background-color: #ffeaa7;
+            color: #2d3436;
+        }
+        
+        p > strong:first-child:contains("Output") {
+            background-color: #dfe6e9;
+            color: #2d3436;
         }
         
         code {
@@ -105,6 +120,23 @@
         
         li {
             margin-bottom: 5px;
+        }
+        
+        /* Highlight important sections */
+        .dataset-info {
+            background-color: #e8f8f5;
+            border: 1px solid #1abc9c;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .goal-info {
+            background-color: #fef5e7;
+            border: 1px solid #f39c12;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
         }
     </style>
 </head>
