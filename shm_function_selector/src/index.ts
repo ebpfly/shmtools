@@ -2366,10 +2366,12 @@ class SHMFunctionSelector {
     // Get all category headers and function items
     const allItems: HTMLElement[] = [];
     
-    // Get all category sections
-    const categorySections = dropdownContent.querySelectorAll('.shm-category-section');
+    // Only get top-level category sections (direct children)
+    const topLevelCategories = Array.from(dropdownContent.children).filter(child => 
+      child.classList.contains('shm-category-section')
+    );
     
-    categorySections.forEach(section => {
+    topLevelCategories.forEach(section => {
       const sectionElement = section as HTMLElement;
       
       // Skip hidden sections
@@ -2386,21 +2388,49 @@ class SHMFunctionSelector {
       // Check if category is expanded
       const content = section.querySelector('.shm-category-content') as HTMLElement;
       if (content && content.style.display !== 'none') {
-        // Add visible function items within this expanded category
-        const functionItems = content.querySelectorAll('.shm-function-item');
-        functionItems.forEach(item => {
-          const funcElement = item as HTMLElement;
-          if (funcElement.style.display !== 'none') {
-            allItems.push(funcElement);
-          }
-        });
+        // Recursively add subcategory headers and functions
+        this.addNavigableItemsFromContent(content, allItems);
       }
     });
     
     console.log('[SHM] Updated navigable items:', allItems.length, 'items');
     console.log('[SHM] Categories only?', allItems.every(item => item.classList.contains('shm-category-header')));
+    console.log('[SHM] First 5 items:', allItems.slice(0, 5).map(item => 
+      item.classList.contains('shm-category-header') ? 
+        'Category: ' + item.textContent?.trim() : 
+        'Function: ' + item.textContent?.trim()
+    ));
     
     this.keyboardNavigationItems = allItems;
+  }
+
+  private addNavigableItemsFromContent(content: HTMLElement, allItems: HTMLElement[]): void {
+    // Get direct child elements that are category sections or function items
+    Array.from(content.children).forEach(child => {
+      if (child.classList.contains('shm-category-section')) {
+        // It's a subcategory
+        const subSection = child as HTMLElement;
+        if (subSection.style.display !== 'none') {
+          const header = subSection.querySelector('.shm-category-header') as HTMLElement;
+          if (header) {
+            allItems.push(header);
+          }
+          
+          // Check if subcategory is expanded
+          const subContent = subSection.querySelector('.shm-category-content') as HTMLElement;
+          if (subContent && subContent.style.display !== 'none') {
+            // Recursively add items from subcategory
+            this.addNavigableItemsFromContent(subContent, allItems);
+          }
+        }
+      } else if (child.classList.contains('shm-function-item')) {
+        // It's a function item
+        const funcElement = child as HTMLElement;
+        if (funcElement.style.display !== 'none') {
+          allItems.push(funcElement);
+        }
+      }
+    });
   }
 
   private updateNavigationHighlight(): void {
@@ -4725,14 +4755,6 @@ class SHMContextMenuManager {
     this.variables.forEach(v => {
       console.log(`  - ${v.name} (${v.type}) from ${v.source || 'unknown'} in ${v.cellId}`);
     });
-    
-    // Filter and sort variables by compatibility
-    const compatibleVars = this.variables.filter(v => 
-      this.isVariableCompatible(v, parameterContext)
-    );
-    const otherVars = this.variables.filter(v => 
-      !this.isVariableCompatible(v, parameterContext)
-    );
 
     // Create context menu
     this.contextMenu = document.createElement('div');
@@ -4790,43 +4812,31 @@ class SHMContextMenuManager {
     `;
     this.contextMenu.appendChild(header);
 
-    // Add compatible variables section
-    if (compatibleVars.length > 0) {
-      const compatibleHeader = document.createElement('div');
-      compatibleHeader.textContent = 'Recommended';
-      compatibleHeader.style.cssText = `
-        padding: 6px 12px;
-        background: #e8f5e8;
-        color: #2e7d2e;
-        font-weight: bold;
-        border-bottom: 1px solid #ddd;
-      `;
-      this.contextMenu.appendChild(compatibleHeader);
-
-      compatibleVars.forEach(variable => {
-        this.addVariableMenuItem(variable, parameterContext, notebook, true, enableValidation);
+    // Group variables by cell for color coding
+    const groupByCellId = (vars: Variable[]) => {
+      const groups = new Map<string, Variable[]>();
+      vars.forEach(v => {
+        if (!groups.has(v.cellId)) {
+          groups.set(v.cellId, []);
+        }
+        groups.get(v.cellId)!.push(v);
       });
-    }
+      return groups;
+    };
 
-    // Add other variables section
-    if (otherVars.length > 0) {
-      const otherHeader = document.createElement('div');
-      otherHeader.textContent = 'Other variables';
-      otherHeader.style.cssText = `
-        padding: 6px 12px;
-        background: #f0f0f0;
-        color: #666;
-        font-weight: bold;
-        border-bottom: 1px solid #ddd;
-      `;
-      this.contextMenu.appendChild(otherHeader);
-
-      otherVars.forEach(variable => {
-        this.addVariableMenuItem(variable, parameterContext, notebook, false, enableValidation);
+    // Add all variables without sorting or categorization
+    if (this.variables.length > 0) {
+      const variableGroups = groupByCellId(this.variables);
+      let cellColorIndex = 0;
+      variableGroups.forEach((variables, cellId) => {
+        variables.forEach(variable => {
+          // Check if variable is compatible for determining styling
+          const isCompatible = this.isVariableCompatible(variable, parameterContext);
+          this.addVariableMenuItem(variable, parameterContext, notebook, isCompatible, enableValidation, cellColorIndex);
+        });
+        cellColorIndex++;
       });
-    }
-
-    if (compatibleVars.length === 0 && otherVars.length === 0) {
+    } else {
       const noVars = document.createElement('div');
       noVars.textContent = 'No variables found';
       noVars.style.cssText = `
@@ -4941,24 +4951,32 @@ class SHMContextMenuManager {
     parameterContext: ParameterContext, 
     notebook: any,
     isRecommended: boolean,
-    enableValidation: boolean = false
+    enableValidation: boolean = false,
+    cellColorIndex: number = 0
   ): void {
     const menuItem = document.createElement('div');
     menuItem.className = 'shm-context-menu-item';
     const isMobile = window.innerWidth < 768;
+    
+    // Determine background color based on cell color index - alternate between green and blue
+    let backgroundColor: string;
+    let hoverColor: string;
+    backgroundColor = cellColorIndex % 2 === 0 ? '#f0fff0' : '#e0f7fa';
+    hoverColor = cellColorIndex % 2 === 0 ? '#e8f5e8' : '#b2ebf2';
+    
     menuItem.style.cssText = `
       padding: ${isMobile ? '12px 16px' : '8px 12px'};
       cursor: pointer;
       border-bottom: 1px solid #eee;
       transition: background 0.2s;
-      ${isRecommended ? 'background: #f0fff0;' : ''}
+      background: ${backgroundColor};
       touch-action: manipulation;
       user-select: none;
       -webkit-tap-highlight-color: transparent;
     `;
 
     menuItem.innerHTML = `
-      <div style="font-weight: bold; color: ${isRecommended ? '#2e7d2e' : '#333'};">
+      <div style="font-weight: bold; color: #333;">
         ${variable.displayName || variable.name}
       </div>
       <div style="font-size: 10px; color: #666;">
@@ -4967,11 +4985,11 @@ class SHMContextMenuManager {
     `;
 
     menuItem.addEventListener('mouseenter', () => {
-      menuItem.style.background = isRecommended ? '#e8f5e8' : '#f5f5f5';
+      menuItem.style.background = hoverColor;
     });
 
     menuItem.addEventListener('mouseleave', () => {
-      menuItem.style.background = isRecommended ? '#f0fff0' : 'white';
+      menuItem.style.background = backgroundColor;
     });
 
     menuItem.addEventListener('click', () => {

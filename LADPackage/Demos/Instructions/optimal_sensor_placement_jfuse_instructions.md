@@ -38,24 +38,23 @@ No Inputs
 **Output**: Optimal List = (SENSORS)  
 **Output**: Fisher Determinant = scalar
 
-### Step 5: Plot Sensors (Auxiliary/Sensor Support/Optimal Sensor Placement/Plotting)
+### Step 5: Plot Sensors with Mesh (Auxiliary/Sensor Support/Optimal Sensor Placement/Plotting)
 **Input**: Elements = Elements (Step 1)  
 **Input**: Nodes = Node Layout (Step 1)  
 **Input**: Sensor Indices = Optimal DOF List (Step 4)  
 **Input**: Response DOF = Response DOF (Step 1)  
 **Output**: Axes Handle
 
-### Step 6: OSP Using Maximum Norm (Auxiliary/SensorSupport/OptimalSensorPlacement)
+### Step 6: OSP Using Maximum Norm (Auxiliary/Sensor Support/Optimal Sensor Placement)
 **Input**: # Of Sensors = 12  
 **Input**: Mode Shapes = Mode Shapes (Step 1)  
-**Input**: Weights = 13:-1:1  
+**Input**: Weights = range(13,0,-1)
 **Input**: Dueling Distance = 20  
 **Input**: Response DOF = Response DOF (Step 1)  
 **Input**: Geometry Layout = Node Layout (Step 1)  
 **Output**: Optimal List = (SENSORS)  
-**Output**: Fisher Determinant = scalar
 
-### Step 7: Plot Sensors With Mesh (LADPackage/Optimal Sensor Placement/)
+### Step 7: Plot Sensors with Mesh (Auxiliary/Sensor Support/Optimal Sensor Placement/Plotting)
 **Input**: Elements = Elements (Step 1)  
 **Input**: Node Layout = Node Layout (Step 1)  
 **Input**: Sensor Indices = Optimal List (Step 6)  

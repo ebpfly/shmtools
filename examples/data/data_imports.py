@@ -221,7 +221,7 @@ def import_active_sense_shm() -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.nd
         :complexity: Advanced
         :data_type: Guided Waves
         :output_type: Dataset
-        :verbose_call: [Baseline Waveforms, Test Waveforms, Sensor Layout, Sensor Pair List, Border Structure, Sample Rate, Actuation Waveform, Damage Location] = Import Active Sensing Dataset #1()
+        :verbose_call: [Baseline Waveforms, Test Waveforms, Sensor Layout, Sensor Pair List, Border Structure, Sample Rate, Actuation Waveform, Damage Location] = Import Active Sensing Dataset()
         
     Returns
     -------
