@@ -38,8 +38,11 @@ npm run build:lib
 echo "📱 Building JupyterLab extension..."
 npm run build:labextension:dev
 
-echo "🚀 Building JupyterLab..."
+echo "📦 Installing extension package..."
 cd ..
+pip install -e shm_function_selector/
+
+echo "🚀 Building JupyterLab..."
 jupyter lab build
 
 echo "✅ Extension build complete!"
