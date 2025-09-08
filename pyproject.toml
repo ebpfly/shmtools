@@ -1,5 +1,11 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = [
+    "setuptools>=61.0", 
+    "wheel", 
+    "setuptools-scm", 
+    "jupyter_packaging~=0.12",
+    "jupyterlab>=4.0.0,<5"
+]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -34,6 +40,7 @@ dependencies = [
     "pandas>=1.3.0",
     "pyyaml>=6.0",
     "jupyterlab>=4.0.0,<5",
+    "jupyter-server>=2.0.0",
     "pywavelets>=1.3.0",
     "numba>=0.56.0", 
     "joblib>=1.1.0",
@@ -65,13 +72,38 @@ Repository = "https://github.com/ebpfly/shm.git"
 "Bug Tracker" = "https://github.com/ebpfly/shm/issues"
 
 [project.scripts]
-install-jfuse = "shmtools.jupyter_extension_installer:install_extension"
-uninstall-jfuse = "shmtools.jupyter_extension_installer:uninstall_extension"
-# shmtools-gui = "bokeh_shmtools.app:main"  # Archived - bokeh GUI on pause
+install-jfuse = "shm_function_selector.jupyter_extension_installer:install_extension"
+uninstall-jfuse = "shm_function_selector.jupyter_extension_installer:uninstall_extension"
+shmtools-build-extension = "shm_function_selector.jupyter_extension_installer:build_extension"
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["shmtools*", "shm_function_selector*"]
+exclude = ["shm_function_selector/node_modules*", "shm_function_selector/lib*"]
+
+[tool.setuptools.package-data]
+"shm_function_selector" = ["labextension/**", "*.json"]
+"*" = ["*.js", "*.css", "*.html", "*.md", "*.txt", "*.yml", "*.yaml"]
+
+[tool.jupyter-packaging.options]
+ensure-targets = [
+    "shm_function_selector/labextension/static/style.js",
+    "shm_function_selector/labextension/package.json",
+]
+skip-if-exists = [
+    "shm_function_selector/labextension/static/style.js",
+    "shm_function_selector/labextension/package.json",
+]
+
+[tool.jupyter-packaging.builder]
+factory = "jupyter_packaging.npm_builder"
+build_cmd = "build:prod"
+build_dir = "shm_function_selector"
+source_dir = "src"
+
+[tool.jupyter-packaging.build_args]
+build_cmd = "jlpm build:prod"
+npm = ["jlpm"]
 
 [tool.black]
 line-length = 88

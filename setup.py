@@ -40,15 +40,15 @@ class PostInstallCommand(install):
         # First run the normal install
         install.run(self)
         
-        # Then install the extension
-        if not self.dry_run:
+        # Then install the extension if not in development mode
+        if not self.dry_run and not self.develop:
             self.execute(self.install_jupyter_extension, [], msg="Installing JupyterLab extension")
     
     def install_jupyter_extension(self):
         """Install the SHM JupyterLab extension after package installation."""
-        print("\n" + "="*60)
-        print("🔧 Installing SHM JupyterLab Extension...")
-        print("="*60)
+        print("\n" + "="*70)
+        print("🎆 SHMTools JupyterLab Extension Auto-Installation")
+        print("="*70)
         
         try:
             # Get the extension directory path
@@ -56,6 +56,12 @@ class PostInstallCommand(install):
             
             if not os.path.exists(extension_dir):
                 print(f"⚠️  Extension directory not found: {extension_dir}")
+                self._print_manual_instructions()
+                return
+            
+            # Check prerequisites
+            if not self._check_prerequisites():
+                self._print_manual_instructions()
                 return
                 
             # Change to extension directory and install
@@ -63,56 +69,115 @@ class PostInstallCommand(install):
             try:
                 os.chdir(extension_dir)
                 
+                # Install npm dependencies
+                print("📦 Installing npm dependencies...")
+                result = subprocess.run(['npm', 'install'], capture_output=True, text=True, timeout=120)
+                if result.returncode != 0:
+                    print(f"⚠️  npm install failed: {result.stderr}")
+                    self._print_manual_instructions()
+                    return
+                print("✅ npm dependencies installed")
+                
+                # Build TypeScript
+                print("🔨 Building TypeScript...")
+                result = subprocess.run(['npm', 'run', 'build:lib'], capture_output=True, text=True, timeout=60)
+                if result.returncode != 0:
+                    print(f"⚠️  TypeScript build failed: {result.stderr}")
+                    self._print_manual_instructions()
+                    return
+                print("✅ TypeScript compiled")
+                
+                # Build labextension
+                print("🔧 Building JupyterLab extension...")
+                result = subprocess.run(['npm', 'run', 'build:labextension:dev'], capture_output=True, text=True, timeout=60)
+                if result.returncode != 0:
+                    print(f"⚠️  Extension build failed: {result.stderr}")
+                    self._print_manual_instructions()
+                    return
+                print("✅ Extension built")
+                
                 # Install the extension package
                 print("📦 Installing extension Python package...")
                 result = subprocess.run([sys.executable, '-m', 'pip', 'install', '-e', '.'], 
-                                      capture_output=True, text=True)
-                if result.returncode == 0:
-                    print("✅ Extension Python package installed")
-                else:
+                                      capture_output=True, text=True, timeout=30)
+                if result.returncode != 0:
                     print(f"⚠️  Extension package install failed: {result.stderr}")
+                    self._print_manual_instructions()
                     return
-                
-                # Register with JupyterLab
-                print("🔗 Registering extension with JupyterLab...")
-                result = subprocess.run(['jupyter', 'labextension', 'develop', '.', '--overwrite'], 
-                                      capture_output=True, text=True)
-                if result.returncode == 0:
-                    print("✅ Extension registered with JupyterLab")
-                else:
-                    print(f"⚠️  Extension registration failed: {result.stderr}")
-                    return
+                print("✅ Extension Python package installed")
                 
                 # Build JupyterLab
-                print("🔨 Building JupyterLab (this may take a moment)...")
+                print("🔨 Building JupyterLab (this may take 2-3 minutes)...")
                 result = subprocess.run(['jupyter', 'lab', 'build'], 
                                       capture_output=True, text=True, timeout=300)
-                if result.returncode == 0:
-                    print("✅ JupyterLab built successfully")
-                else:
+                if result.returncode != 0:
                     print(f"⚠️  JupyterLab build failed: {result.stderr}")
+                    print("\nTrying alternative build command...")
+                    # Try with development build flag
+                    result = subprocess.run(['jupyter', 'lab', 'build', '--dev-build=False'], 
+                                          capture_output=True, text=True, timeout=300)
+                    if result.returncode != 0:
+                        self._print_manual_instructions()
+                        return
+                print("✅ JupyterLab built successfully")
                 
             finally:
                 os.chdir(old_cwd)
             
-            print("\n" + "="*60)
-            print("🎉 SHM JupyterLab Extension installed successfully!")
-            print("="*60)
-            print("To start using SHMTools:")
-            print("  jupyter lab")
-            print("\nLook for the 'SHM Functions' panel in the left sidebar!")
-            print("="*60)
+            print("\n" + "="*70)
+            print("🎉 SHMTools JupyterLab Extension Installed Successfully!")
+            print("="*70)
+            print("🚀 Quick Start:")
+            print("  1. jupyter lab")
+            print("  2. Look for the '🔍 SHM Functions' icon in the left sidebar")
+            print("  3. Open a Python notebook and start exploring!")
+            print("="*70)
                 
         except subprocess.TimeoutExpired:
-            print("⚠️  JupyterLab build timed out, but extension may still work")
-            print("Try running: jupyter lab build")
+            print("⚠️  Build process timed out")
+            self._print_manual_instructions()
         except FileNotFoundError as e:
-            print(f"⚠️  Could not find required command: {e}")
-            print("Make sure JupyterLab is installed and in your PATH")
-            print("You can install the extension manually with: shmtools-install-jupyter")
+            print(f"⚠️  Required tool not found: {e}")
+            self._print_manual_instructions()
         except Exception as e:
-            print(f"⚠️  Extension installation failed: {e}")
-            print("You can install the extension manually with: shmtools-install-jupyter")
+            print(f"⚠️  Installation failed: {e}")
+            self._print_manual_instructions()
+    
+    def _check_prerequisites(self):
+        """Check if required tools are available."""
+        required_tools = [('jupyter', 'JupyterLab'), ('npm', 'Node.js/npm'), ('node', 'Node.js')]
+        missing_tools = []
+        
+        for tool, description in required_tools:
+            try:
+                subprocess.run([tool, '--version'], capture_output=True, check=True, timeout=10)
+            except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+                missing_tools.append(description)
+        
+        if missing_tools:
+            print(f"⚠️  Missing required tools: {', '.join(missing_tools)}")
+            print("\nPlease install the missing tools and try again.")
+            return False
+        
+        print("✅ All prerequisites found")
+        return True
+    
+    def _print_manual_instructions(self):
+        """Print manual installation instructions."""
+        print("\n" + "-"*70)
+        print("🛠️  Manual Installation Required")
+        print("-"*70)
+        print("To install the jFUSE extension manually:")
+        print("")
+        print("  cd shm_function_selector/")
+        print("  npm install")
+        print("  npm run build:lib")
+        print("  npm run build:labextension:dev")
+        print("  cd .. && jupyter lab build")
+        print("")
+        print("Or use the convenience script:")
+        print("  ./restart_jupyterlab.sh")
+        print("-"*70)
 
 
 setup(
@@ -134,10 +199,12 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'install-jfuse=shmtools.jupyter_extension_installer:install_extension',
-            'uninstall-jfuse=shmtools.jupyter_extension_installer:uninstall_extension',
-            # 'shmtools-gui=bokeh_shmtools.app:main',  # Archived - bokeh GUI on pause
+            'install-jfuse=shm_function_selector.jupyter_extension_installer:install_extension',
+            'uninstall-jfuse=shm_function_selector.jupyter_extension_installer:uninstall_extension',
         ],
+    },
+    cmdclass={
+        'install': PostInstallCommand,
     },
     classifiers=[
         'Development Status :: 3 - Alpha',

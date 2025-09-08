@@ -31,13 +31,65 @@ def _delayed_install():
         print(f"Warning: Could not auto-install JupyterLab extension: {e}")
 
 
+def build_extension():
+    """Build the TypeScript and JupyterLab extension components."""
+    try:
+        # Get the path to the extension directory
+        extension_dir = Path(__file__).parent
+        
+        if not extension_dir.exists():
+            print(f"❌ Extension directory not found: {extension_dir}")
+            return False
+            
+        print("🔧 Building SHM JupyterLab Extension...")
+        print(f"Extension directory: {extension_dir}")
+        
+        # Change to extension directory
+        old_cwd = os.getcwd()
+        os.chdir(extension_dir)
+        
+        try:
+            # Check if npm is available
+            subprocess.run(["npm", "--version"], check=True, capture_output=True)
+            
+            # Install npm dependencies
+            print("📦 Installing npm dependencies...")
+            result = subprocess.run(["npm", "install"], check=True, capture_output=True, text=True)
+            print("✅ npm dependencies installed")
+            
+            # Build TypeScript
+            print("🔨 Building TypeScript...")
+            result = subprocess.run(["npm", "run", "build:lib"], check=True, capture_output=True, text=True)
+            print("✅ TypeScript compiled")
+            
+            # Build labextension
+            print("🔨 Building JupyterLab extension...")
+            result = subprocess.run(["npm", "run", "build:labextension:dev"], check=True, capture_output=True, text=True)
+            print("✅ Extension built")
+            
+            return True
+            
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Build failed: {e}")
+            if e.stdout:
+                print(f"stdout: {e.stdout}")
+            if e.stderr:
+                print(f"stderr: {e.stderr}")
+            return False
+        finally:
+            os.chdir(old_cwd)
+            
+    except Exception as e:
+        print(f"❌ Build failed with error: {e}")
+        return False
+
+
 def install_extension():
     """Install the SHM JupyterLab extension."""
 
     try:
         # Get the path to the extension directory
-        current_dir = Path(__file__).parent.parent
-        extension_dir = current_dir / "shm_function_selector"
+        extension_dir = Path(__file__).parent
 
         if not extension_dir.exists():
             print(f"❌ Extension directory not found: {extension_dir}")
@@ -46,54 +98,54 @@ def install_extension():
         print("🔧 Installing SHM JupyterLab Extension...")
         print(f"Extension directory: {extension_dir}")
 
+        # First build the extension
+        if not build_extension():
+            return False
+
         # Change to extension directory
         old_cwd = os.getcwd()
         os.chdir(extension_dir)
 
         try:
-            # Install the extension in development mode
+            # Install the extension Python package in development mode
+            print("📦 Installing extension Python package...")
             result = subprocess.run(
                 [sys.executable, "-m", "pip", "install", "-e", "."],
                 check=True,
                 capture_output=True,
                 text=True,
             )
-
             print("✅ Extension Python package installed")
 
-            # Install extension into JupyterLab
-            result = subprocess.run(
-                ["jupyter", "labextension", "develop", ".", "--overwrite"],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-
-            print("✅ Extension registered with JupyterLab")
-
             # Build JupyterLab
-            print("🔨 Building JupyterLab...")
+            print("🔨 Building JupyterLab (this may take a few minutes)...")
             result = subprocess.run(
-                ["jupyter", "lab", "build", "--dev-build=False", "--minimize=False"],
+                ["jupyter", "lab", "build"],
                 check=True,
                 capture_output=True,
                 text=True,
+                timeout=300
             )
-
             print("✅ JupyterLab built successfully")
 
             print("\n🎉 SHM JupyterLab Extension installed successfully!")
             print("\nTo use the extension:")
             print("1. Start JupyterLab: jupyter lab")
-            print("2. Look for the 'SHM Functions' panel in the left sidebar")
+            print("2. Look for the '🔍 SHM Functions' panel in the left sidebar")
             print("3. Open a Python notebook and use the function selector")
 
             return True
 
         except subprocess.CalledProcessError as e:
             print(f"❌ Installation failed: {e}")
-            print(f"stdout: {e.stdout}")
-            print(f"stderr: {e.stderr}")
+            if e.stdout:
+                print(f"stdout: {e.stdout}")
+            if e.stderr:
+                print(f"stderr: {e.stderr}")
+            return False
+        except subprocess.TimeoutExpired:
+            print("❌ JupyterLab build timed out")
+            print("You can try building manually with: jupyter lab build")
             return False
         finally:
             os.chdir(old_cwd)
@@ -153,7 +205,15 @@ def uninstall_extension():
 if __name__ == "__main__":
     import sys
 
-    if len(sys.argv) > 1 and sys.argv[1] == "uninstall":
-        uninstall_extension()
+    if len(sys.argv) > 1:
+        command = sys.argv[1]
+        if command == "uninstall":
+            uninstall_extension()
+        elif command == "build":
+            build_extension()
+        elif command == "install":
+            install_extension()
+        else:
+            print("Usage: python jupyter_extension_installer.py [install|build|uninstall]")
     else:
         install_extension()

@@ -15,38 +15,29 @@ SHMTools Python provides a modern, JupyterLab-based platform for structural heal
 
 ## Quick Start
 
-### Local Installation
+### One-Command Installation
 
 ```bash
-# Clone the repository
+# Clone and install with automatic jFUSE extension build
 git clone https://github.com/ebpfly/shmtools.git
 cd shm
-
-# Activate virtual environment (CRITICAL)
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt -r requirements-dev.txt
+source venv/bin/activate  # CRITICAL: Always activate first
 pip install -e .
 
 # Install Jupyter kernel
 python -m ipykernel install --user --name=shm-venv --display-name="SHM Python (venv)"
-```
-
-### Launch JupyterLab with jFUSE Extension
-
-```bash
-# Build the jFUSE extension (first time only)
-cd shm_function_selector/
-npm run build:lib
-npm run build:labextension:dev
-cd .. && jupyter lab build
 
 # Launch JupyterLab
 jupyter lab
 ```
 
-Open your browser to `http://localhost:8888` and use the "SHM Python (venv)" kernel.
+**That's it!** The `pip install -e .` automatically:
+- ✅ Installs all Python dependencies
+- ✅ Builds the TypeScript components (`npm install`, `npm run build:lib`)
+- ✅ Compiles the JupyterLab extension (`npm run build:labextension:dev`)
+- ✅ Integrates with JupyterLab (`jupyter lab build`)
+
+Open your browser to `http://localhost:8888` and look for the 🔍 **SHM Functions** panel in the left sidebar!
 
 ### Cloud Deployment (Recommended)
 
@@ -61,10 +52,11 @@ cd jupyterhub/
 ### Basic Usage
 
 #### Using jFUSE Extension in JupyterLab
-1. Open JupyterLab and create a new notebook with "SHM Python (venv)" kernel
-2. Click the jFUSE extension icon in the left sidebar
-3. Search for functions (e.g., "psd", "filter", "outlier")
-4. Click any function to insert pre-configured code
+1. **One-time setup**: `pip install -e .` (automatically builds everything)
+2. **Launch**: `jupyter lab`
+3. **Create notebook**: Use "SHM Python (venv)" kernel
+4. **Find functions**: Click 🔍 **SHM Functions** in left sidebar
+5. **Insert code**: Search and click any function to add pre-configured code
 
 #### Direct Python API
 
@@ -178,10 +170,10 @@ We welcome contributions! Please see our [development guide](docs/development.md
 
 ```bash
 # Activate virtual environment (CRITICAL)
-cd /Users/eric/repo/shm/ && source venv/bin/activate
+cd /path/to/shm && source venv/bin/activate
 
-# Install development dependencies
-pip install -r requirements-dev.txt
+# Install in development mode (includes extension auto-build)
+pip install -e .[dev]
 
 # Run tests
 pytest                                 # All tests
@@ -190,10 +182,29 @@ pytest -m "not hardware"              # Skip hardware tests
 # Code quality
 black shmtools/ && flake8 shmtools/   # Format & lint
 
-# Build jFUSE extension after changes
+# After making extension changes, rebuild quickly:
+shmtools-build-extension              # Build only the extension
+# OR
+./restart_jupyterlab.sh               # Full rebuild + restart
+```
+
+### Manual Extension Commands
+
+If you need more control over the extension build process:
+
+```bash
+# Build extension components only
+shmtools-build-extension
+
+# Full extension install/reinstall
+install-jfuse
+
+# Remove extension
+uninstall-jfuse
+
+# Traditional manual build (if needed)
 cd shm_function_selector/
-npm run build:lib
-npm run build:labextension:dev
+npm install && npm run build:lib && npm run build:labextension:dev
 cd .. && jupyter lab build
 ```
 
