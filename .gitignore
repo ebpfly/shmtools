@@ -144,10 +144,6 @@ cython_debug/
 # macOS
 .DS_Store
 
-# Example data files (too large for git)
-examples/data/*.mat
-examples/data/data_files/*.mat
-
 # MATLAB reference code and data files
 matlab/
 
