@@ -590,9 +590,12 @@ def node_element_plot_shm(
 
 def plot_sensors_shm(
     sensor_layout: np.ndarray, ax_handle: Optional[Any] = None
-) -> None:
+) -> tuple[Any, np.ndarray]:
     """
-    Plot sensor locations on structure.
+    Plot sensor locations with directional indicators on structure.
+
+    Plots sensors as black on white circles with sensor IDs and line
+    segments indicating sensor directional sensitivity.
 
     .. meta::
         :category: Auxiliary - Sensor Support - Optimal Sensor Placement - Plotting
@@ -601,7 +604,172 @@ def plot_sensors_shm(
         :data_type: Sensor Locations
         :output_type: Plot
         :display_name: Plot Sensors
-        :verbose_call: Plot Sensors (Sensor Layout, Axis Handle)
+        :verbose_call: [Axes Handle, Sensor Handle] = Plot Sensors (Sensor Layout, Axes Handle)
+
+    Parameters
+    ----------
+    sensor_layout : ndarray, shape (sensorinfo, num_sensors)
+        Sensor layout IDs, coordinates, and sensitivity direction.
+        SENSORINFO is one of the following ordered sets:
+        [sensorID; xCoord]
+        [sensorID; xCoord; yCoord]
+        [sensorID; xCoord; yCoord; zCoord]
+        [sensorID; xCoord; xDir; yDir; zDir]
+        [sensorID; xCoord; yCoord; xDir; yDir; zDir]
+        [sensorID; xCoord; yCoord; zCoord; xDir; yDir; zDir]
+
+        .. gui::
+            :widget: data_input
+            :description: Sensor layout with coordinates and directions
+
+    ax_handle : matplotlib axes, optional
+        MATLAB axes handle. If None, creates new figure and axes.
+
+        .. gui::
+            :widget: axes_input
+            :description: Matplotlib axes handle
+
+    Returns
+    -------
+    ax_handle : matplotlib axes
+        Axes handle for the plot
+    sensor_handle : ndarray
+        Array of handles to sensor plot objects
+
+    Notes
+    -----
+    MATLAB Compatibility: This function replicates the behavior of the
+    original plotSensors_shm function. It plots sensors with directional
+    arrows when direction information is provided.
+
+    Examples
+    --------
+    >>> # Basic sensor plotting
+    >>> sensor_layout = np.array([[1, 2], [0, 1], [0, 0], [0, 0]])
+    >>> ax, handles = plot_sensors_shm(sensor_layout)
+
+    >>> # With directional information
+    >>> sensor_layout = np.array([[1, 2], [0, 1], [0, 0], [0, 0], [1, 0], [0, 1], [0, 0]])
+    >>> ax, handles = plot_sensors_shm(sensor_layout)
     """
-    # This is a placeholder - actual implementation would add sensors to plot
-    print(f"Plotting {len(sensor_layout)} sensors...")
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
+
+    if ax_handle is None:
+        fig = plt.figure()
+        ax_handle = fig.add_subplot(111, projection="3d")
+
+    # Enable hold on behavior
+    was_interactive = plt.isinteractive()
+    plt.ioff()
+
+    num_sensors = sensor_layout.shape[1]
+
+    # Determine coordinates and directions based on sensor_layout size
+    layout_rows = sensor_layout.shape[0] - 1  # Subtract 1 for sensor ID row
+
+    if layout_rows == 1:
+        # [sensorID; xCoord]
+        sensor_coords = np.array(
+            [sensor_layout[1, :], np.zeros(num_sensors), np.zeros(num_sensors)]
+        )
+        meas_direction = None
+        is_arrow = False
+    elif layout_rows == 2:
+        # [sensorID; xCoord; yCoord]
+        sensor_coords = np.array(
+            [sensor_layout[1, :], sensor_layout[2, :], np.zeros(num_sensors)]
+        )
+        meas_direction = None
+        is_arrow = False
+    elif layout_rows == 3:
+        # [sensorID; xCoord; yCoord; zCoord]
+        sensor_coords = sensor_layout[1:4, :]
+        meas_direction = None
+        is_arrow = False
+    elif layout_rows == 4:
+        # [sensorID; xCoord; xDir; yDir; zDir]
+        sensor_coords = np.array(
+            [sensor_layout[1, :], np.zeros(num_sensors), np.zeros(num_sensors)]
+        )
+        meas_direction = sensor_layout[2:5, :]
+        is_arrow = True
+    elif layout_rows == 5:
+        # [sensorID; xCoord; yCoord; xDir; yDir; zDir]
+        sensor_coords = np.array(
+            [sensor_layout[1, :], sensor_layout[2, :], np.zeros(num_sensors)]
+        )
+        meas_direction = sensor_layout[3:6, :]
+        is_arrow = True
+    elif layout_rows == 6:
+        # [sensorID; xCoord; yCoord; zCoord; xDir; yDir; zDir]
+        sensor_coords = sensor_layout[1:4, :]
+        meas_direction = sensor_layout[4:7, :]
+        is_arrow = True
+    else:
+        is_arrow = False
+
+    # Plot direction arrows if applicable
+    if is_arrow and meas_direction is not None:
+        # Scale direction arrow length
+        coord_range = np.max(sensor_coords) - np.min(sensor_coords)
+        arrow_length = coord_range / 15.0
+
+        # Normalize direction vectors and scale
+        direction_norms = np.sqrt(np.sum(meas_direction**2, axis=0))
+        direction_norms[direction_norms == 0] = 1  # Avoid division by zero
+        op_dir = arrow_length * meas_direction / direction_norms
+
+        # Calculate arrow endpoints
+        dx = np.vstack([sensor_coords[0, :], sensor_coords[0, :] + op_dir[0, :]])
+        dy = np.vstack([sensor_coords[1, :], sensor_coords[1, :] + op_dir[1, :]])
+        dz = np.vstack([sensor_coords[2, :], sensor_coords[2, :] + op_dir[2, :]])
+
+        # Plot arrow lines
+        for i in range(num_sensors):
+            ax_handle.plot(
+                [dx[0, i], dx[1, i]],
+                [dy[0, i], dy[1, i]],
+                [dz[0, i], dz[1, i]],
+                "k-",
+                linewidth=3,
+                alpha=0.8,
+            )
+
+        # Plot arrow heads (dots at end)
+        ax_handle.scatter(dx[1, :], dy[1, :], dz[1, :], c="black", s=40, marker="o")
+
+    # Plot sensor locations as white circles with black edges
+    sensor_handles = []
+    for i in range(num_sensors):
+        handle = ax_handle.scatter(
+            sensor_coords[0, i],
+            sensor_coords[1, i],
+            sensor_coords[2, i],
+            c="white",
+            s=150,
+            marker="o",
+            edgecolors="black",
+            linewidth=2,
+            zorder=10,
+        )
+        sensor_handles.append(handle)
+
+        # Add sensor ID labels
+        ax_handle.text(
+            sensor_coords[0, i],
+            sensor_coords[1, i],
+            sensor_coords[2, i],
+            f" {int(sensor_layout[0, i])} ",
+            color="black",
+            fontsize=9,
+            fontweight="bold",
+            ha="center",
+            va="center",
+        )
+
+    # Restore interactive state
+    if was_interactive:
+        plt.ion()
+
+    return ax_handle, np.array(sensor_handles)

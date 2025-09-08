@@ -280,7 +280,9 @@ def flex_logic_filter_shm(
                 # Filter matches first two dimensions (pairs, POIs)
                 # Apply element-wise filtering
                 filtered_data = data.copy()
-                filtered_data[~logic_filter] = np.min(filtered_data)  # Zero out where filter is False
+                filtered_data[~logic_filter] = np.min(
+                    filtered_data
+                )  # Zero out where filter is False
                 return filtered_data
             else:
                 raise ValueError(

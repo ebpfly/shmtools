@@ -165,3 +165,6 @@ responsive_app.py
 
 # Bokeh server files
 .bokeh/
+
+# Test installation directory
+test_install/

@@ -345,29 +345,66 @@ def plot_sensors_with_mesh(
     ax.scatter(x_nodes, y_nodes, z_nodes, 
               c='lightgray', s=10, alpha=0.6, label='Nodes')
     
-    # Determine sensor locations from DOF indices
+    # Determine sensor locations and directions from DOF indices
     sensor_x, sensor_y, sensor_z = [], [], []
+    sensor_dirs = []  # Store direction vectors for each sensor
     
     for sensor_dof in sensor_indices:
         # Find corresponding node for this DOF (0-based indexing)
         dof_idx = int(sensor_dof) - 1  # Convert to 0-based
         if 0 <= dof_idx < len(resp_dof):
             node_id = int(resp_dof[dof_idx, 0]) - 1  # Convert to 0-based
+            direction = int(resp_dof[dof_idx, 1])     # DOF direction (1=X, 2=Y, 3=Z)
+            
             if 0 <= node_id < len(x_nodes):
                 sensor_x.append(x_nodes[node_id])
                 sensor_y.append(y_nodes[node_id])
                 sensor_z.append(z_nodes[node_id])
+                
+                # Convert direction to unit vector
+                if direction == 1:      # X direction
+                    sensor_dirs.append([1, 0, 0])
+                elif direction == 2:    # Y direction
+                    sensor_dirs.append([0, 1, 0])
+                elif direction == 3:    # Z direction
+                    sensor_dirs.append([0, 0, 1])
+                else:
+                    # For rotational DOFs (4-6), use default Z direction
+                    sensor_dirs.append([0, 0, 1])
     
-    # Plot optimal sensor locations
+    # Calculate arrow length based on structure size
+    if len(sensor_x) > 0:
+        coord_range = np.array([x_nodes.max()-x_nodes.min(), 
+                               y_nodes.max()-y_nodes.min(), 
+                               z_nodes.max()-z_nodes.min()]).max()
+        arrow_length = coord_range / 15.0  # MATLAB uses /15 for arrow scaling
+        
+        # Plot directional arrows for each sensor
+        for i, (x, y, z, direction) in enumerate(zip(sensor_x, sensor_y, sensor_z, sensor_dirs)):
+            # Calculate arrow end point
+            dx = direction[0] * arrow_length
+            dy = direction[1] * arrow_length
+            dz = direction[2] * arrow_length
+            
+            # Plot arrow line
+            ax.plot([x, x + dx], [y, y + dy], [z, z + dz], 
+                   'k-', linewidth=3, alpha=0.8)
+            
+            # Plot arrow head (dot at end)
+            ax.plot([x + dx], [y + dy], [z + dz], 
+                   'ko', markersize=8, markerfacecolor='black')
+    
+    # Plot optimal sensor locations as white circles with black edges
     sensor_handle = ax.scatter(sensor_x, sensor_y, sensor_z,
-                              c='red', s=100, marker='o',
+                              c='white', s=150, marker='o',
                               edgecolors='black', linewidth=2,
                               label=f'Optimal Sensors ({len(sensor_indices)})',
-                              alpha=0.9)
+                              alpha=0.9, zorder=10)
     
     # Add sensor number labels
     for i, (x, y, z) in enumerate(zip(sensor_x, sensor_y, sensor_z)):
-        ax.text(x, y, z, f'  {i+1}', fontsize=10, fontweight='bold')
+        ax.text(x, y, z, f' {i+1} ', fontsize=9, fontweight='bold',
+               ha='center', va='center', color='black')
     
     # Set labels and title
     ax.set_xlabel('X Position')

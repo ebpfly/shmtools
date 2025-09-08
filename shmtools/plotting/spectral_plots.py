@@ -54,7 +54,7 @@ def plot_scores_shm(
             :description: Detection results (0/1)
 
     state_names : list of str, optional
-        Names for the detection states ['Healthy', 'Damaged']. 
+        Names for the detection states ['Healthy', 'Damaged'].
         If None, defaults to ['State 0', 'State 1', ...] based on unique states.
 
         .. gui::
@@ -119,10 +119,10 @@ def plot_scores_shm(
     >>>
     >>> # Plot results with explicit state names and threshold
     >>> ax = plot_scores_shm(scores, detected, ['Healthy', 'Damaged'], threshold)
-    >>> 
+    >>>
     >>> # Plot with auto-generated state names and no threshold
     >>> ax = plot_scores_shm(scores, detected)
-    >>> 
+    >>>
     >>> # Plot with flipped signs and log scores
     >>> ax = plot_scores_shm(scores, detected, flip_signs=True, use_log_scores=True)
     >>> plt.show()
@@ -138,7 +138,7 @@ def plot_scores_shm(
     # Ensure scores and states are 1D arrays
     scores = np.asarray(scores).flatten()
     states = np.asarray(states).flatten()
-    
+
     # Apply sign flip if requested (MATLAB behavior)
     plot_scores = scores.copy()
     plot_threshold = threshold
@@ -171,7 +171,7 @@ def plot_scores_shm(
     if use_bar_chart:
         # Bar chart
         bars = ax.bar(test_indices, plot_scores, color=colors, alpha=0.7)
-        
+
         # Set edge color for each bar individually
         for bar in bars:
             bar.set_edgecolor("black")
@@ -215,7 +215,7 @@ def plot_scores_shm(
             Patch(facecolor="green", alpha=0.7, label=state_names[0]),
             Patch(facecolor="red", alpha=0.7, label=state_names[1]),
         ]
-        
+
         # Add threshold to legend only if provided
         if plot_threshold is not None:
             legend_elements.append(
@@ -227,7 +227,7 @@ def plot_scores_shm(
                     label=f"Threshold = {plot_threshold:.2f}",
                 )
             )
-        
+
         ax.legend(handles=legend_elements, loc="upper left")
 
     # Add statistics text box
@@ -621,6 +621,7 @@ def plot_spectrogram_shm(
     plt.colorbar(im, ax=ax, label="Power (dB)")
 
     return ax
+
 
 def plot_roc_shm(
     tpr: np.ndarray, fpr: np.ndarray, scaling: str = "linear", ax: Optional[Axes] = None
