@@ -12,7 +12,7 @@ from scipy import linalg
 
 def ar_model_shm(
     X: np.ndarray, ar_order: int = 15
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Estimate autoregressive model parameters and compute RMSE.
 
@@ -23,7 +23,7 @@ def ar_model_shm(
         :data_type: Time Series
         :output_type: Features
         :display_name: AR Model
-        :verbose_call: [AR Parameters Feature Vectors, RMS Residuals Feature Vectors, AR Parameters, AR Residuals, AR Prediction] = AR Model (Time Series Data, AR Model Order)
+        :verbose_call: [AR Parameters Feature Vectors, RMS Residuals Feature Vectors, AR Prediction] = AR Model (Time Series Data, AR Model Order)
 
         :example_notebooks: ["ar_model_order_selection.ipynb", "chi_square_outlier_detection.ipynb", "custom_detector_assembly.ipynb", "damage_localization_ar_arx.ipynb", "damage_localization_ar_arx_executed.ipynb", "damage_localization_ar_arx_fixed.ipynb", "daq_ar_mahalanobis_integration.ipynb", "direct_use_nonparametric.ipynb", "direct_use_semiparametric.ipynb", "factor_analysis_final_validated.ipynb", "factor_analysis_outlier_detection.ipynb", "factor_analysis_test.ipynb", "how_to_use_default_detectors.ipynb", "mahalanobis_outlier_detection.ipynb", "ni_ultrasonic_daq.ipynb", "pca_outlier_detection.ipynb", "svd_outlier_detection.ipynb"]
 
@@ -53,10 +53,6 @@ def ar_model_shm(
     rms_residuals_fv : ndarray
         Feature vectors of root mean squared AR residual errors in concatenated format,
         shape (INSTANCES, FEATURES) where FEATURES = CHANNELS.
-    ar_parameters : ndarray
-        AR parameters of shape (AR_ORDER, CHANNELS, INSTANCES).
-    ar_residuals : ndarray
-        AR residuals of shape (TIME, CHANNELS, INSTANCES).
     ar_prediction : ndarray
         AR prediction of shape (TIME, CHANNELS, INSTANCES).
 
@@ -145,8 +141,6 @@ def ar_model_shm(
     return (
         ar_parameters_fv,
         rms_residuals_fv,
-        ar_parameters,
-        ar_residuals,
         ar_prediction,
     )
 
