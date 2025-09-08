@@ -2,7 +2,7 @@
 
 ## Dataset Files
 
-This directory contains the example datasets required for SHMTools Python notebooks:
+This directory contains the example datasets required for SHMTools Python notebooks. All files are included in the repository for immediate use:
 
 | File | Size | Description | Used By |
 |------|------|-------------|---------|
@@ -70,28 +70,14 @@ All datasets are from the original SHMTools library developed by Los Alamos Nati
 **Copyright Notice**  
 Copyright (c) 2014, Los Alamos National Security, LLC. All rights reserved.
 
-These datasets are redistributed under BSD-3-Clause-like terms. The data content remains unchanged from the original LANL releases, only converted to Python-compatible loading.
+These datasets are redistributed under BSD-3-Clause-like terms. The data content remains unchanged from the original LANL releases.
 
 ## References
 
 - Figueiredo, E., Park, G., Figueiras, J., Farrar, C., & Worden, K. (2009). Structural Health Monitoring Algorithm Comparisons using Standard Data Sets. Los Alamos National Laboratory Report: LA-14393.
 
-- Original MATLAB SHMTools library: https://github.com/lanl/SHMTools (LA-CC-14-046)
+- Original SHMTools library: https://github.com/lanl/SHMTools (LA-CC-14-046)
 
-## File Integrity
+## File Verification
 
-If you encounter loading issues, verify file integrity:
-
-```bash
-# Check file sizes match expected values
-ls -lh *.mat
-
-# Expected sizes:
-# data3SS.mat: ~25MB
-# data_CBM.mat: ~54MB  
-# data_example_ActiveSense.mat: ~32MB
-# dataSensorDiagnostic.mat: ~63KB
-# data_OSPExampleModal.mat: ~50KB
-```
-
-For any data loading issues, see the data loading utilities in `shmtools/utils/data_loading.py`.
+All dataset files are included in the repository. If you encounter loading issues, see the data loading utilities in `shmtools/utils/data_loading.py`.
