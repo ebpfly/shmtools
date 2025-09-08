@@ -15,29 +15,49 @@ SHMTools Python provides a modern, JupyterLab-based platform for structural heal
 
 ## Quick Start
 
-### One-Command Installation
+### 🚀 One-Script Installation (Recommended)
 
 ```bash
-# Clone and install with automatic jFUSE extension build
+# Clone and run automated installer
 git clone https://github.com/ebpfly/shmtools.git
-cd shm
-source venv/bin/activate  # CRITICAL: Always activate first
+cd shmtools
+./install-shmtools.sh
+```
+
+**That's it!** The script automatically:
+- ✅ Creates virtual environment (`shmtools-venv`)
+- ✅ Installs all Python dependencies
+- ✅ Installs Jupyter kernel
+- ✅ Builds JupyterLab extension with UI
+- ✅ Verifies everything works
+
+### 🔧 Manual Installation (Step-by-Step)
+
+If you prefer manual control:
+
+```bash
+# 1. Clone repository
+git clone https://github.com/ebpfly/shmtools.git
+cd shmtools
+
+# 2. Create and activate virtual environment
+python3 -m venv shmtools-venv
+source shmtools-venv/bin/activate  # CRITICAL: Always activate first
+
+# 3. Install Python dependencies and SHMTools
 pip install -e .
 
-# Install Jupyter kernel
-python -m ipykernel install --user --name=shm-venv --display-name="SHM Python (venv)"
+# 4. Install Jupyter kernel
+python -m ipykernel install --user --name=shmtools-venv --display-name="SHMTools Python"
 
-# Launch JupyterLab
+# 5. Build JupyterLab extension (REQUIRED for UI)
+./build-extension.sh
+
+# 6. Launch JupyterLab
 jupyter lab
 ```
 
-**That's it!** The `pip install -e .` automatically:
-- ✅ Installs all Python dependencies
-- ✅ Builds the TypeScript components (`npm install`, `npm run build:lib`)
-- ✅ Compiles the JupyterLab extension (`npm run build:labextension:dev`)
-- ✅ Integrates with JupyterLab (`jupyter lab build`)
-
-Open your browser to `http://localhost:8888` and look for the 🔍 **SHM Functions** panel in the left sidebar!
+**Verification**: Open your browser to `http://localhost:8888` and look for the 🔍 **SHM Functions** panel in the left sidebar!
 
 ### Cloud Deployment (Recommended)
 
@@ -52,9 +72,9 @@ cd jupyterhub/
 ### Basic Usage
 
 #### Using jFUSE Extension in JupyterLab
-1. **One-time setup**: `pip install -e .` (automatically builds everything)
-2. **Launch**: `jupyter lab`
-3. **Create notebook**: Use "SHM Python (venv)" kernel
+1. **One-time setup**: Follow complete installation above (including extension build)
+2. **Launch**: `source shmtools-venv/bin/activate && jupyter lab`
+3. **Create notebook**: Use "SHMTools Python" kernel
 4. **Find functions**: Click 🔍 **SHM Functions** in left sidebar
 5. **Insert code**: Search and click any function to add pre-configured code
 
@@ -121,6 +141,53 @@ Explore complete analysis workflows in `examples/notebooks/`:
 - **AWS Deployment**: Automated EC2 setup with JupyterHub, HTTPS, and complete SHMTools environment
 - **User Management**: The Littlest JupyterHub (TLJH) with multi-user support
 - **Remote Updates**: Continuous deployment from GitHub repository
+
+## Troubleshooting
+
+### Extension Not Appearing in JupyterLab
+
+If the 🔍 **SHM Functions** panel doesn't appear in the left sidebar:
+
+```bash
+# 1. Verify extension is installed
+source shmtools-venv/bin/activate
+jupyter labextension list
+# Should show: shm-function-selector v0.1.0 [enabled] [OK]
+
+# 2. If missing, rebuild extension
+cd shm_function_selector
+npm install
+npm run build:lib
+npm run build:labextension:dev
+cd ..
+jupyter lab build
+
+# 3. Restart JupyterLab
+jupyter lab
+```
+
+### Extension Shows as "Disabled" or "Error"
+
+```bash
+# Check for missing _version.py file
+ls shm_function_selector/shm_function_selector/_version.py
+
+# If missing, create it
+echo '__version__ = VERSION = "0.1.0"' > shm_function_selector/shm_function_selector/_version.py
+
+# Rebuild and restart
+jupyter lab build
+jupyter lab
+```
+
+### Virtual Environment Issues
+
+```bash
+# Always use the correct virtual environment
+source shmtools-venv/bin/activate
+which python  # Should show: .../shmtools-venv/bin/python
+which jupyter  # Should show: .../shmtools-venv/bin/jupyter
+```
 
 ## Development Status
 

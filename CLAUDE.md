@@ -49,6 +49,15 @@ source venv/bin/activate
 ## Development Commands
 
 ### Setup
+
+**For users (idiot-proof installation)**:
+```bash
+git clone https://github.com/ebpfly/shmtools.git
+cd shmtools
+./install-shmtools.sh  # Automated complete setup
+```
+
+**For development**:
 ```bash
 cd /Users/eric/repo/shm/ && source venv/bin/activate  # ALWAYS FIRST
 pip install -r requirements.txt -r requirements-dev.txt
@@ -69,7 +78,15 @@ jupyter lab  # Access at http://localhost:8888
 # Use "SHM Python (venv)" kernel for notebooks
 ```
 
-### JupyterLab Extension Build (CRITICAL 3-Step Process)
+### JupyterLab Extension Build
+
+**Automated (Recommended)**:
+```bash
+cd /Users/eric/repo/shm/ && source venv/bin/activate
+./build-extension.sh                 # Automated build with verification
+```
+
+**Manual (3-Step Process)**:
 ```bash
 cd /Users/eric/repo/shm/ && source venv/bin/activate
 cd shm_function_selector/
