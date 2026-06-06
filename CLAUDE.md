@@ -163,6 +163,14 @@ aws ec2 terminate-instances --instance-ids <ID> # Delete
 
 **`shm_function_selector/`**: JupyterLab extension (TypeScript frontend + Python backend)
 
+TypeScript frontend (`src/`) is split into focused modules:
+- `index.ts` — plugin registration + `activate()` entry point (thin wiring)
+- `SHMFunctionSelector.ts` — function browser dropdown UI (search, docs, settings/help panels, code generation/insertion)
+- `SHMContextMenuManager.ts` — right-click parameter linking and variable/plotting context menus
+- `keyboardShortcuts.ts` — keyboard shortcuts plus search / quick-select dialogs
+- `types.ts` — shared interfaces (`SHMFunction`, `CategoryNode`, `ParameterContext`, `Variable`)
+- `serverAPI.ts` — backend request helper
+
 **`examples/notebooks/`**: Educational notebooks by category (basic, intermediate, advanced, CBM, modal, active sensing, outlier detection)
 
 ## Development Principles
